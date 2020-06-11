@@ -1,0 +1,14 @@
+fasta:
+  none
+long_reads:
+  none
+short_reads_1:
+  none
+short_reads_2:
+  none
+max_threads:
+  none
+gtdbtk_folder:
+    /srv/db/gtdbtk/official/release89
+busco_folder:
+    /srv/longreads/nanopore/busco
