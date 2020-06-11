@@ -1,3 +1,5 @@
+configfile: "config.yaml"
+
 onsuccess:
     print("Workflow finished, no error")
 

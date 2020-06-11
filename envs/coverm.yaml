@@ -1,4 +1,4 @@
 channels:
   - bioconda
 dependencies:
-  - coverm>=0.4
+  - coverm >= 0.4
