@@ -21,11 +21,18 @@ elif snakemake.config['short_reads_1']  != 'none':
     subprocess.Popen("coverm contig -t %d -r %s --interleaved %s -m metabat --bam-file-cache-directory data/binning_bams/  > data/short_cov.tsv" %
                      (snakemake.threads, snakemake.input.fasta, snakemake.config["short_reads_1"]), shell=True).wait()
 
-with open('data/coverm.cov', 'w') as file3:
-    with open('data/short_cov.tsv', 'r') as file1:
-        with open('data/long_cov.tsv', 'r') as file2:
-            for line1, line2 in zip(file1, file2):
-                print(line1.strip(), "\t".join(line2.strip().split()[1::]), file=file3)
+# Concatenate the two coverage files if both long and short exist
+if snakemake.config["long_reads"] != "none" and (snakemake.config["short_reads_1"] != "none"):
+    with open('data/coverm.cov', 'w') as file3:
+        with open('data/short_cov.tsv', 'r') as file1:
+            with open('data/long_cov.tsv', 'r') as file2:
+                for line1, line2 in zip(file1, file2):
+                    print(line1.strip(), "\t".join(line2.strip().split()[1::]), file=file3)
+elif snakemake.config["long_reads"] != "none":  # rename long reads cov if only it exists
+    os.rename("data/long_cov.tsv", "data/coverm.cov")
+elif snakemake.config["short_reads_1"] != "none":  # rename shrot reads cov if only they exist
+    os.rename("data/short_cov.tsv", "data/coverm.cov")
+
 try:
     os.makedirs("data/maxbin_cov/")
 except OSError:
