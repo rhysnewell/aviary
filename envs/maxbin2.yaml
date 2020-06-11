@@ -1,0 +1,4 @@
+channels:
+  - bioconda
+dependencies:
+  - maxbin2 >= 2.2.7

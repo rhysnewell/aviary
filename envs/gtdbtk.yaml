@@ -1,0 +1,4 @@
+channels:
+  - bioconda
+dependencies:
+  - gtdbtk = 0.3.1

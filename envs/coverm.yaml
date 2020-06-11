@@ -1,0 +1,4 @@
+channels:
+  - bioconda
+dependencies:
+  - coverm>=0.4
