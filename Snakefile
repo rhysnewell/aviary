@@ -177,3 +177,11 @@ rule busco:
         "run_busco -q -c {threads} -t pro_tmp.${{file:33:-3}} -i $file -o protists_ensembl.${{file:39:-3}} -l {params.busco_folder}/protists_ensembl -m geno; " \
         "fi; done && " \
         "cd ../../ && touch data/busco/done"
+
+rule recover_mags:
+    input:
+        "data/das_tool_bins/done"
+        "data/gtdbtk/done"
+        "data/busco/done"
+    output:
+        "data/done"
