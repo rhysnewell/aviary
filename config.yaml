@@ -7,7 +7,7 @@ short_reads_1:
 short_reads_2:
   none
 max_threads:
-  none
+  8
 gtdbtk_folder:
     /srv/db/gtdbtk/official/release89
 busco_folder:

@@ -182,8 +182,8 @@ rule busco:
 
 rule recover_mags:
     input:
-        "data/das_tool_bins/done"
-        "data/gtdbtk/done"
-        "data/busco/done"
+        "data/das_tool_bins/done",
+        "data/gtdbtk/done",
+        "data/busco/done",
     output:
         "data/done"
