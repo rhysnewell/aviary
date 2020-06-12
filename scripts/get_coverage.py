@@ -21,6 +21,8 @@ elif snakemake.config['short_reads_1']  != 'none':
     subprocess.Popen("coverm contig -t %d -r %s --interleaved %s -m metabat --bam-file-cache-directory data/binning_bams/  > data/short_cov.tsv" %
                      (snakemake.threads, snakemake.input.fasta, snakemake.config["short_reads_1"]), shell=True).wait()
 
+subprocess.Popen("ls data/binning_bams/*.bam | parallel -j1 samtools -@ %d index {} {}.bai" %
+                     (snakemake.threads-1), shell=True).wait()
 # Concatenate the two coverage files if both long and short exist
 if snakemake.config["long_reads"] != "none" and (snakemake.config["short_reads_1"] != "none"):
     with open('data/coverm.cov', 'w') as file3:
