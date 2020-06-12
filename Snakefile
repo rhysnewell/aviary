@@ -185,5 +185,8 @@ rule recover_mags:
         "data/das_tool_bins/done",
         "data/gtdbtk/done",
         "data/busco/done",
+        "data/checkm.out",
     output:
         "data/done"
+    shell:
+        "touch data/done"
