@@ -13,5 +13,7 @@ conda create -n binsnek -c bioconda snakemake
 1. Copy the BinSnek pipeline into your working directory and activate your conda environment
 `conda activate binsnek`
 
-2. Run the pipeline:
-`snakemake `
+2. Setup your config.yaml file with the correct paths to your reads and assembly.
+
+3. Run the pipeline:
+`snakemake --use-conda --cores 24 recover_mags`

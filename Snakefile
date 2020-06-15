@@ -127,7 +127,7 @@ rule das_tool:
         " -c {input.fasta} -o data/das_tool_bins/das_tool && " \
         "touch data/das_tool_bins/done"
 
-rule prepare_binning_files:
+rule get_abundances:
     input:
         "data/das_tool_bins/done"
     output:
