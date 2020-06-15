@@ -127,6 +127,18 @@ rule das_tool:
         " -c {input.fasta} -o data/das_tool_bins/das_tool && " \
         "touch data/das_tool_bins/done"
 
+rule prepare_binning_files:
+    input:
+        "data/das_tool_bins/done"
+    output:
+        "data/coverm_abundances.tsv"
+    conda:
+        "envs/coverm.yaml"
+    threads:
+        config["max_threads"]
+    script:
+        "scripts/get_abundances.py"
+
 rule checkm:
     input:
         "data/das_tool_bins/done"
@@ -186,6 +198,7 @@ rule recover_mags:
         "data/gtdbtk/done",
         "data/busco/done",
         "data/checkm.out",
+        "data/coverm_abundances.tsv",
     output:
         "data/done"
     shell:

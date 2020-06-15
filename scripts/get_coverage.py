@@ -2,13 +2,6 @@ import subprocess
 import os
 import sys
 
-try:
-    os.makedirs('data/binning_bams')
-except OSError:
-    pass
-already_done = set()
-
-
 if snakemake.config["long_reads"] != "none":
     subprocess.Popen("coverm contig -t %d -r %s --single %s -p minimap2-ont -m metabat --bam-file-cache-directory data/binning_bams/ > data/long_cov.tsv" %
                      (snakemake.threads, snakemake.input.fasta, snakemake.config["long_reads"]), shell=True).wait()
