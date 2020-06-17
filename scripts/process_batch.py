@@ -19,15 +19,15 @@ def process_batch(batch_file_path):
             except FileExistsError:
                 print("Directory already exists for sample %s" % identifier)
             # Symbolically link to main BinSnek folder
-            subprocess.Popen("ln -s %s/Snakefile %s/data/%s/Snakefile"
+            subprocess.Popen("ln -s %s/Snakefile %s/data/%s/"
                              % (main_directory, main_directory, identifier), shell=True).wait()
             # subprocess.Popen("cp %s/config.yaml %s/data/%s/"
                              # % (main_directory, main_directory, identifier), shell=True).wait()
-            subprocess.Popen("ln -s %s/envs %s/data/%s/envs"
+            subprocess.Popen("ln -s %s/envs %s/data/%s/"
                              % (main_directory, main_directory, identifier), shell=True).wait()
-            subprocess.Popen("ln -s %s/scripts %s/data/%s/scripts"
+            subprocess.Popen("ln -s %s/scripts %s/data/%s/"
                              % (main_directory, main_directory, identifier), shell=True).wait()
-            subprocess.Popen("ln -s %s/.snakemake/ %s/data/%s/.snakemake"
+            subprocess.Popen("ln -s %s/.snakemake/ %s/data/%s/"
                              % (main_directory, main_directory, identifier), shell=True).wait()
 
             # Flags to specify when to change the next line
@@ -42,27 +42,27 @@ def process_batch(batch_file_path):
                             new_config_file.write(config_line)
                             changing_fasta = True
                         elif changing_fasta:
-                            new_config_file.write("\t" + assembly + "\n")
+                            new_config_file.write(" " + assembly + "\n")
                             changing_fasta = False
                         elif config_line.startswith("short_reads_1"):
                             new_config_file.write(config_line)
                             changing_reads_1 = True
                         elif changing_reads_1:
-                            config_line = "\t" + " ".join(forward) + "\n"
+                            config_line = " " + " ".join(forward) + "\n"
                             new_config_file.write(config_line)
                             changing_reads_1 = False
                         elif config_line.startswith("short_reads_2"):
                             new_config_file.write(config_line)
                             changing_reads_2 = True
                         elif changing_reads_2:
-                            config_line = "\t" + " ".join(reverse) + "\n"
+                            config_line = " " + " ".join(reverse) + "\n"
                             new_config_file.write(config_line)
                             changing_reads_2 = False
                         elif config_line.startswith("batch_file"):
                             new_config_file.write(config_line)
                             changing_batch = True
                         elif changing_batch:
-                            config_line = "\t" + "none" + "\n"
+                            config_line = " " + "none" + "\n"
                             new_config_file.write(config_line)
                             changing_batch = False
                         else:
