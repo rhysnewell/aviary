@@ -17,3 +17,12 @@ conda create -n binsnek -c bioconda snakemake
 
 3. Run the pipeline:
 `snakemake --use-conda --cores 24 recover_mags`
+
+# Batch Files
+
+Instead of providing BinSnek with an assembly and reads, you can provide it a batch file in the following format:
+
+```
+/Absolute/Path/to/Assembly1.fasta    Unique_ID_1    /absolute/path/to/read_set_1.1.fq.gz    /absolute/path/to/read_set_1.2.fq.gz    /absolute/path/to/read_set_2.1.fq.gz    /absolute/path/to/read_set_2.2.fq.gz
+/Absolute/Path/to/Assembly2.fasta    Unique_ID_2    /absolute/path/to/read_set_3.1.fq.gz    /absolute/path/to/read_set_3.2.fq.gz    /absolute/path/to/read_set_4.1.fq.gz    /absolute/path/to/read_set_4.2.fq.gz
+```
