@@ -18,9 +18,9 @@ def process_batch(batch_file_path):
                 os.mkdir("data/" + identifier)
             except FileExistsError:
                 print("Directory already exists for sample %s" % identifier)
-            # Symbolically link to main BinSnek folder
-            subprocess.Popen("ln -s %s/Snakefile %s/data/%s/"
-                             % (main_directory, main_directory, identifier), shell=True).wait()
+            # Symbolically link to main BinSnek folder === BAD IDEA ===
+            # subprocess.Popen("ln -s %s/Snakefile %s/data/%s/"
+            #                  % (main_directory, main_directory, identifier), shell=True).wait()
             # subprocess.Popen("cp %s/config.yaml %s/data/%s/"
                              # % (main_directory, main_directory, identifier), shell=True).wait()
             subprocess.Popen("ln -s %s/envs %s/data/%s/"
@@ -71,9 +71,11 @@ def process_batch(batch_file_path):
 
             os.chdir("%s/data/%s" % (main_directory, identifier))
             # Run a new snakemake process using the updated config.yaml
-            subprocess.Popen("snakemake --cores %d recover_mags" % snakemake.threads, shell=True).wait()
+            subprocess.Popen("snakemake --use-conda --conda-prefix %s/.snakemake/ -s %s/Snakefile --cores %d recover_mags"
+                             % (main_directory, main_directory, snakemake.threads), shell=True).wait()
             os.chdir(main_directory)
 
 
 if __name__ == "__main__":
     process_batch(snakemake.config["batch_file"])
+    subprocess.Popen("touch data/done", shell=True).wait()

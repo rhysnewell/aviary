@@ -4,12 +4,12 @@ channels:
 dependencies:
   - pysam >= 0.16
   - coverm >= 0.4
-  - busco=3.0.2=py37_12
+  - busco >= 3.0.2=py37_12
   - concoct >= 1.1.0
-  - das_tool >= 1.1.1
-  - gtdbtk = 0.3.1
-  - instrain = 1.2.2
+  - das_tool >= 0.3.1
+  - gtdbtk >= 0.3.1
+  - instrain >= 1.2.2
   - maxbin2 >= 2.2.7
-  - samtools = 1.9
+  - samtools >= 1.9
   - minimap2 >= 2.15
   - metabat2 >= 2.12.1

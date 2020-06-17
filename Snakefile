@@ -37,10 +37,8 @@ rule run_batch:
         "data/done"
     threads:
         config["max_threads"]
-    conda:
-        "envs/batch.yaml"
     script:
-        "scripts/process_batch.py && touch data/done"
+        "scripts/process_batch.py"
 
 
 rule prepare_binning_files:
