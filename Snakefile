@@ -30,13 +30,11 @@ onstart:
     if busco_folder != "none" and not os.path.exists(busco_folder):
         sys.stderr.write("busco_folder does not point to a folder\n")
 
-rule prepare_batch_file:
+rule run_batch:
     input:
         batch_file = config["batch_file"]
     output:
         fasta = "data/assemblies/done"
-    conda:
-        "envs/coverm.yaml"
     threads:
         config["max_threads"]
     script:
