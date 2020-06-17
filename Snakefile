@@ -11,21 +11,36 @@ onstart:
     fasta = config["fasta"]
     short_reads_1 = config["short_reads_1"]
     short_reads_2 = config["short_reads_2"]
+    batch_file = config["batch_file"]
     gtdbtk_folder = config["gtdbtk_folder"]
     busco_folder = config["busco_folder"]
     import os
-    if long_reads == "none" and short_reads_1 == "none":
-        sys.exit("Need at least one of long_reads, short_reads_1")
+    if long_reads == "none" and short_reads_1 == "none" and batch_file == "none":
+        sys.exit("Need at least one of long_reads, short_reads_1, batch_file")
     if long_reads != "none" and not os.path.exists(long_reads):
         sys.exit("long_reads does not point to a file")
     if short_reads_1 != "none" and not os.path.exists(short_reads_1):
         sys.exit("short_reads_1 does not point to a file")
     if short_reads_2 != "none" and not os.path.exists(short_reads_2):
         sys.exit("short_reads_2 does not point to a file")
+    if batch_file != "none" and not os.path.exists(batch_file):
+        sys.exit("batch_file does not point to a file")
     if gtdbtk_folder != "none" and not os.path.exists(gtdbtk_folder):
         sys.stderr.write("gtdbtk_folder does not point to a folder\n")
     if busco_folder != "none" and not os.path.exists(busco_folder):
         sys.stderr.write("busco_folder does not point to a folder\n")
+
+rule prepare_batch_file:
+    input:
+        batch_file = config["batch_file"]
+    output:
+        fasta = "data/assemblies/done"
+    conda:
+        "envs/coverm.yaml"
+    threads:
+        config["max_threads"]
+    script:
+        "scripts/process_batch.py"
 
 
 rule prepare_binning_files:
