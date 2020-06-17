@@ -7,21 +7,21 @@ onerror:
     print("An error occurred")
 
 onstart:
-    long_reads = config["long_reads"]
+    long_reads = config["long_reads"].strip().split()
     fasta = config["fasta"]
-    short_reads_1 = config["short_reads_1"]
-    short_reads_2 = config["short_reads_2"]
+    short_reads_1 = config["short_reads_1"].strip().split()
+    short_reads_2 = config["short_reads_2"].strip().split()
     batch_file = config["batch_file"]
     gtdbtk_folder = config["gtdbtk_folder"]
     busco_folder = config["busco_folder"]
     import os
-    if long_reads == "none" and short_reads_1 == "none" and batch_file == "none":
+    if long_reads[0] == "none" and short_reads_1[0] == "none" and batch_file == "none":
         sys.exit("Need at least one of long_reads, short_reads_1, batch_file")
-    if long_reads != "none" and not os.path.exists(long_reads):
+    if long_reads[0] != "none" and not os.path.exists(long_reads[0]):
         sys.exit("long_reads does not point to a file")
-    if short_reads_1 != "none" and not os.path.exists(short_reads_1):
+    if short_reads_1[0] != "none" and not os.path.exists(short_reads_1[0]):
         sys.exit("short_reads_1 does not point to a file")
-    if short_reads_2 != "none" and not os.path.exists(short_reads_2):
+    if short_reads_2[0] != "none" and not os.path.exists(short_reads_2[0]):
         sys.exit("short_reads_2 does not point to a file")
     if batch_file != "none" and not os.path.exists(batch_file):
         sys.exit("batch_file does not point to a file")
@@ -34,11 +34,13 @@ rule run_batch:
     input:
         batch_file = config["batch_file"]
     output:
-        fasta = "data/assemblies/done"
+        "data/done"
     threads:
         config["max_threads"]
+    conda:
+        "envs/batch.yaml"
     script:
-        "scripts/process_batch.py"
+        "scripts/process_batch.py && touch data/done"
 
 
 rule prepare_binning_files:
