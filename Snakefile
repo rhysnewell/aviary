@@ -42,7 +42,7 @@ rule run_batch:
 
 rule rename_contigs:
     input:
-        fasta
+        fasta = config["fasta"]
     output:
         "data/renamed_contigs.fasta"
     shell:
@@ -50,9 +50,9 @@ rule rename_contigs:
 
 rule run_virsorter:
     input:
-        fasta = "data/renamed_contigs.fasta"
+        fasta = "data/renamed_contigs.fasta",
         virsorter_data = config["virsorter_data"]
-    output
+    output:
         "data/virsorter/done"
     conda:
         "envs/virsorter.yaml"
@@ -228,7 +228,7 @@ rule busco:
 
 rule recover_mags:
     input:
-        "data/das_tool_bins/das_tool_DASTool_bins/*",
+        "data/das_tool_bins/done",
         "data/gtdbtk/done",
         "data/busco/done",
         "data/checkm.out",
