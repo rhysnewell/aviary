@@ -5,6 +5,7 @@ import sys
 
 def process_batch(batch_file_path):
     main_directory = os.getcwd()
+    install_directory = "~/git/BinSnek"
     with open(batch_file_path, "r") as batch_file:
         for line in batch_file:
             line = line.strip().split()
@@ -72,10 +73,10 @@ def process_batch(batch_file_path):
             os.chdir("%s/data/%s" % (main_directory, identifier))
             # Run a new snakemake process using the updated config.yaml
             subprocess.Popen(
-                "snakemake --unlock --use-conda --conda-prefix ../../.snakemake/ -s %s/Snakefile --cores %d recover_mags"
-                % (main_directory, snakemake.threads), shell=True).wait()
-            subprocess.Popen("snakemake --use-conda --conda-prefix ../../.snakemake/ -s %s/Snakefile --cores %d recover_mags"
-                             % (main_directory, snakemake.threads), shell=True).wait()
+                "snakemake --unlock --use-conda --conda-prefix %s/.snakemake/ -s %s/Snakefile --cores %d recover_mags"
+                % (install_directory, install_directory, snakemake.threads), shell=True).wait()
+            subprocess.Popen("snakemake --use-conda --conda-prefix %s/.snakemake/ -s %s/Snakefile --cores %d recover_mags"
+                             % (install_directory, install_directory, snakemake.threads), shell=True).wait()
             os.chdir(main_directory)
 
 
