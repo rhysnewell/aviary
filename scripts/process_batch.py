@@ -73,9 +73,9 @@ def process_batch(batch_file_path):
             # Run a new snakemake process using the updated config.yaml
             subprocess.Popen(
                 "snakemake --unlock --use-conda --conda-prefix ../../.snakemake/ -s %s/Snakefile --cores %d recover_mags"
-                % (main_directory, main_directory, snakemake.threads), shell=True).wait()
+                % (main_directory, snakemake.threads), shell=True).wait()
             subprocess.Popen("snakemake --use-conda --conda-prefix ../../.snakemake/ -s %s/Snakefile --cores %d recover_mags"
-                             % (main_directory, main_directory, snakemake.threads), shell=True).wait()
+                             % (main_directory, snakemake.threads), shell=True).wait()
             os.chdir(main_directory)
 
 
