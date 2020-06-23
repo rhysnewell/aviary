@@ -67,7 +67,6 @@ rule prepare_binning_files:
         fasta = config["fasta"],
     output:
         maxbin_coverage = "data/maxbin.cov.list",
-        bams = "data/binning_bams/done",
         metabat_coverage = "data/coverm.cov"
     conda:
         "envs/coverm.yaml"
@@ -75,10 +74,19 @@ rule prepare_binning_files:
         config["max_threads"]
     script:
         "scripts/get_coverage.py"
+
+rule get_bam_indices:
+    input:
+        coverage = "data/coverm.cov"
+    output:
+        bams = "data/binning_bams/done"
+    conda:
+        "envs/coverm.yaml"
+    threads:
+        config["max_threads"]
     shell:
         "ls data/binning_bams/*.bam | parallel -j1 'samtools index -@ %d {} {}.bai' &&" \
         "touch data/binning_bams/done"
-
 
 rule maxbin_binning:
     input:
