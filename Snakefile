@@ -75,6 +75,9 @@ rule prepare_binning_files:
         config["max_threads"]
     script:
         "scripts/get_coverage.py"
+    shell:
+        "ls data/binning_bams/*.bam | parallel -j1 'samtools index -@ %d {} {}.bai' &&" \
+        "touch data/binning_bams/done"
 
 
 rule maxbin_binning:

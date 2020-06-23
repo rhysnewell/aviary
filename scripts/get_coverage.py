@@ -14,8 +14,7 @@ elif snakemake.config['short_reads_1']  != 'none':
     subprocess.Popen("coverm contig -t %d -r %s --interleaved %s -m metabat --bam-file-cache-directory data/binning_bams/  > data/short_cov.tsv" %
                      (snakemake.threads, snakemake.input.fasta, snakemake.config["short_reads_1"]), shell=True).wait()
 
-subprocess.Popen("ls data/binning_bams/*.bam | parallel -j1 samtools -@ %d index {} {}.bai" %
-                     (snakemake.threads-1), shell=True).wait()
+# subprocess.Popen("ls data/binning_bams/*.bam | parallel -j1 samtools index -@ %d {} {}.bai" % (snakemake.threads-1), shell=True).wait()
 # Concatenate the two coverage files if both long and short exist
 if snakemake.config["long_reads"] != "none" and (snakemake.config["short_reads_1"] != "none"):
     with open('data/coverm.cov', 'w') as file3:
@@ -48,8 +47,8 @@ with open("data/coverm.cov") as f, open("data/maxbin.cov.list", "w") as o:
             for j in range(len(contig_list)):
                 oo.write(contig_list[j] + '\t' + cov_list[j][i] + '\n')
         o.write("data/maxbin_cov/p%d.cov\n" % i)
-with open("data/binning_bams/done", 'w') as o:
-    o.write('done')
+# with open("data/binning_bams/done", 'w') as o:
+#     o.write('done')
 
 
 

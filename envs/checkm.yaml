@@ -2,4 +2,3 @@ channels:
   - bioconda
 dependencies:
   - checkm-genome = 1.1.2
-  - pysam >= 0.16
