@@ -30,6 +30,7 @@ onstart:
     if busco_folder != "none" and not os.path.exists(busco_folder):
         sys.stderr.write("busco_folder does not point to a folder\n")
 
+
 rule run_batch:
     input:
         batch_file = config["batch_file"]
@@ -40,6 +41,7 @@ rule run_batch:
     script:
         "scripts/process_batch.py"
 
+
 rule rename_contigs:
     input:
         fasta = config["fasta"]
@@ -47,6 +49,7 @@ rule rename_contigs:
         "data/renamed_contigs.fasta"
     shell:
         "sed -i 's/>/>${{input.fasta}%%_*}_/' {input.fasta}"
+
 
 rule run_virsorter:
     input:
@@ -62,6 +65,7 @@ rule run_virsorter:
         "virsorter -f {input.fasta} --wdir data/virsorter --data-dir {input.virsorter_data} --ncpu {threads} &&" \
         "touch data/virsorter/done"
 
+
 rule prepare_binning_files:
     input:
         fasta = config["fasta"],
@@ -75,6 +79,7 @@ rule prepare_binning_files:
     script:
         "scripts/get_coverage.py"
 
+
 rule get_bam_indices:
     input:
         coverage = "data/coverm.cov"
@@ -85,8 +90,9 @@ rule get_bam_indices:
     threads:
         config["max_threads"]
     shell:
-        "ls data/binning_bams/*.bam | parallel -j1 'samtools index -@ %d {} {}.bai' &&" \
+        "ls data/binning_bams/*.bam | parallel -j  'samtools index -@ {threads} {{}} {{}}.bai' &&" \
         "touch data/binning_bams/done"
+
 
 rule maxbin_binning:
     input:
@@ -134,16 +140,19 @@ rule metabat_binning_2:
         metabat_sense = "data/metabat_bins_sens/done"
     conda:
         "envs/metabat2.yaml"
+    threads:
+        config["max_threads"]
     shell:
         "mkdir -p data/metabat_bins_2 && " \
-        "metabat --seed 89 -i {input.fasta} -a {input.coverage} -o data/metabat_bins_2/binned_contigs && " \
+        "metabat -t {threads} --seed 89 -i {input.fasta} -a {input.coverage} -o data/metabat_bins_2/binned_contigs && " \
         "touch data/metabat_bins_2/done && " \
-        "metabat1 --seed 89 --sensitive -i {input.fasta} -a {input.coverage} -o data/metabat_bins_sens/binned_contigs && " \
+        "metabat1 -t {threads} --seed 89 --sensitive -i {input.fasta} -a {input.coverage} -o data/metabat_bins_sens/binned_contigs && " \
         "touch data/metabat_bins_sens/done && " \
-        "metabat1 --seed 89 --supersensitive -i {input.fasta} -a {input.coverage} -o data/metabat_bins_ssens/binned_contigs && " \
+        "metabat1 -t {threads} --seed 89 --supersensitive -i {input.fasta} -a {input.coverage} -o data/metabat_bins_ssens/binned_contigs && " \
         "touch data/metabat_bins_ssens/done && " \
-        "metabat1 --seed 89 --superspecific -i {input.fasta} -a {input.coverage} -o data/metabat_bins_sspec/binned_contigs && " \
+        "metabat1 -t {threads} --seed 89 --superspecific -i {input.fasta} -a {input.coverage} -o data/metabat_bins_sspec/binned_contigs && " \
         "touch data/metabat_bins_sspec/done"
+
 
 rule das_tool:
     input:
