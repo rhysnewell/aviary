@@ -90,7 +90,7 @@ rule get_bam_indices:
     threads:
         config["max_threads"]
     shell:
-        "ls data/binning_bams/*.bam | parallel -j  'samtools index -@ {threads} {{}} {{}}.bai' &&" \
+        "ls data/binning_bams/*.bam | parallel -j 1 'samtools index -@ {threads} {{}} {{}}.bai' &&" \
         "touch data/binning_bams/done"
 
 
@@ -256,6 +256,6 @@ rule recover_mags:
     output:
         "data/done"
     shell:
-        "mkdir bins && cd bins/ && ln -s ../data/das_tool_bins/das_tool_DASTool_bins/* bins/ && " \
-        "touch data/done"
+        "mkdir data/bins && cd data/bins/ && ln -s ../data/das_tool_bins/das_tool_DASTool_bins/* ./ && " \
+        "cd ../../ && touch data/done"
 

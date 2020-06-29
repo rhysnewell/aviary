@@ -5,7 +5,7 @@ A snakemake pipeline for binning metagenomic assemblies
 
 You'll need `snakemake` installed. It is recommended you set up a `conda` environment for this:
 ```
-conda create -n binsnek -c bioconda snakemake conda
+conda create -n binsnek -c bioconda snakemake conda=4.7.10
 ```
 
 # Usage
