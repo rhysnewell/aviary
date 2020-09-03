@@ -15,6 +15,8 @@ onstart:
     gtdbtk_folder = config["gtdbtk_folder"]
     busco_folder = config["busco_folder"]
     import os
+    import sys
+
     if long_reads[0] == "none" and short_reads_1[0] == "none" and batch_file == "none":
         sys.exit("Need at least one of long_reads, short_reads_1, batch_file")
     if long_reads[0] != "none" and not os.path.exists(long_reads[0]):
@@ -75,7 +77,8 @@ rule prepare_binning_files:
     conda:
         "envs/coverm.yaml"
     envmodules:
-        "/srv/modulefiles/coverm/0.4.0"
+        "/srv/modulefiles/coverm/0.4.0",
+        "/srv/modulefiles/parallel/20180222"
     threads:
         config["max_threads"]
     script:
@@ -90,7 +93,8 @@ rule get_bam_indices:
     conda:
         "envs/coverm.yaml"
     envmodules:
-        "/srv/modulefiles/coverm/0.4.0"
+        "/srv/modulefiles/coverm/0.4.0",
+        "/srv/modulefiles/parallel/20180222"
     threads:
         config["max_threads"]
     shell:
@@ -146,6 +150,8 @@ rule metabat_binning_2:
         metabat_sense = "data/metabat_bins_sens/done"
     conda:
         "envs/metabat2.yaml"
+    envmodules:
+        "/srv/modulefiles/metabat/2.12.1"
     threads:
         config["max_threads"]
     shell:
@@ -173,6 +179,8 @@ rule das_tool:
         das_tool_done = "data/das_tool_bins/done"
     conda:
         "envs/das_tool.yaml"
+    envmodules:
+        "/srv/modulefiles/das_tool/1.0"
     threads:
         config["max_threads"]
     shell:
@@ -194,6 +202,9 @@ rule get_abundances:
         "data/coverm_abundances.tsv"
     conda:
         "envs/coverm.yaml"
+    envmodules:
+        "/srv/modulefiles/coverm/0.4.0",
+        "/srv/modulefiles/parallel/20180222"
     threads:
         config["max_threads"]
     script:
@@ -206,6 +217,8 @@ rule checkm:
         "data/checkm.out"
     conda:
         "envs/checkm.yaml"
+    envmodules:
+        "/srv/modulefiles/checkm/1.1.3"
     threads:
         config["max_threads"]
     shell:
@@ -220,6 +233,8 @@ rule gtdbtk:
         gtdbtk_folder = config['gtdbtk_folder']
     conda:
         "envs/gtdbtk.yaml"
+    envmodules:
+        "/srv/modulefiles/gtdbtk/1.3.0"
     threads:
         config["max_threads"]
     shell:
