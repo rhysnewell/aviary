@@ -13,6 +13,6 @@ max_threads:
 virsorter_data:
   /srv/db/virsorter_data_v2/virsorter-data
 gtdbtk_folder:
-  /srv/db/gtdbtk/official/release89
+  /srv/db/gtdbtk/official/release95
 busco_folder:
   /srv/longreads/nanopore/busco

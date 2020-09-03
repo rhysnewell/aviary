@@ -74,6 +74,8 @@ rule prepare_binning_files:
         metabat_coverage = "data/coverm.cov"
     conda:
         "envs/coverm.yaml"
+    envmodules:
+        "/srv/modulefiles/coverm/0.4.0"
     threads:
         config["max_threads"]
     script:
@@ -87,6 +89,8 @@ rule get_bam_indices:
         bams = "data/binning_bams/done"
     conda:
         "envs/coverm.yaml"
+    envmodules:
+        "/srv/modulefiles/coverm/0.4.0"
     threads:
         config["max_threads"]
     shell:
@@ -102,6 +106,8 @@ rule maxbin_binning:
         "data/maxbin2_bins/done"
     conda:
         "envs/maxbin2.yaml"
+    envmodules:
+        "/srv/sw/maxbin/2.2.4"
     shell:
         "mkdir -p data/maxbin2_bins && " \
         "run_MaxBin.pl -contig {input.fasta} -abund_list {input.maxbin_cov} -out data/maxbin2_bins/maxbin && " \
@@ -158,7 +164,7 @@ rule das_tool:
     input:
         fasta = config["fasta"],
         metabat2_done = "data/metabat_bins_2/done",
-        concoct_done = "data/concoct_bins/done",
+        # concoct_done = "data/concoct_bins/done",
         maxbin_done = "data/maxbin2_bins/done",
         metabat_sspec = "data/metabat_bins_sspec/done",
         metabat_ssens = "data/metabat_bins_ssens/done",
@@ -174,10 +180,10 @@ rule das_tool:
         "Fasta_to_Scaffolds2Bin.sh -i data/metabat_bins_sspec -e fa > data/metabat_bins_sspec.tsv && " \
         "Fasta_to_Scaffolds2Bin.sh -i data/metabat_bins_ssens -e fa > data/metabat_bins_ssens.tsv && " \
         "Fasta_to_Scaffolds2Bin.sh -i data/metabat_bins_sens -e fa > data/metabat_bins_sens.tsv && " \
-        "Fasta_to_Scaffolds2Bin.sh -i data/concoct_bins -e fa > data/concoct_bins.tsv && " \
+        # "Fasta_to_Scaffolds2Bin.sh -i data/concoct_bins -e fa > data/concoct_bins.tsv && " \
         "Fasta_to_Scaffolds2Bin.sh -i data/maxbin2_bins -e fasta > data/maxbin_bins.tsv && " \
         "DAS_Tool --search_engine diamond --write_bin_evals 1 --write_bins 1 -t {threads}" \
-        " -i data/metabat_bins_2.tsv,data/metabat_bins_sspec.tsv,data/metabat_bins_ssens.tsv,data/metabat_bins_sens.tsv,data/concoct_bins.tsv,data/maxbin_bins.tsv" \
+        " -i data/metabat_bins_2.tsv,data/metabat_bins_sspec.tsv,data/metabat_bins_ssens.tsv,data/metabat_bins_sens.tsv,data/maxbin_bins.tsv" \
         " -c {input.fasta} -o data/das_tool_bins/das_tool && " \
         "touch data/das_tool_bins/done"
 
@@ -250,12 +256,12 @@ rule recover_mags:
     input:
         "data/das_tool_bins/done",
         "data/gtdbtk/done",
-        "data/busco/done",
+        # "data/busco/done",
         "data/checkm.out",
         "data/coverm_abundances.tsv",
     output:
         "data/done"
     shell:
-        "mkdir data/bins && cd data/bins/ && ln -s ../data/das_tool_bins/das_tool_DASTool_bins/* ./ && " \
+        "mkdir data/bins && cd data/bins/ && ln -s ../das_tool_bins/das_tool_DASTool_bins/* ./ && " \
         "cd ../../ && touch data/done"
 
