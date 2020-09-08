@@ -111,7 +111,7 @@ rule maxbin_binning:
     conda:
         "envs/maxbin2.yaml"
     envmodules:
-        "/srv/sw/maxbin/2.2.4"
+        "/srv/modulefiles/maxbin/2.2.4"
     shell:
         "mkdir -p data/maxbin2_bins && " \
         "run_MaxBin.pl -contig {input.fasta} -abund_list {input.maxbin_cov} -out data/maxbin2_bins/maxbin && " \

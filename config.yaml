@@ -16,3 +16,5 @@ gtdbtk_folder:
   /srv/db/gtdbtk/official/release95
 busco_folder:
   /srv/longreads/nanopore/busco
+binsnek_install:
+  ~/git/BinSnek/

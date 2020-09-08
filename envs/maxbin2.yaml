@@ -1,4 +1,5 @@
 channels:
   - bioconda
 dependencies:
-  - maxbin2 >= 2.2.7
+  - maxbin2=2.2.4
+  - perl=5.20.3.1
