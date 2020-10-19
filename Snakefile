@@ -179,8 +179,8 @@ rule das_tool:
         das_tool_done = "data/das_tool_bins/done"
     conda:
         "envs/das_tool.yaml"
-    envmodules:
-        "/srv/modulefiles/das_tool/1.0"
+    # envmodules:
+    #     "/srv/modulefiles/das_tool/1.0"
     threads:
         config["max_threads"]
     shell:
@@ -278,5 +278,6 @@ rule recover_mags:
         "data/done"
     shell:
         "mkdir data/bins && cd data/bins/ && ln -s ../das_tool_bins/das_tool_DASTool_bins/* ./ && " \
+        "coverm cluster --checkm-tab-table data/checkm.out -d data/bins -x fa --output-representative-fasta-directory galah_out && " \
         "cd ../../ && touch data/done"
 
