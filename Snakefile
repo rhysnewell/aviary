@@ -222,7 +222,7 @@ rule checkm:
     threads:
         config["max_threads"]
     shell:
-        'checkm lineage_wf -t {threads} -x fa data/das_tool_bins/das_tool_DASTool_bins data/checkm > data/checkm.out'
+        'checkm lineage_wf -t {threads} -x fa data/das_tool_bins/das_tool_DASTool_bins data/checkm --tab_table -f data/checkm.out'
 
 rule gtdbtk:
     input:
@@ -274,9 +274,14 @@ rule recover_mags:
         # "data/busco/done",
         "data/checkm.out",
         "data/coverm_abundances.tsv",
+    conda:
+        "envs/coverm.yaml"
+    threads:
+        config["max_threads"]
     output:
         "data/done"
     shell:
-        "mkdir data/bins && cd data/bins/ && ln -s ../das_tool_bins/das_tool_DASTool_bins/* ./ && " \
-        "cd ../../ && touch data/done"
+        "mkdir -p data/pre_galah_bins && cd data/pre_galah_bins/ && ln -s ../das_tool_bins/das_tool_DASTool_bins/* ./ && cd ../../ && " \
+        "coverm cluster -t {threads} --checkm-tab-table data/checkm.out --genome-fasta-directory data/pre_galah_bins/ -x fa --output-representative-fasta-directory data/galah_bins --ani 0.97 && " \
+        "touch data/done"
 
