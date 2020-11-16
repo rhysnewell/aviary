@@ -4,3 +4,5 @@ channels:
 dependencies:
   - coverm >= 0.4
   - parallel
+  - dashing
+  - fastani

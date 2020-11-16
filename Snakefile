@@ -170,7 +170,7 @@ rule das_tool:
     input:
         fasta = config["fasta"],
         metabat2_done = "data/metabat_bins_2/done",
-        # concoct_done = "data/concoct_bins/done",
+        concoct_done = "data/concoct_bins/done",
         maxbin_done = "data/maxbin2_bins/done",
         metabat_sspec = "data/metabat_bins_sspec/done",
         metabat_ssens = "data/metabat_bins_ssens/done",
@@ -188,10 +188,10 @@ rule das_tool:
         "Fasta_to_Scaffolds2Bin.sh -i data/metabat_bins_sspec -e fa > data/metabat_bins_sspec.tsv && " \
         "Fasta_to_Scaffolds2Bin.sh -i data/metabat_bins_ssens -e fa > data/metabat_bins_ssens.tsv && " \
         "Fasta_to_Scaffolds2Bin.sh -i data/metabat_bins_sens -e fa > data/metabat_bins_sens.tsv && " \
-        # "Fasta_to_Scaffolds2Bin.sh -i data/concoct_bins -e fa > data/concoct_bins.tsv && " \
+        "Fasta_to_Scaffolds2Bin.sh -i data/concoct_bins -e fa > data/concoct_bins.tsv && " \
         "Fasta_to_Scaffolds2Bin.sh -i data/maxbin2_bins -e fasta > data/maxbin_bins.tsv && " \
         "DAS_Tool --search_engine diamond --write_bin_evals 1 --write_bins 1 -t {threads}" \
-        " -i data/metabat_bins_2.tsv,data/metabat_bins_sspec.tsv,data/metabat_bins_ssens.tsv,data/metabat_bins_sens.tsv,data/maxbin_bins.tsv" \
+        " -i data/metabat_bins_2.tsv,data/metabat_bins_sspec.tsv,data/metabat_bins_ssens.tsv,data/metabat_bins_sens.tsv,data/maxbin_bins.tsv,data/concoct_bins.tsv" \
         " -c {input.fasta} -o data/das_tool_bins/das_tool && " \
         "touch data/das_tool_bins/done"
 
@@ -202,9 +202,6 @@ rule get_abundances:
         "data/coverm_abundances.tsv"
     conda:
         "envs/coverm.yaml"
-    envmodules:
-        "/srv/modulefiles/coverm/0.4.0",
-        "/srv/modulefiles/parallel/20180222"
     threads:
         config["max_threads"]
     script:
