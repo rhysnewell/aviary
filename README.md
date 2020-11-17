@@ -1,22 +1,30 @@
 # BinSnek
 A snakemake pipeline for binning metagenomic assemblies
 
+# Installation
+
+```
+git clone https://github.com/rhysnewell/BinSnek.git
+cd BinSnek
+conda env create -n binsnek -f binsnek.yml
+conda activate binsnek
+pip install --editable .
+binsnek recover --help
+```
+
 # Requirements
 
-You'll need `snakemake` installed. It is recommended you set up a `conda` environment for this:
+Initial requirements for binsnek can be downloaded using the `binsnek.yml`:
 ```
-conda create -n binsnek -c bioconda snakemake conda=4.7.10
+conda env create -n binsnek -f binsnek.yml
 ```
 
 # Usage
 
-1. Copy the BinSnek pipeline into your working directory and activate your conda environment
-`conda activate binsnek`
-
-2. Setup your config.yaml file with the correct paths to your reads and assembly.
-
-3. Run the pipeline:
-`snakemake --use-conda --cores 24 recover_mags`
+To perform mag recovery:
+```
+binsnek recover --assembly scaffolds.fasta --short_reads_1 sr1.1.fq sr2.1.fq.gz --short_reads_2 sr1.2.fq sr2.2.fq.gz --longreads nanopore.fastq.gz --output output_dir/ --max_threads 24 --n_cores 24 --gtdb_path /path/to/gtdb/release/
+```
 
 # Batch Files
 

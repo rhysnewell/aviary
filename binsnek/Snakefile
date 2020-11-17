@@ -1,4 +1,3 @@
-configfile: "config.yaml"
 
 onsuccess:
     print("Workflow finished, no error")
@@ -7,6 +6,19 @@ onerror:
     print("An error occurred")
 
 onstart:
+    import os
+    import sys
+
+
+    from snakemake.utils import logger, min_version
+
+    sys.path.append(os.path.join(os.path.dirname(os.path.abspath(workflow.snakefile)),"scripts"))
+
+    from binsnek import update_config
+    config = update_config(config)
+
+    # minimum required snakemake version
+    min_version("5.4.5")
     long_reads = config["long_reads"].strip().split()
     fasta = config["fasta"]
     short_reads_1 = config["short_reads_1"].strip().split()

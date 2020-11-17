@@ -11,8 +11,8 @@ batch_file:
 max_threads:
   8
 virsorter_data:
-  /srv/db/virsorter_data_v2/virsorter-data
+  /work/microbiome/db/virsorter_data_v2/virsorter-data
 gtdbtk_folder:
-  /srv/db/gtdbtk/official/release95
+  /work/microbiome/db/gtdbtk/release95/
 busco_folder:
-  /srv/longreads/nanopore/busco
+  /work/microbiome/db/busco

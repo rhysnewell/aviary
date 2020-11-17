@@ -21,7 +21,7 @@ def process_batch(batch_file_path):
             # Symbolically link to main BinSnek folder === BAD IDEA ===
             # subprocess.Popen("ln -s %s/Snakefile %s/data/%s/"
             #                  % (main_directory, main_directory, identifier), shell=True).wait()
-            # subprocess.Popen("cp %s/config.yaml %s/data/%s/"
+            # subprocess.Popen("cp %s/template_config.yaml %s/data/%s/"
                              # % (main_directory, main_directory, identifier), shell=True).wait()
             subprocess.Popen("ln -s %s/envs %s/data/%s/"
                              % (main_directory, main_directory, identifier), shell=True).wait()
@@ -35,8 +35,8 @@ def process_batch(batch_file_path):
             changing_reads_1 = False
             changing_reads_2 = False
             changing_batch = False
-            with open("%s/data/%s/config.yaml" % (main_directory, identifier), "w+") as new_config_file:
-                with open("%s/config.yaml" % main_directory, 'r') as config_file:
+            with open("%s/data/%s/template_config.yaml" % (main_directory, identifier), "w+") as new_config_file:
+                with open("%s/template_config.yaml" % main_directory, 'r') as config_file:
                     for config_line in config_file:
                         if config_line.startswith("fasta"):
                             new_config_file.write(config_line)
@@ -70,7 +70,7 @@ def process_batch(batch_file_path):
 
 
             os.chdir("%s/data/%s" % (main_directory, identifier))
-            # Run a new snakemake process using the updated config.yaml
+            # Run a new snakemake process using the updated template_config.yaml
             subprocess.Popen("snakemake --use-conda --conda-prefix %s/.snakemake/ -s %s/Snakefile --cores %d recover_mags"
                              % (main_directory, main_directory, snakemake.threads), shell=True).wait()
             os.chdir(main_directory)
