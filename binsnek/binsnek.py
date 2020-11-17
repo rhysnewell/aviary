@@ -140,7 +140,6 @@ def main():
         '--conda_prefix',
         help='Path to the location of installed conda environments, or where to install new environments',
         dest='conda_prefix',
-        nargs=1,
         default='~/.conda/envs/',
     )
 
@@ -148,7 +147,6 @@ def main():
         '--gtdb_path',
         help='Path to the local gtdb files',
         dest='gtdb_path',
-        nargs=1,
         default='/work/microbiome/db/gtdbtk/release95/',
     )
 
@@ -156,7 +154,6 @@ def main():
         '--max_threads',
         help='Maximum number of threads given to any particular process',
         dest='max_threads',
-        nargs=1,
         default=16,
     )
 
@@ -164,7 +161,6 @@ def main():
         '--n_cores',
         help='Maximum number of cores available for use. Must be >= to max_threads',
         dest='n_cores',
-        nargs=1,
         default=16,
     )
 
@@ -172,7 +168,6 @@ def main():
         '--output',
         help='Output directory',
         dest='output',
-        nargs=1,
         default='binsnek_out',
     )
 
@@ -296,7 +291,7 @@ class BinSnek:
         self.pe1 = pe1
         self.pe2 = pe2
         self.longreads = longreads
-        self.max_threads = max_threads
+        self.threads = max_threads
         self.gtdbtk = gtdbtk
         self.output = output
         self.conda_prefix = conda_prefix

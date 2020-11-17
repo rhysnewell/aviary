@@ -4,15 +4,15 @@ import sys
 
 if snakemake.config["long_reads"] != "none":
     subprocess.Popen("coverm contig -t %d -r %s --single %s -p minimap2-ont -m metabat --bam-file-cache-directory data/binning_bams/ > data/long_cov.tsv" %
-                     (snakemake.threads, snakemake.input.fasta, snakemake.config["long_reads"]), shell=True).wait()
+                     (snakemake.threads, snakemake.input.fasta, " ".join(snakemake.config["long_reads"])), shell=True).wait()
 
 if snakemake.config['short_reads_2'] != 'none':
     subprocess.Popen("coverm contig -t %d -r %s -1 %s -2 %s -m metabat --bam-file-cache-directory data/binning_bams/  > data/short_cov.tsv" %
-                     (snakemake.threads, snakemake.input.fasta, snakemake.config["short_reads_1"], snakemake.config["short_reads_2"]), shell=True).wait()
+                     (snakemake.threads, snakemake.input.fasta, " ".join(snakemake.config["short_reads_1"]), " ".join(snakemake.config["short_reads_2"])), shell=True).wait()
 
 elif snakemake.config['short_reads_1']  != 'none':
     subprocess.Popen("coverm contig -t %d -r %s --interleaved %s -m metabat --bam-file-cache-directory data/binning_bams/  > data/short_cov.tsv" %
-                     (snakemake.threads, snakemake.input.fasta, snakemake.config["short_reads_1"]), shell=True).wait()
+                     (snakemake.threads, snakemake.input.fasta, " ".join(snakemake.config["short_reads_1"])), shell=True).wait()
 
 # subprocess.Popen("ls data/binning_bams/*.bam | parallel -j1 samtools index -@ %d {} {}.bai" % (snakemake.threads-1), shell=True).wait()
 # Concatenate the two coverage files if both long and short exist

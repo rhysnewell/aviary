@@ -14,28 +14,29 @@ onstart:
 
     sys.path.append(os.path.join(os.path.dirname(os.path.abspath(workflow.snakefile)),"scripts"))
 
-    from binsnek import update_config
-    config = update_config(config)
+    # from binsnek import update_config
+    # config = update_config(config)
 
     # minimum required snakemake version
     min_version("5.4.5")
-    long_reads = config["long_reads"].strip().split()
+    long_reads = config["long_reads"]
     fasta = config["fasta"]
-    short_reads_1 = config["short_reads_1"].strip().split()
-    short_reads_2 = config["short_reads_2"].strip().split()
+    short_reads_1 = config["short_reads_1"]
+    short_reads_2 = config["short_reads_2"]
     batch_file = config["batch_file"]
     gtdbtk_folder = config["gtdbtk_folder"]
     busco_folder = config["busco_folder"]
+    pplacer_threads = min(48, int(config["max_threads"]))
     import os
     import sys
 
-    if long_reads[0] == "none" and short_reads_1[0] == "none" and batch_file == "none":
+    if long_reads == "none" and short_reads_1 == "none" and batch_file == "none":
         sys.exit("Need at least one of long_reads, short_reads_1, batch_file")
-    if long_reads[0] != "none" and not os.path.exists(long_reads[0]):
+    if long_reads != "none" and not os.path.exists(long_reads[0]):
         sys.exit("long_reads does not point to a file")
-    if short_reads_1[0] != "none" and not os.path.exists(short_reads_1[0]):
+    if short_reads_1 != "none" and not os.path.exists(short_reads_1[0]):
         sys.exit("short_reads_1 does not point to a file")
-    if short_reads_2[0] != "none" and not os.path.exists(short_reads_2[0]):
+    if short_reads_2 != "none" and not os.path.exists(short_reads_2[0]):
         sys.exit("short_reads_2 does not point to a file")
     if batch_file != "none" and not os.path.exists(batch_file):
         sys.exit("batch_file does not point to a file")
@@ -231,7 +232,7 @@ rule checkm:
     threads:
         config["max_threads"]
     shell:
-        'checkm lineage_wf -t {threads} -x fa data/das_tool_bins/das_tool_DASTool_bins data/checkm --tab_table -f data/checkm.out'
+        'checkm lineage_wf -t {threads} --pplacer_threads {pplacer_threads} -x fa data/das_tool_bins/das_tool_DASTool_bins data/checkm --tab_table -f data/checkm.out'
 
 rule gtdbtk:
     input:
@@ -248,7 +249,7 @@ rule gtdbtk:
         config["max_threads"]
     shell:
         "export GTDBTK_DATA_PATH={params.gtdbtk_folder} && " \
-        "gtdbtk classify_wf --cpus {threads} --extension fa --genome_dir data/das_tool_bins/das_tool_DASTool_bins --out_dir data/gtdbtk && touch data/gtdbtk/done"
+        "gtdbtk classify_wf --cpus {threads} --pplacer_cpus {pplacer_threads} --extension fa --genome_dir data/das_tool_bins/das_tool_DASTool_bins --out_dir data/gtdbtk && touch data/gtdbtk/done"
 
 
 rule busco:

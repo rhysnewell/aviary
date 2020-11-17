@@ -6,15 +6,15 @@ import sys
 if snakemake.config["long_reads"] != "none":
     subprocess.Popen("coverm genome -t %d -d data/das_tool_bins/das_tool_DASTool_bins/ \ "
                      "--single %s -p minimap2-ont --min-covered-fraction 0.0 -x fa > data/long_abundances.tsv" %
-                     (snakemake.threads, snakemake.config["long_reads"]), shell=True).wait()
+                     (snakemake.threads, " ".join(snakemake.config["long_reads"])), shell=True).wait()
 
 if snakemake.config['short_reads_2'] != 'none':
     subprocess.Popen("coverm genome -t %d -d data/das_tool_bins/das_tool_DASTool_bins/ -1 %s -2 %s --min-covered-fraction 0.0 -x fa  > data/short_abundances.tsv" %
-                     (snakemake.threads, snakemake.config["short_reads_1"], snakemake.config["short_reads_2"]), shell=True).wait()
+                     (snakemake.threads, " ".join(snakemake.config["short_reads_1"]), " ".join(snakemake.config["short_reads_2"])), shell=True).wait()
 
 elif snakemake.config['short_reads_1'] != 'none':
     subprocess.Popen("coverm genome -t %d -d data/das_tool_bins/das_tool_DASTool_bins/ --interleaved %s --min-covered-fraction 0.0 -x fa  > data/short_abundances.tsv" %
-                     (snakemake.threads, snakemake.config["short_reads_1"]), shell=True).wait()
+                     (snakemake.threads, " ".join(snakemake.config["short_reads_1"])), shell=True).wait()
 
 # Concatenate the two coverage files if both long and short exist
 if snakemake.config["long_reads"] != "none" and (snakemake.config["short_reads_1"] != "none"):
