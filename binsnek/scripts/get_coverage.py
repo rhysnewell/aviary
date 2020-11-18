@@ -50,8 +50,34 @@ if snakemake.config["long_reads"] != "none" and (snakemake.config["short_reads_1
                         )
                         print(line, file=file3)
                         
-elif snakemake.config["long_reads"] != "none":  # rename long reads cov if only it exists
-    os.rename("data/long_cov.tsv", "data/coverm.cov")
+elif snakemake.config["long_reads"] != "none":
+    long_count = len(snakemake.config["long_reads"])
+    with open('data/coverm.cov', 'w') as file3:
+        with open('data/long_cov.tsv', 'r') as file1:
+                for idx, line1, line2 in enumerate(zip(file1, file2)):
+                    long_values = line2.strip().split()
+                    if idx != 0:
+                        long_cov = sum([float(x) for x in long_values[2::2]])
+                        tot_depth = long_cov / long_count
+                        line = (
+                            "{contig_info}\t"
+                            "{total_avg_depth}\t"
+                            "{long}"
+                        ).format(
+                            contig_info = long_values[0:2],
+                            total_avg_depth = tot_depth,
+                            long = "\t".join(long_values)
+                        )
+                        print(line, file=file3)
+                    else:
+                        line = (
+                            "{contig_info}\ttotalAvgDepth\t{samples}"
+                        ).format(
+                            contig_info = long_values[0:2],
+                            samples = long_values[2::]
+                        )
+                        print(line, file=file3)
+                        
 elif snakemake.config["short_reads_1"] != "none":  # rename shrot reads cov if only they exist
     os.rename("data/short_cov.tsv", "data/coverm.cov")
 
