@@ -82,13 +82,14 @@ rule run_virsorter:
 
 rule prepare_binning_files:
     input:
-        fasta = config["fasta"],
-        threads = config["max_threads"]
+        fasta = config["fasta"]
     output:
         maxbin_coverage = "data/maxbin.cov.list",
         metabat_coverage = "data/coverm.cov"
     conda:
         "envs/coverm.yaml"
+    threads:
+        config["max_threads"]
     script:
         "scripts/get_coverage.py"
 
@@ -100,6 +101,8 @@ rule get_bam_indices:
         bams = "data/binning_bams/done"
     conda:
         "envs/coverm.yaml"
+    threads:
+        config["max_threads"]
     shell:
         "ls data/binning_bams/*.bam | parallel -j 1 'samtools index -@ {threads} {{}} {{}}.bai' &&" \
         "touch data/binning_bams/done"
@@ -127,6 +130,8 @@ rule concoct_binning:
         "data/concoct_bins/done"
     conda:
         "envs/concoct.yaml"
+    threads:
+        config["max_threads"]
     shell:
         "mkdir -p data/concoct_working && " \
         "cut_up_fasta.py {input.fasta} -c 10000 -o 0 --merge_last -b data/concoct_working/contigs_10K.bed > data/concoct_working/contigs_10K.fa && " \
@@ -149,6 +154,8 @@ rule metabat_binning_2:
         metabat_sense = "data/metabat_bins_sens/done"
     conda:
         "envs/metabat2.yaml"
+    threads:
+        config["max_threads"]
     shell:
         "mkdir -p data/metabat_bins_2 && " \
         "metabat -t {threads} --seed 89 -i {input.fasta} -a {input.coverage} -o data/metabat_bins_2/binned_contigs && " \
@@ -188,12 +195,13 @@ rule das_tool:
 
 rule get_abundances:
     input:
-        "data/das_tool_bins/done",
-        threads = config["max_threads"]
+        "data/das_tool_bins/done"
     output:
         "data/coverm_abundances.tsv"
     conda:
         "envs/coverm.yaml"
+    threads:
+        config["max_threads"]
     script:
         "scripts/get_abundances.py"
 
@@ -204,6 +212,8 @@ rule checkm:
         "data/checkm.out"
     conda:
         "envs/checkm.yaml"
+    threads:
+        config["max_threads"]
     shell:
         'checkm lineage_wf -t {threads} --pplacer_threads {pplacer_threads} -x fa data/das_tool_bins/das_tool_DASTool_bins data/checkm --tab_table -f data/checkm.out'
 
@@ -216,6 +226,8 @@ rule gtdbtk:
         gtdbtk_folder = config['gtdbtk_folder']
     conda:
         "envs/gtdbtk.yaml"
+    threads:
+        config["max_threads"]
     shell:
         "export GTDBTK_DATA_PATH={params.gtdbtk_folder} && " \
         "gtdbtk classify_wf --cpus {threads} --pplacer_cpus {pplacer_threads} --extension fa --genome_dir data/das_tool_bins/das_tool_DASTool_bins --out_dir data/gtdbtk && touch data/gtdbtk/done"
@@ -230,6 +242,8 @@ rule busco:
         busco_folder = config["busco_folder"]
     conda:
         "envs/busco.yaml"
+    threads:
+        config["max_threads"]
     shell:
         "mkdir -p data/busco && cd data/busco && minimumsize=500000 && " \
         "for file in ../das_tool_bins/das_tool_DASTool_bins/*.fa; do " \
@@ -255,6 +269,8 @@ rule recover_mags:
         "envs/coverm.yaml"
     output:
         "data/done"
+    threads:
+        config["max_threads"]
     shell:
         "mkdir -p data/pre_galah_bins && cd data/pre_galah_bins/ && ln -s ../das_tool_bins/das_tool_DASTool_bins/* ./ && cd ../../ && " \
         "coverm cluster -t {threads} --checkm-tab-table data/checkm.out --genome-fasta-directory data/pre_galah_bins/ -x fa --output-representative-fasta-directory data/galah_bins --ani 0.97 && " \
