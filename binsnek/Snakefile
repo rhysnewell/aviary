@@ -14,9 +14,6 @@ onstart:
 
     sys.path.append(os.path.join(os.path.dirname(os.path.abspath(workflow.snakefile)),"scripts"))
 
-    # from binsnek import update_config
-    # config = update_config(config)
-
     # minimum required snakemake version
     min_version("5.4.5")
     long_reads = config["long_reads"]
@@ -26,6 +23,8 @@ onstart:
     batch_file = config["batch_file"]
     gtdbtk_folder = config["gtdbtk_folder"]
     busco_folder = config["busco_folder"]
+    threads = config["max_threads"]
+    ## pplacer deadlocks on too many threads
     pplacer_threads = min(48, int(config["max_threads"]))
     import os
     import sys
@@ -84,16 +83,12 @@ rule run_virsorter:
 rule prepare_binning_files:
     input:
         fasta = config["fasta"],
+        threads = config["max_threads"]
     output:
         maxbin_coverage = "data/maxbin.cov.list",
         metabat_coverage = "data/coverm.cov"
     conda:
         "envs/coverm.yaml"
-    envmodules:
-        "/srv/modulefiles/coverm/0.4.0",
-        "/srv/modulefiles/parallel/20180222"
-    threads:
-        config["max_threads"]
     script:
         "scripts/get_coverage.py"
 
@@ -105,11 +100,6 @@ rule get_bam_indices:
         bams = "data/binning_bams/done"
     conda:
         "envs/coverm.yaml"
-    envmodules:
-        "/srv/modulefiles/coverm/0.4.0",
-        "/srv/modulefiles/parallel/20180222"
-    threads:
-        config["max_threads"]
     shell:
         "ls data/binning_bams/*.bam | parallel -j 1 'samtools index -@ {threads} {{}} {{}}.bai' &&" \
         "touch data/binning_bams/done"
@@ -123,8 +113,6 @@ rule maxbin_binning:
         "data/maxbin2_bins/done"
     conda:
         "envs/maxbin2.yaml"
-    envmodules:
-        "/srv/sw/maxbin/2.2.4"
     shell:
         "mkdir -p data/maxbin2_bins && " \
         "run_MaxBin.pl -contig {input.fasta} -abund_list {input.maxbin_cov} -out data/maxbin2_bins/maxbin && " \
@@ -139,8 +127,6 @@ rule concoct_binning:
         "data/concoct_bins/done"
     conda:
         "envs/concoct.yaml"
-    threads:
-        config["max_threads"]
     shell:
         "mkdir -p data/concoct_working && " \
         "cut_up_fasta.py {input.fasta} -c 10000 -o 0 --merge_last -b data/concoct_working/contigs_10K.bed > data/concoct_working/contigs_10K.fa && " \
@@ -163,10 +149,6 @@ rule metabat_binning_2:
         metabat_sense = "data/metabat_bins_sens/done"
     conda:
         "envs/metabat2.yaml"
-    envmodules:
-        "/srv/modulefiles/metabat/2.12.1"
-    threads:
-        config["max_threads"]
     shell:
         "mkdir -p data/metabat_bins_2 && " \
         "metabat -t {threads} --seed 89 -i {input.fasta} -a {input.coverage} -o data/metabat_bins_2/binned_contigs && " \
@@ -192,10 +174,6 @@ rule das_tool:
         das_tool_done = "data/das_tool_bins/done"
     conda:
         "envs/das_tool.yaml"
-    envmodules:
-        "/srv/modulefiles/das_tool/1.0"
-    threads:
-        config["max_threads"]
     shell:
         "Fasta_to_Scaffolds2Bin.sh -i data/metabat_bins_2 -e fa > data/metabat_bins_2.tsv && " \
         "Fasta_to_Scaffolds2Bin.sh -i data/metabat_bins_sspec -e fa > data/metabat_bins_sspec.tsv && " \
@@ -210,13 +188,12 @@ rule das_tool:
 
 rule get_abundances:
     input:
-        "data/das_tool_bins/done"
+        "data/das_tool_bins/done",
+        threads = config["max_threads"]
     output:
         "data/coverm_abundances.tsv"
     conda:
         "envs/coverm.yaml"
-    threads:
-        config["max_threads"]
     script:
         "scripts/get_abundances.py"
 
@@ -227,10 +204,6 @@ rule checkm:
         "data/checkm.out"
     conda:
         "envs/checkm.yaml"
-    envmodules:
-        "/srv/modulefiles/checkm/1.1.3"
-    threads:
-        config["max_threads"]
     shell:
         'checkm lineage_wf -t {threads} --pplacer_threads {pplacer_threads} -x fa data/das_tool_bins/das_tool_DASTool_bins data/checkm --tab_table -f data/checkm.out'
 
@@ -243,10 +216,6 @@ rule gtdbtk:
         gtdbtk_folder = config['gtdbtk_folder']
     conda:
         "envs/gtdbtk.yaml"
-    envmodules:
-        "/srv/modulefiles/gtdbtk/1.3.0"
-    threads:
-        config["max_threads"]
     shell:
         "export GTDBTK_DATA_PATH={params.gtdbtk_folder} && " \
         "gtdbtk classify_wf --cpus {threads} --pplacer_cpus {pplacer_threads} --extension fa --genome_dir data/das_tool_bins/das_tool_DASTool_bins --out_dir data/gtdbtk && touch data/gtdbtk/done"
@@ -261,8 +230,6 @@ rule busco:
         busco_folder = config["busco_folder"]
     conda:
         "envs/busco.yaml"
-    threads:
-        config["max_threads"]
     shell:
         "mkdir -p data/busco && cd data/busco && minimumsize=500000 && " \
         "for file in ../das_tool_bins/das_tool_DASTool_bins/*.fa; do " \
@@ -286,8 +253,6 @@ rule recover_mags:
         "data/coverm_abundances.tsv",
     conda:
         "envs/coverm.yaml"
-    threads:
-        config["max_threads"]
     output:
         "data/done"
     shell:
