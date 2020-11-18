@@ -3,7 +3,7 @@ import os
 import sys
 
 if snakemake.config["long_reads"] != "none":
-    subprocess.Popen("coverm contig -t %d -r %s --single %s -p minimap2-ont -m metabat --bam-file-cache-directory data/binning_bams/ > data/long_cov.tsv" %
+    subprocess.Popen("coverm contig -t %d -r %s --single %s -p minimap2-ont -m length trimmed_mean variance --bam-file-cache-directory data/binning_bams/ > data/long_cov.tsv" %
                      (snakemake.threads, snakemake.input.fasta, " ".join(snakemake.config["long_reads"])), shell=True).wait()
 
 if snakemake.config['short_reads_2'] != 'none':
@@ -17,11 +17,39 @@ elif snakemake.config['short_reads_1']  != 'none':
 # subprocess.Popen("ls data/binning_bams/*.bam | parallel -j1 samtools index -@ %d {} {}.bai" % (snakemake.threads-1), shell=True).wait()
 # Concatenate the two coverage files if both long and short exist
 if snakemake.config["long_reads"] != "none" and (snakemake.config["short_reads_1"] != "none"):
+    short_count = len(snakemake.config["short_reads_1"])
+    long_count = len(snakemake.config["long_reads"])
     with open('data/coverm.cov', 'w') as file3:
         with open('data/short_cov.tsv', 'r') as file1:
             with open('data/long_cov.tsv', 'r') as file2:
-                for line1, line2 in zip(file1, file2):
-                    print(line1.strip(), "\t".join(line2.strip().split()[1::]), file=file3)
+                for idx, line1, line2 in enumerate(zip(file1, file2)):
+                    long_values = line2.strip().split()[2::]
+                    short_values = line1.strip().split()
+                    if idx != 0:
+                        long_cov = sum([float(x) for x in long_values[0::2]])
+                        short_cov = sum([float(x) for x in short_values[3::2]])
+                        tot_depth = (long_cov + short_cov) / (short_count + long_count)
+                        line = (
+                            "{contig_info}\t"
+                            "{total_avg_depth}\t"
+                            "{short}\t"
+                            "{long}"
+                        ).format(
+                            contig_info = short_values[0:2],
+                            total_avg_depth = tot_depth,
+                            short = "\t".join(short_values[3::]),
+                            long = "\t".join(long_values)
+                        )
+                        print(line, file=file3)
+                    else:
+                        line = (
+                            "{short}\t{long}"
+                        ).format(
+                            short = short_values,
+                            long = long_values
+                        )
+                        print(line, file=file3)
+                        
 elif snakemake.config["long_reads"] != "none":  # rename long reads cov if only it exists
     os.rename("data/long_cov.tsv", "data/coverm.cov")
 elif snakemake.config["short_reads_1"] != "none":  # rename shrot reads cov if only they exist
