@@ -22,18 +22,18 @@ def get_version(relpath):
 
 
 setup(
-    name='binsnek',
-    version=get_version("binsnek/__init__.py"),
-    url='https://github.com/rhysnewell/BinSnek',
+    name='aviary',
+    version=get_version("aviary/__init__.py"),
+    url='https://github.com/rhysnewell/aviary',
     license='BSD-3',
     author='Rhys Newell',
     author_email='rhys.newell@hdr.qut.edu.au',
-    description='BinSnek - workflows for annotation and comprehensive genomic binning.',
+    description='aviary - workflows for annotation and comprehensive genomic binning.',
     long_description=long_description,
     long_description_content_type='text/markdown',
-    packages=['binsnek'],
+    packages=['aviary'],
     package_data={'': [
-            "binsnek/*",
+            "aviary/*",
                        ]},
     data_files=[(".", ["README.md", "LICENSE.txt"])],
     include_package_data=True,
@@ -42,7 +42,7 @@ setup(
     # install via conda: click, pandas, pyyaml, snakemake
     entry_points={
           'console_scripts': [
-              'binsnek = binsnek.binsnek:main'
+              'aviary = aviary.aviary:main'
           ]
     },
     classifiers=["Topic :: Scientific/Engineering :: Bio-Informatics"],

@@ -5,7 +5,6 @@ import sys
 
 def process_batch(batch_file_path):
     main_directory = os.getcwd()
-    install_directory = "~/git/BinSnek"
     with open(batch_file_path, "r") as batch_file:
         for line in batch_file:
             line = line.strip().split()
@@ -19,7 +18,7 @@ def process_batch(batch_file_path):
                 os.mkdir("data/" + identifier)
             except FileExistsError:
                 print("Directory already exists for sample %s" % identifier)
-            # Symbolically link to main BinSnek folder === BAD IDEA ===
+            # Symbolically link to main aviary folder === BAD IDEA ===
             # subprocess.Popen("ln -s %s/Snakefile %s/data/%s/"
             #                  % (main_directory, main_directory, identifier), shell=True).wait()
             # subprocess.Popen("cp %s/template_config.yaml %s/data/%s/"
@@ -72,10 +71,8 @@ def process_batch(batch_file_path):
 
             os.chdir("%s/data/%s" % (main_directory, identifier))
             # Run a new snakemake process using the updated template_config.yaml
-            subprocess.Popen("snakemake --unlock --use-conda --conda-prefix %s/.snakemake/ -s %s/Snakefile recover_mags"
-                             % (install_directory, install_directory), shell=True).wait()
             subprocess.Popen("snakemake --use-conda --conda-prefix %s/.snakemake/ -s %s/Snakefile --cores %d recover_mags"
-                             % (install_directory, install_directory, snakemake.threads), shell=True).wait()
+                             % (main_directory, main_directory, snakemake.threads), shell=True).wait()
             os.chdir(main_directory)
 
 
