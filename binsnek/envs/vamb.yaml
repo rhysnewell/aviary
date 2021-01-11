@@ -1,0 +1,37 @@
+channels:
+  - bioconda
+  - conda-forge
+  - defaults
+dependencies:
+  - python>=3.8
+  - parallel
+  - pysam>=0.16
+  - svim
+  - svim-asm
+  - freebayes
+  - prodigal
+  - samtools=1.9
+  - vt
+  - rust
+  - clangdev
+  - pkg-config
+  - zlib
+  - gsl
+  - starcode
+  - openblas
+  - bwa
+  - minimap2
+  - fastani
+  - dashing
+  - hdbscan
+  - matplotlib-base
+  - numpy
+  - seaborn
+  - scikit-learn
+  - scikit-bio
+  - numba
+  - biopython
+  - pynndescent
+  - pip
+  - pip:
+      - umap-learn>=0.5
