@@ -4,9 +4,18 @@ import sys
 
 
 if snakemake.config["long_reads"] != "none":
-    subprocess.Popen("coverm genome -t %d -d data/das_tool_bins/das_tool_DASTool_bins/ \ "
-                     "--single %s -p minimap2-ont --min-covered-fraction 0.0 -x fa > data/long_abundances.tsv" %
-                     (snakemake.input.threads, " ".join(snakemake.config["long_reads"])), shell=True).wait()
+    if snakemake.config["long_read_type"] == "nanopore":
+        subprocess.Popen("coverm genome -t %d -d data/das_tool_bins/das_tool_DASTool_bins/ \ "
+                         "--single %s -p minimap2-ont --min-covered-fraction 0.0 -x fa > data/long_abundances.tsv" %
+                         (snakemake.input.threads, " ".join(snakemake.config["long_reads"])), shell=True).wait()
+    elif snakemake.config["long_read_type"] == "pacbio":
+        subprocess.Popen("coverm genome -t %d -d data/das_tool_bins/das_tool_DASTool_bins/ \ "
+                         "--single %s -p minimap2-pb --min-covered-fraction 0.0 -x fa > data/long_abundances.tsv" %
+                         (snakemake.input.threads, " ".join(snakemake.config["long_reads"])), shell=True).wait()
+    else:
+        subprocess.Popen("coverm genome -t %d -d data/das_tool_bins/das_tool_DASTool_bins/ \ "
+                         "--single %s -p minimap2-ont --min-covered-fraction 0.0 -x fa > data/long_abundances.tsv" %
+                         (snakemake.input.threads, " ".join(snakemake.config["long_reads"])), shell=True).wait()
 
 if snakemake.config['short_reads_2'] != 'none':
     subprocess.Popen("coverm genome -t %d -d data/das_tool_bins/das_tool_DASTool_bins/ -1 %s -2 %s --min-covered-fraction 0.0 -x fa  > data/short_abundances.tsv" %

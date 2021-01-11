@@ -2,6 +2,8 @@ fasta:
   none
 long_reads:
   none
+long_read_type:
+  nanopore
 short_reads_1:
   none
 short_reads_2:

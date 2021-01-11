@@ -137,6 +137,15 @@ def main():
     )
 
     input_options.add_argument(
+        '--longread_type',
+        help='Whether the longreads are oxford nanopore or pacbio',
+        dest='longread_type',
+        nargs='1',
+        default="nanopore",
+        choices=["nanopore", "pacbio"],
+    )
+
+    input_options.add_argument(
         '--conda_prefix',
         help='Path to the location of installed conda environments, or where to install new environments',
         dest='conda_prefix',
@@ -199,16 +208,20 @@ def main():
         if not os.path.exists(prefix):
             os.makedirs(prefix)
         if args.interleaved == "none":
-            processor = aviary(args.assembly, args.pe1, args.pe2, args.longreads, int(args.max_threads), args.gtdb_path,
-                                args.output, args.conda_prefix)
+            processor = aviary(args.assembly, args.pe1, args.pe2, args.longreads, args.longread_type,
+                               int(args.max_threads), args.gtdb_path,
+                               args.output, args.conda_prefix)
         elif args.pe2 == "none" and args.interleaved != "none":
-            processor = aviary(args.assembly, args.interleaved, args.pe2, args.longreads, int(args.max_threads),
+            processor = aviary(args.assembly, args.interleaved, args.pe2, args.longreads, args.longread_type,
+                                int(args.max_threads),
                                 args.gtdb_path,
                                 args.output, args.conda_prefix)
         elif args.longreads != "none":
-            processor = aviary(args.assembly, args.pe1, args.pe2, args.longreads, int(args.max_threads),
-                                args.gtdb_path,
-                                args.output, args.conda_prefix)
+            processor = aviary(args.assembly, args.pe1, args.pe2,
+                               args.longreads, args.longread_type,
+                               int(args.max_threads),
+                               args.gtdb_path,
+                               args.output, args.conda_prefix)
         else:
             sys.exit("Missing any input read files...")
 
@@ -282,6 +295,7 @@ class aviary:
                  pe1="none",
                  pe2="none",
                  longreads="none",
+                 longread_type="nanopore",
                  max_threads=16,
                  gtdbtk="/work/microbiome/db/gtdbtk/release95",
                  output=".",
@@ -291,6 +305,7 @@ class aviary:
         self.pe1 = pe1
         self.pe2 = pe2
         self.longreads = longreads
+        self.longread_type = longread_type
         self.threads = max_threads
         self.gtdbtk = gtdbtk
         self.output = output
@@ -326,6 +341,7 @@ class aviary:
         conf["short_reads_1"] = self.pe1
         conf["short_reads_2"] = self.pe2
         conf["long_reads"] = self.longreads
+        conf["long_read_type"] = self.longread_type
 
         conf["gtdbtk_folder"] = self.gtdbtk
 
