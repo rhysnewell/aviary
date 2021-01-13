@@ -154,7 +154,7 @@ rule vamb_binning:
          config["max_threads"]
     shell:
         "mkdir -p data/vamb_bams; cut -d\ -f1 {input.fasta} > data/vamb_bams/renamed_contigs.fasta; "
-        "ls data/binning_bams/*.bam | parallel -j{threads} 'samtools sort -n \{\} > data/vamb_bams/\{\.\/\}.read_sort.bam'; "
+        "ls data/binning_bams/*.bam | parallel -j{threads} 'samtools sort -n {{}} > data/vamb_bams/{{./}}.read_sort.bam'; "
         "vamb --outdir data/vamb_bins/ --bamfiles data/vamb_bams/*.bam --fasta data/vamb_bams/renamed_contigs.fasta"
 
 
@@ -279,13 +279,13 @@ rule binner_result:
         "envs/checkm.yaml"
     shell:
         "mkdir -p data/all_bins && cd data/all_bins; "
-        "ln -s ../metabat_bins_2/*.fa ./ && ls *.fa | parallel 'mv {} {.}.metabat2.fna'; "
-        "ln -s ../metabat_bins_sens/*.fa ./ && ls *.fa | parallel 'mv {} {.}.metabat_sens.fna'; "
-        "ln -s ../metabat_bins_spec/*.fa ./ && ls *.fa | parallel 'mv {} {.}.metabat_spec.fna'; "
-        "ln -s ../metabat_bins_ssens/*.fa ./ && ls *.fa | parallel 'mv {} {.}.metabat_ssens.fna'; "
-        "ln -s ../metabat_bins_sspec/*.fa ./ && ls *.fa | parallel 'mv {} {.}.metabat_sspec.fna'; "
-        "ln -s ../concoct_bins/*.fa ./ && ls *.fa | parallel 'mv {} concoct_{.}.fna'; "
-        "ln -s ../maxbin2_bins/*.fasta ./ && ls *.fasta | parallel 'mv {} maxbin2_{.}.fna'; "
+        "ln -s ../metabat_bins_2/*.fa ./ && ls *.fa | parallel 'mv {{}} {{.}}.metabat2.fna'; "
+        "ln -s ../metabat_bins_sens/*.fa ./ && ls *.fa | parallel 'mv {{}} {{.}}.metabat_sens.fna'; "
+        "ln -s ../metabat_bins_spec/*.fa ./ && ls *.fa | parallel 'mv {{}} {{.}}.metabat_spec.fna'; "
+        "ln -s ../metabat_bins_ssens/*.fa ./ && ls *.fa | parallel 'mv {{}} {{.}}.metabat_ssens.fna'; "
+        "ln -s ../metabat_bins_sspec/*.fa ./ && ls *.fa | parallel 'mv {{}} {{.}}.metabat_sspec.fna'; "
+        "ln -s ../concoct_bins/*.fa ./ && ls *.fa | parallel 'mv {{}} concoct_{{.}}.fna'; "
+        "ln -s ../maxbin2_bins/*.fasta ./ && ls *.fasta | parallel 'mv {{}} maxbin2_{{.}}.fna'; "
         "ln -s ../vamb_bins/*.fna ./; "
         "checkm lineage_wf -t {threads} --pplacer_threads {pplacer_threads} -x fna --tab_table ./ checkm > checkm.out; "
         "touch done && cd ../../"
