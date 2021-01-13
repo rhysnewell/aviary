@@ -140,7 +140,7 @@ def main():
         '--longread_type',
         help='Whether the longreads are oxford nanopore or pacbio',
         dest='longread_type',
-        nargs='1',
+        nargs=1,
         default="nanopore",
         choices=["nanopore", "pacbio"],
     )
@@ -345,16 +345,13 @@ class aviary:
 
         conf["gtdbtk_folder"] = self.gtdbtk
 
-        if os.path.exists(self.config):
-            logging.warning(f"Config file {self.config} already exists, I didn't dare to overwrite it. continue...")
-        else:
 
-            with open(self.config, "w") as f:
-                yaml.dump(conf, f)
-            logging.info(
-                "Configuration file written to %s\n"
-                "You may want to edit it using any text editor." % self.config
-            )
+        with open(self.config, "w") as f:
+            yaml.dump(conf, f)
+        logging.info(
+            "Configuration file written to %s\n"
+            "You may want to edit it using any text editor." % self.config
+        )
 
     def validate_config(self):
         load_configfile(self.config)

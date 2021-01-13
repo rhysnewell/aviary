@@ -2,7 +2,7 @@ import subprocess
 import os
 import sys
 
-if snakemake.config["long_reads"] != "none":
+if snakemake.config["long_reads"] != "none" and not os.path.exists("data/long_cov.tsv"):
     if snakemake.config["long_read_type"] == "nanopore":
         subprocess.Popen("coverm contig -t %d -r %s --single %s -p minimap2-ont -m length trimmed_mean variance --bam-file-cache-directory data/binning_bams/ > data/long_cov.tsv" %
                          (snakemake.threads, snakemake.input.fasta, " ".join(snakemake.config["long_reads"])), shell=True).wait()
@@ -14,11 +14,11 @@ if snakemake.config["long_reads"] != "none":
             "coverm contig -t %d -r %s --single %s -p minimap2-ont -m length trimmed_mean variance --bam-file-cache-directory data/binning_bams/ > data/long_cov.tsv" %
             (snakemake.threads, snakemake.input.fasta, " ".join(snakemake.config["long_reads"])), shell=True).wait()
 
-if snakemake.config['short_reads_2'] != 'none':
+if snakemake.config['short_reads_2'] != 'none' and not os.path.exists("data/short_cov.tsv"):
     subprocess.Popen("coverm contig -t %d -r %s -1 %s -2 %s -m metabat --bam-file-cache-directory data/binning_bams/  > data/short_cov.tsv" %
                      (snakemake.threads, snakemake.input.fasta, " ".join(snakemake.config["short_reads_1"]), " ".join(snakemake.config["short_reads_2"])), shell=True).wait()
 
-elif snakemake.config['short_reads_1']  != 'none':
+elif snakemake.config['short_reads_1']  != 'none' and not os.path.exists("data/short_cov.tsv"):
     subprocess.Popen("coverm contig -t %d -r %s --interleaved %s -m metabat --bam-file-cache-directory data/binning_bams/  > data/short_cov.tsv" %
                      (snakemake.threads, snakemake.input.fasta, " ".join(snakemake.config["short_reads_1"])), shell=True).wait()
 
@@ -30,8 +30,9 @@ if snakemake.config["long_reads"] != "none" and (snakemake.config["short_reads_1
     with open('data/coverm.cov', 'w') as file3:
         with open('data/short_cov.tsv', 'r') as file1:
             with open('data/long_cov.tsv', 'r') as file2:
-                for idx, line1, line2 in enumerate(zip(file1, file2)):
-                    long_values = line2.strip().split()[2::]
+                for idx, (line1, line2) in enumerate(zip(file1, file2)):
+                    long_values = line2.strip().split()[1::]
+                    del long_values[0::3] # delete length value
                     short_values = line1.strip().split()
                     if idx != 0:
                         long_cov = sum([float(x) for x in long_values[0::2]])
@@ -62,8 +63,9 @@ elif snakemake.config["long_reads"] != "none":
     long_count = len(snakemake.config["long_reads"])
     with open('data/coverm.cov', 'w') as file3:
         with open('data/long_cov.tsv', 'r') as file1:
-                for idx, line1, line2 in enumerate(zip(file1, file2)):
-                    long_values = line2.strip().split()
+                for idx, line1 in enumerate(file):
+                    long_values = line1.strip().split()
+                    del long_values[4::3] # delete extra length values
                     if idx != 0:
                         long_cov = sum([float(x) for x in long_values[2::2]])
                         tot_depth = long_cov / long_count
