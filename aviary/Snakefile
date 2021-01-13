@@ -142,10 +142,25 @@ rule concoct_binning:
         "extract_fasta_bins.py {input.fasta} data/concoct_working/clustering_merged.csv --output_path data/concoct_bins/ && " \
         "touch data/concoct_bins/done"
 
+
+rule vamb_bams:
+    output:
+        "data/vamb_bams/done"
+    conda:
+        "envs/vamb.yaml"
+    threads:
+        config["max_threads"]
+    shell:
+        "mkdir -p data/vamb_bams; cut -d\  -f1 {input.fasta} > data/vamb_bams/renamed_contigs.fasta; "
+        "ls data/binning_bams/*.bam | parallel -j{threads} 'samtools sort -n {{}} > data/vamb_bams/{{/.}}.read_sort.bam'; "
+        "touch data/vamb_bams/done; "
+
+        
 rule vamb_binning:
     input:
         coverage = "data/coverm.cov",
         fasta = config["fasta"],
+        done = "data/vamb_bams/done"
     output:
         "data/vamb_bins/clusters.tsv"
     conda:
@@ -153,8 +168,7 @@ rule vamb_binning:
     threads:
          config["max_threads"]
     shell:
-        "mkdir -p data/vamb_bams; cut -d\ -f1 {input.fasta} > data/vamb_bams/renamed_contigs.fasta; "
-        "ls data/binning_bams/*.bam | parallel -j{threads} 'samtools sort -n {{}} > data/vamb_bams/{{./}}.read_sort.bam'; "
+        "rm -r data/vamb_bins/; "
         "vamb --outdir data/vamb_bins/ --bamfiles data/vamb_bams/*.bam --fasta data/vamb_bams/renamed_contigs.fasta"
 
 
