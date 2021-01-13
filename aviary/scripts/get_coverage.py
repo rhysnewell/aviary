@@ -31,20 +31,22 @@ if snakemake.config["long_reads"] != "none" and (snakemake.config["short_reads_1
         with open('data/short_cov.tsv', 'r') as file1:
             with open('data/long_cov.tsv', 'r') as file2:
                 for idx, (line1, line2) in enumerate(zip(file1, file2)):
-                    long_values = line2.strip().split()[1::]
+                    long_values = line2.strip().split("\t")[1::]
                     del long_values[0::3] # delete length value
-                    short_values = line1.strip().split()
+                    short_values = line1.strip().split("\t")
                     if idx != 0:
                         long_cov = sum([float(x) for x in long_values[0::2]])
                         short_cov = sum([float(x) for x in short_values[3::2]])
                         tot_depth = (long_cov + short_cov) / (short_count + long_count)
                         line = (
-                            "{contig_info}\t"
+                            "{contig_name}\t"
+                            "{contig_length}\t"
                             "{total_avg_depth}\t"
                             "{short}\t"
                             "{long}"
                         ).format(
-                            contig_info = short_values[0:2],
+                            contig_name = short_values[0],
+                            contig_length = short_values[1],
                             total_avg_depth = tot_depth,
                             short = "\t".join(short_values[3::]),
                             long = "\t".join(long_values)
@@ -54,8 +56,8 @@ if snakemake.config["long_reads"] != "none" and (snakemake.config["short_reads_1
                         line = (
                             "{short}\t{long}"
                         ).format(
-                            short = short_values,
-                            long = long_values
+                            short = "\t".join(short_values),
+                            long = "\t".join(long_values)
                         )
                         print(line, file=file3)
                         
@@ -64,27 +66,30 @@ elif snakemake.config["long_reads"] != "none":
     with open('data/coverm.cov', 'w') as file3:
         with open('data/long_cov.tsv', 'r') as file1:
                 for idx, line1 in enumerate(file):
-                    long_values = line1.strip().split()
+                    long_values = line1.strip().split("\t")
                     del long_values[4::3] # delete extra length values
                     if idx != 0:
                         long_cov = sum([float(x) for x in long_values[2::2]])
                         tot_depth = long_cov / long_count
                         line = (
-                            "{contig_info}\t"
+                            "{contig_name}\t"
+                            "{contig_length}\t"
                             "{total_avg_depth}\t"
                             "{long}"
                         ).format(
-                            contig_info = long_values[0:2],
+                            contig_name = long_values[0],
+                            contig_length = long_values[1],
                             total_avg_depth = tot_depth,
                             long = "\t".join(long_values)
                         )
                         print(line, file=file3)
                     else:
                         line = (
-                            "{contig_info}\ttotalAvgDepth\t{samples}"
+                            "{contig_name}\t{contig_length}\ttotalAvgDepth\t{samples}"
                         ).format(
-                            contig_info = long_values[0:2],
-                            samples = long_values[2::]
+                            contig_name = long_values[0],
+                            contig_length = long_values[1],
+                            samples = "\t".join(long_values[2::])
                         )
                         print(line, file=file3)
                         
