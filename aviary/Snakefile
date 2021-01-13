@@ -154,7 +154,7 @@ rule vamb_binning:
          config["max_threads"]
     shell:
         "mkdir -p data/vamb_bams; cut -d\ -f1 {input.fasta} > data/vamb_bams/renamed_contigs.fasta; "
-        "ls data/binning_bams/*.bam | parallel -j{input.threads} 'samtools sort -n {} > data/vamb_bams/{./}.read_sort.bam'; "
+        "ls data/binning_bams/*.bam | parallel -j{threads} 'samtools sort -n {} > data/vamb_bams/{./}.read_sort.bam'; "
         "vamb --outdir data/vamb_bins/ --bamfiles data/vamb_bams/*.bam --fasta data/vamb_bams/renamed_contigs.fasta"
 
 
