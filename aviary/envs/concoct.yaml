@@ -1,6 +1,7 @@
 channels:
   - bioconda
-  - intel
+  - conda-forge
+  - defaults
 dependencies:
   - concoct >= 1.1.0
   - mkl
