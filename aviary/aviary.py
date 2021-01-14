@@ -94,6 +94,8 @@ def main():
                                           epilog='''
                                 ~ RECOVER ~
     How to use recover:
+    
+    aviary recover --assembly scaffolds.fasta --paired_end_reads_1 *.1.fq.gz --paired_end_reads_1 *.2.fq.gz --longreads *.nanopore.fastq.gz --longread_type nanopore
 
     ''')
 
@@ -175,9 +177,16 @@ def main():
 
     input_options.add_argument(
         '--output',
-        help='Output directory',
+        help='Output directory, outputs to current directory *DON"T CHANGE, relative paths currently broken for this*',
         dest='output',
-        default='aviary_out',
+        default='./',
+    )
+
+    input_options.add_argument(
+        '--workflow',
+        help='Main workflow to run',
+        dest='workflow',
+        default='recover_mags',
     )
 
     ###########################################################################
@@ -226,7 +235,7 @@ def main():
             sys.exit("Missing any input read files...")
 
         processor.make_config()
-        processor.run_workflow(cores=int(args.n_cores))
+        processor.run_workflow(workflow=args.workflow, cores=int(args.n_cores))
 
 def str2bool(v):
     if isinstance(v, bool):
