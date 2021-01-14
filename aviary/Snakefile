@@ -116,9 +116,11 @@ rule maxbin_binning:
         "data/maxbin2_bins/done"
     conda:
         "envs/maxbin2.yaml"
+    threads:
+        config["max_threads"]
     shell:
         "mkdir -p data/maxbin2_bins && " \
-        "run_MaxBin.pl -contig {input.fasta} -abund_list {input.maxbin_cov} -out data/maxbin2_bins/maxbin && " \
+        "run_MaxBin.pl -contig {input.fasta} -thread {threads} -abund_list {input.maxbin_cov} -out data/maxbin2_bins/maxbin && " \
         "touch data/maxbin2_bins/done"
 
 
