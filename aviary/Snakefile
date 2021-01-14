@@ -145,6 +145,7 @@ rule concoct_binning:
 
 rule vamb_bams:
     output:
+        fasta = config["fasta"],
         "data/vamb_bams/done"
     conda:
         "envs/vamb.yaml"
