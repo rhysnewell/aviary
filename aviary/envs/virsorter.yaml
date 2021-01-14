@@ -1,4 +1,4 @@
 channels:
   - bioconda
 dependencies:
-  - virsorter >= 2.0
+  - virsorter = 2.0

@@ -2,5 +2,5 @@ channels:
   - bioconda
 dependencies:
   - samtools = 1.9
-  - minimap2 >= 2.15
-  - metabat2 >= 2.12.1
+  - minimap2 = 2.15
+  - metabat2 = 2.12.1

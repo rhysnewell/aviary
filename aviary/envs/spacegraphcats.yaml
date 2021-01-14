@@ -13,6 +13,6 @@ dependencies:
   - sortedcontainers=2.1.0
   - click=7.1.2
   - pyflakes
-  - bbhash>=0.5.4
+  - bbhash=0.5.4
   - pip:
       - spacegraphcats

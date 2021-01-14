@@ -1,4 +1,4 @@
 channels:
   - bioconda
 dependencies:
-  - r-virfinder >= 1.1
+  - r-virfinder = 1.1
