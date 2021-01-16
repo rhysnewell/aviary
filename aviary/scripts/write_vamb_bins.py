@@ -1,7 +1,6 @@
 #!/usr/bin/env python
 ###############################################################################
-# flight.py - A fast binning algorithm spinning off of the methodology of
-#              Lorikeet
+# 
 ###############################################################################
 #                                                                             #
 # This program is free software: you can redistribute it and/or modify        #
@@ -19,7 +18,6 @@
 #                                                                             #
 ###############################################################################
 from Bio import SeqIO
-from flock.__init__ import __version__
 __author__ = "Rhys Newell"
 __copyright__ = "Copyright 2020"
 __credits__ = ["Rhys Newell"]
@@ -35,6 +33,7 @@ import argparse
 import logging
 import os
 import datetime
+from pathlib import Path
 
 # Function imports
 import numpy as np
@@ -71,6 +70,8 @@ def main():
 
             write_vamb_bins --reference assembly.fasta --clusters vamb_clusters.tsv
 
+            NOTE: Provided defaults are for use with aviary and should be changed for your specific use
+
             ''')
     vamb_options.add_argument('--version',
                              action='version',
@@ -90,11 +91,13 @@ def main():
 
     vamb_options.add_argument('--reference',
                               help='The assembly file to be binned',
-                              dest='assembly')
+                              dest='assembly',
+                              default="data/vamb_bams/renamed_contigs.fasta")
 
     vamb_options.add_argument('--clusters',
                               help='The vamb clusters',
-                              dest='clusters')
+                              dest='clusters',
+                              default="data/vamb_bins/clusters.tsv")
 
     vamb_options.add_argument('--min_size',
                               help='Minimum bin size',
@@ -104,7 +107,7 @@ def main():
     vamb_options.add_argument('--output',
                               help='The output directory',
                               dest='output',
-                              default='vamb_bins/')
+                              default='data/vamb_bins/')
 
     vamb_options.set_defaults(func=vamb)
     ###########################################################################
@@ -171,6 +174,8 @@ def vamb(args):
                 if len(assembly[contig].seq) >= min_bin_size:
                     with open(prefix + '/vamb_bin.' + str(max_cluster_id) + '.fna', 'w') as f:
                         write_contig(contig, assembly, f)
+
+    Path('data/vamb_bins/done').touch()
 
 
 def write_contig(contig, assembly, f):
