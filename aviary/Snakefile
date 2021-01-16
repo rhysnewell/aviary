@@ -85,7 +85,7 @@ rule prepare_binning_files:
         fasta = config["fasta"]
     output:
         maxbin_coverage = "data/maxbin.cov.list",
-        metabat_coverage = "data/coverm.cov"
+        metabat_coverage = "data/coverm.cov",
     conda:
         "envs/coverm.yaml"
     threads:
@@ -148,6 +148,7 @@ rule concoct_binning:
 rule vamb_bams:
     input:
         fasta = config["fasta"],
+        done = "data/binning_bams/done"
     output:
         vamb_bams_done = "data/vamb_bams/done"
     conda:
@@ -173,20 +174,18 @@ rule vamb_binning:
          config["max_threads"]
     shell:
         "rm -r data/vamb_bins/; "
-        "vamb --outdir data/vamb_bins/ --bamfiles data/vamb_bams/*.bam --fasta data/vamb_bams/renamed_contigs.fasta"
+        "vamb --outdir data/vamb_bins/ -p {threads} --bamfiles data/vamb_bams/*.bam --fasta data/vamb_bams/renamed_contigs.fasta"
 
 
 rule vamb_make_bins:
     input:
         clusters = "data/vamb_bins/clusters.tsv",
-        # script = "scripts/write_vamb_bins.py"
     output:
         "data/vamb_bins/done"
     conda:
-        "envs/vamb.yaml"
-    shell:
-        "python scripts/write_vamb_bins.py --reference data/vamb_bams/renamed_contigs.fasta --clusters {input.clusters} --output data/vamb_bins/; "
-        "touch data/vamb_bins/done"
+        "envs/rosella.yaml"
+    script:
+        "scripts/write_vamb_bins.py"
 
 
 
@@ -217,6 +216,19 @@ rule metabat_binning_2:
         "metabat1 -t {threads} --seed 89 --superspecific -i {input.fasta} -a {input.coverage} -o data/metabat_bins_sspec/binned_contigs && " \
         "touch data/metabat_bins_sspec/done"
 
+rule rosella:
+    input:
+        coverage = "data/coverm.cov",
+        fasta = config["fasta"],
+    output:
+        "data/rosella_bins/done"
+    conda:
+        "envs/rosella.yaml"
+    threads:
+        config["max_threads"]
+    shell:
+        "rosella bin -r {input.fasta} -i {input.coverage} -t {threads} -o rosella_bins && " \
+        "touch data/rosella_bins/done"
 
 rule das_tool:
     input:
@@ -228,7 +240,8 @@ rule das_tool:
         metabat_spec = "data/metabat_bins_spec/done",
         metabat_ssens = "data/metabat_bins_ssens/done",
         metabat_sense = "data/metabat_bins_sens/done",
-        vamb_done = "data/vamb_bins/done"
+        vamb_done = "data/vamb_bins/done",
+        rosella_done = "data/rosella_bins/done"
     output:
         das_tool_done = "data/das_tool_bins/done"
     threads:
@@ -244,10 +257,42 @@ rule das_tool:
         "Fasta_to_Scaffolds2Bin.sh -i data/concoct_bins -e fa > data/concoct_bins.tsv && " \
         "Fasta_to_Scaffolds2Bin.sh -i data/maxbin2_bins -e fasta > data/maxbin_bins.tsv && " \
         "Fasta_to_Scaffolds2Bin.sh -i data/vamb_bins -e fna > data/vamb_bins.tsv && " \
+        "Fasta_to_Scaffolds2Bin.sh -i data/rosella_bins -e fna > data/rosella_bins.tsv && " \
         "DAS_Tool --search_engine diamond --write_bin_evals 1 --write_bins 1 -t {threads}" \
-        " -i data/metabat_bins_2.tsv,data/vamb_bins.tsv,data/metabat_bins_sspec.tsv,data/metabat_bins_spec.tsv,data/metabat_bins_ssens.tsv,data/metabat_bins_sens.tsv,data/maxbin_bins.tsv,data/concoct_bins.tsv" \
+        " -i data/metabat_bins_2.tsv,data/vamb_bins.tsv,data/rosella_bins.tsv,data/metabat_bins_sspec.tsv,data/metabat_bins_spec.tsv,data/metabat_bins_ssens.tsv,data/metabat_bins_sens.tsv,data/maxbin_bins.tsv,data/concoct_bins.tsv" \
         " -c {input.fasta} -o data/das_tool_bins/das_tool && " \
         "touch data/das_tool_bins/done"
+
+rule das_tool_without_rosella:
+    input:
+        fasta = config["fasta"],
+        metabat2_done = "data/metabat_bins_2/done",
+        concoct_done = "data/concoct_bins/done",
+        maxbin_done = "data/maxbin2_bins/done",
+        metabat_sspec = "data/metabat_bins_sspec/done",
+        metabat_spec = "data/metabat_bins_spec/done",
+        metabat_ssens = "data/metabat_bins_ssens/done",
+        metabat_sense = "data/metabat_bins_sens/done",
+        vamb_done = "data/vamb_bins/done"
+    output:
+        das_tool_done = "data/das_tool_without_rosella/done"
+    threads:
+        config["max_threads"]
+    conda:
+        "envs/das_tool.yaml"
+    shell:
+        "Fasta_to_Scaffolds2Bin.sh -i data/metabat_bins_2 -e fa > data/metabat_bins_2.tsv && " \
+        "Fasta_to_Scaffolds2Bin.sh -i data/metabat_bins_sspec -e fa > data/metabat_bins_sspec.tsv && " \
+        "Fasta_to_Scaffolds2Bin.sh -i data/metabat_bins_ssens -e fa > data/metabat_bins_ssens.tsv && " \
+        "Fasta_to_Scaffolds2Bin.sh -i data/metabat_bins_sens -e fa > data/metabat_bins_sens.tsv && " \
+        "Fasta_to_Scaffolds2Bin.sh -i data/metabat_bins_spec -e fa > data/metabat_bins_spec.tsv && " \
+        "Fasta_to_Scaffolds2Bin.sh -i data/concoct_bins -e fa > data/concoct_bins.tsv && " \
+        "Fasta_to_Scaffolds2Bin.sh -i data/maxbin2_bins -e fasta > data/maxbin_bins.tsv && " \
+        "Fasta_to_Scaffolds2Bin.sh -i data/vamb_bins -e fna > data/vamb_bins.tsv && " \
+        "DAS_Tool --search_engine diamond --write_bin_evals 1 --write_bins 1 -t {threads}" \
+        " -i data/metabat_bins_2.tsv,data/vamb_bins.tsv,data/metabat_bins_sspec.tsv,data/metabat_bins_spec.tsv,data/metabat_bins_ssens.tsv,data/metabat_bins_sens.tsv,data/maxbin_bins.tsv,data/concoct_bins.tsv" \
+        " -c {input.fasta} -o data/das_tool_without_rosella/das_tool && " \
+        "touch data/das_tool_without_rosella/done"
 
 rule get_abundances:
     input:
@@ -272,6 +317,19 @@ rule checkm:
         config["max_threads"]
     shell:
         'checkm lineage_wf -t {threads} --pplacer_threads {pplacer_threads} -x fa data/das_tool_bins/das_tool_DASTool_bins data/checkm --tab_table -f data/checkm.out'
+
+rule checkm_without_rosella:
+    input:
+        "data/das_tool_without_rosella/done"
+    output:
+        "data/checkm_without_rosella.out"
+    conda:
+        "envs/checkm.yaml"
+    threads:
+        config["max_threads"]
+    shell:
+        'checkm lineage_wf -t {threads} --pplacer_threads {pplacer_threads} -x fa data/das_tool_without_rosella/das_tool_DASTool_bins data/checkm --tab_table -f data/checkm_without_rosella.out'
+
 
 rule gtdbtk:
     input:
@@ -305,7 +363,8 @@ rule binner_result:
         "ln -s ../concoct_bins/*.fa ./ && ls *.fa | parallel 'mv {{}} concoct_{{.}}.fna'; "
         "ln -s ../maxbin2_bins/*.fasta ./ && ls *.fasta | parallel 'mv {{}} maxbin2_{{.}}.fna'; "
         "ln -s ../vamb_bins/*.fna ./; "
-        "checkm lineage_wf -t {threads} --pplacer_threads {pplacer_threads} -x fna --tab_table ./ checkm > checkm.out; "
+        "ln -s ../rosella_bins/*.fna ./; "
+        "checkm lineage_wf -t {max_threads} --pplacer_threads {pplacer_threads} -x fna --tab_table ./ checkm > checkm.out; "
         "touch done && cd ../../"
 
 rule busco:
@@ -337,7 +396,6 @@ rule recover_mags:
     input:
         "data/das_tool_bins/done",
         "data/gtdbtk/done",
-        "data/all_bins/done",
         "data/checkm.out",
         "data/coverm_abundances.tsv",
     conda:
@@ -351,3 +409,15 @@ rule recover_mags:
         "coverm cluster -t {threads} --checkm-tab-table data/checkm.out --genome-fasta-directory data/pre_galah_bins/ -x fa --output-representative-fasta-directory data/galah_bins --ani 0.97 && " \
         "touch data/done"
 
+
+rule rosella_benchmark:
+    input:
+        "data/all_bins/done",
+        "data/das_tool_bins/done",
+        "data/checkm.out",
+        "data/checkm_without_rosella.out",
+        "data/coverm_abundances.tsv",
+    output:
+        "data/done"
+    shell:
+        "touch data/done"

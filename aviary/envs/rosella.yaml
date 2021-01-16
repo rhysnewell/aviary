@@ -3,4 +3,4 @@ channels:
   - conda-forge
   - defaults
 dependencies:
-  - rosella==0.2.3
+  - rosella==0.2.4
