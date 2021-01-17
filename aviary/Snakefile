@@ -227,7 +227,7 @@ rule rosella:
     threads:
         config["max_threads"]
     shell:
-        "rosella bin -r {input.fasta} -i {input.coverage} -t {threads} -o rosella_bins && " \
+        "rosella bin -r {input.fasta} -i {input.coverage} -t {threads} -o data/rosella_bins && " \
         "touch data/rosella_bins/done"
 
 rule das_tool:
