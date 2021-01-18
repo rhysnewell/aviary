@@ -21,6 +21,7 @@ from Bio import SeqIO
 __author__ = "Rhys Newell"
 __copyright__ = "Copyright 2020"
 __credits__ = ["Rhys Newell"]
+__version__ = "1.0.0"
 __license__ = "GPL3"
 __maintainer__ = "Rhys Newell"
 __email__ = "rhys.newell near hdr.qut.edu.au"

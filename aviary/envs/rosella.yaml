@@ -4,3 +4,4 @@ channels:
   - defaults
 dependencies:
   - rosella==0.2.4
+  - biopython

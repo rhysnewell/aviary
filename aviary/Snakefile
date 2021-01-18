@@ -308,7 +308,7 @@ rule get_abundances:
 
 rule checkm:
     input:
-        "data/das_tool_bins/done"
+        done = "data/das_tool_bins/done"
     output:
         "data/checkm.out"
     conda:
@@ -316,11 +316,12 @@ rule checkm:
     threads:
         config["max_threads"]
     shell:
-        'checkm lineage_wf -t {threads} --pplacer_threads {pplacer_threads} -x fa data/das_tool_bins/das_tool_DASTool_bins data/checkm --tab_table -f data/checkm.out'
+        'checkm lineage_wf -t {threads} --pplacer_threads {threads} -x fa data/das_tool_bins/das_tool_DASTool_bins data/checkm --tab_table -f data/checkm.out'
+
 
 rule checkm_without_rosella:
     input:
-        "data/das_tool_without_rosella/done"
+        done = "data/das_tool_without_rosella/done"
     output:
         "data/checkm_without_rosella.out"
     conda:
@@ -328,7 +329,7 @@ rule checkm_without_rosella:
     threads:
         config["max_threads"]
     shell:
-        'checkm lineage_wf -t {threads} --pplacer_threads {pplacer_threads} -x fa data/das_tool_without_rosella/das_tool_DASTool_bins data/checkm --tab_table -f data/checkm_without_rosella.out'
+        'checkm lineage_wf -t {threads} --pplacer_threads {threads} -x fa data/das_tool_without_rosella/das_tool_DASTool_bins data/checkm --tab_table -f data/checkm_without_rosella.out'
 
 
 rule gtdbtk:
@@ -344,15 +345,17 @@ rule gtdbtk:
         config["max_threads"]
     shell:
         "export GTDBTK_DATA_PATH={params.gtdbtk_folder} && " \
-        "gtdbtk classify_wf --cpus {threads} --pplacer_cpus {pplacer_threads} --extension fa --genome_dir data/das_tool_bins/das_tool_DASTool_bins --out_dir data/gtdbtk && touch data/gtdbtk/done"
+        "gtdbtk classify_wf --cpus {threads} --pplacer_cpus {threads} --extension fa --genome_dir data/das_tool_bins/das_tool_DASTool_bins --out_dir data/gtdbtk && touch data/gtdbtk/done"
 
 rule binner_result:
     input:
-         "data/das_tool_bins/done"
+        done = "data/das_tool_without_rosella/done"
     output:
          "data/all_bins/done"
     conda:
         "envs/checkm.yaml"
+    threads:
+        config["max_threads"]
     shell:
         "mkdir -p data/all_bins && cd data/all_bins; "
         "ln -s ../metabat_bins_2/*.fa ./ && ls *.fa | parallel 'mv {{}} {{.}}.metabat2.fna'; "
@@ -364,7 +367,7 @@ rule binner_result:
         "ln -s ../maxbin2_bins/*.fasta ./ && ls *.fasta | parallel 'mv {{}} maxbin2_{{.}}.fna'; "
         "ln -s ../vamb_bins/*.fna ./; "
         "ln -s ../rosella_bins/*.fna ./; "
-        "checkm lineage_wf -t {max_threads} --pplacer_threads {pplacer_threads} -x fna --tab_table ./ checkm > checkm.out; "
+        "checkm lineage_wf -t {threads} --pplacer_threads {threads} -x fna --tab_table ./ checkm > checkm.out; "
         "touch done && cd ../../"
 
 rule busco:
