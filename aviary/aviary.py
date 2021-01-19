@@ -165,7 +165,14 @@ def main():
         '--max_threads',
         help='Maximum number of threads given to any particular process',
         dest='max_threads',
-        default=16,
+        default=8,
+    )
+
+    input_options.add_argument(
+        '--pplacer_threads',
+        help='The number of threads given to pplacer, values above 48 will be scaled down',
+        dest='pplacer_threads',
+        default=8,
     )
 
     input_options.add_argument(
@@ -218,17 +225,19 @@ def main():
             os.makedirs(prefix)
         if args.interleaved == "none":
             processor = aviary(args.assembly, args.pe1, args.pe2, args.longreads, args.longread_type,
-                               int(args.max_threads), args.gtdb_path,
+                               int(args.max_threads), int(args.pplacer_threads), args.gtdb_path,
                                args.output, args.conda_prefix)
         elif args.pe2 == "none" and args.interleaved != "none":
             processor = aviary(args.assembly, args.interleaved, args.pe2, args.longreads, args.longread_type,
-                                int(args.max_threads),
-                                args.gtdb_path,
-                                args.output, args.conda_prefix)
+                               int(args.max_threads),
+                               int(args.pplacer_threads),
+                               args.gtdb_path,
+                               args.output, args.conda_prefix)
         elif args.longreads != "none":
             processor = aviary(args.assembly, args.pe1, args.pe2,
                                args.longreads, args.longread_type,
                                int(args.max_threads),
+                               int(args.pplacer_threads),
                                args.gtdb_path,
                                args.output, args.conda_prefix)
         else:
@@ -306,6 +315,7 @@ class aviary:
                  longreads="none",
                  longread_type="nanopore",
                  max_threads=16,
+                 pplacer_threads=16,
                  gtdbtk="/work/microbiome/db/gtdbtk/release95",
                  output=".",
                  conda_prefix="~/.conda/envs/",
@@ -316,6 +326,7 @@ class aviary:
         self.longreads = longreads
         self.longread_type = longread_type
         self.threads = max_threads
+        self.pplacer_threads = min(int(pplacer_threads), 48)
         self.gtdbtk = gtdbtk
         self.output = output
         self.conda_prefix = conda_prefix
@@ -346,6 +357,7 @@ class aviary:
 
         conf["fasta"] = self.assembly
         conf["max_threads"] = self.threads
+        conf["pplacer_threads"] = self.pplacer_threads
 
         conf["short_reads_1"] = self.pe1
         conf["short_reads_2"] = self.pe2

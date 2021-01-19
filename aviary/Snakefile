@@ -25,7 +25,7 @@ onstart:
     busco_folder = config["busco_folder"]
     threads = config["max_threads"]
     ## pplacer deadlocks on too many threads
-    pplacer_threads = min(48, int(config["max_threads"]))
+    pplacer_threads = min(48, int(config["pplacer_threads"]))
     import os
     import sys
 
@@ -230,6 +230,34 @@ rule rosella:
         "rosella bin -r {input.fasta} -i {input.coverage} -t {threads} -o data/rosella_bins && " \
         "touch data/rosella_bins/done"
 
+
+rule rerun_rosella:
+    input:
+        coverage = "data/coverm.cov",
+        fasta = config["fasta"],
+    conda:
+        "envs/rosella.yaml"
+    threads:
+        config["max_threads"]
+    shell:
+        "rm data/rosella_bins/*.fna; rm data/rosella_bins/checkm.out; rm -r data/rosella_bins/checkm/"
+        "rosella bin -r {input.fasta} -i {input.coverage} -t {threads} -o data/rosella_bins --b-tail 0.25 && " \
+        "touch data/rosella_bins/rerun"
+
+
+rule rosella_checkm:
+    input:
+        done = "data/rosella_bins/rerun"
+    output:
+        "data/checkm.out"
+    conda:
+        "envs/checkm.yaml"
+    threads:
+        config["max_threads"]
+    shell:
+        'checkm lineage_wf -t {threads} --pplacer_threads {pplacer_threads} -x fna data/rosella_bins/ data/rosella_bins/checkm --tab_table -f data/rosella_bins/checkm.out'
+
+
 rule das_tool:
     input:
         fasta = config["fasta"],
@@ -316,7 +344,7 @@ rule checkm:
     threads:
         config["max_threads"]
     shell:
-        'checkm lineage_wf -t {threads} --pplacer_threads {threads} -x fa data/das_tool_bins/das_tool_DASTool_bins data/checkm --tab_table -f data/checkm.out'
+        'checkm lineage_wf -t {threads} --pplacer_threads {pplacer_threads} -x fa data/das_tool_bins/das_tool_DASTool_bins data/checkm --tab_table -f data/checkm.out'
 
 
 rule checkm_without_rosella:
@@ -329,7 +357,7 @@ rule checkm_without_rosella:
     threads:
         config["max_threads"]
     shell:
-        'checkm lineage_wf -t {threads} --pplacer_threads {threads} -x fa data/das_tool_without_rosella/das_tool_DASTool_bins data/checkm --tab_table -f data/checkm_without_rosella.out'
+        'checkm lineage_wf -t {threads} --pplacer_threads {pplacer_threads} -x fa data/das_tool_without_rosella/das_tool_DASTool_bins data/checkm --tab_table -f data/checkm_without_rosella.out'
 
 
 rule gtdbtk:
@@ -345,7 +373,7 @@ rule gtdbtk:
         config["max_threads"]
     shell:
         "export GTDBTK_DATA_PATH={params.gtdbtk_folder} && " \
-        "gtdbtk classify_wf --cpus {threads} --pplacer_cpus {threads} --extension fa --genome_dir data/das_tool_bins/das_tool_DASTool_bins --out_dir data/gtdbtk && touch data/gtdbtk/done"
+        "gtdbtk classify_wf --cpus {threads} --pplacer_cpus {pplacer_threads} --extension fa --genome_dir data/das_tool_bins/das_tool_DASTool_bins --out_dir data/gtdbtk && touch data/gtdbtk/done"
 
 rule binner_result:
     input:
@@ -367,7 +395,7 @@ rule binner_result:
         "ln -s ../maxbin2_bins/*.fasta ./ && ls *.fasta | parallel 'mv {{}} maxbin2_{{.}}.fna'; "
         "ln -s ../vamb_bins/*.fna ./; "
         "ln -s ../rosella_bins/*.fna ./; "
-        "checkm lineage_wf -t {threads} --pplacer_threads {threads} -x fna --tab_table ./ checkm > checkm.out; "
+        "checkm lineage_wf -t {threads} --pplacer_threads {pplacer_threads} -x fna --tab_table ./ checkm > checkm.out; "
         "touch done && cd ../../"
 
 rule busco:
