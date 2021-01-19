@@ -235,12 +235,14 @@ rule rerun_rosella:
     input:
         coverage = "data/coverm.cov",
         fasta = config["fasta"],
+    output:
+        "data/rosella_bins/rerun"
     conda:
         "envs/rosella.yaml"
     threads:
         config["max_threads"]
     shell:
-        "rm data/rosella_bins/*.fna; rm data/rosella_bins/checkm.out; rm -r data/rosella_bins/checkm/"
+        "rm data/rosella_bins/*.fna; rm data/rosella_bins/checkm.out; rm -r data/rosella_bins/checkm/; "
         "rosella bin -r {input.fasta} -i {input.coverage} -t {threads} -o data/rosella_bins --b-tail 0.25 && " \
         "touch data/rosella_bins/rerun"
 
@@ -248,14 +250,12 @@ rule rerun_rosella:
 rule rosella_checkm:
     input:
         done = "data/rosella_bins/rerun"
-    output:
-        "data/checkm.out"
     conda:
         "envs/checkm.yaml"
     threads:
         config["max_threads"]
     shell:
-        'checkm lineage_wf -t {threads} --pplacer_threads {pplacer_threads} -x fna data/rosella_bins/ data/rosella_bins/checkm --tab_table -f data/rosella_bins/checkm.out'
+        'checkm lineage_wf -t {threads} --pplacer_threads {pplacer_threads} -x fna data/rosella_bins/ data/rosella_bins/checkm --tab_table -f data/rosella_bins/checkm.out && rm data/rosella_bins/rerun'
 
 
 rule das_tool:
