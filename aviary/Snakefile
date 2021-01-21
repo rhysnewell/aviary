@@ -423,6 +423,26 @@ rule busco:
         "fi; done && " \
         "cd ../../ && touch data/busco/done"
 
+rule singlem_pipe_reads:
+    output:
+        "data/singlem_out/metagenome.combined_otu_table.csv"
+    conda:
+        "envs/singlem.yaml"
+    script:
+        "scripts/singlem_reads.py"
+
+rule singlem_appraise:
+    input:
+        metagenome = "data/singlem_out/metagenome.combined_otu_table.csv",
+        dastool_done = "data/das_tool_bins/done"
+    output:
+        "data/singlem_out/singlem_appraise.svg"
+    conda:
+        "envs/singlem.yaml"
+    shell:
+        "singlem pipe -t {pplacer_threads} --sequences data/das_tool_bins/das_tool_DASTool_bins/*.fa --otu_table data/singlem_out/genomes.otu_table.csv;"
+        "singlem appraise --metagenome_otu_tables {input.metagenome} --genome_otu_tables data/singlem_out/genomes.otu_table.csv --plot data/singlem_out/singlem_appraise.svg --output_binned_otu_table data/singlem_out/binned.otu_table.csv --output_unbinned_otu_table data/singlem_out/unbinned.otu_table.csv"
+
 rule recover_mags:
     input:
         "data/das_tool_bins/done",
@@ -432,6 +452,7 @@ rule recover_mags:
     conda:
         "envs/coverm.yaml"
     output:
+        "data/singlem_out/singlem_appraise.svg",
         "data/done"
     threads:
         config["max_threads"]
