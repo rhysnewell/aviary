@@ -440,8 +440,12 @@ rule singlem_appraise:
     conda:
         "envs/singlem.yaml"
     shell:
-        "singlem pipe -t {pplacer_threads} --sequences data/das_tool_bins/das_tool_DASTool_bins/*.fa --otu_table data/singlem_out/genomes.otu_table.csv;"
-        "singlem appraise --metagenome_otu_tables {input.metagenome} --genome_otu_tables data/singlem_out/genomes.otu_table.csv --plot data/singlem_out/singlem_appraise.svg --output_binned_otu_table data/singlem_out/binned.otu_table.csv --output_unbinned_otu_table data/singlem_out/unbinned.otu_table.csv"
+        "singlem pipe -t {pplacer_threads} --sequences data/das_tool_bins/das_tool_DASTool_bins/*.fa --otu_table data/singlem_out/genomes.otu_table.csv; "
+        "singlem pipe -t {pplacer_threads} --sequences {fasta} --otu_table data/singlem_out/assembly.otu_table.csv; "
+        "singlem appraise --metagenome_otu_tables {input.metagenome} --genome_otu_tables data/singlem_out/genomes.otu_table.csv "
+        "--assembly_otu_table data/singlem_out/assembly.otu_table.csv "
+        "--plot data/singlem_out/singlem_appraise.svg --output_binned_otu_table data/singlem_out/binned.otu_table.csv "
+        "--output_unbinned_otu_table data/singlem_out/unbinned.otu_table.csv"
 
 rule recover_mags:
     input:
