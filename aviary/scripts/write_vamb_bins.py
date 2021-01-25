@@ -17,7 +17,6 @@
 # along with this program. If not, see <http://www.gnu.org/licenses/>.        #
 #                                                                             #
 ###############################################################################
-from Bio import SeqIO
 __author__ = "Rhys Newell"
 __copyright__ = "Copyright 2020"
 __credits__ = ["Rhys Newell"]
@@ -39,6 +38,7 @@ from pathlib import Path
 # Function imports
 import numpy as np
 import pandas as pd
+from Bio import SeqIO
 
 # Debug
 debug = {
