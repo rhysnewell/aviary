@@ -12,6 +12,8 @@ batch_file:
   none
 max_threads:
   8
+pplacer_threads:
+  8
 virsorter_data:
   /work/microbiome/db/virsorter_data_v2/virsorter-data
 gtdbtk_folder:

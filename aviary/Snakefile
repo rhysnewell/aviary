@@ -25,7 +25,7 @@ onstart:
     busco_folder = config["busco_folder"]
     threads = config["max_threads"]
     ## pplacer deadlocks on too many threads
-    pplacer_threads = min(48, int(config["max_threads"]))
+    pplacer_threads = min(48, int(config["pplacer_threads"]))
     import os
     import sys
 
@@ -182,8 +182,6 @@ rule vamb_make_bins:
         clusters = "data/vamb_bins/clusters.tsv",
     output:
         "data/vamb_bins/done"
-    conda:
-        "envs/rosella.yaml"
     script:
         "scripts/write_vamb_bins.py"
 
@@ -229,6 +227,36 @@ rule rosella:
     shell:
         "rosella bin -r {input.fasta} -i {input.coverage} -t {threads} -o data/rosella_bins && " \
         "touch data/rosella_bins/done"
+
+
+rule rerun_rosella:
+    input:
+        coverage = "data/coverm.cov",
+        fasta = config["fasta"],
+    output:
+        "data/rosella_bins/rerun"
+    conda:
+        "envs/rosella.yaml"
+    threads:
+        config["max_threads"]
+    shell:
+        "rm data/rosella_bins/*.fna; rm data/rosella_bins/checkm.out; rm -r data/rosella_bins/checkm/; "
+        "rosella bin -r {input.fasta} -i {input.coverage} -t {threads} -o data/rosella_bins --b-tail 0.25 && " \
+        "touch data/rosella_bins/rerun"
+
+
+rule rosella_checkm:
+    input:
+        done = "data/rosella_bins/rerun"
+    params:
+        pplacer_threads = config['pplacer_threads']
+    conda:
+        "envs/checkm.yaml"
+    threads:
+        config["max_threads"]
+    shell:
+        'checkm lineage_wf -t {threads} --pplacer_threads {params.pplacer_threads} -x fna data/rosella_bins/ data/rosella_bins/checkm --tab_table -f data/rosella_bins/checkm.out && rm data/rosella_bins/rerun'
+
 
 rule das_tool:
     input:
@@ -309,6 +337,8 @@ rule get_abundances:
 rule checkm:
     input:
         done = "data/das_tool_bins/done"
+    params:
+        pplacer_threads = config["pplacer_threads"]
     output:
         "data/checkm.out"
     conda:
@@ -316,12 +346,14 @@ rule checkm:
     threads:
         config["max_threads"]
     shell:
-        'checkm lineage_wf -t {threads} --pplacer_threads {threads} -x fa data/das_tool_bins/das_tool_DASTool_bins data/checkm --tab_table -f data/checkm.out'
+        'checkm lineage_wf -t {threads} --pplacer_threads {params.pplacer_threads} -x fa data/das_tool_bins/das_tool_DASTool_bins data/checkm --tab_table -f data/checkm.out'
 
 
 rule checkm_without_rosella:
     input:
         done = "data/das_tool_without_rosella/done"
+    params:
+        pplacer_threads = config["pplacer_threads"]
     output:
         "data/checkm_without_rosella.out"
     conda:
@@ -329,29 +361,32 @@ rule checkm_without_rosella:
     threads:
         config["max_threads"]
     shell:
-        'checkm lineage_wf -t {threads} --pplacer_threads {threads} -x fa data/das_tool_without_rosella/das_tool_DASTool_bins data/checkm --tab_table -f data/checkm_without_rosella.out'
+        'checkm lineage_wf -t {threads} --pplacer_threads {params.pplacer_threads} -x fa data/das_tool_without_rosella/das_tool_DASTool_bins data/checkm --tab_table -f data/checkm_without_rosella.out'
 
 
 rule gtdbtk:
     input:
-        "data/das_tool_bins/done"
+        done_file = "data/das_tool_bins/done"
     output:
         done = "data/gtdbtk/done"
     params:
-        gtdbtk_folder = config['gtdbtk_folder']
+        gtdbtk_folder = config['gtdbtk_folder'],
+        pplacer_threads = config["pplacer_threads"]        
     conda:
         "envs/gtdbtk.yaml"
     threads:
         config["max_threads"]
     shell:
         "export GTDBTK_DATA_PATH={params.gtdbtk_folder} && " \
-        "gtdbtk classify_wf --cpus {threads} --pplacer_cpus {threads} --extension fa --genome_dir data/das_tool_bins/das_tool_DASTool_bins --out_dir data/gtdbtk && touch data/gtdbtk/done"
+        "gtdbtk classify_wf --cpus {threads} --pplacer_cpus {params.pplacer_threads} --extension fa --genome_dir data/das_tool_bins/das_tool_DASTool_bins --out_dir data/gtdbtk && touch data/gtdbtk/done"
 
 rule binner_result:
     input:
         done = "data/das_tool_without_rosella/done"
     output:
          "data/all_bins/done"
+    params:
+        pplacer_threads = config['pplacer_threads']
     conda:
         "envs/checkm.yaml"
     threads:
@@ -367,7 +402,7 @@ rule binner_result:
         "ln -s ../maxbin2_bins/*.fasta ./ && ls *.fasta | parallel 'mv {{}} maxbin2_{{.}}.fna'; "
         "ln -s ../vamb_bins/*.fna ./; "
         "ln -s ../rosella_bins/*.fna ./; "
-        "checkm lineage_wf -t {threads} --pplacer_threads {threads} -x fna --tab_table ./ checkm > checkm.out; "
+        "checkm lineage_wf -t {threads} --pplacer_threads {params.pplacer_threads} -x fna --tab_table ./ checkm > checkm.out; "
         "touch done && cd ../../"
 
 rule busco:
@@ -395,6 +430,32 @@ rule busco:
         "fi; done && " \
         "cd ../../ && touch data/busco/done"
 
+rule singlem_pipe_reads:
+    output:
+        "data/singlem_out/metagenome.combined_otu_table.csv"
+    conda:
+        "envs/singlem.yaml"
+    script:
+        "scripts/singlem_reads.py"
+
+rule singlem_appraise:
+    input:
+        metagenome = "data/singlem_out/metagenome.combined_otu_table.csv",
+        dastool_done = "data/das_tool_bins/done"
+    output:
+        "data/singlem_out/singlem_appraise.svg"
+    params:
+        pplacer_threads = config['pplacer_threads']
+    conda:
+        "envs/singlem.yaml"
+    shell:
+        "singlem pipe -t {params.pplacer_threads} --sequences data/das_tool_bins/das_tool_DASTool_bins/*.fa --otu_table data/singlem_out/genomes.otu_table.csv; "
+        "singlem pipe -t {params.pplacer_threads} --sequences {fasta} --otu_table data/singlem_out/assembly.otu_table.csv; "
+        "singlem appraise --metagenome_otu_tables {input.metagenome} --genome_otu_tables data/singlem_out/genomes.otu_table.csv "
+        "--assembly_otu_table data/singlem_out/assembly.otu_table.csv "
+        "--plot data/singlem_out/singlem_appraise.svg --output_binned_otu_table data/singlem_out/binned.otu_table.csv "
+        "--output_unbinned_otu_table data/singlem_out/unbinned.otu_table.csv"
+
 rule recover_mags:
     input:
         "data/das_tool_bins/done",
@@ -404,12 +465,14 @@ rule recover_mags:
     conda:
         "envs/coverm.yaml"
     output:
+        "data/singlem_out/singlem_appraise.svg",
         "data/done"
     threads:
         config["max_threads"]
     shell:
-        "mkdir -p data/pre_galah_bins && cd data/pre_galah_bins/ && ln -s ../das_tool_bins/das_tool_DASTool_bins/* ./ && cd ../../ && " \
-        "coverm cluster -t {threads} --checkm-tab-table data/checkm.out --genome-fasta-directory data/pre_galah_bins/ -x fa --output-representative-fasta-directory data/galah_bins --ani 0.97 && " \
+        # Use --precluster-method finch so dashing-related install problems are avoided i.e. https://github.com/dnbaker/dashing/issues/41
+        "mkdir -p data/pre_galah_bins && cd data/pre_galah_bins/ && rm * && ln -s ../das_tool_bins/das_tool_DASTool_bins/* ./ && cd ../../ && " \
+        "coverm cluster --precluster-method finch -t {threads} --checkm-tab-table data/checkm.out --genome-fasta-directory data/pre_galah_bins/ -x fa --output-representative-fasta-directory data/galah_bins --ani 0.97 && " \
         "touch data/done"
 
 
