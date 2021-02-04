@@ -462,10 +462,10 @@ rule recover_mags:
         "data/gtdbtk/done",
         "data/checkm.out",
         "data/coverm_abundances.tsv",
+        "data/singlem_out/singlem_appraise.svg"
     conda:
         "envs/coverm.yaml"
     output:
-        "data/singlem_out/singlem_appraise.svg",
         "data/done"
     threads:
         config["max_threads"]
