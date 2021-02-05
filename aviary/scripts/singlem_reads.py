@@ -26,4 +26,4 @@ elif snakemake.config["short_reads_1"] != "none":
              " ".join(snakemake.config["short_reads_1"])), shell=True).wait()
 
 subprocess.Popen(
-            "singlem summarise --input_otu_tables data/singlem_out/*.csv --output_otu_table data/singlem_reads/metagenome.combined_otu_table.csv", shell=True).wait()
+            "singlem summarise --input_otu_tables data/singlem_out/*.csv --output_otu_table data/singlem_out/metagenome.combined_otu_table.csv", shell=True).wait()
