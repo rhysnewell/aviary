@@ -445,12 +445,13 @@ rule singlem_appraise:
     output:
         "data/singlem_out/singlem_appraise.svg"
     params:
-        pplacer_threads = config['pplacer_threads']
+        pplacer_threads = config['pplacer_threads'],
+        fasta = config['fasta']
     conda:
         "envs/singlem.yaml"
     shell:
         "singlem pipe --threads {params.pplacer_threads} --sequences data/das_tool_bins/das_tool_DASTool_bins/*.fa --otu_table data/singlem_out/genomes.otu_table.csv; "
-        "singlem pipe --threads {params.pplacer_threads} --sequences {fasta} --otu_table data/singlem_out/assembly.otu_table.csv; "
+        "singlem pipe --threads {params.pplacer_threads} --sequences {params.fasta} --otu_table data/singlem_out/assembly.otu_table.csv; "
         "singlem appraise --metagenome_otu_tables {input.metagenome} --genome_otu_tables data/singlem_out/genomes.otu_table.csv "
         "--assembly_otu_table data/singlem_out/assembly.otu_table.csv "
         "--plot data/singlem_out/singlem_appraise.svg --output_binned_otu_table data/singlem_out/binned.otu_table.csv "
