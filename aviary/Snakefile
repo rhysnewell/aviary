@@ -472,7 +472,7 @@ rule recover_mags:
         config["max_threads"]
     shell:
         # Use --precluster-method finch so dashing-related install problems are avoided i.e. https://github.com/dnbaker/dashing/issues/41
-        "mkdir -p data/pre_galah_bins && cd data/pre_galah_bins/ && ln -s ../das_tool_bins/das_tool_DASTool_bins/* ./ && cd ../../ && " \
+        "mkdir -p data/pre_galah_bins && cd data/pre_galah_bins/ && rm -f * && ln -s ../das_tool_bins/das_tool_DASTool_bins/* ./ && cd ../../ && " \
         "coverm cluster --precluster-method finch -t {threads} --checkm-tab-table data/checkm.out --genome-fasta-directory data/pre_galah_bins/ -x fa --output-representative-fasta-directory data/galah_bins --ani 0.97 && " \
         "touch data/done"
 
