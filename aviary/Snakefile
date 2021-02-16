@@ -445,12 +445,13 @@ rule singlem_appraise:
     output:
         "data/singlem_out/singlem_appraise.svg"
     params:
-        pplacer_threads = config['pplacer_threads']
+        pplacer_threads = config['pplacer_threads'],
+        fasta = config['fasta']
     conda:
         "envs/singlem.yaml"
     shell:
         "singlem pipe --threads {params.pplacer_threads} --sequences data/das_tool_bins/das_tool_DASTool_bins/*.fa --otu_table data/singlem_out/genomes.otu_table.csv; "
-        "singlem pipe --threads {params.pplacer_threads} --sequences {fasta} --otu_table data/singlem_out/assembly.otu_table.csv; "
+        "singlem pipe --threads {params.pplacer_threads} --sequences {params.fasta} --otu_table data/singlem_out/assembly.otu_table.csv; "
         "singlem appraise --metagenome_otu_tables {input.metagenome} --genome_otu_tables data/singlem_out/genomes.otu_table.csv "
         "--assembly_otu_table data/singlem_out/assembly.otu_table.csv "
         "--plot data/singlem_out/singlem_appraise.svg --output_binned_otu_table data/singlem_out/binned.otu_table.csv "
@@ -471,7 +472,7 @@ rule recover_mags:
         config["max_threads"]
     shell:
         # Use --precluster-method finch so dashing-related install problems are avoided i.e. https://github.com/dnbaker/dashing/issues/41
-        "mkdir -p data/pre_galah_bins && cd data/pre_galah_bins/ && rm * && ln -s ../das_tool_bins/das_tool_DASTool_bins/* ./ && cd ../../ && " \
+        "mkdir -p data/pre_galah_bins && cd data/pre_galah_bins/ && rm -f * && ln -s ../das_tool_bins/das_tool_DASTool_bins/* ./ && cd ../../ && " \
         "coverm cluster --precluster-method finch -t {threads} --checkm-tab-table data/checkm.out --genome-fasta-directory data/pre_galah_bins/ -x fa --output-representative-fasta-directory data/galah_bins --ani 0.97 && " \
         "touch data/done"
 
