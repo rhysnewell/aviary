@@ -14,6 +14,13 @@ aviary recover --help
 
 # Requirements
 
+Your conda channels should be configured ideally in this order:
+```
+conda config --add channels defaults
+conda config --add channels conda-forge
+conda config --add channels bioconda
+```
+
 Initial requirements for aviary can be downloaded using the `aviary.yml`:
 ```
 conda env create -n aviary -f aviary.yml
