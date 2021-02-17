@@ -3,10 +3,10 @@ import os
 import sys
 
 if snakemake.config["long_reads"] != "none" and not os.path.exists("data/long_cov.tsv"):
-    if snakemake.config["long_read_type"] == "nanopore":
+    if snakemake.config["long_read_type"][0] == "nanopore":
         subprocess.Popen("coverm contig -t %d -r %s --single %s -p minimap2-ont -m length trimmed_mean variance --bam-file-cache-directory data/binning_bams/ > data/long_cov.tsv" %
                          (snakemake.threads, snakemake.input.fasta, " ".join(snakemake.config["long_reads"])), shell=True).wait()
-    elif snakemake.config["long_read_type"] == "pacbio":
+    elif snakemake.config["long_read_type"][0] == "pacbio":
         subprocess.Popen("coverm contig -t %d -r %s --single %s -p minimap2-pb -m length trimmed_mean variance --bam-file-cache-directory data/binning_bams/ > data/long_cov.tsv" %
                          (snakemake.threads, snakemake.input.fasta, " ".join(snakemake.config["long_reads"])), shell=True).wait()
     else:
@@ -96,7 +96,7 @@ elif snakemake.config["long_reads"] != "none":
 elif snakemake.config["short_reads_1"] != "none":  # rename shrot reads cov if only they exist
     os.rename("data/short_cov.tsv", "data/coverm.cov")
 
-elif snakemake.config["long_reads"] != "none":
+if snakemake.config["long_reads"] != "none":
     with open('data/long.cov', 'w') as file3:
         with open('data/long_cov.tsv', 'r') as file:
             for idx, line1 in enumerate(file):

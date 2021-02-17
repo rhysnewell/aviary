@@ -4,10 +4,10 @@ import sys
 
 
 if snakemake.config["long_reads"] != "none":
-    if snakemake.config["long_read_type"] == "nanopore":
+    if snakemake.config["long_read_type"][0] == "nanopore":
         subprocess.Popen("coverm genome -t %d -d data/das_tool_bins/das_tool_DASTool_bins/ --single %s -p minimap2-ont --min-covered-fraction 0.0 -x fa > data/long_abundances.tsv" %
                          (snakemake.threads, " ".join(snakemake.config["long_reads"])), shell=True).wait()
-    elif snakemake.config["long_read_type"] == "pacbio":
+    elif snakemake.config["long_read_type"][0] == "pacbio":
         subprocess.Popen("coverm genome -t %d -d data/das_tool_bins/das_tool_DASTool_bins/ --single %s -p minimap2-pb --min-covered-fraction 0.0 -x fa > data/long_abundances.tsv" %
                          (snakemake.threads, " ".join(snakemake.config["long_reads"])), shell=True).wait()
     else:
