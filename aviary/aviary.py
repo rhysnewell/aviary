@@ -355,16 +355,16 @@ class aviary:
         with open(template_conf_file) as template_config:
             conf = yaml.load(template_config)
 
-        conf["fasta"] = self.assembly
+        conf["fasta"] = os.path.abspath(self.assembly)
         conf["max_threads"] = self.threads
         conf["pplacer_threads"] = self.pplacer_threads
 
-        conf["short_reads_1"] = self.pe1
-        conf["short_reads_2"] = self.pe2
-        conf["long_reads"] = self.longreads
+        conf["short_reads_1"] = os.path.abspath(self.pe1)
+        conf["short_reads_2"] = os.path.abspath(self.pe2)
+        conf["long_reads"] = os.path.abspath(self.longreads)
         conf["long_read_type"] = self.longread_type
 
-        conf["gtdbtk_folder"] = self.gtdbtk
+        conf["gtdbtk_folder"] = os.path.abspath(self.gtdbtk)
 
 
         with open(self.config, "w") as f:
