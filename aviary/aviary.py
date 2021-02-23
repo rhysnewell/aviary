@@ -100,14 +100,15 @@ def main():
     ''')
 
     input_options.add_argument(
-        '--assembly',
+        '-a', '--assembly',
         help='FASTA file containing scaffolded contigs of the metagenome assembly',
         dest="assembly",
+        nargs='*',
         required=True,
     )
 
     input_options.add_argument(
-        '--paired_reads_1',
+        '-1', '--paired_reads_1',
         help='A space separated list of forwards read files to use for the binning process',
         dest='pe1',
         nargs='*',
@@ -115,7 +116,7 @@ def main():
     )
 
     input_options.add_argument(
-        '--paired_reads_2',
+        '-2','--paired_reads_2',
         help='A space separated list of forwards read files to use for the binning process',
         dest='pe2',
         nargs='*',
@@ -123,7 +124,7 @@ def main():
     )
 
     input_options.add_argument(
-        '--interleaved',
+        '-i','--interleaved',
         help='A space separated list of interleaved read files for the binning process',
         dest='interleaved',
         nargs='*',
@@ -131,7 +132,7 @@ def main():
     )
 
     input_options.add_argument(
-        '--longreads',
+        '-l', '--longreads',
         help='A space separated list of interleaved read files for the binning process',
         dest='longreads',
         nargs='*',
@@ -162,35 +163,35 @@ def main():
     )
 
     input_options.add_argument(
-        '--max_threads',
+        '-t', '--max_threads',
         help='Maximum number of threads given to any particular process',
         dest='max_threads',
         default=8,
     )
 
     input_options.add_argument(
-        '--pplacer_threads',
+        '-p', '--pplacer_threads',
         help='The number of threads given to pplacer, values above 48 will be scaled down',
         dest='pplacer_threads',
         default=8,
     )
 
     input_options.add_argument(
-        '--n_cores',
+        '-n', '--n_cores',
         help='Maximum number of cores available for use. Must be >= to max_threads',
         dest='n_cores',
         default=16,
     )
 
     input_options.add_argument(
-        '--output',
+        '-o', '--output',
         help='Output directory, outputs to current directory *DON"T CHANGE, relative paths currently broken for this*',
         dest='output',
         default='./',
     )
 
     input_options.add_argument(
-        '--workflow',
+        '-w', '--workflow',
         help='Main workflow to run',
         dest='workflow',
         default='recover_mags',
@@ -355,13 +356,22 @@ class aviary:
         with open(template_conf_file) as template_config:
             conf = yaml.load(template_config)
 
-        conf["fasta"] = os.path.abspath(self.assembly)
+        if self.assembly != "none":
+            self.assembly = [os.path.abspath(p) for p in self.assembly]
+        if self.pe1 != "none":
+            self.pe1 = [os.path.abspath(p) for p in self.pe1]
+        if self.pe2 != "none":
+            self.pe2 = [os.path.abspath(p) for p in self.pe2]
+        if self.longreads != "none":
+            self.longreads = [os.path.abspath(p) for p in self.longreads]
+            
+        conf["fasta"] = self.assembly
         conf["max_threads"] = self.threads
         conf["pplacer_threads"] = self.pplacer_threads
 
-        conf["short_reads_1"] = os.path.abspath(self.pe1)
-        conf["short_reads_2"] = os.path.abspath(self.pe2)
-        conf["long_reads"] = os.path.abspath(self.longreads)
+        conf["short_reads_1"] = self.pe1
+        conf["short_reads_2"] = self.pe2
+        conf["long_reads"] = self.longreads
         conf["long_read_type"] = self.longread_type
 
         conf["gtdbtk_folder"] = os.path.abspath(self.gtdbtk)
