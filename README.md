@@ -32,3 +32,8 @@ To perform mag recovery:
 ```
 aviary recover --assembly scaffolds.fasta -1 sr1.1.fq sr2.1.fq.gz -2 sr1.2.fq sr2.2.fq.gz --longreads nanopore.fastq.gz --output output_dir/ --max_threads 12 --n_cores 24 --gtdb_path /path/to/gtdb/release/
 ```
+
+# Workflow
+The current complete workflow for aviary. This is constantly being updated and will eventually include and assembly stage and
+post binning analysis of MAGs
+![Aviary workflow](figures/aviary_workflow.png)

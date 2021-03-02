@@ -3,5 +3,5 @@ channels:
   - conda-forge
   - defaults
 dependencies:
-  - rosella==0.2.4
+  - rosella==0.3.0
   - biopython
