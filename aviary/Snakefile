@@ -47,15 +47,15 @@ onstart:
         sys.stderr.write("busco_folder does not point to a folder\n")
 
 
-rule run_batch:
-    input:
-        batch_file = config["batch_file"]
-    output:
-        "data/done"
-    threads:
-        config["max_threads"]
-    script:
-        "scripts/process_batch.py"
+# rule run_batch:
+    # input:
+        # batch_file = config["batch_file"]
+    # output:
+        # "data/done"
+    # threads:
+        # config["max_threads"]
+    # script:
+        # "scripts/process_batch.py"
 
 
 rule rename_contigs:
