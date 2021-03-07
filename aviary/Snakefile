@@ -1,5 +1,9 @@
 ruleorder: das_tool > das_tool_no_vamb
 ruleorder: das_tool_without_rosella > das_tool_without_rosella_no_vamb
+ruleorder: checkm > checkm_no_vamb
+ruleorder: checkm_without_rosella > checkm_without_rosella_no_vamb
+ruleorder: binner_result > binner_result_no_vamb
+ruleorder: get_abundances > get_abundances_no_vamb
 
 onsuccess:
     print("Workflow finished, no error")
@@ -325,7 +329,6 @@ rule das_tool_no_vamb:
         rosella_done = "data/rosella_bins/done",
         skipped_vamb = "data/vamb_bins/skipped"
     output:
-        das_tool_done = "data/das_tool_bins/done",
         vamb_skipped = "data/das_tool_bins/skipped_vamb"
     threads:
         config["max_threads"]
@@ -390,7 +393,6 @@ rule das_tool_without_rosella_no_vamb:
         metabat_sense = "data/metabat_bins_sens/done",
         skipped_vamb = "data/vamb_bins/skipped"
     output:
-        das_tool_done = "data/das_tool_without_rosella/done",
         vamb_skipped = "data/das_tool_without_rosella/skipped_vamb"
     threads:
         config["max_threads"]
@@ -423,6 +425,18 @@ rule get_abundances:
     script:
         "scripts/get_abundances.py"
 
+rule get_abundances_no_vamb:
+    input:
+        "data/das_tool_bins/skipped_vamb"
+    output:
+        "data/coverm_abundances.tsv"
+    conda:
+        "envs/coverm.yaml"
+    threads:
+        config["max_threads"]
+    script:
+        "scripts/get_abundances.py"
+
 rule checkm:
     input:
         done = "data/das_tool_bins/done"
@@ -437,6 +451,21 @@ rule checkm:
     shell:
         'checkm lineage_wf -t {threads} --pplacer_threads {params.pplacer_threads} -x fa data/das_tool_bins/das_tool_DASTool_bins data/checkm --tab_table -f data/checkm.out'
 
+rule checkm_no_vamb:
+    input:
+        done = "data/das_tool_bins/skipped_vamb"
+    params:
+        pplacer_threads = config["pplacer_threads"]
+    output:
+        "data/checkm/skipped_vamb"
+    conda:
+        "envs/checkm.yaml"
+    threads:
+        config["max_threads"]
+    shell:
+        'checkm lineage_wf -t {threads} --pplacer_threads {params.pplacer_threads} -x fa data/das_tool_bins/das_tool_DASTool_bins data/checkm --tab_table -f data/checkm.out; '
+        'touch data/checkm/skipped_vamb; '
+
 
 rule checkm_without_rosella:
     input:
@@ -450,7 +479,23 @@ rule checkm_without_rosella:
     threads:
         config["max_threads"]
     shell:
-        'checkm lineage_wf -t {threads} --pplacer_threads {params.pplacer_threads} -x fa data/das_tool_without_rosella/das_tool_DASTool_bins data/checkm --tab_table -f data/checkm_without_rosella.out'
+        'checkm lineage_wf -t {threads} --pplacer_threads {params.pplacer_threads} -x fa data/das_tool_without_rosella/das_tool_DASTool_bins data/checkm --tab_table -f data/checkm_without_rosella.out; '
+
+
+rule checkm_without_rosella_no_vamb:
+    input:
+        done = "data/das_tool_without_rosella/skipped_vamb"
+    params:
+        pplacer_threads = config["pplacer_threads"]
+    output:
+        "data/checkm_without_rosella/skipped_vamb"
+    conda:
+        "envs/checkm.yaml"
+    threads:
+        config["max_threads"]
+    shell:
+        'checkm lineage_wf -t {threads} --pplacer_threads {params.pplacer_threads} -x fa data/das_tool_without_rosella/das_tool_DASTool_bins data/checkm --tab_table -f data/checkm_without_rosella.out; '
+        'touch data/checkm_without_rosella/skipped_vamb'
 
 
 rule gtdbtk:
@@ -491,9 +536,34 @@ rule binner_result:
         "ln -s ../maxbin2_bins/*.fasta ./ && ls *.fasta | parallel 'mv {{}} maxbin2_{{.}}.fna'; "
         "ln -s ../vamb_bins/*.fna ./; "
         "ln -s ../rosella_bins/*.fna ./; "
-        "rm \*.fna; "
+        "rm -f \*.fna; "
         "checkm lineage_wf -t {threads} --pplacer_threads {params.pplacer_threads} -x fna --tab_table ./ checkm > checkm.out; "
         "touch done && cd ../../"
+
+rule binner_result_no_vamb:
+    input:
+        done = "data/das_tool_without_rosella/skipped_vamb"
+    output:
+         "data/all_bins/skipped_vamb"
+    params:
+        pplacer_threads = config['pplacer_threads']
+    conda:
+        "envs/checkm.yaml"
+    threads:
+        config["max_threads"]
+    shell:
+        "mkdir -p data/all_bins && cd data/all_bins; "
+        "ln -s ../metabat_bins_2/*.fa ./ && ls *.fa | parallel 'mv {{}} {{.}}.metabat2.fna'; "
+        "ln -s ../metabat_bins_sens/*.fa ./ && ls *.fa | parallel 'mv {{}} {{.}}.metabat_sens.fna'; "
+        "ln -s ../metabat_bins_spec/*.fa ./ && ls *.fa | parallel 'mv {{}} {{.}}.metabat_spec.fna'; "
+        "ln -s ../metabat_bins_ssens/*.fa ./ && ls *.fa | parallel 'mv {{}} {{.}}.metabat_ssens.fna'; "
+        "ln -s ../metabat_bins_sspec/*.fa ./ && ls *.fa | parallel 'mv {{}} {{.}}.metabat_sspec.fna'; "
+        "ln -s ../concoct_bins/*.fa ./ && ls *.fa | parallel 'mv {{}} concoct_{{.}}.fna'; "
+        "ln -s ../maxbin2_bins/*.fasta ./ && ls *.fasta | parallel 'mv {{}} maxbin2_{{.}}.fna'; "
+        "ln -s ../rosella_bins/*.fna ./; "
+        "rm -f \*.fna; "
+        "checkm lineage_wf -t {threads} --pplacer_threads {params.pplacer_threads} -x fna --tab_table ./ checkm > checkm.out; "
+        "touch skipped_vamb && cd ../../"
 
 rule busco:
     input:
@@ -573,7 +643,7 @@ rule rosella_benchmark:
         "data/das_tool_bins/done",
         "data/checkm.out",
         "data/checkm_without_rosella.out",
-        "data/coverm_abundances.tsv",
+        # "data/coverm_abundances.tsv",
     output:
         "data/done"
     shell:
@@ -582,15 +652,13 @@ rule rosella_benchmark:
 
 rule rosella_benchmark_no_vamb:
     input:
-        "data/all_bins/done",
+        "data/all_bins/skipped_vamb",
         "data/vamb_bins/skipped",
-        "data/das_tool_bins/done",
-        "data/checkm.out",
-        "data/checkm_without_rosella.out",
-        "data/coverm_abundances.tsv",
+        "data/checkm/skipped_vamb",
+        "data/checkm_without_rosella/skipped_vamb",
         "data/das_tool_without_rosella/skipped_vamb",
         "data/das_tool_bins/skipped_vamb"
     output:
-        "data/done"
+        "data/skipped_vamb"
     shell:
-        "touch data/done"
+        "touch data/skipped_vamb"
