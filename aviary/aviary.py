@@ -149,6 +149,22 @@ def main():
     )
 
     input_options.add_argument(
+        '-m', '--min_contig_size',
+        help='Minimum contig size in base pairs to be considered for binning',
+        dest='min_contig_size',
+        nargs=1,
+        default=1500
+    )
+
+    input_options.add_argument(
+        '-s','--min_bin_size',
+        help='Minimum bin size in base pairs for a MAG',
+        dest='min_bin_size',
+        nargs=1,
+        default=200000
+    )
+
+    input_options.add_argument(
         '--conda_prefix',
         help='Path to the location of installed conda environments, or where to install new environments',
         dest='conda_prefix',
@@ -185,7 +201,7 @@ def main():
 
     input_options.add_argument(
         '-o', '--output',
-        help='Output directory, outputs to current directory *DON"T CHANGE, relative paths currently broken for this*',
+        help='Output directory',
         dest='output',
         default='./',
     )
@@ -227,20 +243,20 @@ def main():
         if args.interleaved == "none":
             processor = aviary(args.assembly, args.pe1, args.pe2, args.longreads, args.longread_type,
                                int(args.max_threads), int(args.pplacer_threads), args.gtdb_path,
-                               args.output, args.conda_prefix)
+                               args.output, args.conda_prefix, args)
         elif args.pe2 == "none" and args.interleaved != "none":
             processor = aviary(args.assembly, args.interleaved, args.pe2, args.longreads, args.longread_type,
                                int(args.max_threads),
                                int(args.pplacer_threads),
                                args.gtdb_path,
-                               args.output, args.conda_prefix)
+                               args.output, args.conda_prefix, args)
         elif args.longreads != "none":
             processor = aviary(args.assembly, args.pe1, args.pe2,
                                args.longreads, args.longread_type,
                                int(args.max_threads),
                                int(args.pplacer_threads),
                                args.gtdb_path,
-                               args.output, args.conda_prefix)
+                               args.output, args.conda_prefix, args)
         else:
             sys.exit("Missing any input read files...")
 
@@ -320,6 +336,7 @@ class aviary:
                  gtdbtk="/work/microbiome/db/gtdbtk/release95",
                  output=".",
                  conda_prefix="~/.conda/envs/",
+                 args=None
                  ):
         self.assembly = assembly
         self.pe1 = pe1
@@ -331,6 +348,9 @@ class aviary:
         self.gtdbtk = gtdbtk
         self.output = output
         self.conda_prefix = conda_prefix
+        if args is not None:
+            self.min_contig_size = args.min_contig_size
+            self.min_bin_size = args.min_bin_size
 
     def make_config(self):
         """
@@ -373,6 +393,8 @@ class aviary:
         conf["short_reads_2"] = self.pe2
         conf["long_reads"] = self.longreads
         conf["long_read_type"] = self.longread_type
+        conf["min_contig_size"] = self.min_contig_size
+        conf["min_bin_size"] = self.min_bin_size
 
         conf["gtdbtk_folder"] = os.path.abspath(self.gtdbtk)
 

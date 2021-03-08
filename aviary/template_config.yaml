@@ -8,8 +8,10 @@ short_reads_1:
   none
 short_reads_2:
   none
-batch_file:
-  none
+min_contig_size:
+  1500
+min_bin_size:
+  200000
 max_threads:
   8
 pplacer_threads:
