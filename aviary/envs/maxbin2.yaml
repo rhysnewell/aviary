@@ -1,4 +1,6 @@
 channels:
   - bioconda
 dependencies:
-  - maxbin2 = 2.2.7
+  - maxbin2 >= 2.2.7
+  - perl=5.22.0
+  - perl-lwp-simple
