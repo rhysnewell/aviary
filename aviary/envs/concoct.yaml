@@ -4,6 +4,7 @@ channels:
   - defaults
 dependencies:
   - concoct = 1.1.0
+  - samtools = 1.11
   - mkl
   - pandas=0.25.1
   - numpy=1.17.2
