@@ -3,6 +3,6 @@ channels:
   - conda-forge
   - defaults
 dependencies:
-  - rosella==0.3.2
-  - flight-genome==1.1.2
+  - rosella==0.3.3
+  - flight-genome==1.1.3
   - biopython
