@@ -17,12 +17,11 @@
 # along with this program. If not, see <http://www.gnu.org/licenses/>.        #
 #                                                                             #
 ###############################################################################
-
+from aviary.__init__ import __version__
 __author__ = "Rhys Newell"
 __copyright__ = "Copyright 2020"
 __credits__ = ["Rhys Newell"]
 __license__ = "GPL3"
-__version__ = "0.0.1"
 __maintainer__ = "Rhys Newell"
 __email__ = "rhys.newell near hdr.qut.edu.au"
 __status__ = "Development"
@@ -236,6 +235,7 @@ def main():
                                 datefmt='%m/%d/%Y %I:%M:%S %p')
         logging.info("Time - %s" % (time))
         logging.info("Command - %s" % ' '.join(sys.argv))
+        logging.info("Version - %s" % __version__)
 
         prefix = args.output
         if not os.path.exists(prefix):

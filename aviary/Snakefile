@@ -265,7 +265,7 @@ rule rerun_rosella:
         config["max_threads"]
     shell:
         "rm data/rosella_bins/*.fna; rm data/rosella_bins/checkm.out; rm -r data/rosella_bins/checkm/; "
-        "rosella bin -r {input.fasta} -i {input.coverage} -t {threads} -o data/rosella_bins --b-tail 0.25 --min-contig-size {params.min_contig_size} --min-bin-size {params.min_bin_size} && " \
+        "rosella bin -r {input.fasta} -i {input.coverage} -t {threads} -o data/rosella_bins --b-tail 0.4 --min-contig-size {params.min_contig_size} --min-bin-size {params.min_bin_size} && " \
         "touch data/rosella_bins/rerun"
 
 
@@ -292,8 +292,8 @@ rule das_tool:
         metabat_spec = "data/metabat_bins_spec/done",
         metabat_ssens = "data/metabat_bins_ssens/done",
         metabat_sense = "data/metabat_bins_sens/done",
-        rosella_done = "data/rosella_bins/done"
-        # vamb_done = "data/vamb_bins/done",
+        rosella_done = "data/rosella_bins/done",
+        vamb_done = "data/vamb_bins/done",
     output:
         das_tool_done = "data/das_tool_bins/done"
     threads:
@@ -309,8 +309,9 @@ rule das_tool:
         "Fasta_to_Scaffolds2Bin.sh -i data/concoct_bins -e fa > data/concoct_bins.tsv && " \
         "Fasta_to_Scaffolds2Bin.sh -i data/maxbin2_bins -e fasta > data/maxbin_bins.tsv && " \
         "Fasta_to_Scaffolds2Bin.sh -i data/rosella_bins -e fna > data/rosella_bins.tsv && " \
+        "Fasta_to_Scaffolds2Bin.sh -i data/vamb_bins -e fna > data/vamb_bins.tsv && " \
         "DAS_Tool --search_engine diamond --write_bin_evals 1 --write_bins 1 -t {threads}" \
-        " -i data/metabat_bins_2.tsv,data/rosella_bins.tsv,data/metabat_bins_sspec.tsv,data/metabat_bins_spec.tsv,data/metabat_bins_ssens.tsv,data/metabat_bins_sens.tsv,data/maxbin_bins.tsv,data/concoct_bins.tsv" \
+        " -i data/metabat_bins_2.tsv,data/rosella_bins.tsv,data/vamb_bins.tsv,data/metabat_bins_sspec.tsv,data/metabat_bins_spec.tsv,data/metabat_bins_ssens.tsv,data/metabat_bins_sens.tsv,data/maxbin_bins.tsv,data/concoct_bins.tsv" \
         " -c {input.fasta} -o data/das_tool_bins/das_tool && " \
         "touch data/das_tool_bins/done"
 
@@ -478,7 +479,7 @@ rule checkm_without_rosella:
     threads:
         config["max_threads"]
     shell:
-        'checkm lineage_wf -t {threads} --pplacer_threads {params.pplacer_threads} -x fa data/das_tool_without_rosella/das_tool_DASTool_bins data/checkm --tab_table -f data/checkm_without_rosella.out; '
+        'checkm lineage_wf -t {threads} --pplacer_threads {params.pplacer_threads} -x fa data/das_tool_without_rosella/das_tool_DASTool_bins data/checkm_without_rosella --tab_table -f data/checkm_without_rosella.out; '
 
 
 rule checkm_without_rosella_no_vamb:
@@ -512,6 +513,24 @@ rule gtdbtk:
     shell:
         "export GTDBTK_DATA_PATH={params.gtdbtk_folder} && " \
         "gtdbtk classify_wf --cpus {threads} --pplacer_cpus {params.pplacer_threads} --extension fa --genome_dir data/das_tool_bins/das_tool_DASTool_bins --out_dir data/gtdbtk && touch data/gtdbtk/done"
+
+
+rule gtdbtk_no_vamb:
+    input:
+        done_file = "data/das_tool_bins/skipped_vamb"
+    output:
+        done = "data/gtdbtk/skipped_vamb"
+    params:
+        gtdbtk_folder = config['gtdbtk_folder'],
+        pplacer_threads = config["pplacer_threads"]        
+    conda:
+        "envs/gtdbtk.yaml"
+    threads:
+        config["max_threads"]
+    shell:
+        "export GTDBTK_DATA_PATH={params.gtdbtk_folder} && " \
+        "gtdbtk classify_wf --cpus {threads} --pplacer_cpus {params.pplacer_threads} --extension fa --genome_dir data/das_tool_bins/das_tool_DASTool_bins --out_dir data/gtdbtk && touch data/gtdbtk/skipped_vamb"
+
 
 rule binner_result:
     input:
@@ -622,6 +641,25 @@ rule recover_mags:
         "data/gtdbtk/done",
         "data/checkm.out",
         "data/coverm_abundances.tsv",
+        "data/singlem_out/singlem_appraise.svg"
+    conda:
+        "envs/coverm.yaml"
+    output:
+        "data/done"
+    threads:
+        config["max_threads"]
+    shell:
+        # Use --precluster-method finch so dashing-related install problems are avoided i.e. https://github.com/dnbaker/dashing/issues/41
+        "mkdir -p data/pre_galah_bins && cd data/pre_galah_bins/ && rm -f * && ln -s ../das_tool_bins/das_tool_DASTool_bins/* ./ && cd ../../ && " \
+        "coverm cluster --precluster-method finch -t {threads} --checkm-tab-table data/checkm.out --genome-fasta-directory data/pre_galah_bins/ -x fa --output-representative-fasta-directory data/galah_bins --ani 0.97 && " \
+        "touch data/done"
+
+rule recover_mags_no_vamb:
+    input:
+        "data/das_tool_bins/skipped_vamb",
+        "data/gtdbtk/skipped_vamb",
+        "data/checkm.out",
+        # "data/coverm_abundances.tsv",
         "data/singlem_out/singlem_appraise.svg"
     conda:
         "envs/coverm.yaml"
