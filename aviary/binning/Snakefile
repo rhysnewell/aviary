@@ -1,0 +1,701 @@
+ruleorder: das_tool > das_tool_no_vamb
+ruleorder: das_tool_without_rosella > das_tool_without_rosella_no_vamb
+ruleorder: checkm > checkm_no_vamb
+ruleorder: checkm_without_rosella > checkm_without_rosella_no_vamb
+ruleorder: binner_result > binner_result_no_vamb
+ruleorder: get_abundances > get_abundances_no_vamb
+
+onsuccess:
+    print("Workflow finished, no error")
+
+onerror:
+    print("An error occurred")
+
+onstart:
+    import os
+    import sys
+
+
+    from snakemake.utils import logger, min_version
+
+    sys.path.append(os.path.join(os.path.dirname(os.path.abspath(workflow.snakefile)),"scripts"))
+
+    # minimum required snakemake version
+    min_version("6.0")
+    long_reads = config["long_reads"]
+    fasta = config["fasta"]
+    short_reads_1 = config["short_reads_1"]
+    short_reads_2 = config["short_reads_2"]
+    min_contig_size = config["min_contig_size"]
+    min_bin_size = config["min_bin_size"]
+    gtdbtk_folder = config["gtdbtk_folder"]
+    busco_folder = config["busco_folder"]
+    threads = config["max_threads"]
+    ## pplacer deadlocks on too many threads
+    pplacer_threads = min(48, int(config["pplacer_threads"]))
+    import os
+    import sys
+
+    if long_reads == "none" and short_reads_1 == "none":
+        sys.exit("Need at least one of long_reads or short_reads_1")
+    if long_reads != "none" and not os.path.exists(long_reads[0]):
+        sys.exit("long_reads does not point to a file")
+    if short_reads_1 != "none" and not os.path.exists(short_reads_1[0]):
+        sys.exit("short_reads_1 does not point to a file")
+    if short_reads_2 != "none" and not os.path.exists(short_reads_2[0]):
+        sys.exit("short_reads_2 does not point to a file")
+    if gtdbtk_folder != "none" and not os.path.exists(gtdbtk_folder):
+        sys.stderr.write("gtdbtk_folder does not point to a folder\n")
+    if busco_folder != "none" and not os.path.exists(busco_folder):
+        sys.stderr.write("busco_folder does not point to a folder\n")
+
+
+# rule run_batch:
+    # input:
+        # batch_file = config["batch_file"]
+    # output:
+        # "data/done"
+    # threads:
+        # config["max_threads"]
+    # script:
+        # "scripts/process_batch.py"
+
+
+rule rename_contigs:
+    input:
+        fasta = config["fasta"]
+    output:
+        "data/renamed_contigs.fasta"
+    shell:
+        "sed -i 's/>/>${{input.fasta}%%_*}_/' {input.fasta}"
+
+
+rule run_virsorter:
+    input:
+        fasta = "data/renamed_contigs.fasta",
+        virsorter_data = config["virsorter_data"]
+    output:
+        "data/virsorter/done"
+    conda:
+        "envs/virsorter.yaml"
+    threads:
+        config["max_threads"]
+    shell:
+        "virsorter -f {input.fasta} --wdir data/virsorter --data-dir {input.virsorter_data} --ncpu {threads} &&" \
+        "touch data/virsorter/done"
+
+
+rule prepare_binning_files:
+    input:
+        fasta = config["fasta"]
+    output:
+        maxbin_coverage = "data/maxbin.cov.list",
+        metabat_coverage = "data/coverm.cov",
+    conda:
+        "envs/coverm.yaml"
+    threads:
+        config["max_threads"]
+    script:
+        "scripts/get_coverage.py"
+
+
+rule get_bam_indices:
+    input:
+        coverage = "data/coverm.cov"
+    output:
+        bams = "data/binning_bams/done"
+    conda:
+        "envs/coverm.yaml"
+    threads:
+        config["max_threads"]
+    shell:
+        "ls data/binning_bams/*.bam | parallel -j 1 'samtools index -@ {threads} {{}} {{}}.bai' &&" \
+        "touch data/binning_bams/done"
+
+
+rule maxbin_binning:
+    input:
+        fasta = config["fasta"],
+        maxbin_cov = "data/maxbin.cov.list"
+    params:
+        min_contig_size = config["min_contig_size"]
+    output:
+        "data/maxbin2_bins/done"
+    conda:
+        "envs/maxbin2.yaml"
+    threads:
+        config["max_threads"]
+    shell:
+        "mkdir -p data/maxbin2_bins && " \
+        "run_MaxBin.pl -contig {input.fasta} -thread {threads} -abund_list {input.maxbin_cov} -out data/maxbin2_bins/maxbin -min_contig_length {params.min_contig_size} && " \
+        "touch data/maxbin2_bins/done"
+
+
+rule concoct_binning:
+    input:
+        fasta = config["fasta"],
+        bam_done = "data/binning_bams/done"
+    params:
+        min_contig_size = config["min_contig_size"]
+    output:
+        "data/concoct_bins/done"
+    conda:
+        "envs/concoct.yaml"
+    threads:
+        config["max_threads"]
+    shell:
+        "mkdir -p data/concoct_working && " \
+        "cut_up_fasta.py {input.fasta} -c 10000 -o 0 --merge_last -b data/concoct_working/contigs_10K.bed > data/concoct_working/contigs_10K.fa && " \
+        "concoct_coverage_table.py data/concoct_working/contigs_10K.bed data/binning_bams/*.bam > data/concoct_working/coverage_table.tsv && " \
+        "concoct --threads {threads} -l {params.min_contig_size} --composition_file data/concoct_working/contigs_10K.fa --coverage_file data/concoct_working/coverage_table.tsv -b data/concoct_working/ && " \
+        "merge_cutup_clustering.py data/concoct_working/clustering_gt{params.min_contig_size}.csv > data/concoct_working/clustering_merged.csv && " \
+        "mkdir -p data/concoct_bins && " \
+        "extract_fasta_bins.py {input.fasta} data/concoct_working/clustering_merged.csv --output_path data/concoct_bins/ && " \
+        "touch data/concoct_bins/done"
+
+
+rule vamb_bams:
+    input:
+        fasta = config["fasta"],
+        done = "data/binning_bams/done"
+    output:
+        vamb_bams_done = "data/vamb_bams/done"
+    conda:
+        "envs/vamb_bams.yaml"
+    threads:
+        config["max_threads"]
+    shell:
+        "mkdir -p data/vamb_bams; cut -d\  -f1 {input.fasta} > data/vamb_bams/renamed_contigs.fasta; "
+        "ls data/binning_bams/*.bam | parallel -j{threads} 'samtools sort -n {{}} > data/vamb_bams/{{/.}}.read_sort.bam'; "
+        "touch data/vamb_bams/done; "
+
+        
+rule vamb_binning:
+    input:
+        coverage = "data/coverm.cov",
+        fasta = config["fasta"],
+        done = "data/vamb_bams/done"
+    output:
+        "data/vamb_bins/clusters.tsv"
+    conda:
+        "envs/vamb.yaml"
+    threads:
+         config["max_threads"]
+    shell:
+        "rm -r data/vamb_bins/; "
+        "vamb --outdir data/vamb_bins/ -p {threads} --bamfiles data/vamb_bams/*.bam --fasta data/vamb_bams/renamed_contigs.fasta"
+
+
+rule vamb_make_bins:
+    input:
+        clusters = "data/vamb_bins/clusters.tsv",
+    output:
+        "data/vamb_bins/done"
+    script:
+        "scripts/write_vamb_bins.py"
+
+rule vamb_skip:
+    output:
+        "data/vamb_bins/skipped"
+    shell:
+        "mkdir -p data/vamb_bins/;"
+        "touch data/vamb_bins/skipped"
+
+
+rule metabat_binning_2:
+    input:
+        coverage = "data/coverm.cov",
+        fasta = config["fasta"]
+    params:
+        min_contig_size = config["min_contig_size"],
+        min_bin_size = config["min_bin_size"]
+    output:
+        metabat_done = "data/metabat_bins_2/done",
+        metabat_sspec = "data/metabat_bins_sspec/done",
+        metabat_spec = "data/metabat_bins_spec/done",
+        metabat_ssens = "data/metabat_bins_ssens/done",
+        metabat_sens = "data/metabat_bins_sens/done"
+    conda:
+        "envs/metabat2.yaml"
+    threads:
+        config["max_threads"]
+    shell:
+        "mkdir -p data/metabat_bins_2 && " \
+        "metabat -t {threads} -m {params.min_contig_size} -s {params.min_bin_size} --seed 89 -i {input.fasta} -a {input.coverage} -o data/metabat_bins_2/binned_contigs && " \
+        "touch data/metabat_bins_2/done && " \
+        "metabat1 -t {threads} -m {params.min_contig_size} -s {params.min_bin_size} --seed 89 --sensitive -i {input.fasta} -a {input.coverage} -o data/metabat_bins_sens/binned_contigs && " \
+        "touch data/metabat_bins_sens/done && " \
+        "metabat1 -t {threads} -m {params.min_contig_size} -s {params.min_bin_size} --seed 89 --specific -i {input.fasta} -a {input.coverage} -o data/metabat_bins_spec/binned_contigs && " \
+        "touch data/metabat_bins_spec/done && " \
+        "metabat1 -t {threads} -m {params.min_contig_size} -s {params.min_bin_size} --seed 89 --supersensitive -i {input.fasta} -a {input.coverage} -o data/metabat_bins_ssens/binned_contigs && " \
+        "touch data/metabat_bins_ssens/done && " \
+        "metabat1 -t {threads} -m {params.min_contig_size} -s {params.min_bin_size} --seed 89 --superspecific -i {input.fasta} -a {input.coverage} -o data/metabat_bins_sspec/binned_contigs && " \
+        "touch data/metabat_bins_sspec/done"
+
+rule rosella:
+    input:
+        coverage = "data/coverm.cov",
+        fasta = config["fasta"]
+    params:
+        min_contig_size = config["min_contig_size"],
+        min_bin_size = config["min_bin_size"]
+    output:
+        "data/rosella_bins/done"
+    conda:
+        "envs/rosella.yaml"
+    threads:
+        config["max_threads"]
+    shell:
+        "rosella bin -r {input.fasta} -i {input.coverage} -t {threads} -o data/rosella_bins --min-contig-size {params.min_contig_size} --min-bin-size {params.min_bin_size} --b-tail 0.4 && " \
+        "touch data/rosella_bins/done"
+
+
+rule rerun_rosella:
+    input:
+        coverage = "data/coverm.cov",
+        fasta = config["fasta"],
+    params:
+        min_contig_size = config["min_contig_size"],
+        min_bin_size = config["min_bin_size"]
+    output:
+        "data/rosella_bins/rerun"
+    conda:
+        "envs/rosella.yaml"
+    threads:
+        config["max_threads"]
+    shell:
+        "rm data/rosella_bins/*.fna; rm data/rosella_bins/checkm.out; rm -r data/rosella_bins/checkm/; "
+        "rosella bin -r {input.fasta} -i {input.coverage} -t {threads} -o data/rosella_bins --b-tail 0.4 --min-contig-size {params.min_contig_size} --min-bin-size {params.min_bin_size} && " \
+        "touch data/rosella_bins/rerun"
+
+
+rule rosella_checkm:
+    input:
+        done = "data/rosella_bins/rerun"
+    params:
+        pplacer_threads = config['pplacer_threads']
+    conda:
+        "envs/checkm.yaml"
+    threads:
+        config["max_threads"]
+    shell:
+        'checkm lineage_wf -t {threads} --pplacer_threads {params.pplacer_threads} -x fna data/rosella_bins/ data/rosella_bins/checkm --tab_table -f data/rosella_bins/checkm.out && rm data/rosella_bins/rerun'
+
+
+rule das_tool:
+    input:
+        fasta = config["fasta"],
+        metabat2_done = "data/metabat_bins_2/done",
+        concoct_done = "data/concoct_bins/done",
+        maxbin_done = "data/maxbin2_bins/done",
+        metabat_sspec = "data/metabat_bins_sspec/done",
+        metabat_spec = "data/metabat_bins_spec/done",
+        metabat_ssens = "data/metabat_bins_ssens/done",
+        metabat_sense = "data/metabat_bins_sens/done",
+        rosella_done = "data/rosella_bins/done",
+        vamb_done = "data/vamb_bins/done",
+    output:
+        das_tool_done = "data/das_tool_bins/done"
+    threads:
+        config["max_threads"]
+    conda:
+        "envs/das_tool.yaml"
+    shell:
+        "Fasta_to_Scaffolds2Bin.sh -i data/metabat_bins_2 -e fa > data/metabat_bins_2.tsv && " \
+        "Fasta_to_Scaffolds2Bin.sh -i data/metabat_bins_sspec -e fa > data/metabat_bins_sspec.tsv && " \
+        "Fasta_to_Scaffolds2Bin.sh -i data/metabat_bins_ssens -e fa > data/metabat_bins_ssens.tsv && " \
+        "Fasta_to_Scaffolds2Bin.sh -i data/metabat_bins_sens -e fa > data/metabat_bins_sens.tsv && " \
+        "Fasta_to_Scaffolds2Bin.sh -i data/metabat_bins_spec -e fa > data/metabat_bins_spec.tsv && " \
+        "Fasta_to_Scaffolds2Bin.sh -i data/concoct_bins -e fa > data/concoct_bins.tsv && " \
+        "Fasta_to_Scaffolds2Bin.sh -i data/maxbin2_bins -e fasta > data/maxbin_bins.tsv && " \
+        "Fasta_to_Scaffolds2Bin.sh -i data/rosella_bins -e fna > data/rosella_bins.tsv && " \
+        "Fasta_to_Scaffolds2Bin.sh -i data/vamb_bins -e fna > data/vamb_bins.tsv && " \
+        "DAS_Tool --search_engine diamond --write_bin_evals 1 --write_bins 1 -t {threads}" \
+        " -i data/metabat_bins_2.tsv,data/rosella_bins.tsv,data/vamb_bins.tsv,data/metabat_bins_sspec.tsv,data/metabat_bins_spec.tsv,data/metabat_bins_ssens.tsv,data/metabat_bins_sens.tsv,data/maxbin_bins.tsv,data/concoct_bins.tsv" \
+        " -c {input.fasta} -o data/das_tool_bins/das_tool && " \
+        "touch data/das_tool_bins/done"
+
+
+rule das_tool_no_vamb:
+    input:
+        fasta = config["fasta"],
+        metabat2_done = "data/metabat_bins_2/done",
+        concoct_done = "data/concoct_bins/done",
+        maxbin_done = "data/maxbin2_bins/done",
+        metabat_sspec = "data/metabat_bins_sspec/done",
+        metabat_spec = "data/metabat_bins_spec/done",
+        metabat_ssens = "data/metabat_bins_ssens/done",
+        metabat_sense = "data/metabat_bins_sens/done",
+        rosella_done = "data/rosella_bins/done",
+        skipped_vamb = "data/vamb_bins/skipped"
+    output:
+        vamb_skipped = "data/das_tool_bins/skipped_vamb"
+    threads:
+        config["max_threads"]
+    conda:
+        "envs/das_tool.yaml"
+    shell:
+        "Fasta_to_Scaffolds2Bin.sh -i data/metabat_bins_2 -e fa > data/metabat_bins_2.tsv && " \
+        "Fasta_to_Scaffolds2Bin.sh -i data/metabat_bins_sspec -e fa > data/metabat_bins_sspec.tsv && " \
+        "Fasta_to_Scaffolds2Bin.sh -i data/metabat_bins_ssens -e fa > data/metabat_bins_ssens.tsv && " \
+        "Fasta_to_Scaffolds2Bin.sh -i data/metabat_bins_sens -e fa > data/metabat_bins_sens.tsv && " \
+        "Fasta_to_Scaffolds2Bin.sh -i data/metabat_bins_spec -e fa > data/metabat_bins_spec.tsv && " \
+        "Fasta_to_Scaffolds2Bin.sh -i data/concoct_bins -e fa > data/concoct_bins.tsv && " \
+        "Fasta_to_Scaffolds2Bin.sh -i data/maxbin2_bins -e fasta > data/maxbin_bins.tsv && " \
+        "Fasta_to_Scaffolds2Bin.sh -i data/rosella_bins -e fna > data/rosella_bins.tsv && " \
+        "DAS_Tool --search_engine diamond --write_bin_evals 1 --write_bins 1 -t {threads}" \
+        " -i data/metabat_bins_2.tsv,data/rosella_bins.tsv,data/metabat_bins_sspec.tsv,data/metabat_bins_spec.tsv,data/metabat_bins_ssens.tsv,data/metabat_bins_sens.tsv,data/maxbin_bins.tsv,data/concoct_bins.tsv" \
+        " -c {input.fasta} -o data/das_tool_bins/das_tool && " \
+        "touch data/das_tool_bins/done; "
+        "touch data/das_tool_bins/skipped_vamb"
+
+
+rule das_tool_without_rosella:
+    input:
+        fasta = config["fasta"],
+        metabat2_done = "data/metabat_bins_2/done",
+        concoct_done = "data/concoct_bins/done",
+        maxbin_done = "data/maxbin2_bins/done",
+        metabat_sspec = "data/metabat_bins_sspec/done",
+        metabat_spec = "data/metabat_bins_spec/done",
+        metabat_ssens = "data/metabat_bins_ssens/done",
+        metabat_sense = "data/metabat_bins_sens/done",
+        vamb_done = "data/vamb_bins/done"
+    output:
+        das_tool_done = "data/das_tool_without_rosella/done"
+    threads:
+        config["max_threads"]
+    conda:
+        "envs/das_tool.yaml"
+    shell:
+        "Fasta_to_Scaffolds2Bin.sh -i data/metabat_bins_2 -e fa > data/metabat_bins_2.tsv && " \
+        "Fasta_to_Scaffolds2Bin.sh -i data/metabat_bins_sspec -e fa > data/metabat_bins_sspec.tsv && " \
+        "Fasta_to_Scaffolds2Bin.sh -i data/metabat_bins_ssens -e fa > data/metabat_bins_ssens.tsv && " \
+        "Fasta_to_Scaffolds2Bin.sh -i data/metabat_bins_sens -e fa > data/metabat_bins_sens.tsv && " \
+        "Fasta_to_Scaffolds2Bin.sh -i data/metabat_bins_spec -e fa > data/metabat_bins_spec.tsv && " \
+        "Fasta_to_Scaffolds2Bin.sh -i data/concoct_bins -e fa > data/concoct_bins.tsv && " \
+        "Fasta_to_Scaffolds2Bin.sh -i data/maxbin2_bins -e fasta > data/maxbin_bins.tsv && " \
+        "Fasta_to_Scaffolds2Bin.sh -i data/vamb_bins -e fna > data/vamb_bins.tsv && " \
+        "DAS_Tool --search_engine diamond --write_bin_evals 1 --write_bins 1 -t {threads}" \
+        " -i data/metabat_bins_2.tsv,data/vamb_bins.tsv,data/metabat_bins_sspec.tsv,data/metabat_bins_spec.tsv,data/metabat_bins_ssens.tsv,data/metabat_bins_sens.tsv,data/maxbin_bins.tsv,data/concoct_bins.tsv" \
+        " -c {input.fasta} -o data/das_tool_without_rosella/das_tool && " \
+        "touch data/das_tool_without_rosella/done"
+
+rule das_tool_without_rosella_no_vamb:
+    input:
+        fasta = config["fasta"],
+        metabat2_done = "data/metabat_bins_2/done",
+        concoct_done = "data/concoct_bins/done",
+        maxbin_done = "data/maxbin2_bins/done",
+        metabat_sspec = "data/metabat_bins_sspec/done",
+        metabat_spec = "data/metabat_bins_spec/done",
+        metabat_ssens = "data/metabat_bins_ssens/done",
+        metabat_sense = "data/metabat_bins_sens/done",
+        skipped_vamb = "data/vamb_bins/skipped"
+    output:
+        vamb_skipped = "data/das_tool_without_rosella/skipped_vamb"
+    threads:
+        config["max_threads"]
+    conda:
+        "envs/das_tool.yaml"
+    shell:
+        "Fasta_to_Scaffolds2Bin.sh -i data/metabat_bins_2 -e fa > data/metabat_bins_2.tsv && " \
+        "Fasta_to_Scaffolds2Bin.sh -i data/metabat_bins_sspec -e fa > data/metabat_bins_sspec.tsv && " \
+        "Fasta_to_Scaffolds2Bin.sh -i data/metabat_bins_ssens -e fa > data/metabat_bins_ssens.tsv && " \
+        "Fasta_to_Scaffolds2Bin.sh -i data/metabat_bins_sens -e fa > data/metabat_bins_sens.tsv && " \
+        "Fasta_to_Scaffolds2Bin.sh -i data/metabat_bins_spec -e fa > data/metabat_bins_spec.tsv && " \
+        "Fasta_to_Scaffolds2Bin.sh -i data/concoct_bins -e fa > data/concoct_bins.tsv && " \
+        "Fasta_to_Scaffolds2Bin.sh -i data/maxbin2_bins -e fasta > data/maxbin_bins.tsv && " \
+        "DAS_Tool --search_engine diamond --write_bin_evals 1 --write_bins 1 -t {threads}" \
+        " -i data/metabat_bins_2.tsv,data/metabat_bins_sspec.tsv,data/metabat_bins_spec.tsv,data/metabat_bins_ssens.tsv,data/metabat_bins_sens.tsv,data/maxbin_bins.tsv,data/concoct_bins.tsv" \
+        " -c {input.fasta} -o data/das_tool_without_rosella/das_tool && " \
+        "touch data/das_tool_without_rosella/done; "
+        "touch data/das_tool_without_rosella/skipped_vamb"
+
+
+rule get_abundances:
+    input:
+        "data/das_tool_bins/done"
+    output:
+        "data/coverm_abundances.tsv"
+    conda:
+        "envs/coverm.yaml"
+    threads:
+        config["max_threads"]
+    script:
+        "scripts/get_abundances.py"
+
+rule get_abundances_no_vamb:
+    input:
+        "data/das_tool_bins/skipped_vamb"
+    output:
+        "data/coverm_abundances.tsv"
+    conda:
+        "envs/coverm.yaml"
+    threads:
+        config["max_threads"]
+    script:
+        "scripts/get_abundances.py"
+
+rule checkm:
+    input:
+        done = "data/das_tool_bins/done"
+    params:
+        pplacer_threads = config["pplacer_threads"]
+    output:
+        "data/checkm.out"
+    conda:
+        "envs/checkm.yaml"
+    threads:
+        config["max_threads"]
+    shell:
+        'checkm lineage_wf -t {threads} --pplacer_threads {params.pplacer_threads} -x fa data/das_tool_bins/das_tool_DASTool_bins data/checkm --tab_table -f data/checkm.out'
+
+rule checkm_no_vamb:
+    input:
+        done = "data/das_tool_bins/skipped_vamb"
+    params:
+        pplacer_threads = config["pplacer_threads"]
+    output:
+        "data/checkm/skipped_vamb"
+    conda:
+        "envs/checkm.yaml"
+    threads:
+        config["max_threads"]
+    shell:
+        'checkm lineage_wf -t {threads} --pplacer_threads {params.pplacer_threads} -x fa data/das_tool_bins/das_tool_DASTool_bins data/checkm --tab_table -f data/checkm.out; '
+        'touch data/checkm/skipped_vamb; '
+
+
+rule checkm_without_rosella:
+    input:
+        done = "data/das_tool_without_rosella/done"
+    params:
+        pplacer_threads = config["pplacer_threads"]
+    output:
+        "data/checkm_without_rosella.out"
+    conda:
+        "envs/checkm.yaml"
+    threads:
+        config["max_threads"]
+    shell:
+        'checkm lineage_wf -t {threads} --pplacer_threads {params.pplacer_threads} -x fa data/das_tool_without_rosella/das_tool_DASTool_bins data/checkm_without_rosella --tab_table -f data/checkm_without_rosella.out; '
+
+
+rule checkm_without_rosella_no_vamb:
+    input:
+        done = "data/das_tool_without_rosella/skipped_vamb"
+    params:
+        pplacer_threads = config["pplacer_threads"]
+    output:
+        "data/checkm_without_rosella/skipped_vamb"
+    conda:
+        "envs/checkm.yaml"
+    threads:
+        config["max_threads"]
+    shell:
+        'checkm lineage_wf -t {threads} --pplacer_threads {params.pplacer_threads} -x fa data/das_tool_without_rosella/das_tool_DASTool_bins data/checkm --tab_table -f data/checkm_without_rosella.out; '
+        'touch data/checkm_without_rosella/skipped_vamb'
+
+
+rule gtdbtk:
+    input:
+        done_file = "data/das_tool_bins/done"
+    output:
+        done = "data/gtdbtk/done"
+    params:
+        gtdbtk_folder = config['gtdbtk_folder'],
+        pplacer_threads = config["pplacer_threads"]        
+    conda:
+        "envs/gtdbtk.yaml"
+    threads:
+        config["max_threads"]
+    shell:
+        "export GTDBTK_DATA_PATH={params.gtdbtk_folder} && " \
+        "gtdbtk classify_wf --cpus {threads} --pplacer_cpus {params.pplacer_threads} --extension fa --genome_dir data/das_tool_bins/das_tool_DASTool_bins --out_dir data/gtdbtk && touch data/gtdbtk/done"
+
+
+rule gtdbtk_no_vamb:
+    input:
+        done_file = "data/das_tool_bins/skipped_vamb"
+    output:
+        done = "data/gtdbtk/skipped_vamb"
+    params:
+        gtdbtk_folder = config['gtdbtk_folder'],
+        pplacer_threads = config["pplacer_threads"]        
+    conda:
+        "envs/gtdbtk.yaml"
+    threads:
+        config["max_threads"]
+    shell:
+        "export GTDBTK_DATA_PATH={params.gtdbtk_folder} && " \
+        "gtdbtk classify_wf --cpus {threads} --pplacer_cpus {params.pplacer_threads} --extension fa --genome_dir data/das_tool_bins/das_tool_DASTool_bins --out_dir data/gtdbtk && touch data/gtdbtk/skipped_vamb"
+
+
+rule binner_result:
+    input:
+        done = "data/das_tool_without_rosella/done"
+    output:
+         "data/all_bins/done"
+    params:
+        pplacer_threads = config['pplacer_threads']
+    conda:
+        "envs/checkm.yaml"
+    threads:
+        config["max_threads"]
+    shell:
+        "mkdir -p data/all_bins && cd data/all_bins; "
+        "ln -s ../metabat_bins_2/*.fa ./ && ls *.fa | parallel 'mv {{}} {{.}}.metabat2.fna'; "
+        "ln -s ../metabat_bins_sens/*.fa ./ && ls *.fa | parallel 'mv {{}} {{.}}.metabat_sens.fna'; "
+        "ln -s ../metabat_bins_spec/*.fa ./ && ls *.fa | parallel 'mv {{}} {{.}}.metabat_spec.fna'; "
+        "ln -s ../metabat_bins_ssens/*.fa ./ && ls *.fa | parallel 'mv {{}} {{.}}.metabat_ssens.fna'; "
+        "ln -s ../metabat_bins_sspec/*.fa ./ && ls *.fa | parallel 'mv {{}} {{.}}.metabat_sspec.fna'; "
+        "ln -s ../concoct_bins/*.fa ./ && ls *.fa | parallel 'mv {{}} concoct_{{.}}.fna'; "
+        "ln -s ../maxbin2_bins/*.fasta ./ && ls *.fasta | parallel 'mv {{}} maxbin2_{{.}}.fna'; "
+        "ln -s ../vamb_bins/*.fna ./; "
+        "ln -s ../rosella_bins/*.fna ./; "
+        "rm -f \*.fna; "
+        "checkm lineage_wf -t {threads} --pplacer_threads {params.pplacer_threads} -x fna --tab_table ./ checkm > checkm.out; "
+        "touch done && cd ../../"
+
+rule binner_result_no_vamb:
+    input:
+        done = "data/das_tool_without_rosella/skipped_vamb"
+    output:
+         "data/all_bins/skipped_vamb"
+    params:
+        pplacer_threads = config['pplacer_threads']
+    conda:
+        "envs/checkm.yaml"
+    threads:
+        config["max_threads"]
+    shell:
+        "mkdir -p data/all_bins && cd data/all_bins; "
+        "ln -s ../metabat_bins_2/*.fa ./ && ls *.fa | parallel 'mv {{}} {{.}}.metabat2.fna'; "
+        "ln -s ../metabat_bins_sens/*.fa ./ && ls *.fa | parallel 'mv {{}} {{.}}.metabat_sens.fna'; "
+        "ln -s ../metabat_bins_spec/*.fa ./ && ls *.fa | parallel 'mv {{}} {{.}}.metabat_spec.fna'; "
+        "ln -s ../metabat_bins_ssens/*.fa ./ && ls *.fa | parallel 'mv {{}} {{.}}.metabat_ssens.fna'; "
+        "ln -s ../metabat_bins_sspec/*.fa ./ && ls *.fa | parallel 'mv {{}} {{.}}.metabat_sspec.fna'; "
+        "ln -s ../concoct_bins/*.fa ./ && ls *.fa | parallel 'mv {{}} concoct_{{.}}.fna'; "
+        "ln -s ../maxbin2_bins/*.fasta ./ && ls *.fasta | parallel 'mv {{}} maxbin2_{{.}}.fna'; "
+        "ln -s ../rosella_bins/*.fna ./; "
+        "rm -f \*.fna; "
+        "checkm lineage_wf -t {threads} --pplacer_threads {params.pplacer_threads} -x fna --tab_table ./ checkm > checkm.out; "
+        "touch skipped_vamb && cd ../../"
+
+rule busco:
+    input:
+        "data/das_tool_bins/done"
+    output:
+        done = "data/busco/done"
+    params:
+        busco_folder = config["busco_folder"]
+    conda:
+        "envs/busco.yaml"
+    threads:
+        config["max_threads"]
+    shell:
+        "mkdir -p data/busco && cd data/busco && minimumsize=500000 && " \
+        "for file in ../das_tool_bins/das_tool_DASTool_bins/*.fa; do " \
+        "actualsize=$(wc -c <\"$file\"); " \
+        "if [ $actualsize -ge $minimumsize ]; then " \
+        "run_busco -q -c {threads} -t bac_tmp.${{file:33:-3}} -i $file -o bacteria_odb9.${{file:39:-3}} -l {params.busco_folder}/bacteria_odb9 -m geno; " \
+        "run_busco -q -c {threads} -t euk_tmp.${{file:33:-3}} -i $file -o eukaryota_odb9.${{file:39:-3}} -l {params.busco_folder}/eukaryota_odb9 -m geno; " \
+        "run_busco -q -c {threads} -t emb_tmp.${{file:33:-3}} -i $file -o embryophyta_odb9.${{file:39:-3}} -l {params.busco_folder}/embryophyta_odb9 -m geno; " \
+        "run_busco -q -c {threads} -t fun_tmp.${{file:33:-3}} -i $file -o fungi_odb9.${{file:39:-3}} -l {params.busco_folder}/fungi_odb9 -m geno; " \
+        "run_busco -q -c {threads} -t met_tmp.${{file:33:-3}} -i $file -o metazoa_odb9.${{file:39:-3}} -l {params.busco_folder}/metazoa_odb9 -m geno; " \
+        "run_busco -q -c {threads} -t pro_tmp.${{file:33:-3}} -i $file -o protists_ensembl.${{file:39:-3}} -l {params.busco_folder}/protists_ensembl -m geno; " \
+        "fi; done && " \
+        "cd ../../ && touch data/busco/done"
+
+rule singlem_pipe_reads:
+    output:
+        "data/singlem_out/metagenome.combined_otu_table.csv"
+    conda:
+        "envs/singlem.yaml"
+    script:
+        "scripts/singlem_reads.py"
+
+rule singlem_appraise:
+    input:
+        metagenome = "data/singlem_out/metagenome.combined_otu_table.csv",
+        dastool_done = "data/das_tool_bins/done"
+    output:
+        "data/singlem_out/singlem_appraise.svg"
+    params:
+        pplacer_threads = config['pplacer_threads'],
+        fasta = config['fasta']
+    conda:
+        "envs/singlem.yaml"
+    shell:
+        "singlem pipe --threads {params.pplacer_threads} --sequences data/das_tool_bins/das_tool_DASTool_bins/*.fa --otu_table data/singlem_out/genomes.otu_table.csv; "
+        "singlem pipe --threads {params.pplacer_threads} --sequences {params.fasta} --otu_table data/singlem_out/assembly.otu_table.csv; "
+        "singlem appraise --metagenome_otu_tables {input.metagenome} --genome_otu_tables data/singlem_out/genomes.otu_table.csv "
+        "--assembly_otu_table data/singlem_out/assembly.otu_table.csv "
+        "--plot data/singlem_out/singlem_appraise.svg --output_binned_otu_table data/singlem_out/binned.otu_table.csv "
+        "--output_unbinned_otu_table data/singlem_out/unbinned.otu_table.csv"
+
+rule recover_mags:
+    input:
+        "data/das_tool_bins/done",
+        "data/gtdbtk/done",
+        "data/checkm.out",
+        "data/coverm_abundances.tsv",
+        "data/singlem_out/singlem_appraise.svg"
+    conda:
+        "envs/coverm.yaml"
+    output:
+        "data/done"
+    threads:
+        config["max_threads"]
+    shell:
+        # Use --precluster-method finch so dashing-related install problems are avoided i.e. https://github.com/dnbaker/dashing/issues/41
+        "mkdir -p data/pre_galah_bins && cd data/pre_galah_bins/ && rm -f * && ln -s ../das_tool_bins/das_tool_DASTool_bins/* ./ && cd ../../ && " \
+        "coverm cluster --precluster-method finch -t {threads} --checkm-tab-table data/checkm.out --genome-fasta-directory data/pre_galah_bins/ -x fa --output-representative-fasta-directory data/galah_bins --ani 0.97 && " \
+        "touch data/done"
+
+rule recover_mags_no_vamb:
+    input:
+        "data/das_tool_bins/skipped_vamb",
+        "data/gtdbtk/skipped_vamb",
+        "data/checkm.out",
+        # "data/coverm_abundances.tsv",
+        "data/singlem_out/singlem_appraise.svg"
+    conda:
+        "envs/coverm.yaml"
+    output:
+        "data/done"
+    threads:
+        config["max_threads"]
+    shell:
+        # Use --precluster-method finch so dashing-related install problems are avoided i.e. https://github.com/dnbaker/dashing/issues/41
+        "mkdir -p data/pre_galah_bins && cd data/pre_galah_bins/ && rm -f * && ln -s ../das_tool_bins/das_tool_DASTool_bins/* ./ && cd ../../ && " \
+        "coverm cluster --precluster-method finch -t {threads} --checkm-tab-table data/checkm.out --genome-fasta-directory data/pre_galah_bins/ -x fa --output-representative-fasta-directory data/galah_bins --ani 0.97 && " \
+        "touch data/done"
+
+
+rule rosella_benchmark:
+    input:
+        "data/all_bins/done",
+        "data/das_tool_bins/done",
+        "data/checkm.out",
+        "data/checkm_without_rosella.out",
+        # "data/coverm_abundances.tsv",
+    output:
+        "data/done"
+    shell:
+        "touch data/done"
+
+
+rule rosella_benchmark_no_vamb:
+    input:
+        "data/all_bins/skipped_vamb",
+        "data/vamb_bins/skipped",
+        "data/checkm/skipped_vamb",
+        "data/checkm_without_rosella/skipped_vamb",
+        "data/das_tool_without_rosella/skipped_vamb",
+        "data/das_tool_bins/skipped_vamb"
+    output:
+        "data/skipped_vamb"
+    shell:
+        "touch data/skipped_vamb"
