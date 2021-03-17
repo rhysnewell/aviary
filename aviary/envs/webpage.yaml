@@ -1,0 +1,6 @@
+channels:
+  - bioconda
+  - anaconda
+dependencies:
+  - pysam = 0.15.2
+  - numpy = 1.16.4

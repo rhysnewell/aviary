@@ -1,0 +1,4 @@
+channels:
+  - bioconda
+dependencies:
+  - fastqc = 0.11.0
