@@ -2,20 +2,28 @@ from snakemake.utils import min_version
 min_version("6.0")
 
 
-if config["assembly"] == "none":
+if config["fasta"] == "none":
 	module assembly:
 	    snakefile: "assembly/Snakefile"
 	    config: config
+	    workdir: workdir
 
-	use rule * from assembly as *
+    if config["long_reads"] == "none" and config["short_reads_1"] != "none":
+		use rule spades_assembly_short from assembly as spades_assembly_short
+		config["fasta"] = "data/final_contigs.fasta"
 
-	config["assembly"] = "data/final_contigs.fasta"
+		module binning:
+			snakefile: "binning/Snakefile"
+			config: config
+			workdir: workdir
 
+		use rule * from binning as *
 
-module binning:
-    snakefile: "binning/Snakefile"
-    config: config 
-    
-use rule * from binning as *
+else:
+	module binning:
+		snakefile: "binning/Snakefile"
+		config: config
+		workdir: workdir
 
+	use rule * from binning as *
 

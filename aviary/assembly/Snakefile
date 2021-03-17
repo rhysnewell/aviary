@@ -8,12 +8,35 @@ onstart:
     import os
     import sys
 
+
     from snakemake.utils import logger, min_version
 
-    sys.path.append(os.path.join(os.path.dirname(os.path.abspath(workflow.snakefile)), "scripts"))
+    sys.path.append(os.path.join(os.path.dirname(os.path.abspath(workflow.snakefile)),"scripts"))
 
-    # Minimum snakemake version
+    # minimum required snakemake version
     min_version("6.0")
+    long_reads = config["long_reads"]
+    fasta = config["fasta"]
+    short_reads_1 = config["short_reads_1"]
+    short_reads_2 = config["short_reads_2"]
+    threads = config["max_threads"]
+    ## pplacer deadlocks on too many threads
+    pplacer_threads = min(48, int(config["pplacer_threads"]))
+    import os
+    import sys
+
+    if long_reads == "none" and short_reads_1 == "none":
+        sys.exit("Need at least one of long_reads or short_reads_1")
+    if long_reads != "none" and not os.path.exists(long_reads[0]):
+        sys.exit("long_reads does not point to a file")
+    if short_reads_1 != "none" and not os.path.exists(short_reads_1[0]):
+        sys.exit("short_reads_1 does not point to a file")
+    if short_reads_2 != "none" and not os.path.exists(short_reads_2[0]):
+        sys.exit("short_reads_2 does not point to a file")
+    if gtdbtk_folder != "none" and not os.path.exists(gtdbtk_folder):
+        sys.stderr.write("gtdbtk_folder does not point to a folder\n")
+    if busco_folder != "none" and not os.path.exists(busco_folder):
+        sys.stderr.write("busco_folder does not point to a folder\n")
     
 # Filter reads against a reference, i.e. for removing host contamination from the metagenome
 rule map_reads_ref:
@@ -23,7 +46,7 @@ rule map_reads_ref:
     output:
         "data/raw_mapped_ref.bam"
     conda:
-        "envs/minimap2.yaml"
+        "../envs/coverm.yaml"
     threads:
          config["max_threads"]
     shell:
@@ -39,7 +62,7 @@ rule get_umapped_reads_ref:
     params:
         "no_full"
     conda:
-        "envs/pysam.yaml"
+        "../envs/pysam.yaml"
     script:
         "scripts/filter_read_list.py"
 
@@ -52,7 +75,7 @@ rule get_reads_list_ref:
     output:
         "data/long_reads.fastq.gz"
     conda:
-        "envs/seqtk.yaml"
+        "../envs/seqtk.yaml"
     shell:
         "seqtk subseq {input.fastq} {input.list} | gzip > {output}"
 
@@ -68,7 +91,7 @@ rule flye_assembly:
     params:
         genome_size = config["meta_genome_size"]
     conda:
-        "envs/flye.yaml"
+        "../envs/flye.yaml"
     threads:
         config["max_threads"]
     shell:
@@ -81,7 +104,7 @@ rule polish_metagenome_racon:
         fastq = "data/long_reads.fastq.gz",
         fasta = "data/flye/assembly.fasta"
     conda:
-        "envs/racon.yaml"
+        "../envs/racon.yaml"
     threads:
         config["max_threads"]
     params:
@@ -105,12 +128,12 @@ rule filter_illumina_ref:
         bam = "data/short_unmapped_ref.bam",
         fastq = "data/short_reads.fastq.gz"
     conda:
-        "envs/minimap2.yaml"
+        "../envs/minimap2.yaml"
     threads:
          config["max_threads"]
     shell:
         """
-        minimap2 -ax sr -t {threads} {input.reference_filter} {input.fastq_1} {input.fastq_1}  |
+        minimap2 -ax sr -t {threads} {input.reference_filter} {input.fastq_1} {input.fastq_2}  |
         samtools view -b -f 12 > {output.bam} && \
         samtools bam2fq {output.bam} | gzip > {output.fastq}
         """
@@ -124,7 +147,7 @@ rule filter_illumina_ref_interleaved:
         bam = "data/short_unmapped_ref.bam",
         fastq = "data/short_reads.fastq.gz"
     conda:
-        "envs/minimap2.yaml"
+        "../envs/minimap2.yaml"
     threads:
          config["max_threads"]
     shell:
@@ -148,7 +171,7 @@ rule polish_meta_pilon:
     params:
         pilon_memory = config["pilon_memory"]
     conda:
-        "envs/pilon.yaml"
+        "../envs/pilon.yaml"
     shell:
         """
         minimap2 -ax sr -t {threads} {input.fasta} {input.reads} | samtools view -b | 
@@ -170,7 +193,7 @@ rule polish_meta_racon_ill:
     threads:
         config["max_threads"]
     conda:
-        "envs/racon.yaml"
+        "../envs/racon.yaml"
     params:
         prefix = "racon_ill",
         maxcov = 200,
@@ -265,7 +288,7 @@ rule filter_illumina_assembly:
         bam = "data/sr_vs_long.sort.bam",
         fastq = "data/short_reads.filt.fastq.gz"
     conda:
-        "envs/minimap2.yaml"
+        "../envs/minimap2.yaml"
     threads:
          config["max_threads"]
     shell:
@@ -321,7 +344,7 @@ rule spades_assembly:
     params:
          max_memory = config["max_memory"]
     conda:
-        "envs/spades.yaml"
+        "../envs/spades.yaml"
     shell:
         """
         minimumsize=500000 && \
@@ -335,3 +358,21 @@ rule spades_assembly:
             touch {output.fasta}
         fi 
         """
+
+
+
+# Short reads that did not map to the long read assembly are hybrid assembled with metaspades
+# If no long reads were provided, long_reads.fastq.gz will be empty
+rule spades_assembly_short:
+    input:
+        fastq = "data/short_reads.filt.fastq.gz",
+    output:
+        fasta = "data/final_contigs.fasta"
+    threads:
+         config["max_threads"]
+    params:
+         max_memory = config["max_memory"]
+    conda:
+        "../envs/spades.yaml"
+    script:
+        "../scripts/spades_assembly_short.py"

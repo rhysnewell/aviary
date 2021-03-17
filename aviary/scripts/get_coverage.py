@@ -1,6 +1,6 @@
 import subprocess
 import os
-import sys
+import snakemake
 
 if snakemake.config["long_reads"] != "none" and not os.path.exists("data/long_cov.tsv"):
     if snakemake.config["long_read_type"][0] == "nanopore":
