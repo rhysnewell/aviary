@@ -29,3 +29,7 @@ elif snakemake.config['short_reads_1']  != 'none':
             "spades.py --memory %s --meta -t %d -o data/spades_assembly -k 21,33,55,81,99,127 -12 %s" %
             (snakemake.config["max_memory"], snakemake.threads, " ".join(snakemake.config["short_reads_1"])),
             shell=True).wait()
+
+subprocess.Popen(
+    "ln -s data/spades_assembly/scaffolds.fasta data/final_contigs.fasta", shell=True
+).wait()

@@ -659,7 +659,7 @@ rule recover_mags_no_vamb:
         "data/das_tool_bins/skipped_vamb",
         "data/gtdbtk/skipped_vamb",
         "data/checkm.out",
-        # "data/coverm_abundances.tsv",
+        "data/coverm_abundances.tsv",
         "data/singlem_out/singlem_appraise.svg"
     conda:
         "../envs/coverm.yaml"

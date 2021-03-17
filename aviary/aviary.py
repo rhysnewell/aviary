@@ -67,6 +67,17 @@ recover
 """
 )
 
+
+def str2bool(v):
+    if isinstance(v, bool):
+        return(v)
+    if v.lower() in ('yes', 'true', 't', 'y', '1'):
+        return(True)
+    elif v.lower() in ('no', 'false', 'f', 'n', '0'):
+        return(False)
+    else:
+        raise argparse.ArgumentTypeError('Boolean value expected.')
+
 def main():
 
     ############################ ~ Main Parser ~ ##############################
@@ -107,7 +118,7 @@ def main():
     )
 
     input_options.add_argument(
-        '-1', '--paired_reads_1',
+        '-1', '--paired-reads-1',
         help='A space separated list of forwards read files to use for the binning process',
         dest='pe1',
         nargs='*',
@@ -115,7 +126,7 @@ def main():
     )
 
     input_options.add_argument(
-        '-2','--paired_reads_2',
+        '-2','--paired-reads-2',
         help='A space separated list of forwards read files to use for the binning process',
         dest='pe2',
         nargs='*',
@@ -139,7 +150,7 @@ def main():
     )
 
     input_options.add_argument(
-        '--longread_type',
+        '--longread-type',
         help='Whether the longreads are oxford nanopore or pacbio',
         dest='longread_type',
         nargs=1,
@@ -148,7 +159,7 @@ def main():
     )
 
     input_options.add_argument(
-        '-c', '--min_contig_size',
+        '-c', '--min-contig-size',
         help='Minimum contig size in base pairs to be considered for binning',
         dest='min_contig_size',
         nargs=1,
@@ -156,7 +167,7 @@ def main():
     )
 
     input_options.add_argument(
-        '-s','--min_bin_size',
+        '-s','--min-bin-size',
         help='Minimum bin size in base pairs for a MAG',
         dest='min_bin_size',
         nargs=1,
@@ -164,42 +175,42 @@ def main():
     )
 
     input_options.add_argument(
-        '--conda_prefix',
+        '--conda-prefix',
         help='Path to the location of installed conda environments, or where to install new environments',
         dest='conda_prefix',
         default='~/.conda/envs/',
     )
 
     input_options.add_argument(
-        '--gtdb_path',
+        '--gtdb-path',
         help='Path to the local gtdb files',
         dest='gtdb_path',
         default='/work/microbiome/db/gtdbtk/release95/',
     )
 
     input_options.add_argument(
-        '-t', '--max_threads',
+        '-t', '--max-threads',
         help='Maximum number of threads given to any particular process',
         dest='max_threads',
         default=8,
     )
 
     input_options.add_argument(
-        '-p', '--pplacer_threads',
+        '-p', '--pplacer-threads',
         help='The number of threads given to pplacer, values above 48 will be scaled down',
         dest='pplacer_threads',
         default=8,
     )
 
     input_options.add_argument(
-        '-n', '--n_cores',
+        '-n', '--n-cores',
         help='Maximum number of cores available for use. Must be >= to max_threads',
         dest='n_cores',
         default=16,
     )
 
     input_options.add_argument(
-        '-m', '--max_memory',
+        '-m', '--max-memory',
         help='Maximum memory for available usage in Gigabytes',
         dest='max_memory',
         default=250,
@@ -217,6 +228,16 @@ def main():
         help='Main workflow to run',
         dest='workflow',
         default='recover_mags',
+    )
+
+    input_options.add_argument(
+        '--dry-run',
+        help='Perform snakemake dry run, tests workflow order and conda environments',
+        type=str2bool,
+        nargs='?',
+        const=True,
+        dest='dryrun',
+        default=False,
     )
 
     ###########################################################################
@@ -279,7 +300,7 @@ def main():
             sys.exit("Missing any input read files...")
 
         processor.make_config()
-        processor.run_workflow(workflow=args.workflow, cores=int(args.n_cores))
+        processor.run_workflow(workflow=args.workflow, cores=int(args.n_cores), dryrun=args.dryrun)
 
 def str2bool(v):
     if isinstance(v, bool):
