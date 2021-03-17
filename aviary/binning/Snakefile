@@ -619,7 +619,7 @@ rule singlem_pipe_reads:
 rule singlem_appraise:
     input:
         metagenome = "data/singlem_out/metagenome.combined_otu_table.csv",
-        dastool_done = "data/das_tool_bins/done"
+        coverm_done = "data/coverm_abundances.tsv"
     output:
         "data/singlem_out/singlem_appraise.svg"
     params:
@@ -658,7 +658,7 @@ rule recover_mags_no_vamb:
     input:
         "data/das_tool_bins/skipped_vamb",
         "data/gtdbtk/skipped_vamb",
-        "data/checkm.out",
+        "data/checkm/skipped_vamb",
         "data/coverm_abundances.tsv",
         "data/singlem_out/singlem_appraise.svg"
     conda:

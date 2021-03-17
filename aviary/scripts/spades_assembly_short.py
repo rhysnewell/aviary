@@ -1,6 +1,5 @@
 import subprocess
 import os
-import snakemake
 
 if snakemake.config['short_reads_2'] != 'none':
 
