@@ -1,6 +1,12 @@
 import json
 import os
 import sys
+import signal
+
+def handler(signum, frame):
+     raise IOError
+signal.signal(signal.SIGALRM, handler)
+
 
 """
 Load the reference package. This will fail if the directory doesn't exist.
@@ -18,7 +24,9 @@ def get_gtdb_path():
         print('https://github.com/Ecogenomics/GTDBTk#installation'.center(80))
         print('Alternatively, use --gtdb-path flag.'.center(80))    
         print('=' * 80)
-        sys.exit(1)
+        signal.alarm(20)
+        os.environ['GTDBTK_DATA_PATH'] = input('Input GTDBTK_DATA_PATH now:')
+        signal.alarm(0)
 
 
 """
@@ -36,4 +44,6 @@ def get_conda_path():
         print('Please set this variable to your default server/home directory conda environment path.'.center(80))
         print('Alternatively, use --conda-prefix flag.'.center(80))    
         print('=' * 80)
-        sys.exit(1)
+        signal.alarm(20)
+        os.environ['CONDA_ENV_PATH'] = input('Input CONDA_ENV_PATH now:')
+        signal.alarm(0)

@@ -119,7 +119,7 @@ def main():
     )
 
     input_options.add_argument(
-        '-1', '--paired-reads-1',
+        '-1', '--pe-1', '--paired-reads-1', '--paired_reads_1',
         help='A space separated list of forwards read files to use for the binning process',
         dest='pe1',
         nargs='*',
@@ -127,7 +127,7 @@ def main():
     )
 
     input_options.add_argument(
-        '-2','--paired-reads-2',
+        '-2','--pe-2', '--paired-reads-2', '--paired_reads_2',
         help='A space separated list of forwards read files to use for the binning process',
         dest='pe2',
         nargs='*',
@@ -151,7 +151,7 @@ def main():
     )
 
     input_options.add_argument(
-        '--longread-type',
+        '--longread-type', '--longread_type',
         help='Whether the longreads are oxford nanopore or pacbio',
         dest='longread_type',
         nargs=1,
@@ -160,7 +160,7 @@ def main():
     )
 
     input_options.add_argument(
-        '-c', '--min-contig-size',
+        '-c', '--min-contig-size', '--min_contig_size',
         help='Minimum contig size in base pairs to be considered for binning',
         dest='min_contig_size',
         nargs=1,
@@ -168,7 +168,7 @@ def main():
     )
 
     input_options.add_argument(
-        '-s','--min-bin-size',
+        '-s','--min-bin-size', '--min_bin_size',
         help='Minimum bin size in base pairs for a MAG',
         dest='min_bin_size',
         nargs=1,
@@ -176,42 +176,42 @@ def main():
     )
 
     input_options.add_argument(
-        '--conda-prefix',
+        '--conda-prefix', '--conda_prefix',
         help='Path to the location of installed conda environments, or where to install new environments',
         dest='conda_prefix',
         default=Config.get_conda_path(),
     )
 
     input_options.add_argument(
-        '--gtdb-path',
+        '--gtdb-path', '--gtdb_path',
         help='Path to the local gtdb files',
         dest='gtdb_path',
         default=Config.get_gtdb_path(),
     )
 
     input_options.add_argument(
-        '-t', '--max-threads',
+        '-t', '--max-threads', '--max_threads',
         help='Maximum number of threads given to any particular process',
         dest='max_threads',
         default=8,
     )
 
     input_options.add_argument(
-        '-p', '--pplacer-threads',
+        '-p', '--pplacer-threads', '--pplacer_threads',
         help='The number of threads given to pplacer, values above 48 will be scaled down',
         dest='pplacer_threads',
         default=8,
     )
 
     input_options.add_argument(
-        '-n', '--n-cores',
+        '-n', '--n-cores', '--n_cores',
         help='Maximum number of cores available for use. Must be >= to max_threads',
         dest='n_cores',
         default=16,
     )
 
     input_options.add_argument(
-        '-m', '--max-memory',
+        '-m', '--max-memory', '--max_memory',
         help='Maximum memory for available usage in Gigabytes',
         dest='max_memory',
         default=250,
@@ -232,7 +232,7 @@ def main():
     )
 
     input_options.add_argument(
-        '--dry-run',
+        '--dry-run', '--dry_run', '--dryrun',
         help='Perform snakemake dry run, tests workflow order and conda environments',
         type=str2bool,
         nargs='?',
@@ -242,7 +242,7 @@ def main():
     )
     
     input_options.add_argument(
-        '--conda-frontend',
+        '--conda-frontend', '--conda_frontend',
         help='Which conda frontend to use',
         dest='conda_frontend',
         nargs=1,

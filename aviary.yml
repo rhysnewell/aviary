@@ -4,8 +4,9 @@ channels:
   - defaults
 dependencies:
   - python>=3.6
-  - snakemake>=5.9.1
+  - snakemake>=6.0.5
   - ruamel.yaml>=0.15.99 # needs to be explicit
   - numpy
   - pandas
   - biopython
+  - mamba

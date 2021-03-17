@@ -154,45 +154,72 @@ rule concoct_binning:
         "touch data/concoct_bins/done"
 
 
-rule vamb_bams:
+rule vamb_jgi_filter:
     input:
         fasta = config["fasta"],
-        done = "data/binning_bams/done"
+        done = "data/coverm.cov"
     output:
-        vamb_bams_done = "data/vamb_bams/done"
-    conda:
-        "../envs/vamb_bams.yaml"
+        vamb_bams_done = "data/coverm.filt.cov"
+    params:
+        min_contig_size = config["min_contig_size"]
     threads:
         config["max_threads"]
-    shell:
-        "mkdir -p data/vamb_bams; cut -d\  -f1 {input.fasta} > data/vamb_bams/renamed_contigs.fasta; "
-        "ls data/binning_bams/*.bam | parallel -j{threads} 'samtools sort -n {{}} > data/vamb_bams/{{/.}}.read_sort.bam'; "
-        "touch data/vamb_bams/done; "
+    run:
+        import pandas as pd
+        coverm_out = pd.read_csv('data/coverm.cov', sep='\t')
+        coverm_out = coverm_out[coverm_out['contigLen']>={params.min_contig_size}]
+        coverm_out.to_csv("data/coverm.filt.cov", sep='\t')
 
-        
+
+# rule vamb_concat_fasta:
+    # input:
+        # fasta = config["fasta"]
+    # output:
+        # 'data/catalogue.fna.gz'
+    # shell:
+        # "concatenate.py data/catalogue.fna.gz {input.fasta}"
+
 rule vamb_binning:
     input:
-        coverage = "data/coverm.cov",
+        coverage = "data/coverm.filt.cov",
         fasta = config["fasta"],
-        done = "data/vamb_bams/done"
+    params:
+        min_bin_size = config["min_bin_size"],
+        min_contig_size = config["min_contig_size"]
     output:
-        "data/vamb_bins/clusters.tsv"
+        "data/vamb_bins/done"
     conda:
         "../envs/vamb.yaml"
     threads:
          config["max_threads"]
     shell:
         "rm -r data/vamb_bins/; "
-        "vamb --outdir data/vamb_bins/ -p {threads} --bamfiles data/vamb_bams/*.bam --fasta data/vamb_bams/renamed_contigs.fasta"
+        "vamb --outdir data/vamb_bins/ -p {threads} --jgi data/coverm.filt.cov --fasta {input.fasta} --minfasta {params.min_bin_size} -m {params.min_contig_size}; "
+        "touch data/vamb_bins/done"
 
-
-rule vamb_make_bins:
+rule benchmark_vamb:
     input:
-        clusters = "data/vamb_bins/clusters.tsv",
-    output:
         "data/vamb_bins/done"
-    script:
-        "../scripts/write_vamb_bins.py"
+    output:
+        "data/vamb_bins/checkm.out"
+    params:
+        pplacer_threads = config["pplacer_threads"],
+    conda:
+        "../envs/checkm.yaml"
+    threads:
+        config["max_threads"]
+    shell:
+        'checkm lineage_wf -t {threads} --pplacer_threads {params.pplacer_threads} -x fna data/vamb_bins/ data/vamb_bins/checkm --tab_table -f data/vamb_bins/checkm.out'
+        
+
+
+# rule vamb_make_bins:
+    # input:
+        # clusters = "data/vamb_bins/clusters.tsv",
+    # output:
+        # "data/vamb_bins/done"
+    # script:
+        # "../scripts/write_vamb_bins.py"
 
 rule vamb_skip:
     output:
