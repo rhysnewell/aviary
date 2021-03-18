@@ -2,6 +2,7 @@ import json
 import os
 import sys
 import signal
+import subprocess
 
 def handler(signum, frame):
      raise IOError
@@ -26,6 +27,8 @@ def get_gtdb_path():
         print('=' * 80)
         signal.alarm(20)
         os.environ['GTDBTK_DATA_PATH'] = input('Input GTDBTK_DATA_PATH now:')
+        subprocess.Popen('mkdir -p %s/etc/conda/activate.d/; mkdir -p %s/etc/conda/deactivate.d/; echo "export GTDBTK_DATA_PATH=%s" >> %s/etc/conda/activate.d/aviary.sh; echo "unset GTDBTK_DATA_PATH" >> %s/etc/conda/deactivate.d/aviary.sh; ' % 
+                (os.environ['CONDA_PREFIX'], os.environ['CONDA_PREFIX'], os.environ['GTDBTK_DATA_PATH'], os.environ['CONDA_PREFIX'], os.environ['CONDA_PREFIX']), shell=True).wait()
         signal.alarm(0)
 
 
@@ -46,4 +49,6 @@ def get_conda_path():
         print('=' * 80)
         signal.alarm(20)
         os.environ['CONDA_ENV_PATH'] = input('Input CONDA_ENV_PATH now:')
+        subprocess.Popen('mkdir -p %s/etc/conda/activate.d/; mkdir -p %s/etc/conda/deactivate.d/; echo "export CONDA_ENV_PATH=%s" >> %s/etc/conda/activate.d/aviary.sh; echo "unset CONDA_ENV_PATH" >> %s/etc/conda/deactivate.d/aviary.sh; ' % 
+                (os.environ['CONDA_PREFIX'], os.environ['CONDA_PREFIX'], os.environ['CONDA_ENV_PATH'], os.environ['CONDA_PREFIX'], os.environ['CONDA_PREFIX']), shell=True).wait()
         signal.alarm(0)
