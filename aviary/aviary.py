@@ -106,7 +106,7 @@ def main():
                                 ~ RECOVER ~
     How to use recover:
     
-    aviary recover --assembly scaffolds.fasta --paired_end_reads_1 *.1.fq.gz --paired_end_reads_1 *.2.fq.gz --longreads *.nanopore.fastq.gz --longread_type nanopore
+    aviary recover --assembly scaffolds.fasta -1 *.1.fq.gz -2 *.2.fq.gz --longreads *.nanopore.fastq.gz --longread_type nanopore
 
     ''')
 
@@ -228,7 +228,7 @@ def main():
         '-w', '--workflow',
         help='Main workflow to run',
         dest='workflow',
-        default='recover_mags_no_vamb',
+        default='recover_mags',
     )
 
     input_options.add_argument(
@@ -439,15 +439,15 @@ class aviary:
         conf["fasta"] = self.assembly
         conf["max_threads"] = self.threads
         conf["pplacer_threads"] = self.pplacer_threads
-        conf["max_memory"] = self.max_memory
+        conf["max_memory"] = int(self.max_memory)
 
 
         conf["short_reads_1"] = self.pe1
         conf["short_reads_2"] = self.pe2
         conf["long_reads"] = self.longreads
         conf["long_read_type"] = self.longread_type
-        conf["min_contig_size"] = self.min_contig_size
-        conf["min_bin_size"] = self.min_bin_size
+        conf["min_contig_size"] = int(self.min_contig_size)
+        conf["min_bin_size"] = int(self.min_bin_size)
 
         conf["gtdbtk_folder"] = os.path.abspath(self.gtdbtk)
 

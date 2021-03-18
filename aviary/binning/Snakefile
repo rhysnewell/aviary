@@ -3,7 +3,6 @@ ruleorder: das_tool_without_rosella_no_vamb > das_tool_without_rosella
 ruleorder: checkm_no_vamb > checkm
 ruleorder: checkm_without_rosella_no_vamb > checkm_without_rosella
 ruleorder: binner_result_no_vamb > binner_result
-ruleorder: get_abundances_no_vamb > get_abundances
 
 onsuccess:
     print("Workflow finished, no error")
@@ -161,15 +160,15 @@ rule vamb_jgi_filter:
         done = "data/coverm.cov"
     output:
         vamb_bams_done = "data/coverm.filt.cov"
-    params:
-        min_contig_size = config["min_contig_size"]
     threads:
         config["max_threads"]
+    params:
+        min_contig_size = config['min_contig_size']
     run:
         import pandas as pd
         coverm_out = pd.read_csv('data/coverm.cov', sep='\t')
-        coverm_out = coverm_out[coverm_out['contigLen']>={params.min_contig_size}]
-        coverm_out.to_csv("data/coverm.filt.cov", sep='\t')
+        coverm_out = coverm_out[coverm_out['contigLen']>=int(params.min_contig_size)]
+        coverm_out.to_csv("data/coverm.filt.cov", sep='\t', index=False)
 
 
 # rule vamb_concat_fasta:
@@ -198,6 +197,7 @@ rule vamb_binning:
         "vamb --outdir data/vamb_bins/ -p {threads} --jgi data/coverm.filt.cov --fasta {input.fasta} --minfasta {params.min_bin_size} -m {params.min_contig_size}; "
         "touch data/vamb_bins/done"
 
+
 rule benchmark_vamb:
     input:
         "data/vamb_bins/done"
@@ -210,7 +210,7 @@ rule benchmark_vamb:
     threads:
         config["max_threads"]
     shell:
-        'checkm lineage_wf -t {threads} --pplacer_threads {params.pplacer_threads} -x fna data/vamb_bins/ data/vamb_bins/checkm --tab_table -f data/vamb_bins/checkm.out'
+        'checkm lineage_wf -t {threads} --pplacer_threads {params.pplacer_threads} -x fna data/vamb_bins/bins/ data/vamb_bins/checkm --tab_table -f data/vamb_bins/checkm.out'
         
 
 
@@ -443,19 +443,7 @@ rule das_tool_without_rosella_no_vamb:
 
 rule get_abundances:
     input:
-        "data/das_tool_bins/done"
-    output:
-        "data/coverm_abundances.tsv"
-    conda:
-        "../envs/coverm.yaml"
-    threads:
-        config["max_threads"]
-    script:
-        "../scripts/get_abundances.py"
-
-rule get_abundances_no_vamb:
-    input:
-        "data/das_tool_bins/skipped_vamb"
+        "data/singlem_out/singlem_appraise.svg"
     output:
         "data/coverm_abundances.tsv"
     conda:
@@ -647,7 +635,7 @@ rule singlem_pipe_reads:
 rule singlem_appraise:
     input:
         metagenome = "data/singlem_out/metagenome.combined_otu_table.csv",
-        coverm_done = "data/coverm_abundances.tsv"
+        gtdbtk_done = "data/gtdbtk/done"
     output:
         "data/singlem_out/singlem_appraise.svg"
     params:
@@ -662,6 +650,26 @@ rule singlem_appraise:
         "--assembly_otu_table data/singlem_out/assembly.otu_table.csv "
         "--plot data/singlem_out/singlem_appraise.svg --output_binned_otu_table data/singlem_out/binned.otu_table.csv "
         "--output_unbinned_otu_table data/singlem_out/unbinned.otu_table.csv"
+
+rule singlem_appraise_no_vamb:
+    input:
+        metagenome = "data/singlem_out/metagenome.combined_otu_table.csv",
+        gtdbtk_done = "data/gtdbtk/skipped_vamb"
+    output:
+        "data/singlem_out/skipped_vamb"
+    params:
+        pplacer_threads = config['pplacer_threads'],
+        fasta = config['fasta']
+    conda:
+        "../envs/singlem.yaml"
+    shell:
+        "singlem pipe --threads {params.pplacer_threads} --sequences data/das_tool_bins/das_tool_DASTool_bins/*.fa --otu_table data/singlem_out/genomes.otu_table.csv; "
+        "singlem pipe --threads {params.pplacer_threads} --sequences {params.fasta} --otu_table data/singlem_out/assembly.otu_table.csv; "
+        "singlem appraise --metagenome_otu_tables {input.metagenome} --genome_otu_tables data/singlem_out/genomes.otu_table.csv "
+        "--assembly_otu_table data/singlem_out/assembly.otu_table.csv "
+        "--plot data/singlem_out/singlem_appraise.svg --output_binned_otu_table data/singlem_out/binned.otu_table.csv "
+        "--output_unbinned_otu_table data/singlem_out/unbinned.otu_table.csv; "
+        "touch data/singlem/skipped_vamb"
 
 rule recover_mags:
     input:
@@ -688,7 +696,7 @@ rule recover_mags_no_vamb:
         "data/gtdbtk/skipped_vamb",
         "data/checkm/skipped_vamb",
         "data/coverm_abundances.tsv",
-        "data/singlem_out/singlem_appraise.svg"
+        "data/singlem_out/skipped_vamb"
     conda:
         "../envs/coverm.yaml"
     output:
