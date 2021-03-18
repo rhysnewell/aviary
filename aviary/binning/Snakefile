@@ -151,6 +151,7 @@ rule concoct_binning:
         "merge_cutup_clustering.py data/concoct_working/clustering_gt{params.min_contig_size}.csv > data/concoct_working/clustering_merged.csv && " \
         "mkdir -p data/concoct_bins && " \
         "extract_fasta_bins.py {input.fasta} data/concoct_working/clustering_merged.csv --output_path data/concoct_bins/ && " \
+        "rm -rf data/binning_bams/; "
         "touch data/concoct_bins/done"
 
 
