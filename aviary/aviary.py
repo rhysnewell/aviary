@@ -163,7 +163,6 @@ def main():
         '-c', '--min-contig-size', '--min_contig_size',
         help='Minimum contig size in base pairs to be considered for binning',
         dest='min_contig_size',
-        nargs=1,
         default=1500
     )
 
@@ -171,7 +170,6 @@ def main():
         '-s','--min-bin-size', '--min_bin_size',
         help='Minimum bin size in base pairs for a MAG',
         dest='min_bin_size',
-        nargs=1,
         default=200000
     )
 
