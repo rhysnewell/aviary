@@ -1,0 +1,5 @@
+onsuccess:
+    print("Assembly finished, no error")
+
+onerror:
+    print("An error occurred")

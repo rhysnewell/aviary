@@ -6,7 +6,7 @@ ruleorder: binner_result_no_vamb > binner_result
 ruleorder: get_abundances_no_vamb > get_abundances
 
 onsuccess:
-    print("Workflow finished, no error")
+    print("Binning workflow finished, no error")
 
 onerror:
     print("An error occurred")

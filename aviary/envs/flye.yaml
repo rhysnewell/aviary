@@ -1,0 +1,4 @@
+channels:
+  - bioconda
+dependencies:
+  - flye >= 2.8.2

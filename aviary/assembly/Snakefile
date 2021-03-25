@@ -376,3 +376,57 @@ rule spades_assembly_short:
         "../envs/spades.yaml"
     script:
         "../scripts/spades_assembly_short.py"
+
+
+# Short reads are mapped to the spades assembly and jgi_summarize_bam_contig_depths from metabat
+# used to calculate the mean coverage of the contigs. The coverage and assembly are then used to bin with metabat.
+rule spades_assembly_coverage:
+    input:
+         fastq = "data/short_reads.filt.fastq.gz",
+         fasta = "data/spades_assembly.fasta"
+    output:
+         assembly_cov = "data/short_read_assembly.cov"
+    conda:
+         "../envs/coverm.yaml"
+    threads:
+         config["max_threads"]
+    shell:
+        """
+        coverm contig -m metabat -t {threads} -r {input.fasta} -i {input.fastq} > data/short_read_assembly.cov
+        """
+
+rule metabat_binning_short:
+    input:
+         assembly_cov = "data/short_read_assembly.cov",
+         fasta = "data/spades_assembly.fasta"
+    output:
+         metabat_done = "data/metabat_bins/done"
+    conda:
+         "../envs/metabat2.yaml"
+    threads:
+         config["max_threads"]
+    shell:
+         """
+         mkdir -p data/metabat_bins && \
+         metabat --seed 89 --unbinned -m 1500 -l -i {input.fasta} -a {input.assembly_cov} \
+         -o data/metabat_bins/binned_contigs && \
+         touch data/metabat_bins/done
+         """
+
+# Long reads are mapped to the spades assembly
+rule map_long_mega:
+    input:
+        fastq = "data/long_reads.fastq.gz",
+        fasta = "data/spades_assembly.fasta"
+    output:
+        bam = "data/long_vs_mega.bam"
+    threads:
+        config["max_threads"]
+    conda:
+        "../envs/minimap2.yaml"
+    shell:
+        """
+        minimap2 -t {threads} -ax map-ont -a {input.fasta} {input.fastq} |  samtools view -b |
+        samtools sort -o {output.bam} - && \
+        samtools index {output.bam}
+        """

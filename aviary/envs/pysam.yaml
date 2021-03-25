@@ -1,0 +1,4 @@
+channels:
+  - bioconda
+dependencies:
+  - pysam = 0.15.2
