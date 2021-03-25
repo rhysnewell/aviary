@@ -18,6 +18,7 @@
 #                                                                             #
 ###############################################################################
 from aviary.__init__ import __version__
+import aviary.config.config as Config
 __author__ = "Rhys Newell"
 __copyright__ = "Copyright 2020"
 __credits__ = ["Rhys Newell"]
@@ -67,6 +68,17 @@ recover
 """
 )
 
+
+def str2bool(v):
+    if isinstance(v, bool):
+        return(v)
+    if v.lower() in ('yes', 'true', 't', 'y', '1'):
+        return(True)
+    elif v.lower() in ('no', 'false', 'f', 'n', '0'):
+        return(False)
+    else:
+        raise argparse.ArgumentTypeError('Boolean value expected.')
+
 def main():
 
     ############################ ~ Main Parser ~ ##############################
@@ -94,7 +106,7 @@ def main():
                                 ~ RECOVER ~
     How to use recover:
     
-    aviary recover --assembly scaffolds.fasta --paired_end_reads_1 *.1.fq.gz --paired_end_reads_1 *.2.fq.gz --longreads *.nanopore.fastq.gz --longread_type nanopore
+    aviary recover --assembly scaffolds.fasta -1 *.1.fq.gz -2 *.2.fq.gz --longreads *.nanopore.fastq.gz --longread_type nanopore
 
     ''')
 
@@ -107,7 +119,7 @@ def main():
     )
 
     input_options.add_argument(
-        '-1', '--paired_reads_1',
+        '-1', '--pe-1', '--paired-reads-1', '--paired_reads_1',
         help='A space separated list of forwards read files to use for the binning process',
         dest='pe1',
         nargs='*',
@@ -115,7 +127,7 @@ def main():
     )
 
     input_options.add_argument(
-        '-2','--paired_reads_2',
+        '-2','--pe-2', '--paired-reads-2', '--paired_reads_2',
         help='A space separated list of forwards read files to use for the binning process',
         dest='pe2',
         nargs='*',
@@ -139,7 +151,7 @@ def main():
     )
 
     input_options.add_argument(
-        '--longread_type',
+        '--longread-type', '--longread_type',
         help='Whether the longreads are oxford nanopore or pacbio',
         dest='longread_type',
         nargs=1,
@@ -148,58 +160,56 @@ def main():
     )
 
     input_options.add_argument(
-        '-c', '--min_contig_size',
+        '-c', '--min-contig-size', '--min_contig_size',
         help='Minimum contig size in base pairs to be considered for binning',
         dest='min_contig_size',
-        nargs=1,
         default=1500
     )
 
     input_options.add_argument(
-        '-s','--min_bin_size',
+        '-s','--min-bin-size', '--min_bin_size',
         help='Minimum bin size in base pairs for a MAG',
         dest='min_bin_size',
-        nargs=1,
         default=200000
     )
 
     input_options.add_argument(
-        '--conda_prefix',
+        '--conda-prefix', '--conda_prefix',
         help='Path to the location of installed conda environments, or where to install new environments',
         dest='conda_prefix',
-        default='~/.conda/envs/',
+        default=Config.get_conda_path(),
     )
 
     input_options.add_argument(
-        '--gtdb_path',
+        '--gtdb-path', '--gtdb_path',
         help='Path to the local gtdb files',
         dest='gtdb_path',
-        default='/work/microbiome/db/gtdbtk/release95/',
+        default=Config.get_gtdb_path(),
     )
 
     input_options.add_argument(
-        '-t', '--max_threads',
+        '-t', '--max-threads', '--max_threads',
         help='Maximum number of threads given to any particular process',
         dest='max_threads',
         default=8,
     )
 
     input_options.add_argument(
-        '-p', '--pplacer_threads',
+        '-p', '--pplacer-threads', '--pplacer_threads',
         help='The number of threads given to pplacer, values above 48 will be scaled down',
         dest='pplacer_threads',
         default=8,
     )
 
     input_options.add_argument(
-        '-n', '--n_cores',
+        '-n', '--n-cores', '--n_cores',
         help='Maximum number of cores available for use. Must be >= to max_threads',
         dest='n_cores',
         default=16,
     )
 
     input_options.add_argument(
-        '-m', '--max_memory',
+        '-m', '--max-memory', '--max_memory',
         help='Maximum memory for available usage in Gigabytes',
         dest='max_memory',
         default=250,
@@ -217,6 +227,25 @@ def main():
         help='Main workflow to run',
         dest='workflow',
         default='recover_mags',
+    )
+
+    input_options.add_argument(
+        '--dry-run', '--dry_run', '--dryrun',
+        help='Perform snakemake dry run, tests workflow order and conda environments',
+        type=str2bool,
+        nargs='?',
+        const=True,
+        dest='dryrun',
+        default=False,
+    )
+    
+    input_options.add_argument(
+        '--conda-frontend', '--conda_frontend',
+        help='Which conda frontend to use',
+        dest='conda_frontend',
+        nargs=1,
+        default="mamba",
+        choices=["conda", "mamba"],
     )
 
     ###########################################################################
@@ -279,7 +308,7 @@ def main():
             sys.exit("Missing any input read files...")
 
         processor.make_config()
-        processor.run_workflow(workflow=args.workflow, cores=int(args.n_cores))
+        processor.run_workflow(workflow=args.workflow, cores=int(args.n_cores), dryrun=args.dryrun, conda_frontend=args.conda_frontend)
 
 def str2bool(v):
     if isinstance(v, bool):
@@ -352,9 +381,9 @@ class aviary:
                  max_threads=16,
                  pplacer_threads=16,
                  max_memory=250,
-                 gtdbtk="/work/microbiome/db/gtdbtk/release95",
+                 gtdbtk=Config.get_gtdb_path(),
                  output=".",
-                 conda_prefix="~/.conda/envs/",
+                 conda_prefix=Config.get_conda_path(),
                  args=None
                  ):
         self.assembly = assembly
@@ -408,15 +437,15 @@ class aviary:
         conf["fasta"] = self.assembly
         conf["max_threads"] = self.threads
         conf["pplacer_threads"] = self.pplacer_threads
-        conf["max_memory"] = self.max_memory
+        conf["max_memory"] = int(self.max_memory)
 
 
         conf["short_reads_1"] = self.pe1
         conf["short_reads_2"] = self.pe2
         conf["long_reads"] = self.longreads
         conf["long_read_type"] = self.longread_type
-        conf["min_contig_size"] = self.min_contig_size
-        conf["min_bin_size"] = self.min_bin_size
+        conf["min_contig_size"] = int(self.min_contig_size)
+        conf["min_bin_size"] = int(self.min_bin_size)
 
         conf["gtdbtk_folder"] = os.path.abspath(self.gtdbtk)
 
@@ -432,7 +461,7 @@ class aviary:
         load_configfile(self.config)
 
 
-    def run_workflow(self, workflow="recover_mags", cores=16, profile=None, dryrun=False, snakemake_args = ""):
+    def run_workflow(self, workflow="recover_mags", cores=16, profile=None, dryrun=False, conda_frontend="mamba", snakemake_args = ""):
         """Runs the aviary pipeline
         By default all steps are executed
         Needs a config-file which is generated by given inputs.
@@ -451,7 +480,7 @@ class aviary:
             "snakemake --snakefile {snakefile} --directory {working_dir} "
             "{jobs} --rerun-incomplete "
             "--configfile '{config_file}' --nolock "
-            " {profile} --use-conda {conda_prefix} {dryrun} "
+            " {profile} {conda_frontend} --use-conda {conda_prefix} {dryrun} "
             " {target_rule} "
             " {args} "
         ).format(
@@ -464,6 +493,7 @@ class aviary:
             args=" ".join(snakemake_args),
             target_rule=workflow if workflow != "None" else "",
             conda_prefix="--conda-prefix " + self.conda_prefix,
+            conda_frontend="--conda-frontend " + conda_frontend
         )
         logging.info("Executing: %s" % cmd)
         try:

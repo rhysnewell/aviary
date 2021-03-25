@@ -11,7 +11,7 @@ onstart:
 
     from snakemake.utils import logger, min_version
 
-    sys.path.append(os.path.join(os.path.dirname(os.path.abspath(workflow.snakefile)),"scripts"))
+    sys.path.append(os.path.join(os.path.dirname(os.path.abspath(workflow.snakefile)),"../scripts"))
 
     # minimum required snakemake version
     min_version("6.0")
@@ -64,7 +64,7 @@ rule get_umapped_reads_ref:
     conda:
         "../envs/pysam.yaml"
     script:
-        "scripts/filter_read_list.py"
+        "../scripts/filter_read_list.py"
 
 
 # Create new read file with filtered reads
@@ -115,7 +115,7 @@ rule polish_metagenome_racon:
     output:
         fasta = "data/assembly.pol.rac.fasta"
     script:
-        "scripts/racon_polish.py"
+        "../scripts/racon_polish.py"
 
 
 ### Steps if illumina data exists
@@ -200,7 +200,7 @@ rule polish_meta_racon_ill:
         rounds = 1,
         illumina = True
     script:
-        "scripts/racon_polish.py"
+        "../scripts/racon_polish.py"
 
 
 # High coverage contigs are identified
@@ -364,8 +364,6 @@ rule spades_assembly:
 # Short reads that did not map to the long read assembly are hybrid assembled with metaspades
 # If no long reads were provided, long_reads.fastq.gz will be empty
 rule spades_assembly_short:
-    input:
-        fastq = "data/short_reads.filt.fastq.gz",
     output:
         fasta = "data/final_contigs.fasta"
     threads:
