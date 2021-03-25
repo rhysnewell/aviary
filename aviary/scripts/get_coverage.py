@@ -3,10 +3,10 @@ import os
 
 if snakemake.config["long_reads"] != "none" and not os.path.exists("data/long_cov.tsv"):
     if snakemake.config["long_read_type"][0] == "nanopore":
-        subprocess.Popen("coverm contig -t %d -r %s --single %s -p minimap2-ont -m length trimmed_mean variance --bam-file-cache-directory data/binning_bams/ --discard-unmapped --min-read-percent-identity 0.8 > data/long_cov.tsv" %
+        subprocess.Popen("coverm contig -t %d -r %s --single %s -p minimap2-ont -m length trimmed_mean variance --bam-file-cache-directory data/binning_bams/ --discard-unmapped --min-read-percent-identity 0.75 > data/long_cov.tsv" %
                          (snakemake.threads, snakemake.input.fasta, " ".join(snakemake.config["long_reads"])), shell=True).wait()
     elif snakemake.config["long_read_type"][0] == "pacbio":
-        subprocess.Popen("coverm contig -t %d -r %s --single %s -p minimap2-pb -m length trimmed_mean variance --bam-file-cache-directory data/binning_bams/ --discard-unmapped --min-read-percent-identity 0.95 > data/long_cov.tsv" %
+        subprocess.Popen("coverm contig -t %d -r %s --single %s -p minimap2-pb -m length trimmed_mean variance --bam-file-cache-directory data/binning_bams/ --discard-unmapped --min-read-percent-identity 0.85 > data/long_cov.tsv" %
                          (snakemake.threads, snakemake.input.fasta, " ".join(snakemake.config["long_reads"])), shell=True).wait()
     else:
         subprocess.Popen(
