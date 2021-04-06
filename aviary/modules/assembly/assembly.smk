@@ -30,10 +30,6 @@ onstart:
         sys.exit("short_reads_1 does not point to a file")
     if short_reads_2 != "none" and not os.path.exists(short_reads_2[0]):
         sys.exit("short_reads_2 does not point to a file")
-    if gtdbtk_folder != "none" and not os.path.exists(gtdbtk_folder):
-        sys.stderr.write("gtdbtk_folder does not point to a folder\n")
-    if busco_folder != "none" and not os.path.exists(busco_folder):
-        sys.stderr.write("busco_folder does not point to a folder\n")
     
 # Filter reads against a reference, i.e. for removing host contamination from the metagenome
 rule map_reads_ref:

@@ -63,11 +63,12 @@ def phelp():
     print(
 """
 
-......:::::: AVIARY ::::::......
+         ......:::::: AVIARY ::::::......
 
 A comprehensive metagenomics bioinformatics pipeline
 
 SUBCOMMAND:
+cluster  - Clusters samples based on OTU content using SingleM
 assemble - Perform hybrid assembly using short and long reads, or assembly using only short reads
 recover  - Recover MAGs from provided assembly using a variety of binning algorithms 
 annotate - Annotate MAGs
@@ -285,7 +286,29 @@ def main():
         required=False,
     )
 
-    #~#~#~#~#~#~#~#~#~#~#~#~#~   sub-parser   ~#~#~#~#~#~#~#~#~#~#~#~#~#
+    #~#~#~#~#~#~#~#~#~#~#~#~#~   sub-parsers   ~#~#~#~#~#~#~#~#~#~#~#~#~#
+    ##########################   ~ CLUSTER ~  ###########################
+
+    cluster_options = subparsers.add_parser('cluster',
+                                             description='Cluster samples together based on OTU content. '
+                                                         'Samples that cluster together should be used for assembly and binning.',
+                                             formatter_class=CustomHelpFormatter,
+                                             parents=[read_group, base_group],
+                                             epilog=
+                                             '''
+                                                                ......:::::: CLUSTER ::::::......
+                                 
+                                             aviary cluster -1 *.1.fq.gz -2 *.2.fq.gz --longreads *.nanopore.fastq.gz 
+                                 
+                                             ''')
+
+    cluster_options.add_argument(
+        '-w', '--workflow',
+        help='Main workflow to run',
+        dest='workflow',
+        default='cluster_samples',
+    )
+
     ##########################  ~ ASSEMBLE ~  ###########################
 
     assemble_options = subparsers.add_parser('assemble',
@@ -386,6 +409,27 @@ def main():
         default='create_webpage_genotype',
     )
 
+    ##########################   ~ COMPLETE ~  ###########################
+
+    complete_options = subparsers.add_parser('complete',
+                                            description='Cluster samples together based on OTU content. '
+                                                        'Samples that cluster together should be used for assembly and binning.',
+                                            formatter_class=CustomHelpFormatter,
+                                            parents=[read_group, base_group],
+                                            epilog=
+                                            '''
+                                                               ......:::::: COMPLETE ::::::......
+
+                                            aviary complete -1 *.1.fq.gz -2 *.2.fq.gz --longreads *.nanopore.fastq.gz 
+
+                                            ''')
+
+    complete_options.add_argument(
+        '-w', '--workflow',
+        help='Main workflow to run',
+        dest='workflow',
+        default='complete_workflow',
+    )
 
     ###########################################################################
     # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ #
@@ -421,7 +465,9 @@ def main():
                            args.conda_prefix)
 
         processor.make_config()
-        processor.run_workflow(workflow=args.workflow, cores=int(args.n_cores), dryrun=args.dryrun,
+        processor.run_workflow(workflow=args.workflow,
+                               cores=int(args.n_cores),
+                               dryrun=args.dryrun,
                                conda_frontend=args.conda_frontend)
 
 
