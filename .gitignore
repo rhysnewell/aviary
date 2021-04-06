@@ -1,2 +1,4 @@
 *pyc
 .idea/
+aviary.egg-info
+dist
