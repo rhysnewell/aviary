@@ -5,7 +5,7 @@ ruleorder: checkm_without_rosella_no_vamb > checkm_without_rosella
 ruleorder: binner_result_no_vamb > binner_result
 
 onsuccess:
-    print("Binning workflow finished, no error")
+    print("Binning finished, no error")
 
 onerror:
     print("An error occurred")
@@ -17,7 +17,7 @@ onstart:
 
     from snakemake.utils import logger, min_version
 
-    sys.path.append(os.path.join(os.path.dirname(os.path.abspath(workflow.snakefile)),"../scripts"))
+    sys.path.append(os.path.join(os.path.dirname(os.path.abspath(workflow.snakefile)),"../../scripts"))
 
     # minimum required snakemake version
     min_version("6.0")
@@ -57,7 +57,7 @@ onstart:
     # threads:
         # config["max_threads"]
     # script:
-        # "../scripts/process_batch.py"
+        # "../../scripts/process_batch.py"
 
 
 rule rename_contigs:
@@ -76,7 +76,7 @@ rule run_virsorter:
     output:
         "data/virsorter/done"
     conda:
-        "../envs/virsorter.yaml"
+        "../../envs/virsorter.yaml"
     threads:
         config["max_threads"]
     shell:
@@ -91,11 +91,11 @@ rule prepare_binning_files:
         maxbin_coverage = "data/maxbin.cov.list",
         metabat_coverage = "data/coverm.cov",
     conda:
-        "../envs/coverm.yaml"
+        "../../envs/coverm.yaml"
     threads:
         config["max_threads"]
     script:
-        "../scripts/get_coverage.py"
+        "../../scripts/get_coverage.py"
 
 
 rule get_bam_indices:
@@ -104,7 +104,7 @@ rule get_bam_indices:
     output:
         bams = "data/binning_bams/done"
     conda:
-        "../envs/coverm.yaml"
+        "../../envs/coverm.yaml"
     threads:
         config["max_threads"]
     shell:
@@ -121,7 +121,7 @@ rule maxbin_binning:
     output:
         "data/maxbin2_bins/done"
     conda:
-        "../envs/maxbin2.yaml"
+        "../../envs/maxbin2.yaml"
     threads:
         config["max_threads"]
     shell:
@@ -139,7 +139,7 @@ rule concoct_binning:
     output:
         "data/concoct_bins/done"
     conda:
-        "../envs/concoct.yaml"
+        "../../envs/concoct.yaml"
     threads:
         config["max_threads"]
     shell:
@@ -189,7 +189,7 @@ rule vamb_binning:
     output:
         "data/vamb_bins/done"
     conda:
-        "../envs/vamb.yaml"
+        "../../envs/vamb.yaml"
     threads:
          config["max_threads"]
     shell:
@@ -206,7 +206,7 @@ rule benchmark_vamb:
     params:
         pplacer_threads = config["pplacer_threads"],
     conda:
-        "../envs/checkm.yaml"
+        "../../envs/checkm.yaml"
     threads:
         config["max_threads"]
     shell:
@@ -220,7 +220,7 @@ rule benchmark_vamb:
     # output:
         # "data/vamb_bins/done"
     # script:
-        # "../scripts/write_vamb_bins.py"
+        # "../../scripts/write_vamb_bins.py"
 
 rule vamb_skip:
     output:
@@ -244,7 +244,7 @@ rule metabat_binning_2:
         metabat_ssens = "data/metabat_bins_ssens/done",
         metabat_sens = "data/metabat_bins_sens/done"
     conda:
-        "../envs/metabat2.yaml"
+        "../../envs/metabat2.yaml"
     threads:
         config["max_threads"]
     shell:
@@ -270,7 +270,7 @@ rule rosella:
     output:
         "data/rosella_bins/done"
     conda:
-        "../envs/rosella.yaml"
+        "../../envs/rosella.yaml"
     threads:
         config["max_threads"]
     shell:
@@ -288,7 +288,7 @@ rule rerun_rosella:
     output:
         "data/rosella_bins/rerun"
     conda:
-        "../envs/rosella.yaml"
+        "../../envs/rosella.yaml"
     threads:
         config["max_threads"]
     shell:
@@ -303,7 +303,7 @@ rule rosella_checkm:
     params:
         pplacer_threads = config['pplacer_threads']
     conda:
-        "../envs/checkm.yaml"
+        "../../envs/checkm.yaml"
     threads:
         config["max_threads"]
     shell:
@@ -327,7 +327,7 @@ rule das_tool:
     threads:
         config["max_threads"]
     conda:
-        "../envs/das_tool.yaml"
+        "../../envs/das_tool.yaml"
     shell:
         "Fasta_to_Scaffolds2Bin.sh -i data/metabat_bins_2 -e fa > data/metabat_bins_2.tsv && " \
         "Fasta_to_Scaffolds2Bin.sh -i data/metabat_bins_sspec -e fa > data/metabat_bins_sspec.tsv && " \
@@ -361,7 +361,7 @@ rule das_tool_no_vamb:
     threads:
         config["max_threads"]
     conda:
-        "../envs/das_tool.yaml"
+        "../../envs/das_tool.yaml"
     shell:
         "Fasta_to_Scaffolds2Bin.sh -i data/metabat_bins_2 -e fa > data/metabat_bins_2.tsv && " \
         "Fasta_to_Scaffolds2Bin.sh -i data/metabat_bins_sspec -e fa > data/metabat_bins_sspec.tsv && " \
@@ -394,7 +394,7 @@ rule das_tool_without_rosella:
     threads:
         config["max_threads"]
     conda:
-        "../envs/das_tool.yaml"
+        "../../envs/das_tool.yaml"
     shell:
         "Fasta_to_Scaffolds2Bin.sh -i data/metabat_bins_2 -e fa > data/metabat_bins_2.tsv && " \
         "Fasta_to_Scaffolds2Bin.sh -i data/metabat_bins_sspec -e fa > data/metabat_bins_sspec.tsv && " \
@@ -425,7 +425,7 @@ rule das_tool_without_rosella_no_vamb:
     threads:
         config["max_threads"]
     conda:
-        "../envs/das_tool.yaml"
+        "../../envs/das_tool.yaml"
     shell:
         "Fasta_to_Scaffolds2Bin.sh -i data/metabat_bins_2 -e fa > data/metabat_bins_2.tsv && " \
         "Fasta_to_Scaffolds2Bin.sh -i data/metabat_bins_sspec -e fa > data/metabat_bins_sspec.tsv && " \
@@ -447,11 +447,11 @@ rule get_abundances:
     output:
         "data/coverm_abundances.tsv"
     conda:
-        "../envs/coverm.yaml"
+        "../../envs/coverm.yaml"
     threads:
         config["max_threads"]
     script:
-        "../scripts/get_abundances.py"
+        "../../scripts/get_abundances.py"
 
 rule checkm:
     input:
@@ -461,7 +461,7 @@ rule checkm:
     output:
         "data/checkm.out"
     conda:
-        "../envs/checkm.yaml"
+        "../../envs/checkm.yaml"
     threads:
         config["max_threads"]
     shell:
@@ -475,7 +475,7 @@ rule checkm_no_vamb:
     output:
         "data/checkm/skipped_vamb"
     conda:
-        "../envs/checkm.yaml"
+        "../../envs/checkm.yaml"
     threads:
         config["max_threads"]
     shell:
@@ -491,7 +491,7 @@ rule checkm_without_rosella:
     output:
         "data/checkm_without_rosella.out"
     conda:
-        "../envs/checkm.yaml"
+        "../../envs/checkm.yaml"
     threads:
         config["max_threads"]
     shell:
@@ -506,7 +506,7 @@ rule checkm_without_rosella_no_vamb:
     output:
         "data/checkm_without_rosella/skipped_vamb"
     conda:
-        "../envs/checkm.yaml"
+        "../../envs/checkm.yaml"
     threads:
         config["max_threads"]
     shell:
@@ -523,7 +523,7 @@ rule gtdbtk:
         gtdbtk_folder = config['gtdbtk_folder'],
         pplacer_threads = config["pplacer_threads"]        
     conda:
-        "../envs/gtdbtk.yaml"
+        "../../envs/gtdbtk.yaml"
     threads:
         config["max_threads"]
     shell:
@@ -540,7 +540,7 @@ rule gtdbtk_no_vamb:
         gtdbtk_folder = config['gtdbtk_folder'],
         pplacer_threads = config["pplacer_threads"]        
     conda:
-        "../envs/gtdbtk.yaml"
+        "../../envs/gtdbtk.yaml"
     threads:
         config["max_threads"]
     shell:
@@ -556,7 +556,7 @@ rule binner_result:
     params:
         pplacer_threads = config['pplacer_threads']
     conda:
-        "../envs/checkm.yaml"
+        "../../envs/checkm.yaml"
     threads:
         config["max_threads"]
     shell:
@@ -582,7 +582,7 @@ rule binner_result_no_vamb:
     params:
         pplacer_threads = config['pplacer_threads']
     conda:
-        "../envs/checkm.yaml"
+        "../../envs/checkm.yaml"
     threads:
         config["max_threads"]
     shell:
@@ -607,7 +607,7 @@ rule busco:
     params:
         busco_folder = config["busco_folder"]
     conda:
-        "../envs/busco.yaml"
+        "../../envs/busco.yaml"
     threads:
         config["max_threads"]
     shell:
@@ -628,9 +628,9 @@ rule singlem_pipe_reads:
     output:
         "data/singlem_out/metagenome.combined_otu_table.csv"
     conda:
-        "../envs/singlem.yaml"
+        "../../envs/singlem.yaml"
     script:
-        "../scripts/singlem_reads.py"
+        "../../scripts/singlem_reads.py"
 
 rule singlem_appraise:
     input:
@@ -642,7 +642,7 @@ rule singlem_appraise:
         pplacer_threads = config['pplacer_threads'],
         fasta = config['fasta']
     conda:
-        "../envs/singlem.yaml"
+        "../../envs/singlem.yaml"
     shell:
         "singlem pipe --threads {params.pplacer_threads} --sequences data/das_tool_bins/das_tool_DASTool_bins/*.fa --otu_table data/singlem_out/genomes.otu_table.csv; "
         "singlem pipe --threads {params.pplacer_threads} --sequences {params.fasta} --otu_table data/singlem_out/assembly.otu_table.csv; "
@@ -661,7 +661,7 @@ rule singlem_appraise_no_vamb:
         pplacer_threads = config['pplacer_threads'],
         fasta = config['fasta']
     conda:
-        "../envs/singlem.yaml"
+        "../../envs/singlem.yaml"
     shell:
         "singlem pipe --threads {params.pplacer_threads} --sequences data/das_tool_bins/das_tool_DASTool_bins/*.fa --otu_table data/singlem_out/genomes.otu_table.csv; "
         "singlem pipe --threads {params.pplacer_threads} --sequences {params.fasta} --otu_table data/singlem_out/assembly.otu_table.csv; "
@@ -679,7 +679,7 @@ rule recover_mags:
         "data/coverm_abundances.tsv",
         "data/singlem_out/singlem_appraise.svg"
     conda:
-        "../envs/coverm.yaml"
+        "../../envs/coverm.yaml"
     output:
         "data/done"
     threads:
@@ -698,7 +698,7 @@ rule recover_mags_no_vamb:
         "data/coverm_abundances.tsv",
         "data/singlem_out/skipped_vamb"
     conda:
-        "../envs/coverm.yaml"
+        "../../envs/coverm.yaml"
     output:
         "data/done"
     threads:

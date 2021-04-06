@@ -11,7 +11,7 @@ onstart:
 
     from snakemake.utils import logger, min_version
 
-    sys.path.append(os.path.join(os.path.dirname(os.path.abspath(workflow.snakefile)),"../scripts"))
+    sys.path.append(os.path.join(os.path.dirname(os.path.abspath(workflow.snakefile)),"../../scripts"))
 
     # minimum required snakemake version
     min_version("6.0")
@@ -46,7 +46,7 @@ rule map_reads_ref:
     output:
         "data/raw_mapped_ref.bam"
     conda:
-        "../envs/coverm.yaml"
+        "../../envs/coverm.yaml"
     threads:
          config["max_threads"]
     shell:
@@ -62,9 +62,9 @@ rule get_umapped_reads_ref:
     params:
         "no_full"
     conda:
-        "../envs/pysam.yaml"
+        "../../envs/pysam.yaml"
     script:
-        "../scripts/filter_read_list.py"
+        "../../scripts/filter_read_list.py"
 
 
 # Create new read file with filtered reads
@@ -75,7 +75,7 @@ rule get_reads_list_ref:
     output:
         "data/long_reads.fastq.gz"
     conda:
-        "../envs/seqtk.yaml"
+        "../../envs/seqtk.yaml"
     shell:
         "seqtk subseq {input.fastq} {input.list} | gzip > {output}"
 
@@ -91,7 +91,7 @@ rule flye_assembly:
     params:
         genome_size = config["meta_genome_size"]
     conda:
-        "../envs/flye.yaml"
+        "../../envs/flye.yaml"
     threads:
         config["max_threads"]
     shell:
@@ -104,7 +104,7 @@ rule polish_metagenome_racon:
         fastq = "data/long_reads.fastq.gz",
         fasta = "data/flye/assembly.fasta"
     conda:
-        "../envs/racon.yaml"
+        "../../envs/racon.yaml"
     threads:
         config["max_threads"]
     params:
@@ -115,7 +115,7 @@ rule polish_metagenome_racon:
     output:
         fasta = "data/assembly.pol.rac.fasta"
     script:
-        "../scripts/racon_polish.py"
+        "../../scripts/racon_polish.py"
 
 
 ### Steps if illumina data exists
@@ -128,7 +128,7 @@ rule filter_illumina_ref:
         bam = "data/short_unmapped_ref.bam",
         fastq = "data/short_reads.fastq.gz"
     conda:
-        "../envs/minimap2.yaml"
+        "../../envs/minimap2.yaml"
     threads:
          config["max_threads"]
     shell:
@@ -147,7 +147,7 @@ rule filter_illumina_ref_interleaved:
         bam = "data/short_unmapped_ref.bam",
         fastq = "data/short_reads.fastq.gz"
     conda:
-        "../envs/minimap2.yaml"
+        "../../envs/minimap2.yaml"
     threads:
          config["max_threads"]
     shell:
@@ -171,7 +171,7 @@ rule polish_meta_pilon:
     params:
         pilon_memory = config["pilon_memory"]
     conda:
-        "../envs/pilon.yaml"
+        "../../envs/pilon.yaml"
     shell:
         """
         minimap2 -ax sr -t {threads} {input.fasta} {input.reads} | samtools view -b | 
@@ -193,14 +193,14 @@ rule polish_meta_racon_ill:
     threads:
         config["max_threads"]
     conda:
-        "../envs/racon.yaml"
+        "../../envs/racon.yaml"
     params:
         prefix = "racon_ill",
         maxcov = 200,
         rounds = 1,
         illumina = True
     script:
-        "../scripts/racon_polish.py"
+        "../../scripts/racon_polish.py"
 
 
 # High coverage contigs are identified
@@ -288,7 +288,7 @@ rule filter_illumina_assembly:
         bam = "data/sr_vs_long.sort.bam",
         fastq = "data/short_reads.filt.fastq.gz"
     conda:
-        "../envs/minimap2.yaml"
+        "../../envs/minimap2.yaml"
     threads:
          config["max_threads"]
     shell:
@@ -344,7 +344,7 @@ rule spades_assembly:
     params:
          max_memory = config["max_memory"]
     conda:
-        "../envs/spades.yaml"
+        "../../envs/spades.yaml"
     shell:
         """
         minimumsize=500000 && \
@@ -371,9 +371,9 @@ rule spades_assembly_short:
     params:
          max_memory = config["max_memory"]
     conda:
-        "../envs/spades.yaml"
+        "../../envs/spades.yaml"
     script:
-        "../scripts/spades_assembly_short.py"
+        "../../scripts/spades_assembly_short.py"
 
 
 # Short reads are mapped to the spades assembly and jgi_summarize_bam_contig_depths from metabat
@@ -385,7 +385,7 @@ rule spades_assembly_coverage:
     output:
          assembly_cov = "data/short_read_assembly.cov"
     conda:
-         "../envs/coverm.yaml"
+         "../../envs/coverm.yaml"
     threads:
          config["max_threads"]
     shell:
@@ -400,7 +400,7 @@ rule metabat_binning_short:
     output:
          metabat_done = "data/metabat_bins/done"
     conda:
-         "../envs/metabat2.yaml"
+         "../../envs/metabat2.yaml"
     threads:
          config["max_threads"]
     shell:
@@ -421,10 +421,135 @@ rule map_long_mega:
     threads:
         config["max_threads"]
     conda:
-        "../envs/minimap2.yaml"
+        "../../envs/minimap2.yaml"
     shell:
         """
         minimap2 -t {threads} -ax map-ont -a {input.fasta} {input.fastq} |  samtools view -b |
         samtools sort -o {output.bam} - && \
         samtools index {output.bam}
         """
+
+# Long and short reads that mapped to the spades assembly are pooled (binned) together
+rule pool_reads:
+    input:
+        long_bam = "data/long_vs_mega.bam",
+        short_bam = "data/short_vs_mega.bam",
+        metabat_done = "data/metabat_bins/done"
+    output:
+        list = "data/list_of_lists.txt"
+    conda:
+        "../../envs/pysam.yaml"
+    script:
+        "../../scripts/pool_reads.py"
+
+# Binned read lists are processed to extract the reads associated with each bin
+rule get_read_pools:
+    input:
+        long_reads = "data/long_reads.fastq.gz",
+        short_reads = "data/short_reads.fastq.gz",
+        list = "data/list_of_lists.txt"
+    output:
+        "data/binned_reads/done"
+    conda:
+         "../../envs/mfqe.yaml"
+    shell:
+         'eval $(printf "zcat {input.long_reads} | mfqe --fastq-read-name-lists "; for file in data/binned_reads/*.long.list; do printf "$file "; done;'\
+         ' printf " --output-fastq-files "; for file in data/binned_reads/*.long.list; do printf "${{file:0:-5}}.fastq.gz "; done; printf "\n") && ' \
+         'eval $(printf "seqtk seq -1 {input.short_reads} | mfqe --fastq-read-name-lists "; for file in data/binned_reads/*.short.list; do printf "$file "; done;'\
+         ' printf " --output-fastq-files "; for file in data/binned_reads/*.short.list; do printf "${{file:0:-5}}.1.fastq.gz "; done; printf "\n") && ' \
+         'eval $(printf "seqtk seq -2 {input.short_reads} | mfqe --fastq-read-name-lists "; for file in data/binned_reads/*.short.list; do printf "$file "; done;'\
+         ' printf " --output-fastq-files "; for file in data/binned_reads/*.short.list; do printf "${{file:0:-5}}.2.fastq.gz "; done; printf "\n") && touch {output} || touch {output}'
+
+# Short and long reads for each bin are hybrid assembled with Unicycler
+rule assemble_pools:
+    input:
+        fastq = "data/binned_reads/done",
+        list = "data/list_of_lists.txt",
+        fasta = "data/spades_assembly.fasta",
+        metabat_done = "data/metabat_bins/done"
+    threads:
+        config["max_threads"]
+    output:
+        fasta = "data/unicycler_combined.fa"
+    conda:
+        "../../envs/final_assembly.yaml"
+    script:
+        "scripts/assemble_pools.py"
+
+# The long read high coverage assembly from flye and hybrid assembly from unicycler are combined.
+# Long and short reads are mapped to this combined assembly.
+rule combine_assemblies:
+    input:
+        short_reads = "data/short_reads.fastq.gz",
+        long_reads = "data/long_reads.fastq.gz",
+        unicyc_fasta = "data/unicycler_combined.fa",
+        flye_fasta = "data/flye_high_cov.fasta"
+    output:
+        short_bam = "data/final_short.sort.bam",
+        fasta = "data/final_contigs.fasta",
+        long_bam = "data/final_long.sort.bam"
+    conda:
+        "../../envs/coverm.yaml"
+    priority: 1
+    threads:
+        config["max_threads"]
+    shell:
+        """
+        cat {input.flye_fasta} {input.unicyc_fasta} > {output.fasta} && \
+        minimap2 -t {threads} -ax map-ont -a {output.fasta} {input.long_reads} |  samtools view -b | 
+        samtools sort -o {output.long_bam} - && samtools index {output.long_bam} && \
+        minimap2 -ax sr -t {threads} {output.fasta} {input.short_reads} |  samtools view -b |
+        samtools sort -o {output.short_bam} - && \
+        samtools index {output.short_bam}
+        """
+
+rule combine_long_only:
+    input:
+        long_reads = "data/long_reads.fastq.gz",
+        fasta = "data/assembly.pol.rac.fasta"
+    output:
+        fasta = "data/final_contigs.fasta",
+        bam = "data/final_long.sort.bam"
+    priority: 1
+    conda:
+        "../../envs/coverm.yaml"
+    threads:
+        config["max_threads"]
+    shell:
+        """
+        minimap2 -t {threads} -ax map-ont -a {input.fasta} {input.long_reads} |  samtools view -b | 
+        samtools sort -o {output.bam} - && \
+        samtools index {output.bam} && \
+        ln {input.fasta} {output.fasta}
+        """
+
+rule fastqc:
+    input:
+        "data/short_reads.fastq.gz"
+    output:
+        "www/short_reads_fastqc.html"
+    conda:
+        "../../envs/fastqc.yaml"
+    threads:
+        config["max_threads"]
+    shell:
+        "fastqc -o www {input}"
+
+rule fastqc_long:
+    output:
+        "www/short_reads_fastqc.html"
+    shell:
+        'echo "no short reads" > {output}'
+
+
+rule nanoplot:
+    input:
+        "data/long_reads.fastq.gz"
+    output:
+        "www/nanoplot/longReadsNanoPlot-report.html"
+    conda:
+        "../../envs/nanoplot.yaml"
+    threads:
+        config["max_threads"]
+    shell:
+        "NanoPlot -o www/nanoplot -p longReads --fastq {input}"
