@@ -3,3 +3,4 @@ channels:
   - conda-forge
 dependencies:
   - enrichm = 0.6.3
+  - fuzzywuzzy

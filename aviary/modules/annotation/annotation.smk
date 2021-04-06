@@ -3,3 +3,5 @@ onsuccess:
 
 onerror:
     print("An error occurred")
+
+rule enrichm_annotate:

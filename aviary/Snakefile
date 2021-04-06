@@ -8,7 +8,6 @@ onstart:
     import os
     import sys
 
-
     from snakemake.utils import logger, min_version
 
     # minimum required snakemake version
@@ -24,8 +23,6 @@ onstart:
     threads = config["max_threads"]
     ## pplacer deadlocks on too many threads
     pplacer_threads = min(48, int(config["pplacer_threads"]))
-    import os
-    import sys
 
     if long_reads == "none" and short_reads_1 == "none":
         sys.exit("Need at least one of long_reads or short_reads_1")
@@ -61,53 +58,34 @@ if config["fasta"] == "none":
             config: config
             
         use rule * from binning as *
-        # Create summary webpage
-        rule create_webpage_short_assembly:
-            input:
-                checkm_file = "data/checkm.out",
-                final_bins = "data/das_tool_bins/done",
-                busco_done = "data/busco/done",
-                fasta = "data/final_contigs.fasta",
-                long_reads_qc_html = "www/nanoplot/longReadsNanoPlot-report.html",
-                short_reads_qc_html = "www/short_reads_fastqc.html",
-                genes_gff = "data/genes.gff",
-                gtdbtk_done = "data/gtdbtk/done",
-                singlem_done = "data/singlem_out/singlem_appraise.svg",
-                # strain_profile = "data/instrain/output/instrain_scaffold_info.tsv"
-            output:
-                "www/index.html"
-            threads:
-                config["max_threads"]
-            conda:
-                "envs/webpage.yaml"
-            script:
-                "scripts/create_slamm_webpage.py"
+
 
 
     else:
         use rule * from assembly as *
         use rule * from binning as *
         # Create summary webpage
-        rule create_webpage_long_assembly:
-            input:
-                checkm_file = "data/checkm.out",
-                final_bins = "data/das_tool_bins/done",
-                busco_done = "data/busco/done",
-                fasta = "data/final_contigs.fasta",
-                long_reads_qc_html = "www/nanoplot/longReadsNanoPlot-report.html",
-                short_reads_qc_html = "www/short_reads_fastqc.html",
-                genes_gff = "data/genes.gff",
-                gtdbtk_done = "data/gtdbtk/done",
-                singlem_done = "data/singlem_out/singlem_appraise.svg",
-                # strain_profile = "data/instrain/output/instrain_scaffold_info.tsv"
-            output:
-                "www/index.html"
-            threads:
-                config["max_threads"]
-            conda:
-                "envs/webpage.yaml"
-            script:
-                "scripts/create_slamm_webpage.py"
+
+    rule create_webpage_assemble:
+        input:
+            checkm_file = "data/checkm.out",
+            final_bins = "data/das_tool_bins/done",
+            busco_done = "data/busco/done",
+            fasta = "data/final_contigs.fasta",
+            long_reads_qc_html = "www/nanoplot/longReadsNanoPlot-report.html",
+            short_reads_qc_html = "www/short_reads_fastqc.html",
+            genes_gff = "data/genes.gff",
+            gtdbtk_done = "data/gtdbtk/done",
+            singlem_done = "data/singlem_out/singlem_appraise.svg",
+            # strain_profile = "data/instrain/output/instrain_scaffold_info.tsv"
+        output:
+            "www/index.html"
+        threads:
+            config["max_threads"]
+        conda:
+            "envs/webpage.yaml"
+        script:
+            "scripts/create_slamm_webpage.py"
 
 
 else:
@@ -117,12 +95,12 @@ else:
         
     use rule * from binning as *
     # Create summary webpage
-    rule create_webpage_binning_only:
+    rule create_webpage_recover:
         input:
             checkm_file = "data/checkm.out",
-            final_bins = "data/das_tool_bins/done",
+            final_bins = "data/galah_bins/done",
             busco_done = "data/busco/done",
-            fasta = "data/final_contigs.fasta",
+            fasta = config['fasta'],
             long_reads_qc_html = "www/nanoplot/longReadsNanoPlot-report.html",
             short_reads_qc_html = "www/short_reads_fastqc.html",
             genes_gff = "data/genes.gff",

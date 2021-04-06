@@ -8,7 +8,6 @@ onstart:
     import os
     import sys
 
-
     from snakemake.utils import logger, min_version
 
     sys.path.append(os.path.join(os.path.dirname(os.path.abspath(workflow.snakefile)),"../../scripts"))
@@ -22,8 +21,6 @@ onstart:
     threads = config["max_threads"]
     ## pplacer deadlocks on too many threads
     pplacer_threads = min(48, int(config["pplacer_threads"]))
-    import os
-    import sys
 
     if long_reads == "none" and short_reads_1 == "none":
         sys.exit("Need at least one of long_reads or short_reads_1")

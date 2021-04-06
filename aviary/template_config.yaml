@@ -24,6 +24,8 @@ meta_genome_size:
     50000000
 reference_filter:
     none
+strain_analysis:
+    False
 virsorter_data:
     /work/microbiome/db/virsorter_data_v2/virsorter-data
 gtdbtk_folder:

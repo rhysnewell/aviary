@@ -32,8 +32,6 @@ onstart:
     threads = config["max_threads"]
     ## pplacer deadlocks on too many threads
     pplacer_threads = min(48, int(config["pplacer_threads"]))
-    import os
-    import sys
 
     if long_reads == "none" and short_reads_1 == "none":
         sys.exit("Need at least one of long_reads or short_reads_1")
@@ -329,19 +327,23 @@ rule das_tool:
     conda:
         "../../envs/das_tool.yaml"
     shell:
-        "Fasta_to_Scaffolds2Bin.sh -i data/metabat_bins_2 -e fa > data/metabat_bins_2.tsv && " \
-        "Fasta_to_Scaffolds2Bin.sh -i data/metabat_bins_sspec -e fa > data/metabat_bins_sspec.tsv && " \
-        "Fasta_to_Scaffolds2Bin.sh -i data/metabat_bins_ssens -e fa > data/metabat_bins_ssens.tsv && " \
-        "Fasta_to_Scaffolds2Bin.sh -i data/metabat_bins_sens -e fa > data/metabat_bins_sens.tsv && " \
-        "Fasta_to_Scaffolds2Bin.sh -i data/metabat_bins_spec -e fa > data/metabat_bins_spec.tsv && " \
-        "Fasta_to_Scaffolds2Bin.sh -i data/concoct_bins -e fa > data/concoct_bins.tsv && " \
-        "Fasta_to_Scaffolds2Bin.sh -i data/maxbin2_bins -e fasta > data/maxbin_bins.tsv && " \
-        "Fasta_to_Scaffolds2Bin.sh -i data/rosella_bins -e fna > data/rosella_bins.tsv && " \
-        "Fasta_to_Scaffolds2Bin.sh -i data/vamb_bins/bins/ -e fna > data/vamb_bins.tsv && " \
-        "DAS_Tool --search_engine diamond --write_bin_evals 1 --write_bins 1 -t {threads}" \
-        " -i data/metabat_bins_2.tsv,data/rosella_bins.tsv,data/vamb_bins.tsv,data/metabat_bins_sspec.tsv,data/metabat_bins_spec.tsv,data/metabat_bins_ssens.tsv,data/metabat_bins_sens.tsv,data/maxbin_bins.tsv,data/concoct_bins.tsv" \
-        " -c {input.fasta} -o data/das_tool_bins/das_tool && " \
-        "touch data/das_tool_bins/done"
+        """
+        Fasta_to_Scaffolds2Bin.sh -i data/metabat_bins_2 -e fa > data/metabat_bins_2.tsv; 
+        Fasta_to_Scaffolds2Bin.sh -i data/metabat_bins_sspec -e fa > data/metabat_bins_sspec.tsv; 
+        Fasta_to_Scaffolds2Bin.sh -i data/metabat_bins_ssens -e fa > data/metabat_bins_ssens.tsv; 
+        Fasta_to_Scaffolds2Bin.sh -i data/metabat_bins_sens -e fa > data/metabat_bins_sens.tsv; 
+        Fasta_to_Scaffolds2Bin.sh -i data/metabat_bins_spec -e fa > data/metabat_bins_spec.tsv; 
+        Fasta_to_Scaffolds2Bin.sh -i data/concoct_bins -e fa > data/concoct_bins.tsv; 
+        Fasta_to_Scaffolds2Bin.sh -i data/maxbin2_bins -e fasta > data/maxbin_bins.tsv; 
+        Fasta_to_Scaffolds2Bin.sh -i data/vamb_bins -e fna > data/vamb_bins.tsv; 
+        Fasta_to_Scaffolds2Bin.sh -i data/rosella_bins -e fna > data/rosella_bins.tsv; 
+        scaffold2bin_files=$(find data/*bins*.tsv -not -empty -exec ls {{}} \; | tr "\n" ',' | sed "s/,$//g"); 
+        DAS_Tool --search_engine diamond --write_bin_evals 1 --write_bins 1 -t {threads} \
+         -i $scaffold2bin_files \
+         -c {input.fasta} \
+         -o data/das_tool_bins/das_tool && \
+        touch data/das_tool_bins/done
+        """
 
 
 rule das_tool_no_vamb:
@@ -688,7 +690,7 @@ rule recover_mags:
         # Use --precluster-method finch so dashing-related install problems are avoided i.e. https://github.com/dnbaker/dashing/issues/41
         "mkdir -p data/pre_galah_bins && cd data/pre_galah_bins/ && rm -f * && ln -s ../das_tool_bins/das_tool_DASTool_bins/* ./ && cd ../../ && " \
         "coverm cluster --precluster-method finch -t {threads} --checkm-tab-table data/checkm.out --genome-fasta-directory data/pre_galah_bins/ -x fa --output-representative-fasta-directory data/galah_bins --ani 0.97 && " \
-        "touch data/done"
+        "touch data/galah_bins/done"
 
 rule recover_mags_no_vamb:
     input:
