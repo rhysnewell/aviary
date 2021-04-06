@@ -1,9 +1,10 @@
-import json
 import os
-import sys
 import signal
 import subprocess
 
+"""
+Function to handle signal IOErrors after missing input
+"""
 def handler(signum, frame):
      raise IOError
 signal.signal(signal.SIGALRM, handler)

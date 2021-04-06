@@ -43,8 +43,8 @@ onstart:
         sys.exit("short_reads_2 does not point to a file")
     if gtdbtk_folder != "none" and not os.path.exists(gtdbtk_folder):
         sys.stderr.write("gtdbtk_folder does not point to a folder\n")
-    if busco_folder != "none" and not os.path.exists(busco_folder):
-        sys.stderr.write("busco_folder does not point to a folder\n")
+    # if busco_folder != "none" and not os.path.exists(busco_folder):
+    #     sys.stderr.write("busco_folder does not point to a folder\n")
 
 
 # rule run_batch:

@@ -7,7 +7,11 @@ onerror:
 ####################
 # isolate assembly #
 ####################
-
+rule assemble_reads_redbean:
+    input:
+        reads = config["long_reads"]
+    output:
+        contigs = "isolate/redbean/{assembly}"
 
 rule assemble_reads_flye:
     input:
@@ -40,7 +44,7 @@ rule polish_isolate_racon:
     output:
         fasta = "isolate/isolate.pol.rac.fasta"
     script:
-        "scripts/racon_polish.py"
+        "../../scripts/racon_polish.py"
 
 
 rule polish_isolate_medaka:

@@ -4,11 +4,11 @@ import sys
 
 
 if snakemake.config["long_reads"] != "none":
-    if snakemake.config["long_read_type"][0] == "nanopore":
+    if snakemake.config["long_read_type"][0] == "ont":
         subprocess.Popen("coverm genome -t %d -d data/galah_bins/ --single %s -p minimap2-ont --min-covered-fraction 0.0 -x fa %s --discard-unmapped > data/long_abundances.tsv" %
                          (snakemake.threads, " ".join(snakemake.config["long_reads"]),
                           '--bam-file-cache-directory data/binned_bams/' if snakemake.config['strain_analysis'] is True else ''), shell=True).wait()
-    elif snakemake.config["long_read_type"][0] == "pacbio":
+    elif snakemake.config["long_read_type"][0] in ["rs", "sq", "ccs"]:
         subprocess.Popen("coverm genome -t %d -d data/galah_bins/ --single %s -p minimap2-pb --min-covered-fraction 0.0 -x fa %s --discard-unmapped > data/long_abundances.tsv" %
                          (snakemake.threads, " ".join(snakemake.config["long_reads"]),
                           '--bam-file-cache-directory data/binned_bams/' if snakemake.config['strain_analysis'] is True else ''), shell=True).wait()

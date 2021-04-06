@@ -85,7 +85,7 @@ if config["fasta"] == "none":
         conda:
             "envs/webpage.yaml"
         script:
-            "scripts/create_slamm_webpage.py"
+            "scripts/create_aviary_webpage.py"
 
 
 else:
@@ -114,5 +114,5 @@ else:
         conda:
             "envs/webpage.yaml"
         script:
-            "scripts/create_slamm_webpage.py"
+            "scripts/create_aviary_webpage.py"
 

@@ -8,10 +8,9 @@ onstart:
     import os
     import sys
 
-
     from snakemake.utils import logger, min_version
 
-    sys.path.append(os.path.join(os.path.dirname(os.path.abspath(workflow.snakefile)),"../../scripts"))
+    sys.path.append(os.path.join(os.path.dirname(os.path.abspath(workflow.snakefile)), "../../scripts"))
 
     # minimum required snakemake version
     min_version("6.0")
@@ -36,7 +35,7 @@ onstart:
         sys.exit("short_reads_2 does not point to a file")
     if gtdbtk_folder != "none" and not os.path.exists(gtdbtk_folder):
         sys.stderr.write("gtdbtk_folder does not point to a folder\n")
-    if busco_folder != "none" and not os.path.exists(busco_folder):
-        sys.stderr.write("busco_folder does not point to a folder\n")
+    # if busco_folder != "none" and not os.path.exists(busco_folder):
+    #     sys.stderr.write("busco_folder does not point to a folder\n")
 
 # rule enrichm_annotate:

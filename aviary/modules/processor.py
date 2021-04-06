@@ -1,6 +1,7 @@
 #!/usr/bin/env python
 ###############################################################################
-# aviary.py - Info about aviary.py
+# processor.py - Class used to generate config file and make calls to the
+#                snakemake pipeline
 ###############################################################################
 #                                                                             #
 # This program is free software: you can redistribute it and/or modify        #
@@ -17,7 +18,6 @@
 # along with this program. If not, see <http://www.gnu.org/licenses/>.        #
 #                                                                             #
 ###############################################################################
-from aviary.__init__ import __version__
 import aviary.config.config as Config
 __author__ = "Rhys Newell"
 __copyright__ = "Copyright 2020"
@@ -30,11 +30,8 @@ __status__ = "Development"
 ###############################################################################
 # System imports
 import sys
-import argparse
 import logging
 import os
-import shutil
-from datetime import datetime
 import subprocess
 
 # Local imports
@@ -65,17 +62,17 @@ def get_snakefile(file="Snakefile"):
     return sf
 
 
-def update_config(config):
-    """
-    Populates config file with default config values.
-    And made changes if necessary.
-    """
-
-    # get default values and update them with values specified in config file
-    default_config = make_default_config()
-    utils.update_config(default_config, config)
-
-    return default_config
+# def update_config(config):
+#     """
+#     Populates config file with default config values.
+#     And made changes if necessary.
+#     """
+#
+#     # get default values and update them with values specified in config file
+#     default_config = make_default_config()
+#     utils.update_config(default_config, config)
+#
+#     return default_config
 
 
 ###############################################################################
@@ -170,8 +167,6 @@ class Processor:
             sys.exit(1)
 
         self._validate_config()
-
-        conf = load_configfile(self.config)
 
         cmd = (
             "snakemake --snakefile {snakefile} --directory {working_dir} "

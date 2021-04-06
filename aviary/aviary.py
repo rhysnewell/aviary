@@ -34,14 +34,8 @@ import sys
 import argparse
 import logging
 import os
-import shutil
 from datetime import datetime
-import subprocess
 
-# Local imports
-from snakemake import utils
-from snakemake.io import load_configfile
-from ruamel.yaml import YAML  # used for yaml reading with comments
 
 # Debug
 debug={1:logging.CRITICAL,
@@ -63,17 +57,24 @@ def phelp():
     print(
 """
 
-         ......:::::: AVIARY ::::::......
+                ......:::::: AVIARY ::::::......
 
 A comprehensive metagenomics bioinformatics pipeline
 
-SUBCOMMAND:
-cluster  - Clusters samples based on OTU content using SingleM
-assemble - Perform hybrid assembly using short and long reads, or assembly using only short reads
-recover  - Recover MAGs from provided assembly using a variety of binning algorithms 
-annotate - Annotate MAGs
-genotype - Perform strain level analysis of MAGs
-complete - Runs each stage of the pipeline: assemble, recover, annotate, genotype in that order.
+Metagenome assembly, binning, and annotation:
+        cluster  - Clusters samples based on OTU content using SingleM
+        assemble - Perform hybrid assembly using short and long reads, 
+                   or assembly using only short reads
+        recover  - Recover MAGs from provided assembly using a variety 
+                   of binning algorithms 
+        annotate - Annotate MAGs
+        genotype - Perform strain level analysis of MAGs
+        complete - Runs each stage of the pipeline: assemble, recover, 
+                   annotate, genotype in that order.
+
+Isolate assembly, binning, and annotation:
+        isolate  - Perform isolate assembly
+
 """
 )
 
@@ -111,7 +112,8 @@ def main():
 
     ####################################################################
 
-    base_group = argparse.ArgumentParser(add_help=False)
+    base_group = argparse.ArgumentParser(formatter_class=CustomHelpFormatter,
+                                         add_help=False)
 
     base_group.add_argument(
         '-t', '--max-threads', '--max_threads',
@@ -190,8 +192,9 @@ def main():
 
     ####################################################################
 
-    read_group = argparse.ArgumentParser(add_help=False)
-    read_group_exclusive = read_group.add_mutually_exclusive_group()
+    short_read_group = argparse.ArgumentParser(formatter_class=CustomHelpFormatter,
+                                         add_help=False)
+    read_group_exclusive = short_read_group.add_mutually_exclusive_group()
 
     read_group_exclusive.add_argument(
         '-1', '--pe-1', '--paired-reads-1', '--paired_reads_1', '--pe1',
@@ -201,7 +204,7 @@ def main():
         default="none"
     )
 
-    read_group.add_argument(
+    short_read_group.add_argument(
         '-2', '--pe-2', '--paired-reads-2', '--paired_reads_2', '--pe2',
         help='A space separated list of forwards read files to use for the binning process',
         dest='pe2',
@@ -225,7 +228,11 @@ def main():
         default="none"
     )
 
-    read_group.add_argument(
+    ####################################################################
+
+    long_read_group = argparse.ArgumentParser(formatter_class=CustomHelpFormatter,
+                                              add_help=False)
+    long_read_group.add_argument(
         '-l', '--longreads',
         help='A space separated list of interleaved read files for the binning process',
         dest='longreads',
@@ -233,13 +240,15 @@ def main():
         default="none"
     )
 
-    read_group.add_argument(
-        '--longread-type', '--longread_type',
-        help='Whether the longreads are oxford nanopore or pacbio',
+    long_read_group.add_argument(
+        '-x', '--longread-type', '--longread_type',
+        help='Whether the sequencing platform and technology for the longreads. '
+             '"rs" for PacBio RSII, "sq" for PacBio Sequel, "ccs" for PacBio CCS '
+             'reads and "ont" for Oxford Nanopore',
         dest='longread_type',
         nargs=1,
-        default="nanopore",
-        choices=["nanopore", "pacbio"],
+        default="ont",
+        choices=["ont", "rs", "sq", "ccs"],
     )
 
     ####################################################################
@@ -250,7 +259,8 @@ def main():
 
     ####################################################################
 
-    binning_group = argparse.ArgumentParser(add_help=False)
+    binning_group = argparse.ArgumentParser(formatter_class=CustomHelpFormatter,
+                                            add_help=False)
 
     binning_group.add_argument(
         '-s', '--min-contig-size', '--min_contig_size',
@@ -267,7 +277,8 @@ def main():
     )
 
     ####################################################################
-    mag_group = argparse.ArgumentParser(add_help=False)
+    mag_group = argparse.ArgumentParser(formatter_class=CustomHelpFormatter,
+                                        add_help=False)
     mag_group_exclusive = mag_group.add_mutually_exclusive_group()
 
     mag_group_exclusive.add_argument(
@@ -284,6 +295,28 @@ def main():
         dest='directory',
         nargs='*',
         required=False,
+    )
+
+    #####################################################################
+    isolate_group = argparse.ArgumentParser(formatter_class=CustomHelpFormatter,
+                                            add_help=False)
+
+    isolate_group.add_argument(
+        '--guppy-model', '--guppy_model',
+        help='The guppy model used by medaka to perform polishing',
+        dest='guppy_model',
+        nargs=1,
+        required=False,
+        default='r941_min_high_g360'
+    )
+
+    isolate_group.add_argument(
+        '-g', '--genome-size', '--genome_size',
+        help='Approximate size of the isolate genome to be assembled',
+        dest='genome_size',
+        nargs=1,
+        required=False,
+        default=5000000
     )
 
     #~#~#~#~#~#~#~#~#~#~#~#~#~   sub-parsers   ~#~#~#~#~#~#~#~#~#~#~#~#~#
@@ -429,6 +462,35 @@ def main():
         help='Main workflow to run',
         dest='workflow',
         default='complete_workflow',
+    )
+
+    ##########################  ~ ISOLATE ~  ###########################
+
+    isolate_options = subparsers.add_parser('isolate',
+                                             description='Step-down hybrid assembly using long and short reads, or assembly using only short or long reads.',
+                                             formatter_class=CustomHelpFormatter,
+                                             parents=[read_group, isolate_group, binning_group, base_group],
+                                             epilog=
+                                             '''
+                                                                             ......:::::: ISOLATE ::::::......
+                                 
+                                             aviary isolate -1 *.1.fq.gz -2 *.2.fq.gz --longreads *.nanopore.fastq.gz --longread_type nanopore
+                                 
+                                             ''')
+
+    isolate_options.add_argument(
+        '-r', '--reference-filter', '--reference_filter',
+        help='Reference filter file to aid in the assembly',
+        dest="reference_filter",
+        nargs=1,
+        required=False,
+    )
+
+    isolate_options.add_argument(
+        '-w', '--workflow',
+        help='Main workflow to run',
+        dest='workflow',
+        default='create_webpage_assemble',
     )
 
     ###########################################################################
