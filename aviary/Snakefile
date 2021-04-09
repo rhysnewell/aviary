@@ -95,24 +95,24 @@ else:
         
     use rule * from binning as *
     # Create summary webpage
-    rule create_webpage_recover:
-        input:
-            checkm_file = "data/checkm.out",
-            final_bins = "data/galah_bins/done",
-            busco_done = "data/busco/done",
-            fasta = config['fasta'],
-            long_reads_qc_html = "www/nanoplot/longReadsNanoPlot-report.html",
-            short_reads_qc_html = "www/short_reads_fastqc.html",
-            genes_gff = "data/genes.gff",
-            gtdbtk_done = "data/gtdbtk/done",
-            singlem_done = "data/singlem_out/singlem_appraise.svg",
-            # strain_profile = "data/instrain/output/instrain_scaffold_info.tsv"
-        output:
-            "www/index.html"
-        threads:
-            config["max_threads"]
-        conda:
-            "envs/webpage.yaml"
-        script:
-            "scripts/create_aviary_webpage.py"
+    # rule create_webpage_recover:
+    #     input:
+    #         checkm_file = "data/checkm.out",
+    #         final_bins = "data/galah_bins/done",
+    #         busco_done = "data/busco/done",
+    #         fasta = config['fasta'],
+    #         long_reads_qc_html = "www/nanoplot/longReadsNanoPlot-report.html",
+    #         short_reads_qc_html = "www/short_reads_fastqc.html",
+    #         genes_gff = "data/genes.gff",
+    #         gtdbtk_done = "data/gtdbtk/done",
+    #         singlem_done = "data/singlem_out/singlem_appraise.svg",
+    #         # strain_profile = "data/instrain/output/instrain_scaffold_info.tsv"
+    #     output:
+    #         "www/index.html"
+    #     threads:
+    #         config["max_threads"]
+    #     conda:
+    #         "envs/webpage.yaml"
+    #     script:
+    #         "scripts/create_aviary_webpage.py"
 

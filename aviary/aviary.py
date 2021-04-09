@@ -326,7 +326,7 @@ def main():
                                              description='Cluster samples together based on OTU content. '
                                                          'Samples that cluster together should be used for assembly and binning.',
                                              formatter_class=CustomHelpFormatter,
-                                             parents=[read_group, base_group],
+                                             parents=[short_read_group, long_read_group, base_group],
                                              epilog=
                                              '''
                                                                 ......:::::: CLUSTER ::::::......
@@ -347,7 +347,7 @@ def main():
     assemble_options = subparsers.add_parser('assemble',
                                               description='Step-down hybrid assembly using long and short reads, or assembly using only short or long reads.',
                                               formatter_class=CustomHelpFormatter,
-                                              parents=[read_group, binning_group, base_group],
+                                              parents=[short_read_group, long_read_group, binning_group, base_group],
                                               epilog=
         '''
                                         ......:::::: ASSEMBLE ::::::......
@@ -376,7 +376,7 @@ def main():
     recover_options = subparsers.add_parser('recover',
                                             description='The complete binning pipeline',
                                             formatter_class=CustomHelpFormatter,
-                                            parents=[read_group, binning_group, base_group],
+                                            parents=[short_read_group, long_read_group, binning_group, base_group],
                                             epilog=
     '''
                                            ......:::::: RECOVER ::::::......
@@ -397,7 +397,7 @@ def main():
         '-w', '--workflow',
         help='Main workflow to run',
         dest='workflow',
-        default='create_webpage_recover',
+        default='recover_mags',
     )
 
     ##########################  ~ ANNOTATE ~   ###########################
@@ -426,7 +426,7 @@ def main():
     genotype_options = subparsers.add_parser('genotype',
                                              description='The complete binning pipeline',
                                              formatter_class=CustomHelpFormatter,
-                                             parents=[mag_group, read_group, base_group],
+                                             parents=[mag_group, short_read_group, long_read_group, base_group],
                                              epilog=
                                              '''
                                                      ......:::::: GENOTYPE ::::::......
@@ -448,7 +448,7 @@ def main():
                                             description='Cluster samples together based on OTU content. '
                                                         'Samples that cluster together should be used for assembly and binning.',
                                             formatter_class=CustomHelpFormatter,
-                                            parents=[read_group, base_group],
+                                            parents=[short_read_group, long_read_group, base_group],
                                             epilog=
                                             '''
                                                                ......:::::: COMPLETE ::::::......
@@ -469,7 +469,7 @@ def main():
     isolate_options = subparsers.add_parser('isolate',
                                              description='Step-down hybrid assembly using long and short reads, or assembly using only short or long reads.',
                                              formatter_class=CustomHelpFormatter,
-                                             parents=[read_group, isolate_group, binning_group, base_group],
+                                             parents=[short_read_group, long_read_group, isolate_group, binning_group, base_group],
                                              epilog=
                                              '''
                                                                              ......:::::: ISOLATE ::::::......
