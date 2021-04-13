@@ -396,7 +396,7 @@ def main():
         '-w', '--workflow',
         help='Main workflow to run',
         dest='workflow',
-        default='create_webpage_recover',
+        default='recover_mags',
     )
 
     ##########################  ~ ANNOTATE ~   ###########################
