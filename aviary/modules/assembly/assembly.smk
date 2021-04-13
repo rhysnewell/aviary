@@ -52,7 +52,7 @@ rule map_reads_ref:
     threads:
          config["max_threads"]
     shell:
-        "minimap2 -ax map-ont -t {threads} {input.reference_filter} {input.fastq} | samtools view -b  > {output}"
+        "minimap2 -ax map-ont -t {threads} {input.reference_filter} {input.fastq} | samtools view -@ {threads} -b > {output}"
 
 
 # Get a list of reads that don't map to genome you want to filter
@@ -177,8 +177,8 @@ rule filter_illumina_ref:
     shell:
         """
         minimap2 -ax sr -t {threads} {input.reference_filter} {input.fastq_1} {input.fastq_2}  |
-        samtools view -b -f 12 > {output.bam} && \
-        samtools bam2fq {output.bam} | gzip > {output.fastq}
+        samtools view -@ {threads} -b -f 12 > {output.bam} && \
+        samtools bam2fq -@ {threads} {output.bam} | gzip > {output.fastq}
         """
 
 
@@ -196,19 +196,35 @@ rule filter_illumina_ref_interleaved:
     shell:
         """
         minimap2 -ax sr -t {threads} {input.reference_filter} {input.fastq_1} |
-        samtools view -b -f 12 > {output.bam} && \
-        samtools bam2fq {output.bam} | gzip > {output.fastq}
+        samtools view -@ {threads} -b -f 12 > {output.bam} && \
+        samtools bam2fq -@ {threads} {output.bam} | gzip > {output.fastq}
         """
 
-
-# The racon polished long read assembly is polished again with the short reads using Pilon
-rule polish_meta_pilon:
+# Generate BAM file for pilon, discard unmapped reads
+rule generate_pilon_sort:
     input:
         reads = "data/short_reads.fastq.gz",
         fasta = "data/assembly.pol.rac.fasta"
     output:
-        fasta = "data/assembly.pol.pil.fasta",
         bam = "data/pilon.sort.bam"
+    threads:
+        config["max_threads"]
+    conda:
+        "../../envs/pilon.yaml"
+    shell:
+        """
+        minimap2 -ax sr -t {threads} {input.fasta} {input.reads} | samtools view -@ {threads} -F 4 -b | 
+        samtools sort -@ {threads} -o {output.bam} - && \
+        samtools index -@ {threads} {output.bam}
+        """
+
+# The racon polished long read assembly is polished again with the short reads using Pilon
+rule polish_meta_pilon:
+    input:
+        fasta = "data/assembly.pol.rac.fasta",
+        bam = "data/pilon.sort.bam"
+    output:
+        fasta = "data/assembly.pol.pil.fasta"
     threads:
         config["max_threads"]
     params:
@@ -217,9 +233,6 @@ rule polish_meta_pilon:
         "../../envs/pilon.yaml"
     shell:
         """
-        minimap2 -ax sr -t {threads} {input.fasta} {input.reads} | samtools view -b | 
-        samtools sort -o {output.bam} - && \
-        samtools index {output.bam} && \
         pilon -Xmx{params.pilon_memory}000m --genome {input.fasta} --frags data/pilon.sort.bam \
         --threads {threads} --output data/assembly.pol.pil --fix bases
         """
@@ -336,10 +349,10 @@ rule filter_illumina_assembly:
          config["max_threads"]
     shell:
         """
-        minimap2 -ax sr -t {threads} {input.reference} {input.fastq} |  samtools view -b |
-        samtools sort -o {output.bam} - && \
-        samtools index {output.bam} && \
-        samtools bam2fq -f 12 {output.bam} | gzip > {output.fastq}
+        minimap2 -ax sr -t {threads} {input.reference} {input.fastq} |  samtools view -@ {threads} -b |
+        samtools sort -@ {threads} -o {output.bam} - && \
+        samtools index -@ {threads} {output.bam} && \
+        samtools bam2fq -@ {threads} -f 12 {output.bam} | gzip > {output.fastq}
         """
 
 # If unassembled long reads are provided, skip the long read assembly
@@ -451,7 +464,7 @@ rule metabat_binning_short:
     shell:
          """
          mkdir -p data/metabat_bins && \
-         metabat --seed 89 --unbinned -m 1500 -l -i {input.fasta} -a {input.assembly_cov} \
+         metabat --seed 89 --unbinned -m 1500 -l -i {input.fasta} -t {threads} -a {input.assembly_cov} \
          -o data/metabat_bins/binned_contigs && \
          touch data/metabat_bins/done
          """
@@ -469,9 +482,9 @@ rule map_long_mega:
         "../../envs/minimap2.yaml"
     shell:
         """
-        minimap2 -t {threads} -ax map-ont -a {input.fasta} {input.fastq} |  samtools view -b |
-        samtools sort -o {output.bam} - && \
-        samtools index {output.bam}
+        minimap2 -t {threads} -ax map-ont -a {input.fasta} {input.fastq} |  samtools view -@ {threads} -b |
+        samtools sort -@ {threads} -o {output.bam} - && \
+        samtools index -@ {threads} {output.bam}
         """
 
 # Long and short reads that mapped to the spades assembly are pooled (binned) together
@@ -541,11 +554,11 @@ rule combine_assemblies:
     shell:
         """
         cat {input.flye_fasta} {input.unicyc_fasta} > {output.fasta} && \
-        minimap2 -t {threads} -ax map-ont -a {output.fasta} {input.long_reads} |  samtools view -b | 
-        samtools sort -o {output.long_bam} - && samtools index {output.long_bam} && \
-        minimap2 -ax sr -t {threads} {output.fasta} {input.short_reads} |  samtools view -b |
-        samtools sort -o {output.short_bam} - && \
-        samtools index {output.short_bam}
+        minimap2 -t {threads} -ax map-ont -a {output.fasta} {input.long_reads} |  samtools view -@ {threads} -b | 
+        samtools sort -@ {threads} -o {output.long_bam} - && samtools index -@ {threads} {output.long_bam} && \
+        minimap2 -ax sr -t {threads} {output.fasta} {input.short_reads} |  samtools view -@ {threads} -b |
+        samtools sort -@ {threads} -o {output.short_bam} - && \
+        samtools index -@ {threads} {output.short_bam}
         """
 
 rule combine_long_only:
@@ -562,9 +575,9 @@ rule combine_long_only:
         config["max_threads"]
     shell:
         """
-        minimap2 -t {threads} -ax map-ont -a {input.fasta} {input.long_reads} |  samtools view -b | 
-        samtools sort -o {output.bam} - && \
-        samtools index {output.bam} && \
+        minimap2 -t {threads} -ax map-ont -a {input.fasta} {input.long_reads} |  samtools view -@ {threads} -b | 
+        samtools sort -@ {threads} -o {output.bam} - && \
+        samtools index -@ {threads} {output.bam} && \
         ln {input.fasta} {output.fasta}
         """
 
