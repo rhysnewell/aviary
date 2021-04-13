@@ -87,8 +87,16 @@ class Processor:
 
         self.gtdbtk = gtdbtk
         self.conda_prefix = conda_prefix
-        self.assembly = args.assembly
-        self.reference_filter = args.reference_filter
+        try:
+            self.assembly = args.assembly
+        except AttributeError:
+            self.assembly = 'none'
+
+        try:
+            self.reference_filter = args.reference_filter
+        except AttributeError:
+            self.reference_filter = 'none'
+
         self.longreads = args.longreads
         self.longread_type = args.longread_type
         self.threads = args.max_threads
@@ -97,12 +105,16 @@ class Processor:
         self.min_contig_size = args.min_contig_size
         self.min_bin_size = args.min_bin_size
         self.output = args.output
-        self.pe2 = args.pe2
 
-        if args.interleaved == "none":
-            self.pe1 = args.pe1
-        elif args.pe2 == "none" and args.interleaved != "none":
-            self.pe1 = args.interleaved
+        if args.coupled is not "none":
+            self.pe1 = args.coupled[::2]
+            self.pe2 = args.coupled[1::2]
+        else:
+            self.pe2 = args.pe2
+            if args.interleaved == "none":
+                self.pe1 = args.pe1
+            elif args.pe2 == "none" and args.interleaved != "none":
+                self.pe1 = args.interleaved
 
     def make_config(self):
         """
@@ -110,7 +122,7 @@ class Processor:
         updates it by the parameters provided.
         """
 
-        self.config = os.path.join(self.output, 'template_config.yaml')
+        self.config = os.path.join(self.output, 'config.yaml')
 
         yaml = YAML()
         yaml.version = (1, 1)
@@ -133,8 +145,8 @@ class Processor:
 
         conf["fasta"] = self.assembly
         conf["reference_filter"] = self.reference_filter
-        conf["max_threads"] = self.threads
-        conf["pplacer_threads"] = self.pplacer_threads
+        conf["max_threads"] = int(self.threads)
+        conf["pplacer_threads"] = int(self.pplacer_threads)
         conf["max_memory"] = int(self.max_memory)
         conf["short_reads_1"] = self.pe1
         conf["short_reads_2"] = self.pe2

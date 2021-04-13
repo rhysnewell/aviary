@@ -165,13 +165,6 @@ def main():
     )
 
     base_group.add_argument(
-        '--enrichm-db-path', '--enrichm_db_path',
-        help='Path to the local EnrichM Database files',
-        dest='enrichm_db_path',
-        default=Config.get_enrichm_db_path(),
-    )
-
-    base_group.add_argument(
         '--dry-run', '--dry_run', '--dryrun',
         help='Perform snakemake dry run, tests workflow order and conda environments',
         type=str2bool,
@@ -183,7 +176,8 @@ def main():
 
     base_group.add_argument(
         '--conda-frontend', '--conda_frontend',
-        help='Which conda frontend to use',
+        help='Which conda frontend to use, mamba is faster but harder to debug. Switch this to conda '
+             'If experiencing problems installing environments',
         dest='conda_frontend',
         nargs=1,
         default="mamba",
@@ -253,9 +247,14 @@ def main():
 
     ####################################################################
 
-    # annotation_group = argparse.ArgumentParser(add_help=False)
-    #
-    # annotation_group
+    annotation_group = argparse.ArgumentParser(add_help=False)
+
+    annotation_group.add_argument(
+        '--enrichm-db-path', '--enrichm_db_path',
+        help='Path to the local EnrichM Database files',
+        dest='enrichm_db_path',
+        default=Config.get_enrichm_db_path(),
+    )
 
     ####################################################################
 
@@ -326,7 +325,7 @@ def main():
                                              description='Cluster samples together based on OTU content. '
                                                          'Samples that cluster together should be used for assembly and binning.',
                                              formatter_class=CustomHelpFormatter,
-                                             parents=[read_group, base_group],
+                                             parents=[short_read_group, long_read_group, base_group],
                                              epilog=
                                              '''
                                                                 ......:::::: CLUSTER ::::::......
@@ -347,12 +346,12 @@ def main():
     assemble_options = subparsers.add_parser('assemble',
                                               description='Step-down hybrid assembly using long and short reads, or assembly using only short or long reads.',
                                               formatter_class=CustomHelpFormatter,
-                                              parents=[read_group, binning_group, base_group],
+                                              parents=[short_read_group, long_read_group, binning_group, base_group],
                                               epilog=
         '''
                                         ......:::::: ASSEMBLE ::::::......
 
-        aviary assemble -1 *.1.fq.gz -2 *.2.fq.gz --longreads *.nanopore.fastq.gz --longread_type nanopore
+        aviary assemble -1 *.1.fq.gz -2 *.2.fq.gz --longreads *.nanopore.fastq.gz --long_read_type ont
 
         ''')
 
@@ -361,7 +360,7 @@ def main():
         help='Reference filter file to aid in the assembly',
         dest="reference_filter",
         nargs=1,
-        required=False,
+        default='none'
     )
 
     assemble_options.add_argument(
@@ -376,12 +375,12 @@ def main():
     recover_options = subparsers.add_parser('recover',
                                             description='The complete binning pipeline',
                                             formatter_class=CustomHelpFormatter,
-                                            parents=[read_group, binning_group, base_group],
+                                            parents=[short_read_group, long_read_group, binning_group, base_group],
                                             epilog=
     '''
                                            ......:::::: RECOVER ::::::......
     
-    aviary recover --assembly scaffolds.fasta -1 *.1.fq.gz -2 *.2.fq.gz --longreads *.nanopore.fastq.gz --longread_type nanopore
+    aviary recover --assembly scaffolds.fasta -1 *.1.fq.gz -2 *.2.fq.gz --longreads *.nanopore.fastq.gz --long_read_type ont
 
     ''')
 
@@ -405,7 +404,7 @@ def main():
     annotate_options = subparsers.add_parser('annotate',
                                               description='The complete binning pipeline',
                                               formatter_class=CustomHelpFormatter,
-                                              parents=[mag_group, base_group],
+                                              parents=[mag_group, annotation_group, base_group],
                                               epilog=
                                             '''
                                                   ......:::::: ANNOTATE ::::::......
@@ -426,7 +425,7 @@ def main():
     genotype_options = subparsers.add_parser('genotype',
                                              description='The complete binning pipeline',
                                              formatter_class=CustomHelpFormatter,
-                                             parents=[mag_group, read_group, base_group],
+                                             parents=[mag_group, short_read_group, long_read_group, base_group],
                                              epilog=
                                              '''
                                                      ......:::::: GENOTYPE ::::::......
@@ -448,7 +447,7 @@ def main():
                                             description='Cluster samples together based on OTU content. '
                                                         'Samples that cluster together should be used for assembly and binning.',
                                             formatter_class=CustomHelpFormatter,
-                                            parents=[read_group, base_group],
+                                            parents=[short_read_group, long_read_group, binning_group, annotation_group, base_group],
                                             epilog=
                                             '''
                                                                ......:::::: COMPLETE ::::::......
@@ -469,12 +468,12 @@ def main():
     isolate_options = subparsers.add_parser('isolate',
                                              description='Step-down hybrid assembly using long and short reads, or assembly using only short or long reads.',
                                              formatter_class=CustomHelpFormatter,
-                                             parents=[read_group, isolate_group, binning_group, base_group],
+                                             parents=[short_read_group, long_read_group, isolate_group, binning_group, base_group],
                                              epilog=
                                              '''
                                                                              ......:::::: ISOLATE ::::::......
                                  
-                                             aviary isolate -1 *.1.fq.gz -2 *.2.fq.gz --longreads *.nanopore.fastq.gz --longread_type nanopore
+                                             aviary isolate -1 *.1.fq.gz -2 *.2.fq.gz --longreads *.nanopore.fastq.gz --long_read_type ont
                                  
                                              ''')
 

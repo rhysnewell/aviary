@@ -1,3 +1,12 @@
+ruleorder: skip_long_assembly > get_reads_list_ref > copy_reads > short_only
+ruleorder: filter_illumina_assembly > short_only
+ruleorder: filter_illumina_ref > filter_illumina_ref_interleaved > ill_copy_reads > ill_copy_reads_interleaved
+ruleorder: fastqc > fastqc_long
+ruleorder: combine_assemblies > combine_long_only
+# ruleorder: instrain > instrain_long
+ruleorder: skip_long_assembly > get_high_cov_contigs > short_only
+ruleorder: skip_long_assembly > filter_illumina_assembly
+
 onsuccess:
     print("Assembly finished, no error")
 
@@ -35,7 +44,7 @@ onstart:
 rule map_reads_ref:
     input:
         fastq = config["long_reads"],
-        reference_filter= config["reference_filter"]
+        reference_filter = config["reference_filter"]
     output:
         "data/raw_mapped_ref.bam"
     conda:
@@ -58,6 +67,47 @@ rule get_umapped_reads_ref:
         "../../envs/pysam.yaml"
     script:
         "../../scripts/filter_read_list.py"
+
+# If you don't want to filter the reads using a genome just copy them into the folder
+rule copy_reads:
+    input:
+        fastq = config["long_reads"],
+    output:
+        "data/long_reads.fastq.gz"
+    run:
+        if input.fastq[0][-3:] == ".gz" and len(input.fastq) == 1: # Check if only one longread sample
+            shell("ln -s {input.fastq} {output}")
+        elif len(input.fastq) != 1:
+            shell("cat {input.fastq} | gzip > {output}")
+        elif len(input.fastq) > 1:
+            for long_sample in input.fastq:
+                if long_sample[-3:] == ".gz":
+                    shell("zcat %s | gzip >> {output}" % long_sample)
+                else:
+                    shell("cat %s | gzip >> {output}" % long_sample)
+
+# If no reference provided merge the short reads and copy to working directory
+rule ill_copy_reads:
+    input:
+        fastq_1 = config["short_reads_1"],
+        fastq_2 = config["short_reads_2"]
+    output:
+        "data/short_reads.fastq.gz"
+    conda:
+        "../../envs/seqtk.yaml"
+    shell:
+        "rename.sh prefix=SLAM in={input.fastq_1} in2={input.fastq_2} out={output} addpairnum=f"
+
+
+rule ill_copy_reads_interleaved:
+    input:
+        fastq = config["short_reads_1"]
+    output:
+        "data/short_reads.fastq.gz"
+    conda:
+        "../../envs/seqtk.yaml"
+    shell:
+        "rename.sh prefix=SLAM in={input.fastq_1} out={output} addpairnum=f int=t"
 
 
 # Create new read file with filtered reads
@@ -376,14 +426,16 @@ rule spades_assembly_coverage:
          fastq = "data/short_reads.filt.fastq.gz",
          fasta = "data/spades_assembly.fasta"
     output:
-         assembly_cov = "data/short_read_assembly.cov"
+         assembly_cov = "data/short_read_assembly.cov",
+         short_vs_mega = "data/short_vs_mega.bam"
     conda:
          "../../envs/coverm.yaml"
     threads:
          config["max_threads"]
     shell:
         """
-        coverm contig -m metabat -t {threads} -r {input.fasta} -i {input.fastq} > data/short_read_assembly.cov
+        coverm contig -m metabat -t {threads} -r {input.fasta} -i {input.fastq} --bam-file-cache-directory cached_bams/ > data/short_read_assembly.cov;
+        ln -s cached_bams/*.bam ./short_vs_mega.bam
         """
 
 rule metabat_binning_short:

@@ -37,6 +37,8 @@ def get_gtdb_path():
                 'echo "export GTDBTK_DATA_PATH=%s" >> ~/.bashrc' %
                 (os.environ['GTDBTK_DATA_PATH']), shell=True).wait()
         signal.alarm(0)
+        
+        return os.environ['GTDBTK_DATA_PATH']
 
 
 """
@@ -44,8 +46,8 @@ Set the default enrichm db path.
 """
 def get_enrichm_db_path():
     try:
-        CONDA_PATH = os.environ['ENRICHM_DB']
-        return CONDA_PATH
+        ENRICHM_DB = os.environ['ENRICHM_DB']
+        return ENRICHM_DB
     except KeyError:
         print('\n' + '=' * 80)
         print(' ERROR '.center(80))
@@ -66,6 +68,8 @@ def get_enrichm_db_path():
                 'echo "export ENRICHM_DB=%s" >> ~/.bashrc' %
                 (os.environ['ENRICHM_DB']), shell=True).wait()
         signal.alarm(0)
+        
+        return os.environ['ENRICHM_DB']
 
 """
 Set the default conda environment path.
@@ -94,3 +98,5 @@ def get_conda_path():
                 'echo "export CONDA_ENV_PATH=%s" >> ~/.bashrc' %
                 (os.environ['CONDA_ENV_PATH']), shell=True).wait()
         signal.alarm(0)
+        
+        return os.environ['CONDA_ENV_PATH']

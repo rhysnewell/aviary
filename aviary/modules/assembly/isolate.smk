@@ -1,3 +1,5 @@
+ruleorder: polish_isolate_racon_ill > skip_illumina_polish
+
 onsuccess:
     print("Isolate assembly finished, no error")
 
@@ -7,11 +9,11 @@ onerror:
 ####################
 # isolate assembly #
 ####################
-rule assemble_reads_redbean:
-    input:
-        reads = config["long_reads"]
-    output:
-        contigs = "isolate/redbean/{assembly}"
+# rule assemble_reads_redbean:
+#     input:
+#         reads = config["long_reads"]
+#     output:
+#         contigs = "isolate/redbean/{assembly}"
 
 rule assemble_reads_flye:
     input:
