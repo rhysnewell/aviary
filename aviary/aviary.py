@@ -62,18 +62,18 @@ def phelp():
 A comprehensive metagenomics bioinformatics pipeline
 
 Metagenome assembly, binning, and annotation:
-        cluster  - Clusters samples based on OTU content using SingleM
+        cluster  - Clusters samples based on OTU content using SingleM **TBC**
         assemble - Perform hybrid assembly using short and long reads, 
                    or assembly using only short reads
         recover  - Recover MAGs from provided assembly using a variety 
                    of binning algorithms 
-        annotate - Annotate MAGs
-        genotype - Perform strain level analysis of MAGs
+        annotate - Annotate MAGs **TBC**
+        genotype - Perform strain level analysis of MAGs **TBC**
         complete - Runs each stage of the pipeline: assemble, recover, 
                    annotate, genotype in that order.
 
 Isolate assembly, binning, and annotation:
-        isolate  - Perform isolate assembly
+        isolate  - Perform isolate assembly **PARTIALLY COMPLETED**
 
 """
 )
@@ -318,6 +318,28 @@ def main():
         default=5000000
     )
 
+    #####################################################################
+    # viral_group = argparse.ArgumentParser(formatter_class=CustomHelpFormatter,
+    #                                         add_help=False)
+    #
+    # viral_group.add_argument(
+    #     '--virsorter-data', '--virsorter_data',
+    #     help='The guppy model used by medaka to perform polishing',
+    #     dest='guppy_model',
+    #     nargs=1,
+    #     required=False,
+    #     default='r941_min_high_g360'
+    # )
+    #
+    # viral_group.add_argument(
+    #     '-g', '--genome-size', '--genome_size',
+    #     help='Approximate size of the isolate genome to be assembled',
+    #     dest='genome_size',
+    #     nargs=1,
+    #     required=False,
+    #     default=5000000
+    # )
+
     #~#~#~#~#~#~#~#~#~#~#~#~#~   sub-parsers   ~#~#~#~#~#~#~#~#~#~#~#~#~#
     ##########################   ~ CLUSTER ~  ###########################
 
@@ -354,6 +376,7 @@ def main():
         aviary assemble -1 *.1.fq.gz -2 *.2.fq.gz --longreads *.nanopore.fastq.gz --long_read_type ont
 
         ''')
+
 
     assemble_options.add_argument(
         '-r', '--reference-filter', '--reference_filter',
@@ -435,6 +458,27 @@ def main():
                                              ''')
 
     genotype_options.add_argument(
+        '-w', '--workflow',
+        help='Main workflow to run',
+        dest='workflow',
+        default='create_webpage_genotype',
+    )
+
+    ##########################  ~ VIRAL ~   ###########################
+
+    viral_options = subparsers.add_parser('viral',
+                                              description='The complete binning pipeline',
+                                              formatter_class=CustomHelpFormatter,
+                                              parents=[mag_group, short_read_group, long_read_group, base_group],
+                                              epilog=
+                                              '''
+                                                      ......:::::: VIRAL ::::::...... 
+     
+                                              aviary viral --genome-fasta-files *.fasta
+     
+                                              ''')
+
+    viral_options.add_argument(
         '-w', '--workflow',
         help='Main workflow to run',
         dest='workflow',

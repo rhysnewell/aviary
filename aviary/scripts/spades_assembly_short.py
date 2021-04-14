@@ -5,7 +5,7 @@ if snakemake.config['short_reads_2'] != 'none':
 
     if len(snakemake.config['short_reads_2']) > 1:
         subprocess.Popen(
-            "spades.py --memory %s --meta -t %d -o data/spades_assembly -k 21,33,55,81,99,127 %s %s" %
+            "spades.py --memory %s -t %d -o data/spades_assembly -k 21,33,55,81,99,127 %s %s" %
             (snakemake.config["max_memory"], snakemake.threads,
              [" ".join(['-pe-1 ' + str(tup[0] + 1), tup[1]]) for tup in enumerate(snakemake.config['short_reads_1'])],
              [" ".join(['-pe-2 ' + str(tup[0] + 1), tup[1]]) for tup in enumerate(snakemake.config['short_reads_2'])]),
@@ -19,7 +19,7 @@ if snakemake.config['short_reads_2'] != 'none':
 elif snakemake.config['short_reads_1']  != 'none':
     if len(snakemake.config['short_reads_2']) > 1:
         subprocess.Popen(
-            "spades.py --memory %s --meta -t %d -o data/spades_assembly -k 21,33,55,81,99,127 %s" %
+            "spades.py --memory %s -t %d -o data/spades_assembly -k 21,33,55,81,99,127 %s" %
             (snakemake.config["max_memory"], snakemake.threads,
              [" ".join(['-pe-12 ' + str(tup[0] + 1), tup[1]]) for tup in enumerate(snakemake.config['short_reads_1'])]),
             shell=True).wait()

@@ -1,11 +1,10 @@
 ruleorder: skip_long_assembly > get_reads_list_ref > copy_reads > short_only
 ruleorder: filter_illumina_assembly > short_only
-ruleorder: filter_illumina_ref > filter_illumina_ref_interleaved > ill_copy_reads > ill_copy_reads_interleaved
 ruleorder: fastqc > fastqc_long
 ruleorder: combine_assemblies > combine_long_only
-# ruleorder: instrain > instrain_long
 ruleorder: skip_long_assembly > get_high_cov_contigs > short_only
 ruleorder: skip_long_assembly > filter_illumina_assembly
+ruleorder: filter_illumina_ref > ill_copy_reads > ill_copy_reads_interleaved
 
 onsuccess:
     print("Assembly finished, no error")
@@ -145,7 +144,7 @@ rule flye_assembly:
 rule polish_metagenome_racon:
     input:
         fastq = "data/long_reads.fastq.gz",
-        fasta = "data/flye/assembly.fasta"
+        fasta = "data/flye/assembly.fasta",
     conda:
         "../../envs/racon.yaml"
     threads:
@@ -161,11 +160,9 @@ rule polish_metagenome_racon:
         "../../scripts/racon_polish.py"
 
 
-### Steps if illumina data exists
+### Filter illumina reads against provided reference
 rule filter_illumina_ref:
     input:
-        fastq_1 = config["short_reads_1"],
-        fastq_2 = config["short_reads_2"],
         reference_filter = config["reference_filter"]
     output:
         bam = "data/short_unmapped_ref.bam",
@@ -174,31 +171,9 @@ rule filter_illumina_ref:
         "../../envs/minimap2.yaml"
     threads:
          config["max_threads"]
-    shell:
-        """
-        minimap2 -ax sr -t {threads} {input.reference_filter} {input.fastq_1} {input.fastq_2}  |
-        samtools view -@ {threads} -b -f 12 > {output.bam} && \
-        samtools bam2fq -@ {threads} {output.bam} | gzip > {output.fastq}
-        """
+    script:
+        "../../scripts/filter_illumina_reference.py"
 
-
-rule filter_illumina_ref_interleaved:
-    input:
-        fastq_1 = config["short_reads_1"],
-        reference_filter = config["reference_filter"]
-    output:
-        bam = "data/short_unmapped_ref.bam",
-        fastq = "data/short_reads.fastq.gz"
-    conda:
-        "../../envs/minimap2.yaml"
-    threads:
-         config["max_threads"]
-    shell:
-        """
-        minimap2 -ax sr -t {threads} {input.reference_filter} {input.fastq_1} |
-        samtools view -@ {threads} -b -f 12 > {output.bam} && \
-        samtools bam2fq -@ {threads} {output.bam} | gzip > {output.fastq}
-        """
 
 # Generate BAM file for pilon, discard unmapped reads
 rule generate_pilon_sort:
@@ -211,12 +186,8 @@ rule generate_pilon_sort:
         config["max_threads"]
     conda:
         "../../envs/pilon.yaml"
-    shell:
-        """
-        minimap2 -ax sr -t {threads} {input.fasta} {input.reads} | samtools view -@ {threads} -F 4 -b | 
-        samtools sort -@ {threads} -o {output.bam} - && \
-        samtools index -@ {threads} {output.bam}
-        """
+    script:
+        "../../scripts/generate_pilon_sort.py"
 
 # The racon polished long read assembly is polished again with the short reads using Pilon
 rule polish_meta_pilon:
@@ -228,7 +199,7 @@ rule polish_meta_pilon:
     threads:
         config["max_threads"]
     params:
-        pilon_memory = config["pilon_memory"]
+        pilon_memory = config["max_memory"]
     conda:
         "../../envs/pilon.yaml"
     shell:
@@ -241,7 +212,6 @@ rule polish_meta_pilon:
 # The assembly polished with Racon and Pilon is polished again with the short reads using Racon
 rule polish_meta_racon_ill:
     input:
-        fastq = "data/short_reads.fastq.gz",
         fasta = "data/assembly.pol.pil.fasta"
     output:
         fasta = "data/assembly.pol.fin.fasta",
@@ -338,8 +308,7 @@ rule get_high_cov_contigs:
 # Specifically, short reads that do not map to the high coverage long contigs are collected
 rule filter_illumina_assembly:
     input:
-        reference = "data/flye_high_cov.fasta",
-        fastq = "data/short_reads.fastq.gz"
+        reference = "data/flye_high_cov.fasta"
     output:
         bam = "data/sr_vs_long.sort.bam",
         fastq = "data/short_reads.filt.fastq.gz"
@@ -347,13 +316,9 @@ rule filter_illumina_assembly:
         "../../envs/minimap2.yaml"
     threads:
          config["max_threads"]
-    shell:
-        """
-        minimap2 -ax sr -t {threads} {input.reference} {input.fastq} |  samtools view -@ {threads} -b |
-        samtools sort -@ {threads} -o {output.bam} - && \
-        samtools index -@ {threads} {output.bam} && \
-        samtools bam2fq -@ {threads} -f 12 {output.bam} | gzip > {output.fastq}
-        """
+    script:
+        "../../scripts/filter_illumina_assembly.py"
+
 
 # If unassembled long reads are provided, skip the long read assembly
 rule skip_long_assembly:
@@ -417,15 +382,15 @@ rule spades_assembly:
 
 
 
-# Short reads that did not map to the long read assembly are hybrid assembled with metaspades
-# If no long reads were provided, long_reads.fastq.gz will be empty
+# Perform shrot read assembly only with no other steps
 rule spades_assembly_short:
     output:
         fasta = "data/final_contigs.fasta"
     threads:
          config["max_threads"]
     params:
-         max_memory = config["max_memory"]
+         max_memory = config["max_memory"],
+         final_assembly = True
     conda:
         "../../envs/spades.yaml"
     script:

@@ -6,11 +6,7 @@ import shutil
 import gzip
 
 out = "data/racon_polishing"
-reads = snakemake.input.fastq
 max_cov = snakemake.params.maxcov
-
-if not os.path.exists(reads):
-    sys.exit("No read file found")
 
 try:
     os.makedirs(out)
@@ -21,24 +17,38 @@ random.seed(89)
 reference = snakemake.input.fasta
 
 if snakemake.params.illumina:
-    with gzip.open(reads, 'rt') as f:
-        line1 = f.readline()
-        f.readline()
-        f.readline()
-        f.readline()
-        line5 = f.readline()
-    if line1.split()[0] == line5.split()[0]:
-        subprocess.Popen('zcat ' + reads + ' | awk \'{{if (NR % 8 == 1) {{print $1 "/1"}} else if (NR % 8 == 5) {{print $1 "/2"}} ' \
-                         'else if (NR % 4 == 3){{print "+"}} else {{print $0}}}}\' | gzip > data/short_reads_racon.fastq.gz', shell=True).wait()
-        reads = 'data/short_reads_racon.fastq.gz'
-
+    # with gzip.open(reads, 'rt') as f:
+    #     line1 = f.readline()
+    #     f.readline()
+    #     f.readline()
+    #     f.readline()
+    #     line5 = f.readline()
+    # if line1.split()[0] == line5.split()[0]:
+    #     subprocess.Popen('zcat ' + reads + ' | awk \'{{if (NR % 8 == 1) {{print $1 "/1"}} else if (NR % 8 == 5) {{print $1 "/2"}} ' \
+    #                      'else if (NR % 4 == 3){{print "+"}} else {{print $0}}}}\' | gzip > data/short_reads_racon.fastq.gz', shell=True).wait()
+    if snakemake.config['reference_filter'] != 'none':
+        reads = "data/short_reads.fastq.gz"
+    elif snakemake.config['short_reads_2'] != 'none':
+        reads = [' '.join([pe1, pe2]) for pe1, pe2 in zip(snakemake.config['short_reads_1'], snakemake.config['short_reads_2'])]
+    else:
+        reads = snakemake.config['short_reads_1']
+else:
+    reads = snakemake.input.fastq
 
 for rounds in range(snakemake.params.rounds):
     paf = os.path.join(out, 'alignment.%s.%d.paf') % (snakemake.params.prefix, rounds)
     if snakemake.params.illumina:
-        subprocess.Popen("minimap2 -t %d -x sr %s %s > %s" % (snakemake.threads, reference, reads, paf), shell=True).wait()
-    else:
+        if reads != "data/short_reads.fastq.gz":
+            subprocess.Popen("minimap2 -t %d -x sr %s %s > %s" % (snakemake.threads, reference, ' '.join(reads), paf),
+                             shell=True).wait()
+        else:
+            subprocess.Popen("minimap2 -t %d -x sr %s %s > %s" % (snakemake.threads, reference, reads, paf),
+                             shell=True).wait()
+    elif config["long_read_type"] == 'ont':
         subprocess.Popen("minimap2 -t %d -x map-ont %s %s > %s" % (snakemake.threads, reference, reads, paf), shell=True).wait()
+    else:
+        subprocess.Popen("minimap2 -t %d -x map-pb %s %s > %s" % (snakemake.threads, reference, reads, paf), shell=True).wait()
+
     cov_dict = {}
     with open(paf) as f:
         for line in f:
@@ -95,13 +105,13 @@ for rounds in range(snakemake.params.rounds):
                     excluded_reads.add(qname)
     with open(os.path.join(out, "reads.%s.%d.lst" % (snakemake.params.prefix, rounds)), "w") as o:
         for i in included_reads:
-            if snakemake.params.illumina:
-                o.write(i + '/1\n')
-                o.write(i + '/2\n')
-            else:
-                o.write(i + '\n')
-    subprocess.Popen("seqtk subseq %s %s/reads.%s.%d.lst | gzip > %s/reads.%s.%d.fastq.gz" % \
-                     (reads, out, snakemake.params.prefix, rounds, out, snakemake.params.prefix, rounds), shell=True).wait()
+            # if reads == 'data/short_reads.fastq.gz':
+            #     o.write(i + '/1\n')
+            #     o.write(i + '/2\n')
+            # else:
+            o.write(i + '\n')
+    subprocess.Popen("seqkit grep --pattern-file %s/reads.%s.%d.lst | gzip > %s/reads.%s.%d.fastq.gz" % \
+                     (out, snakemake.params.prefix, rounds, reads, out, snakemake.params.prefix, rounds), shell=True).wait()
     subprocess.Popen("racon -m 8 -x -6 -g -8 -w 500 -t %d -u %s/reads.%s.%d.fastq.gz %s/filtered.%s.%d.paf %s/filtered.%s.%d.fa"
                      " > %s/filtered.%s.%d.pol.fa" % (snakemake.threads, out, snakemake.params.prefix, rounds, out,
                                                    snakemake.params.prefix, rounds, out, snakemake.params.prefix, rounds,

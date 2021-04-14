@@ -43,8 +43,8 @@ onstart:
         sys.exit("short_reads_2 does not point to a file")
     if gtdbtk_folder != "none" and not os.path.exists(gtdbtk_folder):
         sys.stderr.write("gtdbtk_folder does not point to a folder\n")
-    # if busco_folder != "none" and not os.path.exists(busco_folder):
-    #     sys.stderr.write("busco_folder does not point to a folder\n")
+    if busco_folder != "none" and not os.path.exists(busco_folder):
+        sys.stderr.write("busco_folder does not point to a folder\n")
 
 
 # rule run_batch:
@@ -56,30 +56,6 @@ onstart:
         # config["max_threads"]
     # script:
         # "../../scripts/process_batch.py"
-
-
-rule rename_contigs:
-    input:
-        fasta = config["fasta"]
-    output:
-        "data/renamed_contigs.fasta"
-    shell:
-        "sed -i 's/>/>${{input.fasta}%%_*}_/' {input.fasta}"
-
-
-rule run_virsorter:
-    input:
-        fasta = "data/renamed_contigs.fasta",
-        virsorter_data = config["virsorter_data"]
-    output:
-        "data/virsorter/done"
-    conda:
-        "../../envs/virsorter.yaml"
-    threads:
-        config["max_threads"]
-    shell:
-        "virsorter -f {input.fasta} --wdir data/virsorter --data-dir {input.virsorter_data} --ncpu {threads} &&" \
-        "touch data/virsorter/done"
 
 
 rule prepare_binning_files:

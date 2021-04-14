@@ -32,8 +32,6 @@ instrain_params:
     {}
 profile_read_list:
     none
-pilon_memory:
-    128
 guppy_model:
     r941_min_high_g360
 gtdbtk_folder:
