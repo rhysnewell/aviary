@@ -1,7 +1,8 @@
 import subprocess
 import os
+import logging
 
-
+logging.info("Generating BAM files for pilon...")
 if os.path.exists('data/short_reads.fastq.gz'):
     subprocess.Popen("minimap2 -ax sr -t %d %s data/short_reads.fastq.gz | samtools view -b -@ %d | "
                      "samtools sort -@ %d -o %s -; samtools index -@ %d %s; " %

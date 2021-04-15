@@ -84,7 +84,6 @@ class Processor:
                  gtdbtk=Config.get_gtdb_path(),
                  conda_prefix=Config.get_conda_path(),
                  ):
-
         self.gtdbtk = gtdbtk
         self.conda_prefix = conda_prefix
         try:
@@ -165,7 +164,8 @@ class Processor:
     def _validate_config(self):
         load_configfile(self.config)
 
-    def run_workflow(self, workflow="recover_mags", cores=16, profile=None, dryrun=False, conda_frontend="mamba",
+    def run_workflow(self, workflow="recover_mags", cores=16, profile=None,
+                     dryrun=False, clean=True, conda_frontend="mamba",
                      snakemake_args=""):
         """
         Runs the aviary pipeline
@@ -184,7 +184,8 @@ class Processor:
             "snakemake --snakefile {snakefile} --directory {working_dir} "
             "{jobs} --rerun-incomplete "
             "--configfile '{config_file}' --nolock "
-            " {profile} {conda_frontend} --use-conda {conda_prefix} {dryrun} "
+            " {profile} {conda_frontend} --use-conda {conda_prefix} "
+            " {dryrun} {notemp} "
             " {target_rule} "
             " {args} "
         ).format(
@@ -194,6 +195,7 @@ class Processor:
             config_file=self.config,
             profile="" if (profile is None) else "--profile {}".format(profile),
             dryrun="--dryrun" if dryrun else "",
+            notemp="--notemp" if not clean else "",
             args=" ".join(snakemake_args),
             target_rule=workflow if workflow != "None" else "",
             conda_prefix="--conda-prefix " + self.conda_prefix,

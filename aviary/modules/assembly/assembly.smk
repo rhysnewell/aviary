@@ -1,10 +1,11 @@
 ruleorder: skip_long_assembly > get_reads_list_ref > copy_reads > short_only
 ruleorder: filter_illumina_assembly > short_only
-ruleorder: fastqc > fastqc_long
+# ruleorder: fastqc > fastqc_long
 ruleorder: combine_assemblies > combine_long_only
 ruleorder: skip_long_assembly > get_high_cov_contigs > short_only
 ruleorder: skip_long_assembly > filter_illumina_assembly
-ruleorder: filter_illumina_ref > ill_copy_reads > ill_copy_reads_interleaved
+ruleorder: filter_illumina_ref > no_ref_filter
+ruleorder: combine_assemblies > combine_long_only > spades_assembly_short
 
 onsuccess:
     print("Assembly finished, no error")
@@ -45,7 +46,7 @@ rule map_reads_ref:
         fastq = config["long_reads"],
         reference_filter = config["reference_filter"]
     output:
-        "data/raw_mapped_ref.bam"
+        temp("data/raw_mapped_ref.bam")
     conda:
         "../../envs/coverm.yaml"
     threads:
@@ -59,7 +60,7 @@ rule get_umapped_reads_ref:
     input:
         "data/raw_mapped_ref.bam"
     output:
-        "data/unmapped_to_ref.list"
+        temp("data/unmapped_to_ref.list")
     params:
         "no_full"
     conda:
@@ -72,41 +73,20 @@ rule copy_reads:
     input:
         fastq = config["long_reads"],
     output:
-        "data/long_reads.fastq.gz"
+        temp("data/long_reads.fastq.gz")
+    threads:
+        config['max_threads']
     run:
         if input.fastq[0][-3:] == ".gz" and len(input.fastq) == 1: # Check if only one longread sample
             shell("ln -s {input.fastq} {output}")
         elif len(input.fastq) != 1:
-            shell("cat {input.fastq} | gzip > {output}")
+            shell("cat {input.fastq} | pigz -p {threads} > {output}")
         elif len(input.fastq) > 1:
             for long_sample in input.fastq:
                 if long_sample[-3:] == ".gz":
-                    shell("zcat %s | gzip >> {output}" % long_sample)
+                    shell("zcat %s | pigz -p {threads} >> {output}" % long_sample)
                 else:
-                    shell("cat %s | gzip >> {output}" % long_sample)
-
-# If no reference provided merge the short reads and copy to working directory
-rule ill_copy_reads:
-    input:
-        fastq_1 = config["short_reads_1"],
-        fastq_2 = config["short_reads_2"]
-    output:
-        "data/short_reads.fastq.gz"
-    conda:
-        "../../envs/seqtk.yaml"
-    shell:
-        "rename.sh prefix=SLAM in={input.fastq_1} in2={input.fastq_2} out={output} addpairnum=f"
-
-
-rule ill_copy_reads_interleaved:
-    input:
-        fastq = config["short_reads_1"]
-    output:
-        "data/short_reads.fastq.gz"
-    conda:
-        "../../envs/seqtk.yaml"
-    shell:
-        "rename.sh prefix=SLAM in={input.fastq_1} out={output} addpairnum=f int=t"
+                    shell("cat %s | pigz -p {threads} >> {output}" % long_sample)
 
 
 # Create new read file with filtered reads
@@ -115,12 +95,22 @@ rule get_reads_list_ref:
         fastq = config["long_reads"],
         list = "data/unmapped_to_ref.list"
     output:
-        "data/long_reads.fastq.gz"
+        temp("data/long_reads.fastq.gz")
+    threads:
+        config['max_threads']
     conda:
         "../../envs/seqtk.yaml"
     shell:
-        "seqtk subseq {input.fastq} {input.list} | gzip > {output}"
+        "seqtk subseq {input.fastq} {input.list} | pigz -p {threads} > {output}"
 
+# if no reference filter output this done file just to keep the DAG happy
+rule no_ref_filter:
+    input:
+        pe1 = config["short_reads_1"]
+    output:
+        filtered = temp("data/short_filter.done")
+    shell:
+        "touch {output.filtered}"
 
 # Assembly long reads with metaflye
 rule flye_assembly:
@@ -165,8 +155,9 @@ rule filter_illumina_ref:
     input:
         reference_filter = config["reference_filter"]
     output:
-        bam = "data/short_unmapped_ref.bam",
-        fastq = "data/short_reads.fastq.gz"
+        bam = temp("data/short_unmapped_ref.bam"),
+        fastq = temp("data/short_reads.fastq.gz"),
+        filtered = temp("data/short_filter.done")
     conda:
         "../../envs/minimap2.yaml"
     threads:
@@ -178,10 +169,10 @@ rule filter_illumina_ref:
 # Generate BAM file for pilon, discard unmapped reads
 rule generate_pilon_sort:
     input:
-        reads = "data/short_reads.fastq.gz",
+        filtered = "data/short_filter.done",
         fasta = "data/assembly.pol.rac.fasta"
     output:
-        bam = "data/pilon.sort.bam"
+        bam = temp("data/pilon.sort.bam")
     threads:
         config["max_threads"]
     conda:
@@ -215,7 +206,7 @@ rule polish_meta_racon_ill:
         fasta = "data/assembly.pol.pil.fasta"
     output:
         fasta = "data/assembly.pol.fin.fasta",
-        paf = "data/racon_polishing/alignment.racon_ill.0.paf"
+        paf = temp("data/racon_polishing/alignment.racon_ill.0.paf")
     threads:
         config["max_threads"]
     conda:
@@ -310,8 +301,8 @@ rule filter_illumina_assembly:
     input:
         reference = "data/flye_high_cov.fasta"
     output:
-        bam = "data/sr_vs_long.sort.bam",
-        fastq = "data/short_reads.filt.fastq.gz"
+        bam = temp("data/sr_vs_long.sort.bam"),
+        fastq = temp("data/short_reads.filt.fastq.gz")
     conda:
         "../../envs/minimap2.yaml"
     threads:
@@ -323,15 +314,13 @@ rule filter_illumina_assembly:
 # If unassembled long reads are provided, skip the long read assembly
 rule skip_long_assembly:
     input:
-        fastq = "data/short_reads.fastq.gz",
         unassembled_long = config["unassembled_long"]
     output:
-        fastq = "data/short_reads.filt.fastq.gz",
+        # fastq = "data/short_reads.filt.fastq.gz",
         fasta = "data/flye_high_cov.fasta",
-        long_reads = "data/long_reads.fastq.gz"
+        long_reads = temp("data/long_reads.fastq.gz")
     shell:
         """
-        ln {input.fastq} {output.fastq} && \
         touch {output.fasta} && \
         ln {input.unassembled_long} {output.long_reads}
         """
@@ -340,14 +329,12 @@ rule skip_long_assembly:
 # If only short reads are provided
 rule short_only:
     input:
-        fastq = "data/short_reads.fastq.gz"
+        fastq = config["short_reads_1"]
     output:
-        fastq = "data/short_reads.filt.fastq.gz",
         fasta = "data/flye_high_cov.fasta",
-        long_reads = "data/long_reads.fastq.gz"
+        long_reads = temp("data/long_reads.fastq.gz")
     shell:
         """
-        ln {input.fastq} {output.fastq} && \
         touch {output.fasta} && \
         touch {output.long_reads}
         """
@@ -384,6 +371,8 @@ rule spades_assembly:
 
 # Perform shrot read assembly only with no other steps
 rule spades_assembly_short:
+    input:
+        fastq = config["short_reads_1"]
     output:
         fasta = "data/final_contigs.fasta"
     threads:
@@ -404,8 +393,8 @@ rule spades_assembly_coverage:
          fastq = "data/short_reads.filt.fastq.gz",
          fasta = "data/spades_assembly.fasta"
     output:
-         assembly_cov = "data/short_read_assembly.cov",
-         short_vs_mega = "data/short_vs_mega.bam"
+         assembly_cov = temp("data/short_read_assembly.cov"),
+         short_vs_mega = temp("data/short_vs_mega.bam")
     conda:
          "../../envs/coverm.yaml"
     threads:
@@ -440,7 +429,7 @@ rule map_long_mega:
         fastq = "data/long_reads.fastq.gz",
         fasta = "data/spades_assembly.fasta"
     output:
-        bam = "data/long_vs_mega.bam"
+        bam = temp("data/long_vs_mega.bam")
     threads:
         config["max_threads"]
     conda:
@@ -459,7 +448,7 @@ rule pool_reads:
         short_bam = "data/short_vs_mega.bam",
         metabat_done = "data/metabat_bins/done"
     output:
-        list = "data/list_of_lists.txt"
+        list = temp("data/list_of_lists.txt")
     conda:
         "../../envs/pysam.yaml"
     script:
@@ -468,20 +457,15 @@ rule pool_reads:
 # Binned read lists are processed to extract the reads associated with each bin
 rule get_read_pools:
     input:
-        long_reads = "data/long_reads.fastq.gz",
-        short_reads = "data/short_reads.fastq.gz",
         list = "data/list_of_lists.txt"
     output:
         "data/binned_reads/done"
     conda:
          "../../envs/mfqe.yaml"
-    shell:
-         'eval $(printf "zcat {input.long_reads} | mfqe --fastq-read-name-lists "; for file in data/binned_reads/*.long.list; do printf "$file "; done;'\
-         ' printf " --output-fastq-files "; for file in data/binned_reads/*.long.list; do printf "${{file:0:-5}}.fastq.gz "; done; printf "\n") && ' \
-         'eval $(printf "seqtk seq -1 {input.short_reads} | mfqe --fastq-read-name-lists "; for file in data/binned_reads/*.short.list; do printf "$file "; done;'\
-         ' printf " --output-fastq-files "; for file in data/binned_reads/*.short.list; do printf "${{file:0:-5}}.1.fastq.gz "; done; printf "\n") && ' \
-         'eval $(printf "seqtk seq -2 {input.short_reads} | mfqe --fastq-read-name-lists "; for file in data/binned_reads/*.short.list; do printf "$file "; done;'\
-         ' printf " --output-fastq-files "; for file in data/binned_reads/*.short.list; do printf "${{file:0:-5}}.2.fastq.gz "; done; printf "\n") && touch {output} || touch {output}'
+    threads:
+         config['max_threads']
+    script:
+         '../../scripts/get_binned_reads.py'
 
 # Short and long reads for each bin are hybrid assembled with Unicycler
 rule assemble_pools:
@@ -503,28 +487,21 @@ rule assemble_pools:
 # Long and short reads are mapped to this combined assembly.
 rule combine_assemblies:
     input:
-        short_reads = "data/short_reads.fastq.gz",
+        short_reads = config['short_reads_1'],
         long_reads = "data/long_reads.fastq.gz",
         unicyc_fasta = "data/unicycler_combined.fa",
         flye_fasta = "data/flye_high_cov.fasta"
     output:
-        short_bam = "data/final_short.sort.bam",
+        # short_bam = "data/final_short.sort.bam",
         fasta = "data/final_contigs.fasta",
-        long_bam = "data/final_long.sort.bam"
+        # long_bam = "data/final_long.sort.bam"
     conda:
-        "../../envs/coverm.yaml"
+        "../../envs/minimap2.yaml"
     priority: 1
     threads:
         config["max_threads"]
-    shell:
-        """
-        cat {input.flye_fasta} {input.unicyc_fasta} > {output.fasta} && \
-        minimap2 -t {threads} -ax map-ont -a {output.fasta} {input.long_reads} |  samtools view -@ {threads} -b | 
-        samtools sort -@ {threads} -o {output.long_bam} - && samtools index -@ {threads} {output.long_bam} && \
-        minimap2 -ax sr -t {threads} {output.fasta} {input.short_reads} |  samtools view -@ {threads} -b |
-        samtools sort -@ {threads} -o {output.short_bam} - && \
-        samtools index -@ {threads} {output.short_bam}
-        """
+    script:
+        "../../scripts/combine_assemblies.py"
 
 rule combine_long_only:
     input:
@@ -532,37 +509,26 @@ rule combine_long_only:
         fasta = "data/assembly.pol.rac.fasta"
     output:
         fasta = "data/final_contigs.fasta",
-        bam = "data/final_long.sort.bam"
+        # long_bam = "data/final_long.sort.bam"
     priority: 1
     conda:
-        "../../envs/coverm.yaml"
+        "../../envs/minimap2.yaml"
     threads:
         config["max_threads"]
-    shell:
-        """
-        minimap2 -t {threads} -ax map-ont -a {input.fasta} {input.long_reads} |  samtools view -@ {threads} -b | 
-        samtools sort -@ {threads} -o {output.bam} - && \
-        samtools index -@ {threads} {output.bam} && \
-        ln {input.fasta} {output.fasta}
-        """
+    script:
+        "../../scripts/combine_assemblies.py"
 
 rule fastqc:
     input:
-        "data/short_reads.fastq.gz"
+        config['short_reads_1']
     output:
-        "www/short_reads_fastqc.html"
+        "www/{short_samples}_fastqc.html"
     conda:
         "../../envs/fastqc.yaml"
     threads:
         config["max_threads"]
-    shell:
-        "fastqc -o www {input}"
-
-rule fastqc_long:
-    output:
-        "www/short_reads_fastqc.html"
-    shell:
-        'echo "no short reads" > {output}'
+    script:
+        "../../script/run_fastqc.py"
 
 
 rule nanoplot:
@@ -576,3 +542,11 @@ rule nanoplot:
         config["max_threads"]
     shell:
         "NanoPlot -o www/nanoplot -p longReads --fastq {input}"
+
+rule complete_assembly:
+    input:
+        'data/final_contigs.fasta'
+    output:
+        'assembly/final_contigs.fasta'
+    shell:
+        'mkdir -p assembly; mv data/final_contigs.fasta assembly/; '

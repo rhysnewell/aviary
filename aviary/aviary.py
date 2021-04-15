@@ -184,6 +184,20 @@ def main():
         choices=["conda", "mamba"],
     )
 
+    base_group.add_argument(
+        '--clean',
+        help='Clean up all temporary files. This will remove most BAM files and any FASTQ files '
+             'generated from read filtering. Setting this to False is the equivalent of the --notemp'
+             'option in snakemake. Useful for when running only part of a workflow as it avoids'
+             'deleting files that would likely be needed in later parts of the workflow.'
+             'NOTE: Not cleaning makes reruns faster but will incur the wrath of your sysadmin',
+        type=str2bool,
+        nargs='?',
+        const=True,
+        dest='clean',
+        default=True,
+    )
+
     ####################################################################
 
     short_read_group = argparse.ArgumentParser(formatter_class=CustomHelpFormatter,
@@ -390,7 +404,7 @@ def main():
         '-w', '--workflow',
         help='Main workflow to run',
         dest='workflow',
-        default='create_webpage_assemble',
+        default='complete_assembly',
     )
 
     ##########################  ~ RECOVER ~   ###########################
@@ -573,6 +587,7 @@ def main():
         processor.run_workflow(workflow=args.workflow,
                                cores=int(args.n_cores),
                                dryrun=args.dryrun,
+                               clean=args.clean,
                                conda_frontend=args.conda_frontend)
 
 

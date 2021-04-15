@@ -6514,5 +6514,8 @@ else:
 
 # create_main_page("www/index.html", fasta, checkm_file, contig_folder, long_bam, short_bam,
 # gff_file, long_html, short_html, gtdbtk_dir, busco_dir, instrain_file)
-create_main_page("www/index.html", fasta, checkm_file, contig_folder, long_bam, short_bam,
-                 gff_file, long_html, short_html, gtdbtk_dir, busco_dir)
+create_main_page("www/index.html", fasta,
+                 checkm_file, contig_folder,
+                 long_bam, short_bam,
+                 gff_file, long_html,
+                 short_html, gtdbtk_dir, busco_dir)

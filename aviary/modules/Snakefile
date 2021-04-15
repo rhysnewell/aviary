@@ -1,3 +1,5 @@
+ruleorder: create_webpage_recover > create_webpage_assemble
+
 onsuccess:
     print("Aviary finished, no error")
 
@@ -78,10 +80,10 @@ rule create_webpage_recover:
     input:
         checkm_file = "data/checkm.out",
         final_bins = "data/galah_bins/done",
-        busco_done = "data/busco/done",
+        # busco_done = "data/busco/done",
         fasta = config['fasta'],
         long_reads_qc_html = "www/nanoplot/longReadsNanoPlot-report.html",
-        short_reads_qc_html = "www/short_reads_fastqc.html",
+        short_reads_qc_html = "www/{samples}_fastqc.html",
         genes_gff = "data/genes.gff",
         gtdbtk_done = "data/gtdbtk/done",
         singlem_done = "data/singlem_out/singlem_appraise.svg",
@@ -91,7 +93,7 @@ rule create_webpage_recover:
     threads:
         config["max_threads"]
     conda:
-        "envs/webpage.yaml"
+        "../envs/webpage.yaml"
     script:
         "scripts/create_aviary_webpage.py"
 
@@ -101,9 +103,9 @@ rule create_webpage_assemble:
         checkm_file = "data/checkm.out",
         final_bins = "data/das_tool_bins/done",
         busco_done = "data/busco/done",
-        fasta = "data/final_contigs.fasta",
+        fasta = "assembly/final_contigs.fasta",
         long_reads_qc_html = "www/nanoplot/longReadsNanoPlot-report.html",
-        short_reads_qc_html = "www/short_reads_fastqc.html",
+        short_reads_qc_html = "www/{samples}_fastqc.html",
         genes_gff = "data/genes.gff",
         gtdbtk_done = "data/gtdbtk/done",
         singlem_done = "data/singlem_out/singlem_appraise.svg",
@@ -113,7 +115,7 @@ rule create_webpage_assemble:
     threads:
         config["max_threads"]
     conda:
-        "envs/webpage.yaml"
+        "../envs/webpage.yaml"
     script:
         "scripts/create_aviary_webpage.py"
 
