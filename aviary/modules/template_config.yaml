@@ -28,6 +28,8 @@ strain_analysis:
     False
 unassembled_long:
     none
+mags:
+    none
 instrain_params:
     {}
 profile_read_list:
