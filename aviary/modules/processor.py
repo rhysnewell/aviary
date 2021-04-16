@@ -86,6 +86,7 @@ class Processor:
                  ):
         self.gtdbtk = gtdbtk
         self.conda_prefix = conda_prefix
+
         try:
             self.assembly = args.assembly
         except AttributeError:
@@ -133,8 +134,11 @@ class Processor:
         with open(template_conf_file) as template_config:
             conf = yaml.load(template_config)
 
-        if self.assembly != "none":
+        if self.assembly != "none" and self.assembly is not None:
             self.assembly = [os.path.abspath(p) for p in self.assembly]
+        elif self.assembly is None:
+            self.assembly = 'none'
+            logging.warn("No assembly provided, assembly will be created using available reads...")
         if self.pe1 != "none":
             self.pe1 = [os.path.abspath(p) for p in self.pe1]
         if self.pe2 != "none":
@@ -185,9 +189,8 @@ class Processor:
             "{jobs} --rerun-incomplete "
             "--configfile '{config_file}' --nolock "
             " {profile} {conda_frontend} --use-conda {conda_prefix} "
-            " {dryrun} {notemp} "
+            " {dryrun} {notemp} {args}"
             " {target_rule} "
-            " {args} "
         ).format(
             snakefile=get_snakefile(),
             working_dir=self.output,

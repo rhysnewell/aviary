@@ -10,8 +10,8 @@ if snakemake.config['short_reads_2'] != 'none':
                       " ".join(snakemake.config["short_reads_2"]),
                       snakemake.threads, snakemake.output.bam,
                       snakemake.threads, snakemake.output.bam,
-                      snakemake.threads, snakemake.output.bam, snakemake.output.fastq,
-                      snakemake.threads
+                      snakemake.threads, snakemake.output.bam,
+                      snakemake.threads, snakemake.output.fastq,
                       ), shell=True).wait()
 
 elif snakemake.config['short_reads_1']  != 'none':
@@ -22,8 +22,8 @@ elif snakemake.config['short_reads_1']  != 'none':
                       " ".join(snakemake.config["short_reads_1"]),
                       snakemake.threads, snakemake.output.bam,
                       snakemake.threads, snakemake.output.bam,
-                      snakemake.threads, snakemake.output.bam, snakemake.output.fastq,
-                      snakemake.threads
+                      snakemake.threads, snakemake.output.bam,
+                      snakemake.threads, snakemake.output.fastq,
                       ), shell=True).wait()
 
 Path(snakemake.output.filtered).touch()

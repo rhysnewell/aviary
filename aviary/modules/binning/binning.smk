@@ -46,16 +46,8 @@ onstart:
     if busco_folder != "none" and not os.path.exists(busco_folder):
         sys.stderr.write("busco_folder does not point to a folder\n")
 
-
-# rule run_batch:
-    # input:
-        # batch_file = config["batch_file"]
-    # output:
-        # "data/done"
-    # threads:
-        # config["max_threads"]
-    # script:
-        # "../../scripts/process_batch.py"
+if config['fasta'] == 'none':
+    config['fasta'] = 'assembly/final_contigs.fasta'
 
 
 rule prepare_binning_files:
@@ -70,7 +62,6 @@ rule prepare_binning_files:
         config["max_threads"]
     script:
         "../../scripts/get_coverage.py"
-
 
 rule get_bam_indices:
     input:
@@ -651,22 +642,35 @@ rule singlem_appraise_no_vamb:
 
 rule recover_mags:
     input:
-        "data/das_tool_bins/done",
-        "data/gtdbtk/done",
-        "data/checkm.out",
-        "data/coverm_abundances.tsv",
-        "data/singlem_out/singlem_appraise.svg"
+        das = "data/das_tool_bins/done",
+        gtdbtk = "data/gtdbtk/done",
+        checkm = "data/checkm.out",
+        coverm = "data/coverm_abundances.tsv",
+        singlem = "data/singlem_out/singlem_appraise.svg"
     conda:
         "../../envs/coverm.yaml"
     output:
-        "data/done"
+        bins = "bins/done",
+        taxonomy = "taxonomy/done",
+        diversity = 'diversity/done',
+        quality = 'bins/checkm.out'
     threads:
         config["max_threads"]
     shell:
         # Use --precluster-method finch so dashing-related install problems are avoided i.e. https://github.com/dnbaker/dashing/issues/41
         "mkdir -p data/pre_galah_bins && cd data/pre_galah_bins/ && rm -f * && ln -s ../das_tool_bins/das_tool_DASTool_bins/* ./ && cd ../../ && " \
-        "coverm cluster --precluster-method finch -t {threads} --checkm-tab-table data/checkm.out --genome-fasta-directory data/pre_galah_bins/ -x fa --output-representative-fasta-directory data/galah_bins --ani 0.97 && " \
-        "touch data/galah_bins/done"
+        "coverm cluster --precluster-method finch -t {threads} --checkm-tab-table data/checkm.out --genome-fasta-directory data/pre_galah_bins/ -x fa --output-representative-fasta-directory data/galah_bins --ani 0.97; "
+        "mv data/das_tool_bins/das_tool_DASTool_bins bins/final_bins; "
+        "mv data/galah_bins bins/galah_dereplicated; "
+        "mv data/checkm.out bins/; "
+        "mv data/coverm_abundances.tsv bins/; "
+        "mv data/coverm.cov bins/; "
+        "mv data/*_bins* bins/; "
+        "mv data/singlem_out/ diversity/; "
+        "mv data/gtdbtk/ taxonomy/; "
+        "touch bins/done; "
+        "touch diversity/done; "
+        "touch taxonomy/done; "
 
 rule recover_mags_no_vamb:
     input:

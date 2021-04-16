@@ -1,4 +1,4 @@
-ruleorder: skip_long_assembly > get_reads_list_ref > copy_reads > short_only
+ruleorder: skip_long_assembly > get_reads_list_ref > link_reads > short_only
 ruleorder: filter_illumina_assembly > short_only
 # ruleorder: fastqc > fastqc_long
 ruleorder: combine_assemblies > combine_long_only
@@ -68,8 +68,8 @@ rule get_umapped_reads_ref:
     script:
         "../../scripts/filter_read_list.py"
 
-# If you don't want to filter the reads using a genome just copy them into the folder
-rule copy_reads:
+# If you don't want to filter the reads using a genome just link them into the folder
+rule link_reads:
     input:
         fastq = config["long_reads"],
     output:
@@ -77,16 +77,13 @@ rule copy_reads:
     threads:
         config['max_threads']
     run:
-        if input.fastq[0][-3:] == ".gz" and len(input.fastq) == 1: # Check if only one longread sample
+        import subprocess
+        if len(input.fastq) == 1: # Check if only one longread sample
             shell("ln -s {input.fastq} {output}")
-        elif len(input.fastq) != 1:
-            shell("cat {input.fastq} | pigz -p {threads} > {output}")
         elif len(input.fastq) > 1:
-            for long_sample in input.fastq:
-                if long_sample[-3:] == ".gz":
-                    shell("zcat %s | pigz -p {threads} >> {output}" % long_sample)
-                else:
-                    shell("cat %s | pigz -p {threads} >> {output}" % long_sample)
+            subprocess.Popen("ln -s %s %s" % (input.fastq[0], output))
+        else:
+            shell("touch {output}")
 
 
 # Create new read file with filtered reads
@@ -105,8 +102,6 @@ rule get_reads_list_ref:
 
 # if no reference filter output this done file just to keep the DAG happy
 rule no_ref_filter:
-    input:
-        pe1 = config["short_reads_1"]
     output:
         filtered = temp("data/short_filter.done")
     shell:
@@ -169,6 +164,7 @@ rule filter_illumina_ref:
 # Generate BAM file for pilon, discard unmapped reads
 rule generate_pilon_sort:
     input:
+        fastq = config['short_reads_1'],
         filtered = "data/short_filter.done",
         fasta = "data/assembly.pol.rac.fasta"
     output:
@@ -203,6 +199,7 @@ rule polish_meta_pilon:
 # The assembly polished with Racon and Pilon is polished again with the short reads using Racon
 rule polish_meta_racon_ill:
     input:
+        fastq = config['short_reads_1'], # check short reads are here
         fasta = "data/assembly.pol.pil.fasta"
     output:
         fasta = "data/assembly.pol.fin.fasta",
@@ -299,7 +296,8 @@ rule get_high_cov_contigs:
 # Specifically, short reads that do not map to the high coverage long contigs are collected
 rule filter_illumina_assembly:
     input:
-        reference = "data/flye_high_cov.fasta"
+        fastq = config['short_reads_1'], # check short reads were supplied
+        fasta = "data/flye_high_cov.fasta"
     output:
         bam = temp("data/sr_vs_long.sort.bam"),
         fastq = temp("data/short_reads.filt.fastq.gz")
@@ -332,7 +330,7 @@ rule short_only:
         fastq = config["short_reads_1"]
     output:
         fasta = "data/flye_high_cov.fasta",
-        long_reads = temp("data/long_reads.fastq.gz")
+        # long_reads = temp("data/long_reads.fastq.gz")
     shell:
         """
         touch {output.fasta} && \
@@ -355,6 +353,7 @@ rule spades_assembly:
         "../../envs/spades.yaml"
     shell:
         """
+        rm -rf data/spades_assembly/tmp; 
         minimumsize=500000 && \
         actualsize=$(stat -c%s data/short_reads.filt.fastq.gz) && \
         if [ $actualsize -ge $minimumsize ]
@@ -481,20 +480,16 @@ rule assemble_pools:
     conda:
         "../../envs/final_assembly.yaml"
     script:
-        "scripts/assemble_pools.py"
+        "../../scripts/assemble_pools.py"
 
 # The long read high coverage assembly from flye and hybrid assembly from unicycler are combined.
 # Long and short reads are mapped to this combined assembly.
 rule combine_assemblies:
     input:
-        short_reads = config['short_reads_1'],
-        long_reads = "data/long_reads.fastq.gz",
         unicyc_fasta = "data/unicycler_combined.fa",
         flye_fasta = "data/flye_high_cov.fasta"
     output:
-        # short_bam = "data/final_short.sort.bam",
         fasta = "data/final_contigs.fasta",
-        # long_bam = "data/final_long.sort.bam"
     conda:
         "../../envs/minimap2.yaml"
     priority: 1

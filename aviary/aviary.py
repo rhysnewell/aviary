@@ -198,6 +198,18 @@ def main():
         default=True,
     )
 
+    base_group.add_argument(
+        '--snakemake-cmds',
+        help='Additional commands to supplied to snakemake in the form of a single string'
+             'e.g. "--print-compilation True". '
+             'NOTE: Most commands in snakemake -h are valid but some commands may clash with commands '
+             'aviary directly supplies to snakemake. Please make'
+             "sure your additional commands don't clash.",
+        nargs=1,
+        dest='cmds',
+        default='',
+    )
+
     ####################################################################
 
     short_read_group = argparse.ArgumentParser(formatter_class=CustomHelpFormatter,
@@ -206,7 +218,9 @@ def main():
 
     read_group_exclusive.add_argument(
         '-1', '--pe-1', '--paired-reads-1', '--paired_reads_1', '--pe1',
-        help='A space separated list of forwards read files to use for the binning process',
+        help='A space separated list of forwards read files to use for the binning process'
+             'NOTE: If performing assembly and multiple files are provided then only '
+             'the first file will be used for assembly.',
         dest='pe1',
         nargs='*',
         default="none"
@@ -214,7 +228,9 @@ def main():
 
     short_read_group.add_argument(
         '-2', '--pe-2', '--paired-reads-2', '--paired_reads_2', '--pe2',
-        help='A space separated list of forwards read files to use for the binning process',
+        help='A space separated list of forwards read files to use for the binning process'
+             'NOTE: If performing assembly and multiple files are provided then only '
+             'the first file will be used for assembly.',
         dest='pe2',
         nargs='*',
         default="none"
@@ -222,7 +238,9 @@ def main():
 
     read_group_exclusive.add_argument(
         '-i','--interleaved',
-        help='A space separated list of interleaved read files for the binning process',
+        help='A space separated list of interleaved read files for the binning process '
+             'NOTE: If performing assembly and multiple files are provided then only '
+             'the first file will be used for assembly.',
         dest='interleaved',
         nargs='*',
         default="none"
@@ -230,7 +248,9 @@ def main():
 
     read_group_exclusive.add_argument(
         '-c', '--coupled',
-        help='Forward and reverse read files in a coupled space separated list',
+        help='Forward and reverse read files in a coupled space separated list. '
+             'NOTE: If performing assembly and multiple files are provided then only '
+             'the first two files will be used for assembly.',
         dest='coupled',
         nargs='*',
         default="none"
@@ -242,14 +262,15 @@ def main():
                                               add_help=False)
     long_read_group.add_argument(
         '-l', '--longreads',
-        help='A space separated list of interleaved read files for the binning process',
+        help='A space separated list of interleaved read files for the binning process. NOTE: If performing assembly and '
+             'multiple long read files are provided, then only the first file is used for assembly. ',
         dest='longreads',
         nargs='*',
         default="none"
     )
 
     long_read_group.add_argument(
-        '-x', '--longread-type', '--longread_type',
+        '-z', '--longread-type', '--longread_type',
         help='Whether the sequencing platform and technology for the longreads. '
              '"rs" for PacBio RSII, "sq" for PacBio Sequel, "ccs" for PacBio CCS '
              'reads and "ont" for Oxford Nanopore',
@@ -308,6 +329,15 @@ def main():
         dest='directory',
         nargs='*',
         required=False,
+    )
+
+    mag_group.add_argument(
+        '-x', '--fasta-extension', '--fasta_extension',
+        help='File extension of fasta files in --genome-fasta-directory',
+        dest='ext',
+        nargs=1,
+        required=False,
+        default='fa'
     )
 
     #####################################################################
@@ -426,7 +456,7 @@ def main():
         help='FASTA file containing scaffolded contigs of the metagenome assembly',
         dest="assembly",
         nargs=1,
-        required=True,
+        required=False,
     )
 
     recover_options.add_argument(
@@ -588,7 +618,8 @@ def main():
                                cores=int(args.n_cores),
                                dryrun=args.dryrun,
                                clean=args.clean,
-                               conda_frontend=args.conda_frontend)
+                               conda_frontend=args.conda_frontend,
+                               snakemake_args=args.cmds)
 
 
 ###############################################################################

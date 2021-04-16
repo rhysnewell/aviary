@@ -2,3 +2,5 @@
 .idea/
 aviary.egg-info
 dist
+.snakemake
+binsnek.egg-info
