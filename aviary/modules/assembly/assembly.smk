@@ -400,8 +400,8 @@ rule spades_assembly_coverage:
          config["max_threads"]
     shell:
         """
-        coverm contig -m metabat -t {threads} -r {input.fasta} -i {input.fastq} --bam-file-cache-directory cached_bams/ > data/short_read_assembly.cov;
-        ln -s cached_bams/*.bam ./short_vs_mega.bam
+        coverm contig -m metabat -t {threads} -r {input.fasta} --interleaved {input.fastq} --bam-file-cache-directory data/cached_bams/ > data/short_read_assembly.cov;
+        mv data/cached_bams/*.bam data/short_vs_mega.bam
         """
 
 rule metabat_binning_short:
