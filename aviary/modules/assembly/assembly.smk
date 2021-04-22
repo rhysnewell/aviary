@@ -7,11 +7,11 @@ ruleorder: skip_long_assembly > filter_illumina_assembly
 ruleorder: filter_illumina_ref > no_ref_filter
 ruleorder: combine_assemblies > combine_long_only > spades_assembly_short
 
-onsuccess:
-    print("Assembly finished, no error")
-
-onerror:
-    print("An error occurred")
+# onsuccess:
+#     print("Assembly finished, no error")
+#
+# onerror:
+#     print("An error occurred")
 
 onstart:
     import os

@@ -580,6 +580,27 @@ def main():
         default='create_webpage_assemble',
     )
 
+    ##########################   ~ build ~  ###########################
+
+    build_options = subparsers.add_parser('build',
+                                            description='Build necessary conda environments and then exits. ',
+                                            formatter_class=CustomHelpFormatter,
+                                            parents=[base_group],
+                                            epilog=
+                                            '''
+                                              ......:::::: BUILD ::::::......
+
+                                            aviary build --conda-prefix ~/.conda
+
+                                            ''')
+
+    build_options.add_argument(
+        '-w', '--workflow',
+        help='The workflow to build the conda environments for',
+        dest='workflow',
+        default='complete_assembly',
+    )
+
     ###########################################################################
     # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ #
     # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~ Parsing input ~~~~~~~~~~~~~~~~~~~~~~~~~~~~ #
@@ -614,6 +635,13 @@ def main():
                            args.conda_prefix)
 
         processor.make_config()
+
+        if args.subparser_name == 'build':
+            try:
+                args.cmds = args.cmds + ['--conda-create-envs-only True ']
+            except TypeError:
+                args.cmds = ['--conda-create-envs-only True ']
+
         processor.run_workflow(workflow=args.workflow,
                                cores=int(args.n_cores),
                                dryrun=args.dryrun,

@@ -97,24 +97,46 @@ class Processor:
         except AttributeError:
             self.reference_filter = 'none'
 
-        self.longreads = args.longreads
-        self.longread_type = args.longread_type
+        try:
+            self.longreads = args.longreads
+        except AttributeError:
+            self.longreads = 'none'
+        try:
+            self.longread_type = args.longread_type
+        except AttributeError:
+            self.longread_type = 'none'
         self.threads = args.max_threads
         self.max_memory = args.max_memory
-        self.pplacer_threads = min(int(args.pplacer_threads), 48)
-        self.min_contig_size = args.min_contig_size
-        self.min_bin_size = args.min_bin_size
+
+        try:
+            self.pplacer_threads = min(int(args.pplacer_threads), 48)
+        except AttributeError:
+            self.pplacer_threads = 8
+
+        try:
+            self.min_contig_size = args.min_contig_size
+        except AttributeError:
+            self.min_contig_size = 1500
+
+        try:
+            self.min_bin_size = args.min_bin_size
+        except AttributeError:
+            self.min_bin_size = 200000
         self.output = args.output
 
-        if args.coupled is not "none":
-            self.pe1 = args.coupled[::2]
-            self.pe2 = args.coupled[1::2]
-        else:
-            self.pe2 = args.pe2
-            if args.interleaved == "none":
-                self.pe1 = args.pe1
-            elif args.pe2 == "none" and args.interleaved != "none":
-                self.pe1 = args.interleaved
+        try:
+            if args.coupled is not "none":
+                self.pe1 = args.coupled[::2]
+                self.pe2 = args.coupled[1::2]
+            else:
+                self.pe2 = args.pe2
+                if args.interleaved == "none":
+                    self.pe1 = args.pe1
+                elif args.pe2 == "none" and args.interleaved != "none":
+                    self.pe1 = args.interleaved
+        except AttributeError:
+            self.pe1 = 'none'
+            self.pe2 = 'none'
 
     def make_config(self):
         """

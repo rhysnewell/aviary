@@ -4,11 +4,11 @@ ruleorder: checkm_no_vamb > checkm
 ruleorder: checkm_without_rosella_no_vamb > checkm_without_rosella
 ruleorder: binner_result_no_vamb > binner_result
 
-onsuccess:
-    print("Binning finished, no error")
-
-onerror:
-    print("An error occurred")
+# onsuccess:
+#     print("Binning finished, no error")
+#
+# onerror:
+#     print("An error occurred")
 
 onstart:
     import os
@@ -717,3 +717,25 @@ rule rosella_benchmark_no_vamb:
         "data/skipped_vamb"
     shell:
         "touch data/skipped_vamb"
+
+rule reset_benchmark:
+    log:
+        temp('data/reset')
+    shell:
+        'rm -rf data/rosella_bins/; '
+        'rm -rf data/metabat_bins_2/; '
+        'rm -rf data/das_tool_*/; '
+        'rm -rf data/checkm*; '
+        'rm -rf data/all_bins/; '
+        'touch data/reset_all'
+
+rule reset_rosella:
+    log:
+        temp('data/reset_rosella')
+    shell:
+        'rm -rf data/rosella_bins/; '
+        'rm -rf data/das_tool_bins/; '
+        'rm -rf data/checkm; '
+        'rm -rf data/checkm.out'
+        'rm -rf data/all_bins/; '
+        'touch data/reset_rosella; '

@@ -1,10 +1,10 @@
 ruleorder: busco_bins_provided > busco
 
-onsuccess:
-    print("Annotation finished, no error")
-
-onerror:
-    print("An error occurred")
+# onsuccess:
+#     print("Annotation finished, no error")
+#
+# onerror:
+#     print("An error occurred")
 
 onstart:
     import os
