@@ -10,5 +10,5 @@ dependencies:
   - numpy
   - pandas
   - biopython
-  - mamba
+  - mamba>=0.8.2
   - pigz = 2.4
