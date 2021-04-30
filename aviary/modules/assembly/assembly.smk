@@ -513,31 +513,6 @@ rule combine_long_only:
     script:
         "../../scripts/combine_assemblies.py"
 
-rule fastqc:
-    input:
-        config['short_reads_1']
-    output:
-        "www/{short_samples}_fastqc.html"
-    conda:
-        "../../envs/fastqc.yaml"
-    threads:
-        config["max_threads"]
-    script:
-        "../../script/run_fastqc.py"
-
-
-rule nanoplot:
-    input:
-        "data/long_reads.fastq.gz"
-    output:
-        "www/nanoplot/longReadsNanoPlot-report.html"
-    conda:
-        "../../envs/nanoplot.yaml"
-    threads:
-        config["max_threads"]
-    shell:
-        "NanoPlot -o www/nanoplot -p longReads --fastq {input}"
-
 rule complete_assembly:
     input:
         'data/final_contigs.fasta'

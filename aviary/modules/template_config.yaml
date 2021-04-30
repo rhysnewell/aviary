@@ -34,6 +34,10 @@ instrain_params:
     {}
 profile_read_list:
     none
+min_long_read_length:
+    1000
+keep_percent:
+    90
 guppy_model:
     r941_min_high_g360
 gtdbtk_folder:
