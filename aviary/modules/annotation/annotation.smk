@@ -43,7 +43,7 @@ rule prodigal:
     output:
         "data/genes.gff"
     conda:
-        "../../envs/prodigal.yaml"
+        "envs/prodigal.yaml"
     shell:
         "prodigal -i {input.fasta} -f gff -o {output} -p meta"
 
@@ -57,7 +57,7 @@ rule busco_bins_provided:
     params:
         busco_folder = config["busco_folder"]
     conda:
-        "../../envs/busco.yaml"
+        "envs/busco.yaml"
     threads:
         config["max_threads"]
     script:
@@ -104,7 +104,7 @@ rule busco:
     params:
         busco_folder = config["busco_folder"]
     conda:
-        "../../envs/busco.yaml"
+        "envs/busco.yaml"
     threads:
         config["max_threads"]
     shell:

@@ -221,7 +221,7 @@ class Processor:
             profile="" if (profile is None) else "--profile {}".format(profile),
             dryrun="--dryrun" if dryrun else "",
             notemp="--notemp" if not clean else "",
-            args=" ".join(snakemake_args),
+            args=snakemake_args,
             target_rule=workflow if workflow != "None" else "",
             conda_prefix="--conda-prefix " + self.conda_prefix,
             conda_frontend="--conda-frontend " + conda_frontend

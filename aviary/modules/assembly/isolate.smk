@@ -21,11 +21,13 @@ rule assemble_reads_flye:
     output:
         contigs = "isolate/flye/assembly.fasta"
     conda:
-        "../../envs/flye.yaml"
+        "envs/flye.yaml"
     params:
         genome_size = config["genome_size"]
     threads:
         config["max_threads"]
+    benchmark:
+        "benchmarks/assemble_reads_flye.benchmark.txt"
     shell:
         "flye --nano-raw {input.reads} --threads {threads} -o isolate/flye -g {params.genome_size} --asm-coverage 100"
 
@@ -35,7 +37,7 @@ rule polish_isolate_racon:
         fastq = config["long_reads"],
         fasta = "isolate/flye/assembly.fasta"
     conda:
-        "../../envs/racon.yaml"
+        "envs/racon.yaml"
     threads:
         config["max_threads"]
     params:
@@ -45,8 +47,10 @@ rule polish_isolate_racon:
         illumina = False
     output:
         fasta = "isolate/isolate.pol.rac.fasta"
+    benchmark:
+        "benchmarks/polish_isolate_racon.benchmark.txt"
     script:
-        "../../scripts/racon_polish.py"
+        "scripts/racon_polish.py"
 
 
 rule polish_isolate_medaka:
@@ -54,13 +58,15 @@ rule polish_isolate_medaka:
         reads = config["long_reads"],
         contigs = "isolate/isolate.pol.rac.fasta"
     conda:
-        "../../envs/medaka.yaml"
+        "envs/medaka.yaml"
     threads:
         config["max_threads"]
     params:
         model = config["guppy_model"]
     output:
         fasta = "isolate/isolate.pol.med.fasta"
+    benchmark:
+        "benchmarks/polish_isolate_medaka.benchmark.txt"
     shell:
         """
         medaka_consensus -i {input.reads} -d {input.contigs} -o isolate/medaka/ -t {threads} -m {params.model} && \
@@ -77,7 +83,9 @@ rule polish_isolate_pilon:
     threads:
         config["max_threads"]
     conda:
-        "../../envs/pilon.yaml"
+        "envs/pilon.yaml"
+    benchmark:
+        "benchmarks/polish_isolate_pilon.benchmark.txt"
     shell:
         """
         minimap2 -ax sr -t {threads} {input.fasta} {input.reads} | samtools view -b | 
@@ -97,12 +105,14 @@ rule polish_isolate_racon_ill:
     threads:
         config["max_threads"]
     conda:
-        "../../envs/racon.yaml"
+        "envs/racon.yaml"
     params:
         prefix = "racon_ill",
         maxcov = 1000,
         rounds = 1,
         illumina = True
+    benchmark:
+        "benchmarks/polish_isolate_racon_ill.benchmark.txt"
     script:
         "scripts/racon_polish.py"
 
@@ -125,7 +135,9 @@ rule circlator:
     threads:
         config["max_threads"]
     conda:
-        "../../envs/circlator.yaml"
+        "envs/circlator.yaml"
+    benchmark:
+        "benchmarks/circlator.benchmark.txt"
     shell:
         """
         circlator all {input.fasta} {input.reads} isolate/circlator && \

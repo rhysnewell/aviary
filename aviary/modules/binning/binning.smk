@@ -87,6 +87,8 @@ rule maxbin_binning:
         "data/maxbin2_bins/done"
     conda:
         "../../envs/maxbin2.yaml"
+    benchmark:
+        "benchmarks/maxbin2.benchmark.txt"
     threads:
         config["max_threads"]
     shell:
@@ -105,6 +107,8 @@ rule concoct_binning:
         "data/concoct_bins/done"
     conda:
         "../../envs/concoct.yaml"
+    benchmark:
+        "benchmarks/concoct.benchmark.txt"
     threads:
         config["max_threads"]
     shell:
@@ -136,14 +140,6 @@ rule vamb_jgi_filter:
         coverm_out.to_csv("data/coverm.filt.cov", sep='\t', index=False)
 
 
-# rule vamb_concat_fasta:
-    # input:
-        # fasta = config["fasta"]
-    # output:
-        # 'data/catalogue.fna.gz'
-    # shell:
-        # "concatenate.py data/catalogue.fna.gz {input.fasta}"
-
 rule vamb_binning:
     input:
         coverage = "data/coverm.filt.cov",
@@ -155,6 +151,8 @@ rule vamb_binning:
         "data/vamb_bins/done"
     conda:
         "../../envs/vamb.yaml"
+    benchmark:
+        "benchmarks/vamb.benchmark.txt"
     threads:
          config["max_threads"]
     shell:
@@ -195,7 +193,7 @@ rule vamb_skip:
         "touch data/vamb_bins/skipped"
 
 
-rule metabat_binning_2:
+rule metabat2:
     input:
         coverage = "data/coverm.cov",
         fasta = config["fasta"]
@@ -203,27 +201,85 @@ rule metabat_binning_2:
         min_contig_size = config["min_contig_size"],
         min_bin_size = config["min_bin_size"]
     output:
-        metabat_done = "data/metabat_bins_2/done",
-        metabat_sspec = "data/metabat_bins_sspec/done",
-        metabat_spec = "data/metabat_bins_spec/done",
-        metabat_ssens = "data/metabat_bins_ssens/done",
-        metabat_sens = "data/metabat_bins_sens/done"
+        metabat_done = "data/metabat_bins_2/done"
     conda:
         "../../envs/metabat2.yaml"
     threads:
         config["max_threads"]
+    benchmark:
+        "benchmarks/metabat_2.benchmark.txt"
     shell:
-        "mkdir -p data/metabat_bins_2 && " \
-        "metabat -t {threads} -m {params.min_contig_size} -s {params.min_bin_size} --seed 89 -i {input.fasta} -a {input.coverage} -o data/metabat_bins_2/binned_contigs && " \
-        "touch data/metabat_bins_2/done && " \
-        "metabat1 -t {threads} -m {params.min_contig_size} -s {params.min_bin_size} --seed 89 --sensitive -i {input.fasta} -a {input.coverage} -o data/metabat_bins_sens/binned_contigs && " \
-        "touch data/metabat_bins_sens/done && " \
-        "metabat1 -t {threads} -m {params.min_contig_size} -s {params.min_bin_size} --seed 89 --specific -i {input.fasta} -a {input.coverage} -o data/metabat_bins_spec/binned_contigs && " \
-        "touch data/metabat_bins_spec/done && " \
-        "metabat1 -t {threads} -m {params.min_contig_size} -s {params.min_bin_size} --seed 89 --supersensitive -i {input.fasta} -a {input.coverage} -o data/metabat_bins_ssens/binned_contigs && " \
-        "touch data/metabat_bins_ssens/done && " \
-        "metabat1 -t {threads} -m {params.min_contig_size} -s {params.min_bin_size} --seed 89 --superspecific -i {input.fasta} -a {input.coverage} -o data/metabat_bins_sspec/binned_contigs && " \
+        "metabat -t {threads} -m {params.min_contig_size} -s {params.min_bin_size} --seed 89 -i {input.fasta} -a {input.coverage} -o data/metabat_bins_2/binned_contigs; "
+        "touch data/metabat_bins_2/done"
+
+
+rule metabat_spec:
+    input:
+        coverage = "data/coverm.cov",
+        fasta = config["fasta"]
+    output:
+        'data/metabat_bins_spec/done'
+    params:
+        min_contig_size = config["min_contig_size"],
+        min_bin_size = config["min_bin_size"]
+    benchmark:
+        "benchmarks/metabat_spec.benchmark.txt"
+    threads:
+        config["max_threads"]
+    shell:
+        "metabat1 -t {threads} -m {params.min_contig_size} -s {params.min_bin_size} --seed 89 --specific -i {input.fasta} -a {input.coverage} -o data/metabat_bins_spec/binned_contigs; "
+        "touch data/metabat_bins_spec/done"
+
+rule metabat_sspec:
+    input:
+        coverage = "data/coverm.cov",
+        fasta = config["fasta"]
+    output:
+        'data/metabat_bins_sspec/done'
+    params:
+        min_contig_size = config["min_contig_size"],
+        min_bin_size = config["min_bin_size"]
+    benchmark:
+        "benchmarks/metabat_sspec.benchmark.txt"
+    threads:
+        config["max_threads"]
+    shell:
+        "metabat1 -t {threads} -m {params.min_contig_size} -s {params.min_bin_size} --seed 89 --superspecific -i {input.fasta} -a {input.coverage} -o data/metabat_bins_sspec/binned_contigs; "
         "touch data/metabat_bins_sspec/done"
+
+rule metabat_sens:
+    input:
+        coverage = "data/coverm.cov",
+        fasta = config["fasta"]
+    output:
+        'data/metabat_bins_sens/done'
+    params:
+        min_contig_size = config["min_contig_size"],
+        min_bin_size = config["min_bin_size"]
+    benchmark:
+        "benchmarks/metabat_sens.benchmark.txt"
+    threads:
+        config["max_threads"]
+    shell:
+        "metabat1 -t {threads} -m {params.min_contig_size} -s {params.min_bin_size} --seed 89 --sensitive -i {input.fasta} -a {input.coverage} -o data/metabat_bins_sens/binned_contigs; "
+        "touch data/metabat_bins_sens/done"
+
+rule metabat_ssens:
+    input:
+        coverage = "data/coverm.cov",
+        fasta = config["fasta"]
+    output:
+        'data/metabat_bins_ssens/done'
+    params:
+        min_contig_size = config["min_contig_size"],
+        min_bin_size = config["min_bin_size"]
+    benchmark:
+        "benchmarks/metabat_ssens.benchmark.txt"
+    threads:
+        config["max_threads"]
+    shell:
+        "metabat1 -t {threads} -m {params.min_contig_size} -s {params.min_bin_size} --seed 89 --supersensitive -i {input.fasta} -a {input.coverage} -o data/metabat_bins_ssens/binned_contigs; " \
+        "touch data/metabat_bins_ssens/done"
 
 rule rosella:
     input:
@@ -235,11 +291,13 @@ rule rosella:
     output:
         "data/rosella_bins/done"
     conda:
-        "../../envs/rosella.yaml"
+        "envs/rosella.yaml"
     threads:
         config["max_threads"]
+    benchmark:
+        "benchmarks/rosella.benchmark.txt"
     shell:
-        "rosella bin -r {input.fasta} -i {input.coverage} -t {threads} -o data/rosella_bins --min-contig-size {params.min_contig_size} --min-bin-size {params.min_bin_size} --b-tail 0.4 && " \
+        "rosella bin -r {input.fasta} -i {input.coverage} -t {threads} -o data/rosella_bins --min-contig-size {params.min_contig_size} --min-bin-size {params.min_bin_size} --b-tail 0.4; "
         "touch data/rosella_bins/done"
 
 
@@ -253,11 +311,13 @@ rule rerun_rosella:
     output:
         "data/rosella_bins/rerun"
     conda:
-        "../../envs/rosella.yaml"
+        "envs/rosella.yaml"
     threads:
         config["max_threads"]
+    benchmark:
+        "benchmarks/rosella_rerun.benchmark.txt"
     shell:
-        "rm data/rosella_bins/*.fna; rm data/rosella_bins/checkm.out; rm -r data/rosella_bins/checkm/; "
+        "rm -f data/rosella_bins/*.fna; rm -f data/rosella_bins/checkm.out; rm -rf data/rosella_bins/checkm/; "
         "rosella bin -r {input.fasta} -i {input.coverage} -t {threads} -o data/rosella_bins --b-tail 0.4 --min-contig-size {params.min_contig_size} --min-bin-size {params.min_bin_size} && " \
         "touch data/rosella_bins/rerun"
 
@@ -292,7 +352,9 @@ rule das_tool:
     threads:
         config["max_threads"]
     conda:
-        "../../envs/das_tool.yaml"
+        "envs/das_tool.yaml"
+    benchmark:
+        "benchmarks/das_tool.benchmark.txt"
     shell:
         """
         Fasta_to_Scaffolds2Bin.sh -i data/metabat_bins_2 -e fa > data/metabat_bins_2.tsv; 
@@ -330,7 +392,7 @@ rule das_tool_no_vamb:
     threads:
         config["max_threads"]
     conda:
-        "../../envs/das_tool.yaml"
+        "envs/das_tool.yaml"
     shell:
         "Fasta_to_Scaffolds2Bin.sh -i data/metabat_bins_2 -e fa > data/metabat_bins_2.tsv && " \
         "Fasta_to_Scaffolds2Bin.sh -i data/metabat_bins_sspec -e fa > data/metabat_bins_sspec.tsv && " \
@@ -363,7 +425,7 @@ rule das_tool_without_rosella:
     threads:
         config["max_threads"]
     conda:
-        "../../envs/das_tool.yaml"
+        "envs/das_tool.yaml"
     shell:
         "Fasta_to_Scaffolds2Bin.sh -i data/metabat_bins_2 -e fa > data/metabat_bins_2.tsv && " \
         "Fasta_to_Scaffolds2Bin.sh -i data/metabat_bins_sspec -e fa > data/metabat_bins_sspec.tsv && " \
@@ -394,7 +456,7 @@ rule das_tool_without_rosella_no_vamb:
     threads:
         config["max_threads"]
     conda:
-        "../../envs/das_tool.yaml"
+        "envs/das_tool.yaml"
     shell:
         "Fasta_to_Scaffolds2Bin.sh -i data/metabat_bins_2 -e fa > data/metabat_bins_2.tsv && " \
         "Fasta_to_Scaffolds2Bin.sh -i data/metabat_bins_sspec -e fa > data/metabat_bins_sspec.tsv && " \
@@ -420,7 +482,7 @@ rule get_abundances:
     threads:
         config["max_threads"]
     script:
-        "../../scripts/get_abundances.py"
+        "scripts/get_abundances.py"
 
 rule checkm:
     input:
@@ -567,31 +629,6 @@ rule binner_result_no_vamb:
         "rm -f \*.fna; "
         "checkm lineage_wf -t {threads} --pplacer_threads {params.pplacer_threads} -x fna --tab_table ./ checkm > checkm.out; "
         "touch skipped_vamb && cd ../../"
-
-rule busco:
-    input:
-        "data/das_tool_bins/done"
-    output:
-        done = "data/busco/done"
-    params:
-        busco_folder = config["busco_folder"]
-    conda:
-        "../../envs/busco.yaml"
-    threads:
-        config["max_threads"]
-    shell:
-        "mkdir -p data/busco && cd data/busco && minimumsize=500000 && " \
-        "for file in ../das_tool_bins/das_tool_DASTool_bins/*.fa; do " \
-        "actualsize=$(wc -c <\"$file\"); " \
-        "if [ $actualsize -ge $minimumsize ]; then " \
-        "run_busco -q -c {threads} -t bac_tmp.${{file:33:-3}} -i $file -o bacteria_odb9.${{file:39:-3}} -l {params.busco_folder}/bacteria_odb9 -m geno; " \
-        "run_busco -q -c {threads} -t euk_tmp.${{file:33:-3}} -i $file -o eukaryota_odb9.${{file:39:-3}} -l {params.busco_folder}/eukaryota_odb9 -m geno; " \
-        "run_busco -q -c {threads} -t emb_tmp.${{file:33:-3}} -i $file -o embryophyta_odb9.${{file:39:-3}} -l {params.busco_folder}/embryophyta_odb9 -m geno; " \
-        "run_busco -q -c {threads} -t fun_tmp.${{file:33:-3}} -i $file -o fungi_odb9.${{file:39:-3}} -l {params.busco_folder}/fungi_odb9 -m geno; " \
-        "run_busco -q -c {threads} -t met_tmp.${{file:33:-3}} -i $file -o metazoa_odb9.${{file:39:-3}} -l {params.busco_folder}/metazoa_odb9 -m geno; " \
-        "run_busco -q -c {threads} -t pro_tmp.${{file:33:-3}} -i $file -o protists_ensembl.${{file:39:-3}} -l {params.busco_folder}/protists_ensembl -m geno; " \
-        "fi; done && " \
-        "cd ../../ && touch data/busco/done"
 
 rule singlem_pipe_reads:
     output:

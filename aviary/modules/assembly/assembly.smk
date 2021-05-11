@@ -19,7 +19,7 @@ onstart:
 
     from snakemake.utils import logger, min_version
 
-    sys.path.append(os.path.join(os.path.dirname(os.path.abspath(workflow.snakefile)),"../../scripts"))
+    sys.path.append(os.path.join(os.path.dirname(os.path.abspath(workflow.snakefile)),"scripts"))
 
     # minimum required snakemake version
     min_version("6.0")
@@ -49,6 +49,8 @@ rule map_reads_ref:
         temp("data/raw_mapped_ref.bam")
     conda:
         "../../envs/coverm.yaml"
+    benchmark:
+        "benchmarks/map_reads_ref.benchmark.txt"
     threads:
          config["max_threads"]
     shell:
@@ -64,9 +66,11 @@ rule get_umapped_reads_ref:
     params:
         "no_full"
     conda:
-        "../../envs/pysam.yaml"
+        "envs/pysam.yaml"
+    benchmark:
+        "benchmarks/get_unmapped_reads_ref.benchmark.txt"
     script:
-        "../../scripts/filter_read_list.py"
+        "scripts/filter_read_list.py"
 
 # If you don't want to filter the reads using a genome just link them into the folder
 rule link_reads:
@@ -96,7 +100,9 @@ rule get_reads_list_ref:
     threads:
         config['max_threads']
     conda:
-        "../../envs/seqtk.yaml"
+        "envs/seqtk.yaml"
+    benchmark:
+        "benchmarks/get_reads_list_ref.benchmark.txt"
     shell:
         "seqtk subseq {input.fastq} {input.list} | pigz -p {threads} > {output}"
 
@@ -118,7 +124,9 @@ rule flye_assembly:
     params:
         genome_size = config["meta_genome_size"]
     conda:
-        "../../envs/flye.yaml"
+        "envs/flye.yaml"
+    benchmark:
+        "benchmarks/flye_assembly.benchmark.txt"
     threads:
         config["max_threads"]
     shell:
@@ -131,7 +139,7 @@ rule polish_metagenome_racon:
         fastq = "data/long_reads.fastq.gz",
         fasta = "data/flye/assembly.fasta",
     conda:
-        "../../envs/racon.yaml"
+        "envs/racon.yaml"
     threads:
         config["max_threads"]
     params:
@@ -141,8 +149,10 @@ rule polish_metagenome_racon:
         illumina = False
     output:
         fasta = "data/assembly.pol.rac.fasta"
+    benchmark:
+        "benchmarks/polish_metagenome_racon.benchmark.txt"
     script:
-        "../../scripts/racon_polish.py"
+        "scripts/racon_polish.py"
 
 
 ### Filter illumina reads against provided reference
@@ -157,8 +167,10 @@ rule filter_illumina_ref:
         "../../envs/minimap2.yaml"
     threads:
          config["max_threads"]
+    benchmark:
+        "benchmarks/filter_illumina_ref.benchmark.txt"
     script:
-        "../../scripts/filter_illumina_reference.py"
+        "scripts/filter_illumina_reference.py"
 
 
 # Generate BAM file for pilon, discard unmapped reads
@@ -172,9 +184,11 @@ rule generate_pilon_sort:
     threads:
         config["max_threads"]
     conda:
-        "../../envs/pilon.yaml"
+        "envs/pilon.yaml"
+    benchmark:
+        "benchmarks/generate_pilon_sort.benchmark.txt"
     script:
-        "../../scripts/generate_pilon_sort.py"
+        "scripts/generate_pilon_sort.py"
 
 # The racon polished long read assembly is polished again with the short reads using Pilon
 rule polish_meta_pilon:
@@ -188,7 +202,9 @@ rule polish_meta_pilon:
     params:
         pilon_memory = config["max_memory"]
     conda:
-        "../../envs/pilon.yaml"
+        "envs/pilon.yaml"
+    benchmark:
+        "benchmarks/polish_meta_pilon.benchmark.txt"
     shell:
         """
         pilon -Xmx{params.pilon_memory}000m --genome {input.fasta} --frags data/pilon.sort.bam \
@@ -207,14 +223,16 @@ rule polish_meta_racon_ill:
     threads:
         config["max_threads"]
     conda:
-        "../../envs/racon.yaml"
+        "envs/racon.yaml"
     params:
         prefix = "racon_ill",
         maxcov = 200,
         rounds = 1,
         illumina = True
+    benchmark:
+        "benchmarks/polish_meta_racon_ill.benchmark.txt"
     script:
-        "../../scripts/racon_polish.py"
+        "scripts/racon_polish.py"
 
 
 # High coverage contigs are identified
@@ -226,6 +244,8 @@ rule get_high_cov_contigs:
         paf = "data/racon_polishing/alignment.racon_ill.0.paf"
     output:
         fasta = "data/flye_high_cov.fasta"
+    benchmark:
+        "benchmarks/get_high_cov_contigs.benchmark.txt"
     params:
         min_cov_long = 20.0,
         min_cov_short = 10.0,
@@ -305,8 +325,10 @@ rule filter_illumina_assembly:
         "../../envs/minimap2.yaml"
     threads:
          config["max_threads"]
+    benchmark:
+        "benchmarks/filter_illumina_assembly.benchmark.txt"
     script:
-        "../../scripts/filter_illumina_assembly.py"
+        "scripts/filter_illumina_assembly.py"
 
 
 # If unassembled long reads are provided, skip the long read assembly
@@ -350,7 +372,9 @@ rule spades_assembly:
     params:
          max_memory = config["max_memory"]
     conda:
-        "../../envs/spades.yaml"
+        "envs/spades.yaml"
+    benchmark:
+        "benchmarks/spades_assembly.benchmark.txt"
     shell:
         """
         rm -rf data/spades_assembly/tmp; 
@@ -380,9 +404,11 @@ rule spades_assembly_short:
          max_memory = config["max_memory"],
          final_assembly = True
     conda:
-        "../../envs/spades.yaml"
+        "envs/spades.yaml"
+    benchmark:
+        "benchmarks/spades_assembly_short.benchmark.txt"
     script:
-        "../../scripts/spades_assembly_short.py"
+        "scripts/spades_assembly_short.py"
 
 
 # Short reads are mapped to the spades assembly and jgi_summarize_bam_contig_depths from metabat
@@ -398,6 +424,8 @@ rule spades_assembly_coverage:
          "../../envs/coverm.yaml"
     threads:
          config["max_threads"]
+    benchmark:
+        "benchmarks/spades_assembly_coverage.benchmark.txt"
     shell:
         """
         coverm contig -m metabat -t {threads} -r {input.fasta} --interleaved {input.fastq} --bam-file-cache-directory data/cached_bams/ > data/short_read_assembly.cov;
@@ -414,6 +442,8 @@ rule metabat_binning_short:
          "../../envs/metabat2.yaml"
     threads:
          config["max_threads"]
+    benchmark:
+        "benchmarks/metabat_binning_short.benchmark.txt"
     shell:
          """
          mkdir -p data/metabat_bins && \
@@ -433,6 +463,8 @@ rule map_long_mega:
         config["max_threads"]
     conda:
         "../../envs/minimap2.yaml"
+    benchmark:
+        "benchmarks/map_long_mega.benchmark.txt"
     shell:
         """
         minimap2 -t {threads} -ax map-ont -a {input.fasta} {input.fastq} |  samtools view -@ {threads} -b |
@@ -449,9 +481,11 @@ rule pool_reads:
     output:
         list = temp("data/list_of_lists.txt")
     conda:
-        "../../envs/pysam.yaml"
+        "envs/pysam.yaml"
+    benchmark:
+        "benchmarks/pool_reads.benchmark.txt"
     script:
-        "../../scripts/pool_reads.py"
+        "scripts/pool_reads.py"
 
 # Binned read lists are processed to extract the reads associated with each bin
 rule get_read_pools:
@@ -460,11 +494,13 @@ rule get_read_pools:
     output:
         "data/binned_reads/done"
     conda:
-         "../../envs/mfqe.yaml"
+         "envs/mfqe.yaml"
     threads:
          config['max_threads']
+    benchmark:
+        "benchmarks/get_read_pools.benchmark.txt"
     script:
-         '../../scripts/get_binned_reads.py'
+         'scripts/get_binned_reads.py'
 
 # Short and long reads for each bin are hybrid assembled with Unicycler
 rule assemble_pools:
@@ -478,9 +514,11 @@ rule assemble_pools:
     output:
         fasta = "data/unicycler_combined.fa"
     conda:
-        "../../envs/final_assembly.yaml"
+        "envs/final_assembly.yaml"
+    benchmark:
+        "benchmarks/assemble_pools.benchmark.txt"
     script:
-        "../../scripts/assemble_pools.py"
+        "scripts/assemble_pools.py"
 
 # The long read high coverage assembly from flye and hybrid assembly from unicycler are combined.
 # Long and short reads are mapped to this combined assembly.
@@ -496,7 +534,7 @@ rule combine_assemblies:
     threads:
         config["max_threads"]
     script:
-        "../../scripts/combine_assemblies.py"
+        "scripts/combine_assemblies.py"
 
 rule combine_long_only:
     input:
@@ -511,7 +549,7 @@ rule combine_long_only:
     threads:
         config["max_threads"]
     script:
-        "../../scripts/combine_assemblies.py"
+        "scripts/combine_assemblies.py"
 
 rule complete_assembly:
     input:

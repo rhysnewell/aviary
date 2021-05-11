@@ -179,7 +179,6 @@ def main():
         help='Which conda frontend to use, mamba is faster but harder to debug. Switch this to conda '
              'If experiencing problems installing environments',
         dest='conda_frontend',
-        nargs=1,
         default="mamba",
         choices=["conda", "mamba"],
     )
@@ -205,7 +204,6 @@ def main():
              'NOTE: Most commands in snakemake -h are valid but some commands may clash with commands '
              'aviary directly supplies to snakemake. Please make'
              "sure your additional commands don't clash.",
-        nargs=1,
         dest='cmds',
         default='',
     )

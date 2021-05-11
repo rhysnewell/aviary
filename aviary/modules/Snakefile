@@ -42,9 +42,20 @@ onstart:
 from snakemake.utils import min_version
 min_version("6.0")
 
+module qc:
+    snakefile: "quality_control/qc.smk"
+    config: config
+
+module cluster:
+    snakefile: "cluster/clustering.smk"
+    config: config
 
 module assembly:
     snakefile: "assembly/assembly.smk"
+    config: config
+
+module isolate:
+    snakefile: "assembly/isolate.smk"
     config: config
 
 module binning:
@@ -55,11 +66,31 @@ module annotation:
     snakefile: "annotation/annotation.smk"
     config: config
 
+module strain_analysis:
+    snakefile: "strain_analysis/strain_analysis.smk"
+    config: config
+
+module viral_analysis:
+    snakefile: "viral_analysis/viral_analysis.smk"
+    config: config
+
+
+use rule * from qc as *
+
+use rule * from cluster as *
+
 use rule * from assembly as *
+
+use rule * from isolate as *
 
 use rule * from binning as *
 
 use rule * from annotation as *
+
+use rule * from strain_analysis as *
+
+use rule * from viral_analysis as *
+
 
 
 if config["fasta"] == "none":

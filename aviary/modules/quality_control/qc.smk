@@ -76,7 +76,7 @@ rule fastqc:
     output:
         directory("www/fastqc/")
     conda:
-        "../../envs/fastqc.yaml"
+        "envs/fastqc.yaml"
     threads:
         config["max_threads"]
     script:
@@ -89,7 +89,7 @@ rule nanoplot:
     output:
         directory("www/nanoplot/")
     conda:
-        "../../envs/nanoplot.yaml"
+        "envs/nanoplot.yaml"
     threads:
         config["max_threads"]
     shell:
