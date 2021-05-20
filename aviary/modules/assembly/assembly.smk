@@ -1,4 +1,3 @@
-ruleorder: skip_long_assembly > get_reads_list_ref > link_reads > short_only
 ruleorder: filter_illumina_assembly > short_only
 # ruleorder: fastqc > fastqc_long
 ruleorder: combine_assemblies > combine_long_only
@@ -6,6 +5,7 @@ ruleorder: skip_long_assembly > get_high_cov_contigs > short_only
 ruleorder: skip_long_assembly > filter_illumina_assembly
 ruleorder: filter_illumina_ref > no_ref_filter
 ruleorder: combine_assemblies > combine_long_only > spades_assembly_short
+ruleorder: complete_assembly_with_qc > complete_assembly
 
 # onsuccess:
 #     print("Assembly finished, no error")
@@ -18,7 +18,7 @@ onstart:
     import sys
 
     from snakemake.utils import logger, min_version
-
+    sys.path.append(os.path.join(os.path.dirname(os.path.abspath(workflow.snakefile)),"../../scripts"))
     sys.path.append(os.path.join(os.path.dirname(os.path.abspath(workflow.snakefile)),"scripts"))
 
     # minimum required snakemake version
@@ -71,23 +71,6 @@ rule get_umapped_reads_ref:
         "benchmarks/get_unmapped_reads_ref.benchmark.txt"
     script:
         "scripts/filter_read_list.py"
-
-# If you don't want to filter the reads using a genome just link them into the folder
-rule link_reads:
-    input:
-        fastq = config["long_reads"],
-    output:
-        temp("data/long_reads.fastq.gz")
-    threads:
-        config['max_threads']
-    run:
-        import subprocess
-        if len(input.fastq) == 1: # Check if only one longread sample
-            shell("ln -s {input.fastq} {output}")
-        elif len(input.fastq) > 1:
-            subprocess.Popen("ln -s %s %s" % (input.fastq[0], output))
-        else:
-            shell("touch {output}")
 
 
 # Create new read file with filtered reads
@@ -439,7 +422,7 @@ rule metabat_binning_short:
     output:
          metabat_done = "data/metabat_bins/done"
     conda:
-         "../../envs/metabat2.yaml"
+         "../binning/envs/metabat2.yaml"
     threads:
          config["max_threads"]
     benchmark:
@@ -554,6 +537,15 @@ rule combine_long_only:
 rule complete_assembly:
     input:
         'data/final_contigs.fasta'
+    output:
+        'assembly/final_contigs.fasta'
+    shell:
+        'mkdir -p assembly; mv data/final_contigs.fasta assembly/; '
+
+rule complete_assembly_with_qc:
+    input:
+        'data/final_contigs.fasta',
+        'data/qc_done'
     output:
         'assembly/final_contigs.fasta'
     shell:

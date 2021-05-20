@@ -62,18 +62,21 @@ def phelp():
 A comprehensive metagenomics bioinformatics pipeline
 
 Metagenome assembly, binning, and annotation:
-        cluster  - Clusters samples based on OTU content using SingleM **TBC**
-        assemble - Perform hybrid assembly using short and long reads, 
-                   or assembly using only short reads
-        recover  - Recover MAGs from provided assembly using a variety 
-                   of binning algorithms 
-        annotate - Annotate MAGs **TBC**
-        genotype - Perform strain level analysis of MAGs **TBC**
-        complete - Runs each stage of the pipeline: assemble, recover, 
-                   annotate, genotype in that order.
+        cluster   - Clusters samples based on OTU content using SingleM **TBC**
+        assemble  - Perform hybrid assembly using short and long reads, 
+                    or assembly using only short reads
+        recover   - Recover MAGs from provided assembly using a variety 
+                    of binning algorithms 
+        annotate  - Annotate MAGs **TBC**
+        genotype  - Perform strain level analysis of MAGs **TBC**
+        complete  - Runs each stage of the pipeline: assemble, recover, 
+                    annotate, genotype in that order.
 
 Isolate assembly, binning, and annotation:
-        isolate  - Perform isolate assembly **PARTIALLY COMPLETED**
+        isolate   - Perform isolate assembly **PARTIALLY COMPLETED**
+        
+Utility modules:
+        configure - Set or overwrite the environment variables for future runs.
 
 """
 )
@@ -198,6 +201,15 @@ def main():
     )
 
     base_group.add_argument(
+        '--build',
+        help='Build conda environments and then exits. Equivalent to \"--snakemake-cmds \'--conda-create-envs-only True \' \"',
+        type=str2bool,
+        nargs='?',
+        const=True,
+        dest='build',
+    )
+
+    base_group.add_argument(
         '--snakemake-cmds',
         help='Additional commands to supplied to snakemake in the form of a single string'
              'e.g. "--print-compilation True". '
@@ -207,6 +219,39 @@ def main():
         dest='cmds',
         default='',
     )
+
+    ####################################################################
+    qc_group = argparse.ArgumentParser(formatter_class=CustomHelpFormatter,
+                                               add_help=False)
+    qc_group.add_argument(
+        '-r', '--reference-filter', '--reference_filter',
+        help='Reference filter file to aid in the assembly',
+        dest="reference_filter",
+        nargs=1,
+        default='none'
+    )
+
+    qc_group.add_argument(
+        '--min-read-size', '--min_read_size',
+        help='Minimum long read size when filtering using Filtlong',
+        dest="min_read_size",
+        default=1000
+    )
+
+    qc_group.add_argument(
+        '--min-mean-q', '--min_mean_q',
+        help='Minimum mean quality threshold',
+        dest="min_mean_q",
+        default=80
+    )
+
+    qc_group.add_argument(
+        '--keep-percent', '--keep_percent',
+        help='Percentage of reads passing quality thresholds kept by filtlong',
+        dest="keep_percent",
+        default=100
+    )
+
 
     ####################################################################
 
@@ -410,7 +455,7 @@ def main():
     assemble_options = subparsers.add_parser('assemble',
                                               description='Step-down hybrid assembly using long and short reads, or assembly using only short or long reads.',
                                               formatter_class=CustomHelpFormatter,
-                                              parents=[short_read_group, long_read_group, binning_group, base_group],
+                                              parents=[qc_group, short_read_group, long_read_group, binning_group, base_group],
                                               epilog=
         '''
                                         ......:::::: ASSEMBLE ::::::......
@@ -419,14 +464,6 @@ def main():
 
         ''')
 
-
-    assemble_options.add_argument(
-        '-r', '--reference-filter', '--reference_filter',
-        help='Reference filter file to aid in the assembly',
-        dest="reference_filter",
-        nargs=1,
-        default='none'
-    )
 
     assemble_options.add_argument(
         '-w', '--workflow',
@@ -554,7 +591,7 @@ def main():
     isolate_options = subparsers.add_parser('isolate',
                                              description='Step-down hybrid assembly using long and short reads, or assembly using only short or long reads.',
                                              formatter_class=CustomHelpFormatter,
-                                             parents=[short_read_group, long_read_group, isolate_group, binning_group, base_group],
+                                             parents=[qc_group, short_read_group, long_read_group, isolate_group, binning_group, base_group],
                                              epilog=
                                              '''
                                                                              ......:::::: ISOLATE ::::::......
@@ -564,39 +601,51 @@ def main():
                                              ''')
 
     isolate_options.add_argument(
-        '-r', '--reference-filter', '--reference_filter',
-        help='Reference filter file to aid in the assembly',
-        dest="reference_filter",
-        nargs=1,
-        required=False,
-    )
-
-    isolate_options.add_argument(
         '-w', '--workflow',
         help='Main workflow to run',
         dest='workflow',
         default='create_webpage_assemble',
     )
 
-    ##########################   ~ build ~  ###########################
+    ##########################   ~ configure ~  ###########################
 
-    build_options = subparsers.add_parser('build',
-                                            description='Build necessary conda environments and then exits. ',
+    configure_options = subparsers.add_parser('configure',
+                                            description='Sets the conda environment variables for future runs. ',
                                             formatter_class=CustomHelpFormatter,
-                                            parents=[base_group],
                                             epilog=
                                             '''
-                                              ......:::::: BUILD ::::::......
+                                                               ......:::::: CONFIGURE ::::::......
 
-                                            aviary build --conda-prefix ~/.conda
+                                            aviary configure --conda-prefix ~/.conda --gtdb-path ~/gtdbtk/release202/ 
 
                                             ''')
 
-    build_options.add_argument(
-        '-w', '--workflow',
-        help='The workflow to build the conda environments for',
-        dest='workflow',
-        default='complete_assembly',
+    configure_options.add_argument(
+        '--conda-prefix', '--conda_prefix',
+        help='Path to the location of installed conda environments, or where to install new environments',
+        dest='conda_prefix',
+        required=False,
+    )
+
+    configure_options.add_argument(
+        '--gtdb-path', '--gtdb_path',
+        help='Path to the local gtdb files',
+        dest='gtdb_path',
+        required=False,
+    )
+
+    configure_options.add_argument(
+        '--busco-db-path', '--busco_db_path',
+        help='Path to the local BUSCO database files',
+        dest='busco_db_path',
+        required=False,
+    )
+
+    configure_options.add_argument(
+        '--enrichm-db-path', '--enrichm_db_path',
+        help='Path to the local EnrichM database files',
+        dest='enrichm_db_path',
+        required=False,
     )
 
     ###########################################################################
@@ -624,28 +673,43 @@ def main():
         logging.info("Command - %s" % ' '.join(sys.argv))
         logging.info("Version - %s" % __version__)
 
-        prefix = args.output
-        if not os.path.exists(prefix):
-            os.makedirs(prefix)
+        if args.subparser_name == 'configure':
+            # Set the environment variables if manually configuring
+            if args.conda_prefix is not None:
+                Config.set_conda_path(args.conda_prefix)
 
-        processor = Processor(args,
-                           args.gtdb_path,
-                           args.conda_prefix)
+            if args.gtdb_path is not None:
+                Config.set_gtdb_path(args.gtdb_path)
 
-        processor.make_config()
+            if args.busco_db_path is not None:
+                Config.set_busco_db_path(args.busco_db_path)
 
-        if args.subparser_name == 'build':
-            try:
-                args.cmds = args.cmds + ['--conda-create-envs-only True ']
-            except TypeError:
-                args.cmds = ['--conda-create-envs-only True ']
+            if args.enrichm_db_path is not None:
+                Config.set_enrichm_db_path(args.enrichm_db_path)
 
-        processor.run_workflow(workflow=args.workflow,
-                               cores=int(args.n_cores),
-                               dryrun=args.dryrun,
-                               clean=args.clean,
-                               conda_frontend=args.conda_frontend,
-                               snakemake_args=args.cmds)
+        else:
+            prefix = args.output
+            if not os.path.exists(prefix):
+                os.makedirs(prefix)
+
+            processor = Processor(args,
+                               args.gtdb_path,
+                               args.conda_prefix)
+
+            processor.make_config()
+
+            if args.build:
+                try:
+                    args.cmds = args.cmds + '--conda-create-envs-only '
+                except TypeError:
+                    args.cmds = '--conda-create-envs-only '
+
+            processor.run_workflow(workflow=args.workflow,
+                                   cores=int(args.n_cores),
+                                   dryrun=args.dryrun,
+                                   clean=args.clean,
+                                   conda_frontend=args.conda_frontend,
+                                   snakemake_args=args.cmds)
 
 
 ###############################################################################

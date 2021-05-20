@@ -1,3 +1,4 @@
+ruleorder: skip_long_assembly > get_reads_list_ref > link_reads > short_only
 
 onsuccess:
     print("Aviary finished, no error")
@@ -74,6 +75,9 @@ module viral_analysis:
     snakefile: "viral_analysis/viral_analysis.smk"
     config: config
 
+module benchmarking:
+    snakefile: "benchmarking/benchmarking.smk"
+    config: config
 
 use rule * from qc as *
 
@@ -91,7 +95,7 @@ use rule * from strain_analysis as *
 
 use rule * from viral_analysis as *
 
-
+use rule * from benchmarking as *
 
 if config["fasta"] == "none":
     config["fasta"] = "assembly/final_contigs.fasta"

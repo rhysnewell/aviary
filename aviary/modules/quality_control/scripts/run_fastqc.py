@@ -33,3 +33,5 @@ elif snakemake.config['short_reads_1'] != 'none': # interleaved
     pool.join()
 else:
     subprocess.Popen('echo "no short reads" > www/fastqc/short_reads_fastqc.html')
+
+subprocess.Popen('touch www/fastqc/done')

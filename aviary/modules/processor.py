@@ -84,6 +84,8 @@ class Processor:
                  gtdbtk=Config.get_gtdb_path(),
                  conda_prefix=Config.get_conda_path(),
                  ):
+
+
         self.gtdbtk = gtdbtk
         self.conda_prefix = conda_prefix
 
@@ -208,19 +210,19 @@ class Processor:
 
         cmd = (
             "snakemake --snakefile {snakefile} --directory {working_dir} "
-            "{jobs} --rerun-incomplete "
-            "--configfile '{config_file}' --nolock "
-            " {profile} {conda_frontend} --use-conda {conda_prefix} "
-            " {dryrun} {notemp} {args}"
-            " {target_rule} "
+            "{jobs}--rerun-incomplete "
+            "--configfile '{config_file}' --nolock"
+            " {profile} {conda_frontend} --use-conda {conda_prefix}"
+            " {dryrun}{notemp}{args}"
+            " {target_rule}"
         ).format(
             snakefile=get_snakefile(),
             working_dir=self.output,
-            jobs="--jobs {}".format(cores) if cores is not None else "",
+            jobs="--jobs {} ".format(cores) if cores is not None else "",
             config_file=self.config,
             profile="" if (profile is None) else "--profile {}".format(profile),
-            dryrun="--dryrun" if dryrun else "",
-            notemp="--notemp" if not clean else "",
+            dryrun="--dryrun " if dryrun else "",
+            notemp="--notemp " if not clean else "",
             args=snakemake_args,
             target_rule=workflow if workflow != "None" else "",
             conda_prefix="--conda-prefix " + self.conda_prefix,

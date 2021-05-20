@@ -14,7 +14,7 @@ rule run_virsorter:
     output:
         "data/virsorter/done"
     conda:
-        "../../envs/virsorter.yaml"
+        "envs/virsorter.yaml"
     threads:
         config["max_threads"]
     shell:

@@ -37,13 +37,17 @@ profile_read_list:
 min_long_read_length:
     1000
 keep_percent:
-    90
+    100
+min_mean_q:
+    80
 guppy_model:
     r941_min_high_g360
 gtdbtk_folder:
-    /work/microbiome/db/gtdbtk/release95/
+    /work/microbiome/db/gtdb/data/releases/release202/
 busco_folder:
     /work/microbiome/db/busco
+enrichm_folder:
+    none
 virsorter_data:
     /work/microbiome/db/virsorter_data_v2/virsorter-data
 email:
