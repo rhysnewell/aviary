@@ -37,7 +37,7 @@ profile_read_list:
 min_long_read_length:
     1000
 keep_percent:
-    100
+    99
 min_mean_q:
     80
 guppy_model:

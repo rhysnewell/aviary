@@ -249,7 +249,7 @@ def main():
         '--keep-percent', '--keep_percent',
         help='Percentage of reads passing quality thresholds kept by filtlong',
         dest="keep_percent",
-        default=100
+        default=99
     )
 
 
@@ -477,7 +477,7 @@ def main():
     recover_options = subparsers.add_parser('recover',
                                             description='The complete binning pipeline',
                                             formatter_class=CustomHelpFormatter,
-                                            parents=[short_read_group, long_read_group, binning_group, base_group],
+                                            parents=[qc_group, short_read_group, long_read_group, binning_group, base_group],
                                             epilog=
     '''
                                            ......:::::: RECOVER ::::::......

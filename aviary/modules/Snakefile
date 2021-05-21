@@ -1,4 +1,5 @@
 ruleorder: skip_long_assembly > get_reads_list_ref > link_reads > short_only
+ruleorder: filtlong_no_reference > link_reads
 
 onsuccess:
     print("Aviary finished, no error")

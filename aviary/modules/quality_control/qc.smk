@@ -1,7 +1,7 @@
-ruleorder: filtlong_paired > filtlong_single > filtlong_reference > filtlong_no_reference > link_reads
+ruleorder: filtlong_no_reference > link_reads
 ruleorder: complete_qc_all > complete_qc_long > complete_qc_short
-ruleorder: filtlong_paired > filtlong_single
-ruleorder: filtlong_paired > filtlong_no_reference
+# ruleorder: filtlong_paired > filtlong_single
+# ruleorder: filtlong_paired > filtlong_no_reference
 
 # If you don't want to filter the reads using a genome just link them into the folder
 rule link_reads:
@@ -31,66 +31,68 @@ rule filtlong_no_reference:
         min_mean_q = config['min_mean_q']
     threads:
         config['max_threads']
+    benchmark:
+        "benchmarks/filtlong.benchmark.txt"
     conda:
         'envs/filtlong.yaml'
     shell:
-        'filtlong --min_length {params.min_length} --min_mean_q {params.min_mean_q} -p {params.keep_percent} {input.long} \ '
+        'filtlong --min_length {params.min_length} --min_mean_q {params.min_mean_q} {input.long} '
         '| pigz -p {threads} > {output.long}'
 
-rule filtlong_reference:
-    input:
-        reference = config['reference_filter'],
-        long = config['long_reads'],
-    output:
-        long = "data/long_reads.fastq.gz",
-    params:
-        min_length = config['min_long_read_length'],
-        keep_percent = config['keep_percent'],
-        min_mean_q = config['min_mean_q']
-    threads:
-        config['max_threads']
-    conda:
-        'envs/filtlong.yaml'
-    shell:
-        'filtlong -a {input.reference} --min_length {params.min_length} --min_mean_q {params.min_mean_q} -p {params.keep_percent} {input.long} \ '
-        '| pigz -p {threads} > {output.long}'
+# rule filtlong_reference:
+#     input:
+#         reference = config['reference_filter'],
+#         long = config['long_reads'],
+#     output:
+#         long = "data/long_reads.fastq.gz",
+#     params:
+#         min_length = config['min_long_read_length'],
+#         keep_percent = config['keep_percent'],
+#         min_mean_q = config['min_mean_q']
+#     threads:
+#         config['max_threads']
+#     conda:
+#         'envs/filtlong.yaml'
+#     shell:
+#         'filtlong -a {input.reference} --min_length {params.min_length} --min_mean_q {params.min_mean_q} -p {params.keep_percent} {input.long} '
+#         '| pigz -p {threads} > {output.long}'
 
-rule filtlong_single:
-    input:
-        pe1 = config['short_reads_1'],
-        long = config['long_reads'],
-    output:
-        long = "data/long_reads.fastq.gz",
-    params:
-        min_length = config['min_long_read_length'],
-        keep_percent = config['keep_percent'],
-        min_mean_q = config['min_mean_q']
-    threads:
-        config['max_threads']
-    conda:
-        'envs/filtlong.yaml'
-    shell:
-        'filtlong -1 {input.pe1} --min_length {params.min_length} --min_mean_q {params.min_mean_q} -p {params.keep_percent} {input.long} \ '
-        '| pigz -p {threads} > {output.long}'
+# rule filtlong_single:
+#     input:
+#         pe1 = config['short_reads_1'],
+#         long = config['long_reads'],
+#     output:
+#         long = "data/long_reads.fastq.gz",
+#     params:
+#         min_length = config['min_long_read_length'],
+#         keep_percent = config['keep_percent'],
+#         min_mean_q = config['min_mean_q']
+#     threads:
+#         config['max_threads']
+#     conda:
+#         'envs/filtlong.yaml'
+#     shell:
+#         'filtlong -1 {input.pe1} --min_length {params.min_length} --min_mean_q {params.min_mean_q} -p {params.keep_percent} {input.long} \ '
+#         '| pigz -p {threads} > {output.long}'
 
-rule filtlong_paired:
-    input:
-        pe1 = config['short_reads_1'],
-        pe2 = config['short_reads_2'],
-        long = config['long_reads'],
-    output:
-        long = "data/long_reads.fastq.gz",
-    params:
-        min_length = config['min_long_read_length'],
-        keep_percent = config['keep_percent'],
-        min_mean_q = config['min_mean_q']
-    threads:
-        config['max_threads']
-    conda:
-        'envs/filtlong.yaml'
-    shell:
-        'filtlong -1 {input.pe1} -2 {input.pe2} --min_length {params.min_length} --min_mean_q {params.min_mean_q} -p {params.keep_percent} {input.long} \ '
-        '| pigz -p {threads} > {output.long}'
+# rule filtlong_paired:
+#     input:
+#         pe1 = config['short_reads_1'],
+#         pe2 = config['short_reads_2'],
+#         long = config['long_reads'],
+#     output:
+#         long = "data/long_reads.fastq.gz",
+#     params:
+#         min_length = config['min_long_read_length'],
+#         keep_percent = config['keep_percent'],
+#         min_mean_q = config['min_mean_q']
+#     threads:
+#         config['max_threads']
+#     conda:
+#         'envs/filtlong.yaml'
+#     shell:
+#         'filtlong -1 {input.pe1} -2 {input.pe2} --min_length {params.min_length} --min_mean_q {params.min_mean_q} -p {params.keep_percent} {input.long} '
+#         '| pigz -p {threads} > {output.long}'
 
 
 rule fastqc:
@@ -101,6 +103,8 @@ rule fastqc:
         temp('www/fastqc/done')
     conda:
         "envs/fastqc.yaml"
+    benchmark:
+        "benchmarks/fastqc_short.benchmark.txt"
     threads:
         config["max_threads"]
     script:
@@ -112,23 +116,30 @@ rule fastqc_long:
     output:
         directory("www/fastqc_long/"),
         temp('www/fastqc_long/done')
+    conda:
+        "envs/fastqc.yaml"
+    benchmark:
+        "benchmarks/fastqc_long.benchmark.txt"
     threads:
         config["max_threads"]
     shell:
-        "fastqc -o www/fastqc_long/ {input[0]}; touch www/fastqc_long/done"
+        "fastqc -o www/fastqc_long/ -t {threads} {input[0]}; touch www/fastqc_long/done"
 
 rule nanoplot:
     input:
-        "data/long_reads.fastq.gz"
+        long = config['long_reads']
+         # "data/long_reads.fastq.gz"
     output:
         directory("www/nanoplot/"),
         temp('www/nanoplot/done')
     conda:
         "envs/nanoplot.yaml"
+    benchmark:
+        "benchmarks/nanoplot.benchmark.txt"
     threads:
         config["max_threads"]
     shell:
-        "NanoPlot -o www/nanoplot -p longReads --fastq {input}; touch www/nanoplot/done"
+        "NanoPlot -o www/nanoplot -p longReads -t {threads} --fastq {input.long}; touch www/nanoplot/done"
 
 
 rule complete_qc_short:
@@ -142,7 +153,7 @@ rule complete_qc_short:
 rule complete_qc_long:
     input:
         'www/nanoplot/done',
-        'www/fastqc_long/done'
+        'www/fastqc_long/done',
         'data/long_reads.fastq.gz'
     output:
         temp('data/qc_done')
