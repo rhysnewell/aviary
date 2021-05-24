@@ -1,15 +1,3 @@
-# ruleorder: das_tool_no_vamb > das_tool
-# ruleorder: das_tool_without_rosella_no_vamb > das_tool_without_rosella
-# ruleorder: checkm_no_vamb > checkm
-# ruleorder: checkm_without_rosella_no_vamb > checkm_without_rosella
-# ruleorder: binner_result_no_vamb > binner_result
-
-# onsuccess:
-#     print("Binning finished, no error")
-#
-# onerror:
-#     print("An error occurred")
-
 onstart:
     import os
     import sys
@@ -392,33 +380,6 @@ rule gtdbtk:
         "export GTDBTK_DATA_PATH={params.gtdbtk_folder} && "
         "gtdbtk classify_wf --cpus {threads} --pplacer_cpus {params.pplacer_threads} --extension fa "
         "--genome_dir data/das_tool_bins/das_tool_DASTool_bins --out_dir data/gtdbtk && touch data/gtdbtk/done"
-
-
-rule binner_result:
-    input:
-        done = "data/das_tool_without_rosella/done"
-    output:
-         "data/all_bins/done"
-    params:
-        pplacer_threads = config['pplacer_threads']
-    conda:
-        "../../envs/checkm.yaml"
-    threads:
-        config["max_threads"]
-    shell:
-        "mkdir -p data/all_bins && cd data/all_bins; "
-        "ln -s ../vamb_bins/bins/*.fna ./ && ls *.fna | parallel 'mv {{}} vamb_bins_{{}}'; "
-        "ln -s ../metabat_bins_2/*.fa ./ && ls *.fa | parallel 'mv {{}} {{.}}.metabat2.fna'; "
-        "ln -s ../metabat_bins_sens/*.fa ./ && ls *.fa | parallel 'mv {{}} {{.}}.metabat_sens.fna'; "
-        "ln -s ../metabat_bins_spec/*.fa ./ && ls *.fa | parallel 'mv {{}} {{.}}.metabat_spec.fna'; "
-        "ln -s ../metabat_bins_ssens/*.fa ./ && ls *.fa | parallel 'mv {{}} {{.}}.metabat_ssens.fna'; "
-        "ln -s ../metabat_bins_sspec/*.fa ./ && ls *.fa | parallel 'mv {{}} {{.}}.metabat_sspec.fna'; "
-        "ln -s ../concoct_bins/*.fa ./ && ls *.fa | parallel 'mv {{}} concoct_{{.}}.fna'; "
-        "ln -s ../maxbin2_bins/*.fasta ./ && ls *.fasta | parallel 'mv {{}} maxbin2_{{.}}.fna'; "
-        "ln -s ../rosella_bins/*.fna ./; "
-        "rm -f \*.fna; "
-        "checkm lineage_wf -t {threads} --pplacer_threads {params.pplacer_threads} -x fna --tab_table ./ checkm > checkm.out; "
-        "touch done && cd ../../"
 
 
 rule singlem_pipe_reads:

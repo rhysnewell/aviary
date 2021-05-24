@@ -35,6 +35,39 @@ rule rosella_checkm:
         '--tab_table -f data/rosella_bins/checkm.out && rm data/rosella_bins/rerun'
 
 
+rule binner_result:
+    input:
+        metabat2_done = "data/metabat_bins_2/done",
+        concoct_done = "data/concoct_bins/done",
+        maxbin_done = "data/maxbin2_bins/done",
+        metabat_sspec = "data/metabat_bins_sspec/done",
+        metabat_spec = "data/metabat_bins_spec/done",
+        metabat_ssens = "data/metabat_bins_ssens/done",
+        metabat_sense = "data/metabat_bins_sens/done",
+        rosella_done = "data/rosella_bins/done",
+        vamb_done = "data/vamb_bins/done",
+    output:
+         "data/all_bins/done"
+    params:
+        pplacer_threads = config['pplacer_threads']
+    conda:
+        "../../envs/checkm.yaml"
+    threads:
+        config["max_threads"]
+    shell:
+        "mkdir -p data/all_bins && cd data/all_bins; "
+        "ln -s ../vamb_bins/bins/*.fna ./ && ls *.fna | parallel 'mv {{}} vamb_bins_{{}}'; rm -f vamb_bins_\*.fna; "
+        "ln -s ../metabat_bins_2/*.fa ./ && ls *.fa | parallel 'mv {{}} {{.}}.metabat2.fna'; "
+        "ln -s ../metabat_bins_sens/*.fa ./ && ls *.fa | parallel 'mv {{}} {{.}}.metabat_sens.fna'; "
+        "ln -s ../metabat_bins_spec/*.fa ./ && ls *.fa | parallel 'mv {{}} {{.}}.metabat_spec.fna'; "
+        "ln -s ../metabat_bins_ssens/*.fa ./ && ls *.fa | parallel 'mv {{}} {{.}}.metabat_ssens.fna'; "
+        "ln -s ../metabat_bins_sspec/*.fa ./ && ls *.fa | parallel 'mv {{}} {{.}}.metabat_sspec.fna'; "
+        "ln -s ../concoct_bins/*.fa ./ && ls *.fa | parallel 'mv {{}} concoct_{{.}}.fna'; "
+        "ln -s ../maxbin2_bins/*.fasta ./ && ls *.fasta | parallel 'mv {{}} maxbin2_{{.}}.fna'; "
+        "ln -s ../rosella_bins/*.fna ./; "
+        "rm -f \*.fna; "
+        "checkm lineage_wf -t {threads} --pplacer_threads {params.pplacer_threads} -x fna --tab_table ./ checkm > checkm.out; "
+        "touch done && cd ../../"
 
 rule das_tool_without_rosella:
     input:
@@ -112,7 +145,9 @@ rule reset_benchmark:
         'rm -rf data/das_tool_*/; '
         'rm -rf data/checkm*; '
         'rm -rf data/all_bins/; '
-        'touch data/reset_all'
+        'rm -rf data/coverm.cov; '
+        'rm -f data/done; '
+        'touch data/reset'
 
 rule reset_rosella:
     log:
@@ -123,4 +158,5 @@ rule reset_rosella:
         'rm -rf data/checkm; '
         'rm -rf data/checkm.out'
         'rm -rf data/all_bins/; '
+        'rm -rf data/done; '
         'touch data/reset_rosella; '

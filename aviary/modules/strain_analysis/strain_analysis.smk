@@ -1,8 +1,8 @@
-onsuccess:
-    print("Strain analysis finished, no error")
-
-onerror:
-    print("An error occurred")
+# onsuccess:
+#     print("Strain analysis finished, no error")
+#
+# onerror:
+#     print("An error occurred")
 
 
 # rule generate_bams:

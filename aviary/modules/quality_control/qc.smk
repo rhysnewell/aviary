@@ -11,6 +11,7 @@ rule link_reads:
         temp("data/long_reads.fastq.gz")
     threads:
         config['max_threads']
+    group: 'qc'
     run:
         import subprocess
         if len(input.fastq) == 1: # Check if only one longread sample
@@ -33,6 +34,7 @@ rule filtlong_no_reference:
         config['max_threads']
     benchmark:
         "benchmarks/filtlong.benchmark.txt"
+    group: 'qc'
     conda:
         'envs/filtlong.yaml'
     shell:
@@ -105,6 +107,7 @@ rule fastqc:
         "envs/fastqc.yaml"
     benchmark:
         "benchmarks/fastqc_short.benchmark.txt"
+    group: 'qc'
     threads:
         config["max_threads"]
     script:
@@ -120,6 +123,7 @@ rule fastqc_long:
         "envs/fastqc.yaml"
     benchmark:
         "benchmarks/fastqc_long.benchmark.txt"
+    group: 'qc'
     threads:
         config["max_threads"]
     shell:
@@ -136,6 +140,7 @@ rule nanoplot:
         "envs/nanoplot.yaml"
     benchmark:
         "benchmarks/nanoplot.benchmark.txt"
+    group: 'qc'
     threads:
         config["max_threads"]
     shell:
@@ -147,6 +152,7 @@ rule complete_qc_short:
         'www/fastqc/done',
     output:
         temp('data/qc_done')
+    group: 'qc'
     shell:
         'touch data/qc_done'
 
@@ -157,6 +163,7 @@ rule complete_qc_long:
         'data/long_reads.fastq.gz'
     output:
         temp('data/qc_done')
+    group: 'qc'
     shell:
         'touch data/qc_done'
 
@@ -168,5 +175,6 @@ rule complete_qc_all:
         'data/long_reads.fastq.gz'
     output:
         temp('data/qc_done')
+    group: 'qc'
     shell:
         'touch data/qc_done'
