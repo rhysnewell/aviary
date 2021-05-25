@@ -5,6 +5,7 @@ rule rerun_rosella:
     params:
         min_contig_size = config["min_contig_size"],
         min_bin_size = config["min_bin_size"]
+    group: 'binning'
     output:
         "data/rosella_bins/rerun"
     conda:
@@ -35,6 +36,22 @@ rule rosella_checkm:
         '--tab_table -f data/rosella_bins/checkm.out && rm data/rosella_bins/rerun'
 
 
+rule benchmark_vamb:
+    input:
+        "data/vamb_bins/done"
+    group: 'binning'
+    output:
+        "data/vamb_bins/checkm.out"
+    params:
+        pplacer_threads = config["pplacer_threads"],
+    conda:
+        "../../envs/checkm.yaml"
+    threads:
+        config["max_threads"]
+    shell:
+        'checkm lineage_wf -t {threads} --pplacer_threads {params.pplacer_threads} -x fna data/vamb_bins/bins/ data/vamb_bins/checkm --tab_table -f data/vamb_bins/checkm.out'
+
+
 rule binner_result:
     input:
         metabat2_done = "data/metabat_bins_2/done",
@@ -46,6 +63,7 @@ rule binner_result:
         metabat_sense = "data/metabat_bins_sens/done",
         rosella_done = "data/rosella_bins/done",
         vamb_done = "data/vamb_bins/done",
+    group: 'binning'
     output:
          "data/all_bins/done"
     params:
@@ -80,6 +98,7 @@ rule das_tool_without_rosella:
         metabat_ssens = "data/metabat_bins_ssens/done",
         metabat_sense = "data/metabat_bins_sens/done",
         vamb_done = "data/vamb_bins/done"
+    group: 'binning'
     output:
         das_tool_done = "data/das_tool_without_rosella/done"
     threads:
@@ -110,6 +129,7 @@ rule checkm_without_rosella:
         done = "data/das_tool_without_rosella/done"
     params:
         pplacer_threads = config["pplacer_threads"]
+    group: 'binning'
     output:
         "data/checkm_without_rosella.out"
     conda:
@@ -129,6 +149,7 @@ rule rosella_benchmark:
         "data/checkm.out",
         "data/checkm_without_rosella.out",
         # "data/coverm_abundances.tsv",
+    group: 'binning'
     output:
         "data/done"
     shell:

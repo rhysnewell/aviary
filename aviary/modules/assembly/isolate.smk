@@ -1,23 +1,19 @@
 ruleorder: polish_isolate_racon_ill > skip_illumina_polish
 
-onsuccess:
-    print("Isolate assembly finished, no error")
-
-onerror:
-    print("An error occurred")
-
 ####################
 # isolate assembly #
 ####################
 # rule assemble_reads_redbean:
 #     input:
 #         reads = config["long_reads"]
+#     group: 'isolate'
 #     output:
 #         contigs = "isolate/redbean/{assembly}"
 
 rule assemble_reads_flye:
     input:
         reads = config["long_reads"]
+    group: 'isolate'
     output:
         contigs = "isolate/flye/assembly.fasta"
     conda:
@@ -45,6 +41,7 @@ rule polish_isolate_racon:
         maxcov = 1000,
         rounds = 4,
         illumina = False
+    group: 'isolate'
     output:
         fasta = "isolate/isolate.pol.rac.fasta"
     benchmark:
@@ -63,6 +60,7 @@ rule polish_isolate_medaka:
         config["max_threads"]
     params:
         model = config["guppy_model"]
+    group: 'isolate'
     output:
         fasta = "isolate/isolate.pol.med.fasta"
     benchmark:
@@ -78,6 +76,7 @@ rule polish_isolate_pilon:
     input:
         reads = "data/short_reads.fastq.gz",
         fasta = "isolate/isolate.pol.med.fasta"
+    group: 'isolate'
     output:
         fasta = "isolate/isolate.pol.pil.fasta",
     threads:
@@ -100,6 +99,7 @@ rule polish_isolate_racon_ill:
     input:
         fastq = "data/short_reads.fastq.gz",
         fasta = "isolate/isolate.pol.pil.fasta"
+    group: 'isolate'
     output:
         fasta = "isolate/isolate.pol.fin.fasta"
     threads:
@@ -120,8 +120,10 @@ rule polish_isolate_racon_ill:
 rule skip_illumina_polish:
     input:
         fasta = "isolate/isolate.pol.med.fasta"
+    group: 'isolate'
     output:
         fasta = "isolate/isolate.pol.fin.fasta"
+    group: 'isolate'
     shell:
         "cp {input.fasta} {output.fasta}"
 
@@ -130,6 +132,7 @@ rule circlator:
     input:
         fasta = "isolate/isolate.pol.fin.fasta",
         reads = config["long_reads"]
+    group: 'isolate'
     output:
         fasta = "isolate/completed_assembly.fasta"
     threads:

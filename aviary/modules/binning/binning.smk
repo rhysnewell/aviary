@@ -42,6 +42,7 @@ if config['fasta'] == 'none':
 rule prepare_binning_files:
     input:
         fasta = config["fasta"]
+    group: 'binning'
     output:
         maxbin_coverage = "data/maxbin.cov.list",
         metabat_coverage = "data/coverm.cov",
@@ -55,6 +56,7 @@ rule prepare_binning_files:
 rule get_bam_indices:
     input:
         coverage = "data/coverm.cov"
+    group: 'binning'
     output:
         bams = "data/binning_bams/done"
     conda:
@@ -72,6 +74,7 @@ rule maxbin_binning:
         maxbin_cov = "data/maxbin.cov.list"
     params:
         min_contig_size = config["min_contig_size"]
+    group: 'binning'
     output:
         "data/maxbin2_bins/done"
     conda:
@@ -84,7 +87,7 @@ rule maxbin_binning:
         "mkdir -p data/maxbin2_bins && "
         "run_MaxBin.pl -contig {input.fasta} -thread {threads} -abund_list {input.maxbin_cov} "
         "-out data/maxbin2_bins/maxbin -min_contig_length {params.min_contig_size} && "
-        "touch data/maxbin2_bins/done"
+        "touch {output[0]} || touch {output[0]}"
 
 
 rule concoct_binning:
@@ -93,6 +96,7 @@ rule concoct_binning:
         bam_done = "data/binning_bams/done"
     params:
         min_contig_size = config["min_contig_size"]
+    group: 'binning'
     output:
         "data/concoct_bins/done"
     conda:
@@ -109,14 +113,19 @@ rule concoct_binning:
         "merge_cutup_clustering.py data/concoct_working/clustering_gt{params.min_contig_size}.csv > data/concoct_working/clustering_merged.csv && "
         "mkdir -p data/concoct_bins && "
         "extract_fasta_bins.py {input.fasta} data/concoct_working/clustering_merged.csv --output_path data/concoct_bins/ && "
-        "rm -rf data/binning_bams/; "
-        "touch data/concoct_bins/done"
+        "rm -rf data/binning_bams/ && "
+        "touch {output[0]} || touch {output[0]}"
 
 
 rule vamb_jgi_filter:
+    """
+    vamb has to have to coverage file filtered prior to running otherwise it throws an error
+    Outputs a coverage file containing no contigs smaller than minimum contig size
+    """
     input:
         fasta = config["fasta"],
         done = "data/coverm.cov"
+    group: 'binning'
     output:
         vamb_bams_done = "data/coverm.filt.cov"
     threads:
@@ -131,12 +140,18 @@ rule vamb_jgi_filter:
 
 
 rule vamb_binning:
+    """
+    Perform binning via vamb. Vamb frequently breaks and won't produce any bins or errors out. As such, whenenver 
+    vamb throws an error this rule will catch it and create the output regardless. You'll know if vamb failed as there
+    will be no bins produced by it but all other files will be there
+    """
     input:
         coverage = "data/coverm.filt.cov",
         fasta = config["fasta"],
     params:
         min_bin_size = config["min_bin_size"],
         min_contig_size = config["min_contig_size"]
+    group: 'binning'
     output:
         "data/vamb_bins/done"
     conda:
@@ -152,22 +167,8 @@ rule vamb_binning:
         "touch {output[0]} && mkdir -p data/vamb_bins/bins"
 
 
-rule benchmark_vamb:
-    input:
-        "data/vamb_bins/done"
-    output:
-        "data/vamb_bins/checkm.out"
-    params:
-        pplacer_threads = config["pplacer_threads"],
-    conda:
-        "../../envs/checkm.yaml"
-    threads:
-        config["max_threads"]
-    shell:
-        'checkm lineage_wf -t {threads} --pplacer_threads {params.pplacer_threads} -x fna data/vamb_bins/bins/ data/vamb_bins/checkm --tab_table -f data/vamb_bins/checkm.out'
-
-
 rule vamb_skip:
+    group: 'binning'
     output:
         "data/vamb_bins/skipped"
     shell:
@@ -182,6 +183,7 @@ rule metabat2:
     params:
         min_contig_size = config["min_contig_size"],
         min_bin_size = config["min_bin_size"]
+    group: 'binning'
     output:
         metabat_done = "data/metabat_bins_2/done"
     conda:
@@ -192,14 +194,15 @@ rule metabat2:
         "benchmarks/metabat_2.benchmark.txt"
     shell:
         "metabat -t {threads} -m {params.min_contig_size} -s {params.min_bin_size} --seed 89 -i {input.fasta} "
-        "-a {input.coverage} -o data/metabat_bins_2/binned_contigs; "
-        "touch data/metabat_bins_2/done"
+        "-a {input.coverage} -o data/metabat_bins_2/binned_contigs && "
+        "touch {output[0]} || touch {output[0]}"
 
 
 rule metabat_spec:
     input:
         coverage = "data/coverm.cov",
         fasta = config["fasta"]
+    group: 'binning'
     output:
         'data/metabat_bins_spec/done'
     conda:
@@ -213,13 +216,14 @@ rule metabat_spec:
         config["max_threads"]
     shell:
         "metabat1 -t {threads} -m {params.min_contig_size} -s {params.min_bin_size} --seed 89 --specific -i {input.fasta} "
-        "-a {input.coverage} -o data/metabat_bins_spec/binned_contigs; "
-        "touch data/metabat_bins_spec/done"
+        "-a {input.coverage} -o data/metabat_bins_spec/binned_contigs && "
+        "touch {output[0]} || touch {output[0]}"
 
 rule metabat_sspec:
     input:
         coverage = "data/coverm.cov",
         fasta = config["fasta"]
+    group: 'binning'
     output:
         'data/metabat_bins_sspec/done'
     conda:
@@ -233,13 +237,14 @@ rule metabat_sspec:
         config["max_threads"]
     shell:
         "metabat1 -t {threads} -m {params.min_contig_size} -s {params.min_bin_size} --seed 89 --superspecific "
-        "-i {input.fasta} -a {input.coverage} -o data/metabat_bins_sspec/binned_contigs; "
-        "touch data/metabat_bins_sspec/done"
+        "-i {input.fasta} -a {input.coverage} -o data/metabat_bins_sspec/binned_contigs && "
+        "touch {output[0]} || touch {output[0]}"
 
 rule metabat_sens:
     input:
         coverage = "data/coverm.cov",
         fasta = config["fasta"]
+    group: 'binning'
     output:
         'data/metabat_bins_sens/done'
     conda:
@@ -253,13 +258,14 @@ rule metabat_sens:
         config["max_threads"]
     shell:
         "metabat1 -t {threads} -m {params.min_contig_size} -s {params.min_bin_size} --seed 89 --sensitive "
-        "-i {input.fasta} -a {input.coverage} -o data/metabat_bins_sens/binned_contigs; "
-        "touch data/metabat_bins_sens/done"
+        "-i {input.fasta} -a {input.coverage} -o data/metabat_bins_sens/binned_contigs && "
+        "touch {output[0]} || touch {output[0]}"
 
 rule metabat_ssens:
     input:
         coverage = "data/coverm.cov",
         fasta = config["fasta"]
+    group: 'binning'
     output:
         'data/metabat_bins_ssens/done'
     conda:
@@ -273,16 +279,21 @@ rule metabat_ssens:
         config["max_threads"]
     shell:
         "metabat1 -t {threads} -m {params.min_contig_size} -s {params.min_bin_size} --seed 89 --supersensitive "
-        "-i {input.fasta} -a {input.coverage} -o data/metabat_bins_ssens/binned_contigs; "
-        "touch data/metabat_bins_ssens/done"
+        "-i {input.fasta} -a {input.coverage} -o data/metabat_bins_ssens/binned_contigs && "
+        "touch {output[0]} || touch {output[0]}"
 
 rule rosella:
+    """
+    Runs Rosella. Of the current binners, Rosella is the slowest but will frequently produce the best binning results
+    Hopefully the speed issues can be tackled as UMAP matures.
+    """
     input:
         coverage = "data/coverm.cov",
         fasta = config["fasta"]
     params:
         min_contig_size = config["min_contig_size"],
         min_bin_size = config["min_bin_size"]
+    group: 'binning'
     output:
         "data/rosella_bins/done"
     conda:
@@ -293,11 +304,14 @@ rule rosella:
         "benchmarks/rosella.benchmark.txt"
     shell:
         "rosella bin -r {input.fasta} -i {input.coverage} -t {threads} -o data/rosella_bins "
-        "--min-contig-size {params.min_contig_size} --min-bin-size {params.min_bin_size} --b-tail 0.4; "
-        "touch data/rosella_bins/done"
+        "--min-contig-size {params.min_contig_size} --min-bin-size {params.min_bin_size} --b-tail 0.4 && "
+        "touch {output[0]} || touch {output[0]}"
 
 
 rule das_tool:
+    """
+    Runs dasTool on the output of all binning algorithms. If a binner failed to produce bins then their output is ignored
+    """
     input:
         fasta = config["fasta"],
         metabat2_done = "data/metabat_bins_2/done",
@@ -309,6 +323,7 @@ rule das_tool:
         metabat_sense = "data/metabat_bins_sens/done",
         rosella_done = "data/rosella_bins/done",
         vamb_done = "data/vamb_bins/done",
+    group: 'binning'
     output:
         das_tool_done = "data/das_tool_bins/done"
     threads:
@@ -339,6 +354,7 @@ rule das_tool:
 rule get_abundances:
     input:
         "data/singlem_out/singlem_appraise.svg"
+    group: 'binning'
     output:
         "data/coverm_abundances.tsv"
     conda:
@@ -353,6 +369,7 @@ rule checkm:
         done = "data/das_tool_bins/done"
     params:
         pplacer_threads = config["pplacer_threads"]
+    group: 'binning'
     output:
         "data/checkm.out"
     conda:
@@ -367,6 +384,7 @@ rule checkm:
 rule gtdbtk:
     input:
         done_file = "data/das_tool_bins/done"
+    group: 'binning'
     output:
         done = "data/gtdbtk/done"
     params:
@@ -383,6 +401,7 @@ rule gtdbtk:
 
 
 rule singlem_pipe_reads:
+    group: 'binning'
     output:
         "data/singlem_out/metagenome.combined_otu_table.csv"
     conda:
@@ -394,6 +413,7 @@ rule singlem_appraise:
     input:
         metagenome = "data/singlem_out/metagenome.combined_otu_table.csv",
         gtdbtk_done = "data/gtdbtk/done"
+    group: 'binning'
     output:
         "data/singlem_out/singlem_appraise.svg"
     params:
@@ -418,6 +438,7 @@ rule recover_mags:
         singlem = "data/singlem_out/singlem_appraise.svg"
     conda:
         "../../envs/coverm.yaml"
+    group: 'binning'
     output:
         bins = "bins/done",
         taxonomy = "taxonomy/done",
