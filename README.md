@@ -15,7 +15,7 @@ Future modules will include:
 2. [Usage](#usage)
     - [Basic usage](#basic-usage)
     - [Advanced usage](#advanced-usage)
-    - [Helpful parameters](#helpful-parameters)
+    - [Helpful parameters](#helpful-parameters-and-commands)
 3. [Workflow](#workflow)
 4. [Citations](#citations)
 

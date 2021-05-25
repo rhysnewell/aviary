@@ -52,14 +52,19 @@ class BadTreeFileException(Exception):
 
 ###############################################################################
 ################################ - Functions - ################################
+def centerify(text, width=-1):
+  lines = text.split('\n')
+  width = max(map(len, lines)) if width == -1 else width
+  return '\n'.join(line.center(width) for line in lines)
+
 
 def phelp():
     print(
 """
 
-                ......:::::: AVIARY ::::::......
+                    ......:::::: AVIARY ::::::......
 
-A comprehensive metagenomics bioinformatics pipeline
+           A comprehensive metagenomics bioinformatics pipeline
 
 Metagenome assembly, binning, and annotation:
         cluster   - Clusters samples based on OTU content using SingleM **TBC**
