@@ -12,12 +12,14 @@ Future modules will include:
 
 1. [Installation](#installation)
     - [Requirements](#requirements)
-2. [Usage](#usage)
+2. [Module details](#module-details)
+3. [Usage](#usage)
     - [Basic usage](#basic-usage)
     - [Advanced usage](#advanced-usage)
     - [Helpful parameters](#helpful-parameters-and-commands)
-3. [Workflow](#workflow)
-4. [Citations](#citations)
+4. [Workflow](#workflow)
+5. [Troubleshooting](#troubleshooting)
+6. [Citations](#citations)
 
 
 # Installation
@@ -88,6 +90,17 @@ Initial requirements for aviary can be downloaded using the `aviary.yml`:
 conda env create -n aviary -f aviary.yml
 ```
 
+# Module details
+|__method__ |__description__ |
+| --- | --- |
+|`cluster`|Module under development|
+|`assemble`|Perform quality control and assembly of provided reads. Will provide hybrid assembly if given long and short reads|
+|`recover`|Recover MAGs from provided assembly using a variety of binning algorithms. Also perform quality checks on recovered MAGs and taxonomic classification.|
+|`annotate`|Module under development|
+|`genotype`|Module under development|
+|`complete`|Performs the complete workflow up to last possible rule given the provided inputs|
+|`isolate` |Performs hybrid isolate assembly. For use with isolated pure sequencing results.  |
+|`configure` |Set or reset environment variables used by aviary  |
 
 # Usage
 ## Basic Usage
@@ -134,6 +147,16 @@ NOTE: The space after `--cluster qsub ` is required due to a strange quirk in ho
 Upon first running Aviary, you will be prompted to input the location for several database folders if
 they haven't already been provided. If at any point the location of these folders change you can
 use the the `aviary configure` module to update the environment variables used by aviary.
+
+These environment variables can also be configured manually, just set the following variables in your `.bashrc` file:
+```
+GTDBTK_DATA_PATH
+ENRICHM_DB
+BUSCO_DB
+CONDA_ENV_PATH
+```
+
+Make sure to reactivate your conda environment or re-source your `.bashrc` for aviary to be able to access these variables.
 
 ### Thread control
 Aviary has three thread contol options:
