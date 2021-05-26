@@ -186,7 +186,8 @@ rule generate_pilon_sort:
 rule polish_meta_pilon:
     input:
         fasta = "data/assembly.pol.rac.fasta",
-        bam = "data/pilon.sort.bam"
+        bam = "data/pilon.sort.bam",
+        bai = "data/pilon.sort.bam.bai"
     group: 'assembly'
     output:
         fasta = "data/assembly.pol.pil.fasta"
@@ -421,7 +422,8 @@ rule spades_assembly_coverage:
     group: 'assembly'
     output:
          assembly_cov = temp("data/short_read_assembly.cov"),
-         short_vs_mega = temp("data/short_vs_mega.bam")
+         bam = temp("data/short_vs_mega.bam"),
+         bai = temp("data/short_vs_mega.bai")
     conda:
          "../../envs/coverm.yaml"
     threads:
@@ -430,8 +432,8 @@ rule spades_assembly_coverage:
         "benchmarks/spades_assembly_coverage.benchmark.txt"
     shell:
         """
-        coverm contig -m metabat -t {threads} -r {input.fasta} --interleaved {input.fastq} --bam-file-cache-directory data/cached_bams/ > data/short_read_assembly.cov;
-        mv data/cached_bams/*.bam data/short_vs_mega.bam
+        coverm contig -m metabat -t {threads} -r {input.fasta} --interleaved {input.fastq} --bam-file-cache-directory data/cached_bams/ > {output.assembly_cov};
+        mv data/cached_bams/*.bam {output.bam} && samtools index -@ {threads} {output.bam}
         """
 
 rule metabat_binning_short:
@@ -481,8 +483,10 @@ rule map_long_mega:
 rule pool_reads:
     input:
         long_bam = "data/long_vs_mega.bam",
+        long_bai = "data/long_vs_mega.bam.bai",
         short_bam = "data/short_vs_mega.bam",
-        metabat_done = "data/metabat_bins/done"
+        short_bai = "data/short_vs_mega.bam.bai",
+        metabat_done = "data/metabat_bins/done",
     group: 'assembly'
     output:
         list = temp("data/list_of_lists.txt")
