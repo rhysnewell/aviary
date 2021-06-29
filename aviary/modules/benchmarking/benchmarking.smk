@@ -166,6 +166,7 @@ rule reset_benchmark:
         'rm -rf data/das_tool_*/; '
         'rm -rf data/checkm*; '
         'rm -rf data/all_bins/; '
+        'rm -rf data/*_cov.tsv; '
         'rm -rf data/coverm.cov; '
         'rm -f data/done; '
         'touch data/reset'

@@ -1,10 +1,6 @@
-ruleorder: busco_bins_provided > busco
+ruleorder: busco_mag_directory > busco_bins_provided > busco
+ruleorder: enrichm_directory > enrichm_bins_provided > enrichm_from_recover
 
-# onsuccess:
-#     print("Annotation finished, no error")
-#
-# onerror:
-#     print("An error occurred")
 
 onstart:
     import os
@@ -48,6 +44,53 @@ rule prodigal:
     shell:
         "prodigal -i {input.fasta} -f gff -o {output} -p meta"
 
+
+rule busco_mag_directory:
+    input:
+        mags = config['mag_directory'],
+        ext = config['mag_extension']
+    output:
+        done = 'data/busco/done'
+    params:
+        busco_folder = config["busco_folder"]
+    conda:
+        "envs/busco.yaml"
+    threads:
+        config["max_threads"]
+    script:
+        """
+        mkdir -p data/busco && \
+        cd data/busco && \
+        minimumsize=500000 && \
+        for file in {input.mags}/*{input.ext};do 
+            actualsize=$(wc -c <\"$file\"); 
+            if [ $actualsize -ge $minimumsize ]; then 
+                if [ ! -d bacteria_odb10.${{file:39:-3}} ]; then
+                    busco -q -c {threads} -i $file -o bacteria_odb10.${{file:39:-3}} \
+                    -l {params.busco_folder}/bacteria_odb10 -m geno;
+                fi
+                if [ ! -d eukaryota_odb10.${{file:39:-3}} ]; then
+                busco -q -c {threads} -i $file -o eukaryota_odb10.${{file:39:-3}} \
+                -l {params.busco_folder}/eukaryota_odb10 -m geno; 
+                fi
+                if [ ! -d embryophyta_odb10.${{file:39:-3}} ]; then
+                busco -q -c {threads} -i $file -o embryophyta_odb10.${{file:39:-3}} \
+                -l {params.busco_folder}/embryophyta_odb10 -m geno; 
+                fi
+                if [ ! -d fungi_odb10.${{file:39:-3}} ]; then
+                busco -q -c {threads} -i $file -o fungi_odb10.${{file:39:-3}} \
+                -l {params.busco_folder}/fungi_odb10 -m geno; 
+                fi 
+                # busco -q -c {threads} -i $file -o metazoa_odb10.${{file:39:-3}} \
+                -l {params.busco_folder}/metazoa_odb10 -m geno; 
+                # busco -q -c {threads} -i $file -o protists_ensembl.${{file:39:-3}} \
+                -l {params.busco_folder}/protists_ensembl -m geno; 
+            fi
+        done && \
+        cd ../../ && \
+        touch data/busco/done
+        """
+
 # Run BUSCO on the bins
 rule busco_bins_provided:
     input:
@@ -66,7 +109,7 @@ rule busco_bins_provided:
         mkdir -p data/busco && \
         cd data/busco && \
         minimumsize=500000 && \
-        for file in ../das_tool_bins/das_tool_DASTool_bins/*.fa;do 
+        for file in {input.mags};do 
             actualsize=$(wc -c <\"$file\"); 
             if [ $actualsize -ge $minimumsize ]; then 
                 if [ ! -d bacteria_odb10.${{file:39:-3}} ]; then
@@ -99,7 +142,6 @@ rule busco_bins_provided:
 rule busco:
     input:
         mags = "bins/done",
-
     output:
         done = "data/busco/done"
     params:
@@ -141,3 +183,76 @@ rule busco:
         cd ../../ && \
         touch data/busco/done
         """
+
+
+rule enrichm_directory:
+    input:
+        mags = config['mags'],
+    output:
+        out_folder = "data/enrichm",
+        done = "data/enrichm/done"
+    params:
+        busco_folder = config["enrichm_folder"]
+    conda:
+        "envs/enrichm.yaml"
+    threads:
+        config["max_threads"]
+    shell:
+        """
+        enrichm annotate --output {output.out_folder} --genome_directory {input.mags} --suffix {input.ext} --ko_hmm --pfam --tigrfam --clusters --orthogroup --cazy --ec --parallel {threads} && 
+        enrichm classify --output {output.out_folder} --genome_and_annotation_matrix {output.out_folder}/ko_frequency_table.tsv; 
+        touch data/enrichm/done
+        """
+
+rule enrichm_bins_provided:
+    input:
+        mags = config['mags'],
+    output:
+        out_folder = "data/enrichm",
+        done = "data/enrichm/done"
+    params:
+        busco_folder = config["enrichm_folder"]
+    conda:
+        "envs/enrichm.yaml"
+    threads:
+        config["max_threads"]
+    shell:
+        """
+        enrichm annotate --output {output.out_folder} --genome_files {input.mags} --ko_hmm --pfam --tigrfam --clusters --orthogroup --cazy --ec --parallel {threads} && 
+        enrichm classify --output {output.out_folder} --genome_and_annotation_matrix {output.out_folder}/ko_frequency_table.tsv; 
+        touch data/enrichm/done
+        """
+
+rule enrichm_from_recover:
+    input:
+        mags = "bins/final_bins",
+        ext = "fa"
+    output:
+        out_folder = "data/enrichm",
+        done = "data/enrichm/done"
+    params:
+        busco_folder = config["enrichm_folder"]
+    conda:
+        "envs/enrichm.yaml"
+    threads:
+        config["max_threads"]
+    shell:
+        """
+        enrichm annotate --output {output.out_folder} --genome_directory {input.mags} --suffix {input.ext} --ko_hmm --pfam --tigrfam --clusters --orthogroup --cazy --ec --parallel {threads} && 
+        enrichm classify --output {output.out_folder} --genome_and_annotation_matrix {output.out_folder}/ko_frequency_table.tsv; 
+        touch data/enrichm/done
+        """
+
+
+rule complete_annotation:
+    input:
+         'data/busco/done',
+         'data/enrichm/done',
+    output:
+         'annotation/done',
+    shell:
+         """
+         mkdir -p annotation;
+         mv data/enrichm annotation/
+         mv data/busco annotation/
+         """

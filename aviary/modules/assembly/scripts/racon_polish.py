@@ -15,6 +15,7 @@ except FileExistsError:
 random.seed(89)
 reference = snakemake.input.fasta
 
+# Whether contigs are polished with illumina or long read
 if snakemake.params.illumina:
     if snakemake.config['reference_filter'] != 'none':
         reads = "data/short_reads.fastq.gz"
@@ -29,6 +30,7 @@ for rounds in range(snakemake.params.rounds):
     paf = os.path.join(out, 'alignment.%s.%d.paf') % (snakemake.params.prefix, rounds)
     logging.info("Generating PAF file: %s for racon round %d..." % (paf, rounds))
 
+    # Generate PAF mapping files
     if not os.path.exists(paf): # Check if mapping already exists
         if snakemake.params.illumina:
             if reads != "data/short_reads.fastq.gz":
@@ -43,6 +45,7 @@ for rounds in range(snakemake.params.rounds):
             subprocess.Popen("minimap2 -t %d -x map-pb %s %s > %s" % (snakemake.threads, reference, reads, paf), shell=True).wait()
 
     cov_dict = {}
+    # Populate coverage dictionary,
     with open(paf) as f:
         for line in f:
             qname, qlen, qstart, qstop, strand, ref, rlen, rstart, rstop = line.split()[:9]
@@ -86,6 +89,7 @@ for rounds in range(snakemake.params.rounds):
                 paf_file.write(line)
                 included_reads.add(qname)
             elif ref in high_cov:
+                # Down sample reads from high coverage contigs
                 sample_rate = max_cov / cov_dict[ref]
                 if qname in excluded_reads:
                     pass

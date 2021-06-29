@@ -110,15 +110,16 @@ rule flye_assembly:
         graph = "data/flye/assembly_graph.gfa",
         info = "data/flye/assembly_info.txt"
     params:
-        genome_size = config["meta_genome_size"]
+        genome_size = config["meta_genome_size"],
+        long_read_type = config["long_read_type"]
     conda:
         "envs/flye.yaml"
     benchmark:
         "benchmarks/flye_assembly.benchmark.txt"
     threads:
         config["max_threads"]
-    shell:
-        "flye --nano-raw {input.fastq} --meta -o data/flye -t {threads} -g {params.genome_size}"
+    script:
+        "scripts/run_flye.py"
 
 
 # Polish the long reads assembly with Racon
@@ -249,6 +250,7 @@ rule get_high_cov_contigs:
         long_contig_size = 500000
     run:
         ill_cov_dict = {}
+        # populate illumina coverage dictionary using PAF
         with open(input.paf) as paf:
             for line in paf:
                 query, qlen, qstart, qend, strand, ref, rlen, rstart, rend = line.split()[:9]
@@ -257,46 +259,67 @@ rule get_high_cov_contigs:
                     ill_cov_dict[ref] = 0.0
                 ill_cov_dict[ref] += (int(rend) - int(rstart)) / int(rlen)
         count = 0
+        high_cov_set = set()
+        short_edges = {}
         with open(input.info) as f:
+            # Based on the flye assembly_info.txt, retrieve contigs > long_contig_size
             f.readline()
-            high_cov_set = set()
-            short_edges = {}
             for line in f:
                 if int(line.split()[1]) > params.long_contig_size:
                     high_cov_set.add(line.split()[0])
                 elif int(line.split()[1]) < params.short_contig_size:
+                    # Take first and last edge in info file for this contig
                     se1 = line.split()[6].split(',')[0]
+                    # Filter the '-' sign from edge name
                     if se1.startswith('-'):
                         se1 = ("edge_" + se1[1:], True)
                     else:
                         se1 = ("edge_" + se1, False)
                     se2 = line.split()[6].split(',')[-1]
+                    # Filter the '-' sign from edge name
                     if se2.startswith('-'):
                         se2 = ("edge_" + se2[1:], False)
                     else:
                         se2 = ("edge_" + se2, True)
+
+                    # Append contig to associated edges in short_edges dict
                     if not se1 in short_edges:
                         short_edges[se1] = []
                     short_edges[se1].append(line.split()[0])
                     if not se2 in short_edges:
                         short_edges[se2] = []
                     short_edges[se2].append(line.split()[0])
-                if float(line.split()[2]) >= params.min_cov_long or not line.split()[0] in ill_cov_dict or ill_cov_dict[line.split()[0]] <= params.min_cov_short:
+                # if a contig is covered by >= mon_cov_long long reads place in high cov set
+                # Also place in high coverage set if contig was not covered by illumina reads
+                # Also place in high coverage set if illumina coverage was <= min_cov_short
+                if float(line.split()[2]) >= params.min_cov_long or not line.split()[0] in ill_cov_dict \
+                        or ill_cov_dict[line.split()[0]] <= params.min_cov_short:
                     high_cov_set.add(line.split()[0])
+
+        filtered_contigs = set()
+        # Populate filtered contigs with short contigs that were connected to two edges in short_edges dict in the correct
+        # orientation: edge_1 + to edge_2 - and edge_1 != edge_2. So the start of a sequences complements links to
+        #               the end of a sequences reverse complement. If the length of the match is 0M, then do not filter.
         with open(input.graph) as f:
-            filtered_contigs = set()
             for line in f:
                 if line.startswith("L"):
-                    if (line.split()[1], line.split()[2] == '+') in short_edges and (line.split()[3], line.split()[4] == '-') in short_edges and not line.split()[1] == line.split()[3]:
+                    if (line.split()[1], line.split()[2] == '+') in short_edges \
+                            and (line.split()[3], line.split()[4] == '-') in short_edges \
+                            and not line.split()[1] == line.split()[3] \
+                            and not line.split()[5] == '0M':
                         for i in short_edges[(line.split()[1], line.split()[2] == '+')]:
                             filtered_contigs.add(i)
                         for i in short_edges[(line.split()[3], line.split()[4] == '-')]:
                             filtered_contigs.add(i)
+
+        # Remove contigs that were filtered from the high coverage set
         for i in filtered_contigs:
             try:
                 high_cov_set.remove(i)
             except KeyError:
                 pass
+
+        # Write high coverage contigs
         with open(input.fasta) as f, open(output.fasta, 'w') as o:
             write_line = False
             for line in f:
@@ -423,7 +446,7 @@ rule spades_assembly_coverage:
     output:
          assembly_cov = temp("data/short_read_assembly.cov"),
          bam = temp("data/short_vs_mega.bam"),
-         bai = temp("data/short_vs_mega.bai")
+         bai = temp("data/short_vs_mega.bam.bai")
     conda:
          "../../envs/coverm.yaml"
     threads:

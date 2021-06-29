@@ -30,6 +30,10 @@ unassembled_long:
     none
 mags:
     none
+mag_directory:
+    none
+mag_extension:
+    none
 instrain_params:
     {}
 profile_read_list:

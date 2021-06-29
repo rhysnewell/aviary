@@ -351,9 +351,28 @@ rule das_tool:
         touch data/das_tool_bins/done
         """
 
+rule galah_dereplicate:
+    input:
+        checkm = 'data/checkm.out',
+        das_tool = 'data/das_tool_bins/done'
+    output:
+        final_bins = temp('bins/final_bins/done')
+    params:
+        derep_ani = 0.97
+    threads:
+        config['max_threads']
+    conda:
+        "../../envs/coverm.yaml"
+    shell:
+        "mv data/das_tool_bins/das_tool_DASTool_bins bins/non_dereplicated_bins; "
+        "coverm cluster --precluster-method finch -t {threads} --checkm-tab-table {input.checkm} " \
+        "--genome-fasta-directory bins/non_dereplicated_bins -x fa --output-representative-fasta-directory {output.final_bins} --ani {params.derep_ani}; "
+        "touch bins/final_bins/done"
+
+
 rule get_abundances:
     input:
-        "data/singlem_out/singlem_appraise.svg"
+        "bins/final_bins/done"
     group: 'binning'
     output:
         "data/coverm_abundances.tsv"
@@ -431,7 +450,7 @@ rule singlem_appraise:
 
 rule recover_mags:
     input:
-        das = "data/das_tool_bins/done",
+        final_bins = "bins/final_bins/done",
         gtdbtk = "data/gtdbtk/done",
         checkm = "data/checkm.out",
         coverm = "data/coverm_abundances.tsv",
@@ -448,10 +467,6 @@ rule recover_mags:
         config["max_threads"]
     shell:
         # Use --precluster-method finch so dashing-related install problems are avoided i.e. https://github.com/dnbaker/dashing/issues/41
-        "mkdir -p data/pre_galah_bins && cd data/pre_galah_bins/ && rm -f * && ln -s ../das_tool_bins/das_tool_DASTool_bins/* ./ && cd ../../ && "
-        "coverm cluster --precluster-method finch -t {threads} --checkm-tab-table data/checkm.out --genome-fasta-directory data/pre_galah_bins/ -x fa --output-representative-fasta-directory data/galah_bins --ani 0.97; "
-        "mv data/das_tool_bins/das_tool_DASTool_bins bins/final_bins; "
-        "mv data/galah_bins bins/galah_dereplicated; "
         "mv data/checkm.out bins/; "
         "mv data/coverm_abundances.tsv bins/; "
         "mv data/coverm.cov bins/; "

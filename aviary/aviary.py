@@ -375,7 +375,6 @@ def main():
         '-d', '--genome-fasta-directory', '--genome_fasta_directory',
         help='Directory containing MAGs to be annotated',
         dest='directory',
-        nargs='*',
         required=False,
     )
 
@@ -383,7 +382,6 @@ def main():
         '-x', '--fasta-extension', '--fasta_extension',
         help='File extension of fasta files in --genome-fasta-directory',
         dest='ext',
-        nargs=1,
         required=False,
         default='fa'
     )
@@ -524,7 +522,7 @@ def main():
         '-w', '--workflow',
         help='Main workflow to run',
         dest='workflow',
-        default='create_webpage_annotate',
+        default='complete_annotation',
     )
 
     ##########################  ~ GENOTYPE ~   ###########################

@@ -18,6 +18,8 @@
 # along with this program. If not, see <http://www.gnu.org/licenses/>.        #
 #                                                                             #
 ###############################################################################
+import glob
+
 import aviary.config.config as Config
 __author__ = "Rhys Newell"
 __copyright__ = "Copyright 2020"
@@ -140,6 +142,21 @@ class Processor:
             self.pe1 = 'none'
             self.pe2 = 'none'
 
+        try:
+            self.mag_directory = args.directory
+        except AttributeError:
+            self.mag_directory = 'none'
+
+        try:
+            self.mags = args.mags
+        except AttributeError:
+            self.mags = 'none'
+
+        try:
+            self.mag_extension = args.ext
+        except AttributeError:
+            self.mag_extension = 'none'
+
     def make_config(self):
         """
         Reads template config file with comments from ./template_config.yaml
@@ -162,7 +179,7 @@ class Processor:
             self.assembly = [os.path.abspath(p) for p in self.assembly]
         elif self.assembly is None:
             self.assembly = 'none'
-            logging.warn("No assembly provided, assembly will be created using available reads...")
+            logging.warning("No assembly provided, assembly will be created using available reads...")
         if self.pe1 != "none":
             self.pe1 = [os.path.abspath(p) for p in self.pe1]
         if self.pe2 != "none":
@@ -182,6 +199,9 @@ class Processor:
         conf["min_contig_size"] = int(self.min_contig_size)
         conf["min_bin_size"] = int(self.min_bin_size)
         conf["gtdbtk_folder"] = os.path.abspath(self.gtdbtk)
+        conf["mag_directory"] = self.mag_directory
+        conf["mag_extension"] = self.mag_extension
+        conf["mags"] = self.mags
 
         with open(self.config, "w") as f:
             yaml.dump(conf, f)
