@@ -1,3 +1,5 @@
+ruleorder: dereplicate_and_get_abundances_paired > dereplicate_and_get_abundances_interleaved
+
 onstart:
     import os
     import sys
@@ -476,3 +478,45 @@ rule recover_mags:
         "touch bins/done; "
         "touch diversity/done; "
         "touch taxonomy/done; "
+
+# Special rule to help out with a buggy output
+rule dereplicate_and_get_abundances_paired:
+    input:
+        pe_1 = config["short_reads_1"],
+        pe_2 = config["short_reads_2"]
+    output:
+        final_bins_done = temp('bins/final_bins/done'),
+        output_abundances = 'bins/coverm_abundances.tsv'
+    params:
+        final_bins = 'bins/final_bins',
+        derep_ani = 0.97
+    threads:
+        config['max_threads']
+    conda:
+        "../../envs/coverm.yaml"
+    shell:
+        "mv bins/final_bins/ bins/non_dereplicated_bins; "
+        "coverm cluster --precluster-method finch -t {threads} --checkm-tab-table bins/checkm.out "
+        "--genome-fasta-directory bins/non_dereplicated_bins -x fa --output-representative-fasta-directory {params.final_bins} --ani {params.derep_ani}; "
+        "coverm genome -t {threads} -d bins/final_bins/ -1 {input.pe_1} -2 {input.pe_2} --min-covered-fraction 0.0 -x fa > bins/coverm_abundances.tsv; "
+        "touch bins/final_bins/done"
+
+# Special rule to help out with a buggy output
+rule dereplicate_and_get_abundances_interleaved:
+    input:
+        pe_1 = config["short_reads_1"],
+    output:
+        output_abundances = 'bins/coverm_abundances.tsv'
+    params:
+        final_bins = 'bins/final_bins',
+        derep_ani = 0.97
+    threads:
+        config['max_threads']
+    conda:
+        "../../envs/coverm.yaml"
+    shell:
+        "mv bins/final_bins/ bins/non_dereplicated_bins; "
+        "coverm cluster --precluster-method finch -t {threads} --checkm-tab-table bins/checkm.out "
+        "--genome-fasta-directory bins/non_dereplicated_bins -x fa --output-representative-fasta-directory {params.final_bins} --ani {params.derep_ani}; "
+        "coverm genome -t {threads} -d bins/final_bins/ --interleaved {input.pe_1} --min-covered-fraction 0.0 -x fa > bins/coverm_abundances.tsv; "
+        "touch bins/final_bins/done"
