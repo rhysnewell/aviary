@@ -485,7 +485,6 @@ rule dereplicate_and_get_abundances_paired:
         pe_1 = config["short_reads_1"],
         pe_2 = config["short_reads_2"]
     output:
-        final_bins_done = temp('bins/final_bins/done'),
         output_abundances = 'bins/coverm_abundances.tsv'
     params:
         final_bins = 'bins/final_bins',
