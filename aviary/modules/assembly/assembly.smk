@@ -55,7 +55,7 @@ rule map_reads_ref:
     threads:
          config["max_threads"]
     shell:
-        "minimap2 -ax map-ont -t {threads} {input.reference_filter} {input.fastq} | samtools view -@ {threads} -b > {output}"
+        "minimap2 -ax map-ont --split-prefix=tmp -t {threads} {input.reference_filter} {input.fastq} | samtools view -@ {threads} -b > {output}"
 
 
 # Get a list of reads that don't map to genome you want to filter
@@ -497,7 +497,7 @@ rule map_long_mega:
         "benchmarks/map_long_mega.benchmark.txt"
     shell:
         """
-        minimap2 -t {threads} -ax map-ont -a {input.fasta} {input.fastq} |  samtools view -@ {threads} -b |
+        minimap2 -t {threads} --split-prefix=tmp -ax map-ont -a {input.fasta} {input.fastq} |  samtools view -@ {threads} -b |
         samtools sort -@ {threads} -o {output.bam} - && \
         samtools index -@ {threads} {output.bam}
         """
