@@ -11,30 +11,44 @@ signal.signal(signal.SIGALRM, handler)
 
 
 def source_conda_env():
-    with open(format('%s/etc/conda/activate.d/aviary.sh' % os.environ['CONDA_PREFIX'])) as f:
-        for line in f:
-            if line.startswith('#') or not line.strip():
-                continue
-            # if 'export' not in line:
-            #     continue
-            # Remove leading `export `, if you have those
-            # then, split name / value pair
-            # key, value = line.replace('export ', '', 1).strip().split('=', 1)
-            key, value = line.strip().split('=', 1)
-            os.environ[key] = value  # Load to local environ
+    try:
+        with open(format('%s/etc/conda/activate.d/aviary.sh' % os.environ['CONDA_PREFIX'])) as f:
+            for line in f:
+                if line.startswith('#') or not line.strip():
+                    continue
+                # if 'export' not in line:
+                #     continue
+                # Remove leading `export `, if you have those
+                # then, split name / value pair
+                # key, value = line.replace('export ', '', 1).strip().split('=', 1)
+                try:
+                    key, value = line.strip().split('=', 1)
+                    os.environ[key] = value  # Load to local environ
+                except ValueError:
+                    continue
+    except FileNotFoundError:
+        # File not found so going to have to create it
+        pass
 
 def source_bashrc():
-    with open('%s/.bashrc' % os.environ['HOME']) as f:
-        for line in f:
-            if line.startswith('#') or not line.strip():
-                continue
-            # if 'export' not in line:
-            #     continue
-            # Remove leading `export `, if you have those
-            # then, split name / value pair
-            # key, value = line.replace('export ', '', 1).strip().split('=', 1)
-            key, value = line.strip().split('=', 1)
-            os.environ[key] = value  # Load to local environ
+    try:
+        with open('%s/.bashrc' % os.environ['HOME']) as f:
+            for line in f:
+                if line.startswith('#') or not line.strip():
+                    continue
+                # if 'export' not in line:
+                #     continue
+                # Remove leading `export `, if you have those
+                # then, split name / value pair
+                # key, value = line.replace('export ', '', 1).strip().split('=', 1)
+                try:
+                    key, value = line.strip().split('=', 1)
+                    os.environ[key] = value  # Load to local environ
+                except ValueError:
+                    continue
+    except FileNotFoundError:
+        # File not found so going to have to create it
+        pass
 
 """
 Load the reference package. This will fail if the directory doesn't exist.
