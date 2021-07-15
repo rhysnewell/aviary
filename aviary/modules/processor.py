@@ -129,7 +129,7 @@ class Processor:
         self.output = args.output
 
         try:
-            if args.coupled is not "none":
+            if args.coupled != "none":
                 self.pe1 = args.coupled[::2]
                 self.pe2 = args.coupled[1::2]
             else:
