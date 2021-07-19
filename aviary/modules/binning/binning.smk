@@ -368,7 +368,7 @@ rule galah_dereplicate:
     shell:
         "mv data/das_tool_bins/das_tool_DASTool_bins bins/non_dereplicated_bins; "
         "coverm cluster --precluster-method finch -t {threads} --checkm-tab-table {input.checkm} " \
-        "--genome-fasta-directory bins/non_dereplicated_bins -x fa --output-representative-fasta-directory {output.final_bins} --ani {params.derep_ani}; "
+        "--genome-fasta-directory bins/non_dereplicated_bins -x fa --output-representative-fasta-directory bins/final_bins --ani {params.derep_ani}; "
         "touch bins/final_bins/done"
 
 
