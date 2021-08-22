@@ -228,6 +228,8 @@ class Processor:
 
         self._validate_config()
 
+        cores = max(int(self.threads), cores)
+
         cmd = (
             "snakemake --snakefile {snakefile} --directory {working_dir} "
             "{jobs}--rerun-incomplete "
