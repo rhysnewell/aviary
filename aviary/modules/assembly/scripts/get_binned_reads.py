@@ -22,10 +22,9 @@ def process_short_reads_paired(reads_1, reads_2, file, threads):
     subprocess.Popen('seqkit -j %d grep -f %s %s | pigz -p %d > %s.2.fastq.gz' %
                      (threads, file, reads_2, threads, file[:-5]), shell=True).wait()
 
-def process_long_reads(reads, file):
-    if not os.path.exists(file[:-5] + '.fastq.gz'):
-        subprocess.Popen('zcat %s | mfqe --fastq-read-name-lists %s --output-fastq-files %s.fastq.gz' %
-                         (reads, file, file[:-5]), shell=True).wait()
+def process_long_reads(reads, file, threads):
+    subprocess.Popen('seqtk subseq %s %s | pigz -p %d > %s.fastq.gz' %
+                     (reads, file, threads, file[:-5]), shell=True).wait()
 
 
 def get_index(n_files, current):
@@ -41,7 +40,7 @@ if snakemake.config['long_reads'] != 'none':
     pool = mp.Pool(snakemake.threads)
 
     mp_results = [pool.apply_async(process_long_reads,
-                                    args=(snakemake.config["long_reads"][0], file))
+                                    args=(snakemake.config["long_reads"][0], file, 2))
                                     for file in glob.glob('data/binned_reads/*.long.list')]
     for result in mp_results:
         result.get()
