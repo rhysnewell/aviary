@@ -422,7 +422,7 @@ rule spades_assembly_short:
         fastq = config["short_reads_1"]
     group: 'assembly'
     output:
-        fasta = "data/final_contigs.fasta"
+        fasta = "data/spades_assembly/scaffolds.fasta"
     threads:
          config["max_threads"]
     params:
@@ -434,6 +434,16 @@ rule spades_assembly_short:
         "benchmarks/spades_assembly_short.benchmark.txt"
     script:
         "scripts/spades_assembly_short.py"
+
+
+rule move_spades_assembly:
+    input:
+        assembly = "data/spades_assembly/scaffolds.fasta"
+    group: 'assembly'
+    output:
+        out = "data/final_contigs.fasta"
+    script:
+        "cp {input.assembly} {output.out}"
 
 
 # Short reads are mapped to the spades assembly and jgi_summarize_bam_contig_depths from metabat
