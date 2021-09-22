@@ -6,6 +6,7 @@ ruleorder: skip_long_assembly > filter_illumina_assembly
 ruleorder: filter_illumina_ref > no_ref_filter
 ruleorder: combine_assemblies > combine_long_only > spades_assembly_short
 ruleorder: complete_assembly_with_qc > complete_assembly
+ruleorder: combine_assemblies > move_spades_assembly
 
 # onsuccess:
 #     print("Assembly finished, no error")
@@ -442,7 +443,7 @@ rule move_spades_assembly:
     group: 'assembly'
     output:
         out = "data/final_contigs.fasta"
-    script:
+    shell:
         "cp {input.assembly} {output.out}"
 
 
