@@ -3,5 +3,6 @@ channels:
   - conda-forge
 dependencies:
   - spades = 3.15.0
+  - megahit = 1.2.9
   - pyyaml
   - joblib

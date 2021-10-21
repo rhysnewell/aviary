@@ -617,3 +617,4 @@ rule complete_assembly_with_qc:
         'assembly/final_contigs.fasta'
     shell:
         'mkdir -p assembly; mv data/final_contigs.fasta assembly/; '
+

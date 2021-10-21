@@ -286,8 +286,7 @@ rule metabat_ssens:
 
 rule rosella:
     """
-    Runs Rosella. Of the current binners, Rosella is the slowest but will frequently produce the best binning results
-    Hopefully the speed issues can be tackled as UMAP matures.
+    Runs Rosella.
     """
     input:
         coverage = "data/coverm.cov",
@@ -358,7 +357,8 @@ rule galah_dereplicate:
         checkm = 'data/checkm.out',
         das_tool = 'data/das_tool_bins/done'
     output:
-        final_bins = temp('bins/final_bins/done')
+        final_bins_dir = 'bins/final_bins/',
+        final_bins_fin = temp('bins/final_bins/done')
     params:
         derep_ani = 0.97
     threads:
@@ -368,8 +368,8 @@ rule galah_dereplicate:
     shell:
         "mv data/das_tool_bins/das_tool_DASTool_bins bins/non_dereplicated_bins; "
         "coverm cluster --precluster-method finch -t {threads} --checkm-tab-table {input.checkm} " \
-        "--genome-fasta-directory bins/non_dereplicated_bins -x fa --output-representative-fasta-directory {output.final_bins} --ani {params.derep_ani}; "
-        "touch bins/final_bins/done"
+        "--genome-fasta-directory bins/non_dereplicated_bins -x fa --output-representative-fasta-directory {output.final_bins_dir} --ani {params.derep_ani}; "
+        "touch {output.final_bins_fin}"
 
 
 rule get_abundances:
