@@ -157,10 +157,10 @@ class Processor:
         except AttributeError:
             self.mag_extension = 'none'
 
-        if args.coassemble is not None:
-            self.coassemble = True
-        else:
-            self.coassemble = False
+        # if args.coassemble is not None:
+        #     self.coassemble = True
+        # else:
+        #     self.coassemble = False
 
     def make_config(self):
         """
