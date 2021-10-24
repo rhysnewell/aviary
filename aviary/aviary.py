@@ -309,7 +309,7 @@ def main():
     long_read_group = argparse.ArgumentParser(formatter_class=CustomHelpFormatter,
                                               add_help=False)
     long_read_group.add_argument(
-        '-l', '--longreads',
+        '-l', '--longreads', '--long-reads', '--long_reads',
         help='A space separated list of interleaved read files for the binning process. NOTE: If performing assembly and '
              'multiple long read files are provided, then only the first file is used for assembly. ',
         dest='longreads',
@@ -318,7 +318,7 @@ def main():
     )
 
     long_read_group.add_argument(
-        '-z', '--longread-type', '--longread_type',
+        '-z', '--longread-type', '--longread_type', '--long_read_type', '--long-read-type',
         help='Whether the sequencing platform and technology for the longreads. '
              '"rs" for PacBio RSII, "sq" for PacBio Sequel, "ccs" for PacBio CCS '
              'reads and "ont" for Oxford Nanopore',

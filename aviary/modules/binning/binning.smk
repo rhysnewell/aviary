@@ -404,7 +404,8 @@ rule checkm:
 
 rule gtdbtk:
     input:
-        done_file = "data/das_tool_bins/done"
+        done_file = "data/final_bins/done",
+        dereplicated_bin_folder = "bins/final_bins/"
     group: 'binning'
     output:
         done = "data/gtdbtk/done"
@@ -418,7 +419,7 @@ rule gtdbtk:
     shell:
         "export GTDBTK_DATA_PATH={params.gtdbtk_folder} && "
         "gtdbtk classify_wf --cpus {threads} --pplacer_cpus {params.pplacer_threads} --extension fa "
-        "--genome_dir data/das_tool_bins/das_tool_DASTool_bins --out_dir data/gtdbtk && touch data/gtdbtk/done"
+        "--genome_dir {input.dereplicated_bin_folder} --out_dir data/gtdbtk && touch data/gtdbtk/done"
 
 
 rule singlem_pipe_reads:
@@ -433,7 +434,8 @@ rule singlem_pipe_reads:
 rule singlem_appraise:
     input:
         metagenome = "data/singlem_out/metagenome.combined_otu_table.csv",
-        gtdbtk_done = "data/gtdbtk/done"
+        gtdbtk_done = "data/gtdbtk/done",
+        bins = "bins/final_bins/"
     group: 'binning'
     output:
         "data/singlem_out/singlem_appraise.svg"
@@ -443,7 +445,7 @@ rule singlem_appraise:
     conda:
         "../../envs/singlem.yaml"
     shell:
-        "singlem pipe --threads {params.pplacer_threads} --sequences data/das_tool_bins/das_tool_DASTool_bins/*.fa --otu_table data/singlem_out/genomes.otu_table.csv; "
+        "singlem pipe --threads {params.pplacer_threads} --sequences bins/final_bins/*.fa --otu_table data/singlem_out/genomes.otu_table.csv; "
         "singlem pipe --threads {params.pplacer_threads} --sequences {params.fasta} --otu_table data/singlem_out/assembly.otu_table.csv; "
         "singlem appraise --metagenome_otu_tables {input.metagenome} --genome_otu_tables data/singlem_out/genomes.otu_table.csv "
         "--assembly_otu_table data/singlem_out/assembly.otu_table.csv "
