@@ -157,6 +157,11 @@ class Processor:
         except AttributeError:
             self.mag_extension = 'none'
 
+        # if args.coassemble is not None:
+        #     self.coassemble = True
+        # else:
+        #     self.coassemble = False
+
     def make_config(self):
         """
         Reads template config file with comments from ./template_config.yaml
@@ -227,6 +232,8 @@ class Processor:
             sys.exit(1)
 
         self._validate_config()
+
+        cores = max(int(self.threads), cores)
 
         cmd = (
             "snakemake --snakefile {snakefile} --directory {working_dir} "

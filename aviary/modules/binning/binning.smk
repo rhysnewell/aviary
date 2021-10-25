@@ -286,8 +286,7 @@ rule metabat_ssens:
 
 rule rosella:
     """
-    Runs Rosella. Of the current binners, Rosella is the slowest but will frequently produce the best binning results
-    Hopefully the speed issues can be tackled as UMAP matures.
+    Runs Rosella.
     """
     input:
         coverage = "data/coverm.cov",
@@ -306,7 +305,7 @@ rule rosella:
         "benchmarks/rosella.benchmark.txt"
     shell:
         "rosella bin -r {input.fasta} -i {input.coverage} -t {threads} -o data/rosella_bins "
-        "--min-contig-size {params.min_contig_size} --min-bin-size {params.min_bin_size} --b-tail 0.4 && "
+        "--min-contig-size {params.min_contig_size} --min-bin-size {params.min_bin_size} --n-neighbors 100 && "
         "touch {output[0]} || touch {output[0]}"
 
 
@@ -358,7 +357,8 @@ rule galah_dereplicate:
         checkm = 'data/checkm.out',
         das_tool = 'data/das_tool_bins/done'
     output:
-        final_bins = temp('bins/final_bins/done')
+        final_bins_dir = 'bins/final_bins/',
+        final_bins_fin = temp('bins/final_bins/done')
     params:
         derep_ani = 0.97
     threads:
@@ -368,8 +368,8 @@ rule galah_dereplicate:
     shell:
         "mv data/das_tool_bins/das_tool_DASTool_bins bins/non_dereplicated_bins; "
         "coverm cluster --precluster-method finch -t {threads} --checkm-tab-table {input.checkm} " \
-        "--genome-fasta-directory bins/non_dereplicated_bins -x fa --output-representative-fasta-directory bins/final_bins --ani {params.derep_ani}; "
-        "touch bins/final_bins/done"
+        "--genome-fasta-directory bins/non_dereplicated_bins -x fa --output-representative-fasta-directory {output.final_bins_dir} --ani {params.derep_ani}; "
+        "touch {output.final_bins_fin}"
 
 
 rule get_abundances:
@@ -404,7 +404,8 @@ rule checkm:
 
 rule gtdbtk:
     input:
-        done_file = "data/das_tool_bins/done"
+        done_file = "data/final_bins/done",
+        dereplicated_bin_folder = "bins/final_bins/"
     group: 'binning'
     output:
         done = "data/gtdbtk/done"
@@ -418,7 +419,7 @@ rule gtdbtk:
     shell:
         "export GTDBTK_DATA_PATH={params.gtdbtk_folder} && "
         "gtdbtk classify_wf --cpus {threads} --pplacer_cpus {params.pplacer_threads} --extension fa "
-        "--genome_dir data/das_tool_bins/das_tool_DASTool_bins --out_dir data/gtdbtk && touch data/gtdbtk/done"
+        "--genome_dir {input.dereplicated_bin_folder} --out_dir data/gtdbtk && touch data/gtdbtk/done"
 
 
 rule singlem_pipe_reads:
@@ -433,7 +434,8 @@ rule singlem_pipe_reads:
 rule singlem_appraise:
     input:
         metagenome = "data/singlem_out/metagenome.combined_otu_table.csv",
-        gtdbtk_done = "data/gtdbtk/done"
+        gtdbtk_done = "data/gtdbtk/done",
+        bins = "bins/final_bins/"
     group: 'binning'
     output:
         "data/singlem_out/singlem_appraise.svg"
@@ -443,7 +445,7 @@ rule singlem_appraise:
     conda:
         "../../envs/singlem.yaml"
     shell:
-        "singlem pipe --threads {params.pplacer_threads} --sequences data/das_tool_bins/das_tool_DASTool_bins/*.fa --otu_table data/singlem_out/genomes.otu_table.csv; "
+        "singlem pipe --threads {params.pplacer_threads} --sequences bins/final_bins/*.fa --otu_table data/singlem_out/genomes.otu_table.csv; "
         "singlem pipe --threads {params.pplacer_threads} --sequences {params.fasta} --otu_table data/singlem_out/assembly.otu_table.csv; "
         "singlem appraise --metagenome_otu_tables {input.metagenome} --genome_otu_tables data/singlem_out/genomes.otu_table.csv "
         "--assembly_otu_table data/singlem_out/assembly.otu_table.csv "

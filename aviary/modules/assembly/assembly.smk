@@ -6,6 +6,7 @@ ruleorder: skip_long_assembly > filter_illumina_assembly
 ruleorder: filter_illumina_ref > no_ref_filter
 ruleorder: combine_assemblies > combine_long_only > spades_assembly_short
 ruleorder: complete_assembly_with_qc > complete_assembly
+ruleorder: combine_assemblies > move_spades_assembly
 
 # onsuccess:
 #     print("Assembly finished, no error")
@@ -422,7 +423,7 @@ rule spades_assembly_short:
         fastq = config["short_reads_1"]
     group: 'assembly'
     output:
-        fasta = "data/final_contigs.fasta"
+        fasta = "data/spades_assembly/scaffolds.fasta"
     threads:
          config["max_threads"]
     params:
@@ -434,6 +435,16 @@ rule spades_assembly_short:
         "benchmarks/spades_assembly_short.benchmark.txt"
     script:
         "scripts/spades_assembly_short.py"
+
+
+rule move_spades_assembly:
+    input:
+        assembly = "data/spades_assembly/scaffolds.fasta"
+    group: 'assembly'
+    output:
+        out = "data/final_contigs.fasta"
+    shell:
+        "cp {input.assembly} {output.out}"
 
 
 # Short reads are mapped to the spades assembly and jgi_summarize_bam_contig_depths from metabat
@@ -606,3 +617,4 @@ rule complete_assembly_with_qc:
         'assembly/final_contigs.fasta'
     shell:
         'mkdir -p assembly; mv data/final_contigs.fasta assembly/; '
+
