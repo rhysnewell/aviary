@@ -404,7 +404,7 @@ rule checkm:
 
 rule gtdbtk:
     input:
-        done_file = "data/final_bins/done",
+        done_file = "bins/final_bins/done",
         dereplicated_bin_folder = "bins/final_bins/"
     group: 'binning'
     output:
