@@ -516,8 +516,22 @@ rule dereplicate_and_get_abundances_interleaved:
     conda:
         "../../envs/coverm.yaml"
     shell:
-        "mv bins/final_bins/ bins/non_dereplicated_bins; "
-        "coverm cluster --precluster-method finch -t {threads} --checkm-tab-table bins/checkm.out "
-        "--genome-fasta-directory bins/non_dereplicated_bins -x fa --output-representative-fasta-directory {params.final_bins} --ani {params.derep_ani}; "
-        "coverm genome -t {threads} -d bins/final_bins/ --interleaved {input.pe_1} --min-covered-fraction 0.0 -x fa > bins/coverm_abundances.tsv; "
-        "touch bins/final_bins/done"
+        """
+        mv bins/final_bins/ bins/non_dereplicated_bins
+        coverm cluster \
+        --precluster-method finch \
+        -t {threads} \
+        --checkm-tab-table bins/checkm.out \
+        --genome-fasta-directory bins/non_dereplicated_bins \
+        -x fa --output-representative-fasta-directory {params.final_bins} \
+        --ani {params.derep_ani}
+        
+        coverm genome \
+        -t {threads} \
+        -d bins/final_bins/ \
+        --interleaved {input.pe_1} \
+        --min-covered-fraction 0.0 \
+        -x fa > bins/coverm_abundances.tsv
+        touch bins/final_bins/done
+        """
+
