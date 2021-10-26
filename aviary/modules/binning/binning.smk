@@ -357,7 +357,7 @@ rule galah_dereplicate:
         checkm = 'data/checkm.out',
         das_tool = 'data/das_tool_bins/done'
     output:
-        final_bins_dir = 'bins/final_bins/',
+        final_bins_dir = directory('bins/final_bins/'),
         final_bins_fin = temp('bins/final_bins/done')
     params:
         derep_ani = 0.97
