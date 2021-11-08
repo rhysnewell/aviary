@@ -157,6 +157,10 @@ class Processor:
         except AttributeError:
             self.mag_extension = 'none'
 
+        try:
+            self.previous_runs = [os.path.abspath(run) for run in args.previous_runs]
+        except AttributeError:
+            self.previous_runs = 'none'
         # if args.coassemble is not None:
         #     self.coassemble = True
         # else:
@@ -207,6 +211,7 @@ class Processor:
         conf["mag_directory"] = self.mag_directory
         conf["mag_extension"] = self.mag_extension
         conf["mags"] = self.mags
+        conf["previous_runs"] = self.previous_runs
 
         with open(self.config, "w") as f:
             yaml.dump(conf, f)

@@ -409,6 +409,18 @@ def main():
     )
 
     #####################################################################
+    cluster_group = argparse.ArgumentParser(formatter_class=CustomHelpFormatter, add_help=False)
+
+    cluster_group.add_argument(
+        '--previous-runs', '--previous_runs',
+        help='The paths to the previous finished runs of Aviary. Must contain the bins/checkm.out and bins/final_bins'
+             'outputs',
+        dest='previous_runs',
+        nargs='*',
+        required=True,
+    )
+
+    #####################################################################
     # viral_group = argparse.ArgumentParser(formatter_class=CustomHelpFormatter,
     #                                         add_help=False)
     #
@@ -544,6 +556,28 @@ def main():
         help='Main workflow to run',
         dest='workflow',
         default='create_webpage_genotype',
+    )
+
+    ##########################  ~ CLUSTER ~   ###########################
+
+    cluster_options = subparsers.add_parser('cluster',
+                                             description='Clusters previous aviary runs together and performs'
+                                                         'dereplication using Galah',
+                                             formatter_class=CustomHelpFormatter,
+                                             parents=[base_group, cluster_group],
+                                             epilog=
+                                             '''
+                                                     ......:::::: CLUSTER ::::::......
+
+                                             aviary cluster --previous-runs aviary_output_folder_1/ aviary_output_folder_2/
+
+                                             ''')
+
+    cluster_options.add_argument(
+        '-w', '--workflow',
+        help='Main workflow to run',
+        dest='workflow',
+        default='complete_cluster',
     )
 
     ##########################  ~ VIRAL ~   ###########################
