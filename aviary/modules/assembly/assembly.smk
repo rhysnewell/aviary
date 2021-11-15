@@ -393,9 +393,10 @@ rule spades_assembly:
     output:
         fasta = "data/spades_assembly.fasta"
     threads:
-         config["max_threads"]
+        config["max_threads"]
     params:
-         max_memory = config["max_memory"]
+        max_memory = config["max_memory"],
+        long_read_type = config["long_read_type"]
     conda:
         "envs/spades.yaml"
     benchmark:
@@ -403,13 +404,20 @@ rule spades_assembly:
     shell:
         """
         rm -rf data/spades_assembly/tmp; 
-        minimumsize=500000 && \
-        actualsize=$(stat -c%s data/short_reads.filt.fastq.gz) && \
+        minimumsize=500000;
+        actualsize=$(stat -c%s data/short_reads.filt.fastq.gz);
         if [ $actualsize -ge $minimumsize ]
         then
-            spades.py --memory {params.max_memory} --meta --nanopore {input.long_reads} --12 {input.fastq} \
-            -o data/spades_assembly -t {threads} -k 21,33,55,81,99,127 && \
-            ln data/spades_assembly/scaffolds.fasta data/spades_assembly.fasta
+            if [ {params.long_read_type} = "ont" ]
+            then
+                spades.py --memory {params.max_memory} --meta --nanopore {input.long_reads} --12 {input.fastq} \
+                -o data/spades_assembly -t {threads} -k 21,33,55,81,99,127 && \
+                ln data/spades_assembly/scaffolds.fasta data/spades_assembly.fasta
+            else
+                spades.py --memory {params.max_memory} --meta --pacbio {input.long_reads} --12 {input.fastq} \
+                -o data/spades_assembly -t {threads} -k 21,33,55,81,99,127 && \
+                ln data/spades_assembly/scaffolds.fasta data/spades_assembly.fasta
+            fi
         else
             touch {output.fasta}
         fi 
