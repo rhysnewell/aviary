@@ -122,7 +122,7 @@ aviary assemble --longreads *.nanopore.fastq.gz --long_read_type ont -t 24 -n 48
 
 To perform mag recovery:
 ```
-aviary recover --assembly scaffolds.fasta -1 sr1.1.fq sr2.1.fq.gz -2 sr1.2.fq sr2.2.fq.gz --longreads nanopore.fastq.gz --output output_dir/ --max_threads 12 --n_cores 24 --gtdb_path /path/to/gtdb/release/
+aviary recover --assembly scaffolds.fasta -1 sr1.1.fq sr2.1.fq.gz -2 sr1.2.fq sr2.2.fq.gz --longreads nanopore.fastq.gz -z ont --output output_dir/ --max_threads 12 --n_cores 24 --gtdb_path /path/to/gtdb/release/
 ```
 If no assembly file is provided, then aviary will first perform the assembly pipeline to produce an assembly using the 
 input reads.
