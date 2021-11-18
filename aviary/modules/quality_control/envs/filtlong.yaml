@@ -1,0 +1,7 @@
+channels:
+  - bioconda
+  - conda-forge
+  - defaults
+dependencies:
+  - filtlong = 0.2.0
+  - pigz = 2.4

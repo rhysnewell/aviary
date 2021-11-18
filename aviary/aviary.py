@@ -19,6 +19,7 @@
 ###############################################################################
 from aviary.__init__ import __version__
 import aviary.config.config as Config
+from aviary.modules.processor import Processor
 __author__ = "Rhys Newell"
 __copyright__ = "Copyright 2020"
 __credits__ = ["Rhys Newell"]
@@ -33,14 +34,8 @@ import sys
 import argparse
 import logging
 import os
-import shutil
 from datetime import datetime
-import subprocess
 
-# Local imports
-from snakemake import utils
-from snakemake.io import load_configfile
-from ruamel.yaml import YAML  # used for yaml reading with comments
 
 # Debug
 debug={1:logging.CRITICAL,
@@ -55,16 +50,39 @@ debug={1:logging.CRITICAL,
 class BadTreeFileException(Exception):
     pass
 
-###############################################################################                                                                                                                      [44/1010]
+###############################################################################
 ################################ - Functions - ################################
+def centerify(text, width=-1):
+  lines = text.split('\n')
+  width = max(map(len, lines)) if width == -1 else width
+  return '\n'.join(line.center(width) for line in lines)
+
 
 def phelp():
     print(
-    """
-aviary
+"""
 
-SUBCOMMAND:
-recover
+                    ......:::::: AVIARY ::::::......
+
+           A comprehensive metagenomics bioinformatics pipeline
+
+Metagenome assembly, binning, and annotation:
+        cluster   - Clusters samples based on OTU content using SingleM **TBC**
+        assemble  - Perform hybrid assembly using short and long reads, 
+                    or assembly using only short reads
+        recover   - Recover MAGs from provided assembly using a variety 
+                    of binning algorithms 
+        annotate  - Annotate MAGs **TBC**
+        genotype  - Perform strain level analysis of MAGs **TBC**
+        complete  - Runs each stage of the pipeline: assemble, recover, 
+                    annotate, genotype in that order.
+
+Isolate assembly, binning, and annotation:
+        isolate   - Perform isolate assembly **PARTIALLY COMPLETED**
+        
+Utility modules:
+        configure - Set or overwrite the environment variables for future runs.
+
 """
 )
 
@@ -98,141 +116,64 @@ def main():
                              default=False)
     subparsers = main_parser.add_subparsers(help="--", dest='subparser_name')
 
-    ########################## ~ sub-parser ~ ###########################
-    input_options = subparsers.add_parser('recover',
-                                          description='The complete binning pipeline',
-                                          formatter_class=CustomHelpFormatter,
-                                          epilog='''
-                                ~ RECOVER ~
-    How to use recover:
-    
-    aviary recover --assembly scaffolds.fasta --paired_end_reads_1 *.1.fq.gz --paired_end_reads_1 *.2.fq.gz --longreads *.nanopore.fastq.gz --longread_type nanopore
+    #~#~#~#~#~#~#~#~#~#~#~#~#~ Command groups ~#~#~#~#~#~#~#~#~#~#~#~#~#
 
-    ''')
+    ####################################################################
 
-    input_options.add_argument(
-        '-a', '--assembly',
-        help='FASTA file containing scaffolded contigs of the metagenome assembly',
-        dest="assembly",
-        nargs='*',
-        required=True,
-    )
+    base_group = argparse.ArgumentParser(formatter_class=CustomHelpFormatter,
+                                         add_help=False)
 
-    input_options.add_argument(
-        '-1', '--paired-reads-1',
-        help='A space separated list of forwards read files to use for the binning process',
-        dest='pe1',
-        nargs='*',
-        default="none"
-    )
-
-    input_options.add_argument(
-        '-2','--paired-reads-2',
-        help='A space separated list of forwards read files to use for the binning process',
-        dest='pe2',
-        nargs='*',
-        default="none"
-    )
-
-    input_options.add_argument(
-        '-i','--interleaved',
-        help='A space separated list of interleaved read files for the binning process',
-        dest='interleaved',
-        nargs='*',
-        default="none"
-    )
-
-    input_options.add_argument(
-        '-l', '--longreads',
-        help='A space separated list of interleaved read files for the binning process',
-        dest='longreads',
-        nargs='*',
-        default="none"
-    )
-
-    input_options.add_argument(
-        '--longread-type',
-        help='Whether the longreads are oxford nanopore or pacbio',
-        dest='longread_type',
-        nargs=1,
-        default="nanopore",
-        choices=["nanopore", "pacbio"],
-    )
-
-    input_options.add_argument(
-        '-c', '--min-contig-size',
-        help='Minimum contig size in base pairs to be considered for binning',
-        dest='min_contig_size',
-        nargs=1,
-        default=1500
-    )
-
-    input_options.add_argument(
-        '-s','--min-bin-size',
-        help='Minimum bin size in base pairs for a MAG',
-        dest='min_bin_size',
-        nargs=1,
-        default=200000
-    )
-
-    input_options.add_argument(
-        '--conda-prefix',
-        help='Path to the location of installed conda environments, or where to install new environments',
-        dest='conda_prefix',
-        default=Config.get_conda_path(),
-    )
-
-    input_options.add_argument(
-        '--gtdb-path',
-        help='Path to the local gtdb files',
-        dest='gtdb_path',
-        default=Config.get_gtdb_path(),
-    )
-
-    input_options.add_argument(
-        '-t', '--max-threads',
+    base_group.add_argument(
+        '-t', '--max-threads', '--max_threads',
         help='Maximum number of threads given to any particular process',
         dest='max_threads',
         default=8,
     )
 
-    input_options.add_argument(
-        '-p', '--pplacer-threads',
+    base_group.add_argument(
+        '-p', '--pplacer-threads', '--pplacer_threads',
         help='The number of threads given to pplacer, values above 48 will be scaled down',
         dest='pplacer_threads',
         default=8,
     )
 
-    input_options.add_argument(
-        '-n', '--n-cores',
+    base_group.add_argument(
+        '-n', '--n-cores', '--n_cores',
         help='Maximum number of cores available for use. Must be >= to max_threads',
         dest='n_cores',
         default=16,
     )
 
-    input_options.add_argument(
-        '-m', '--max-memory',
+    base_group.add_argument(
+        '-m', '--max-memory', '--max_memory',
         help='Maximum memory for available usage in Gigabytes',
         dest='max_memory',
         default=250,
     )
 
-    input_options.add_argument(
+    base_group.add_argument(
         '-o', '--output',
         help='Output directory',
         dest='output',
         default='./',
     )
 
-    input_options.add_argument(
-        '-w', '--workflow',
-        help='Main workflow to run',
-        dest='workflow',
-        default='recover_mags_no_vamb',
+    base_group.add_argument(
+        '--conda-prefix', '--conda_prefix',
+        help='Path to the location of installed conda environments, or where to install new environments',
+        dest='conda_prefix',
+        default=Config.get_conda_path(),
     )
 
-    input_options.add_argument(
-        '--dry-run',
+    base_group.add_argument(
+        '--gtdb-path', '--gtdb_path',
+        help='Path to the local gtdb files',
+        dest='gtdb_path',
+        default=Config.get_gtdb_path(),
+    )
+
+    base_group.add_argument(
+        '--dry-run', '--dry_run', '--dryrun',
         help='Perform snakemake dry run, tests workflow order and conda environments',
         type=str2bool,
         nargs='?',
@@ -240,14 +181,508 @@ def main():
         dest='dryrun',
         default=False,
     )
-    
-    input_options.add_argument(
-        '--conda-frontend',
-        help='Which conda frontend to use',
+
+    base_group.add_argument(
+        '--conda-frontend', '--conda_frontend',
+        help='Which conda frontend to use, mamba is faster but harder to debug. Switch this to conda '
+             'If experiencing problems installing environments',
         dest='conda_frontend',
-        nargs=1,
         default="mamba",
         choices=["conda", "mamba"],
+    )
+
+    base_group.add_argument(
+        '--clean',
+        help='Clean up all temporary files. This will remove most BAM files and any FASTQ files '
+             'generated from read filtering. Setting this to False is the equivalent of the --notemp'
+             'option in snakemake. Useful for when running only part of a workflow as it avoids'
+             'deleting files that would likely be needed in later parts of the workflow.'
+             'NOTE: Not cleaning makes reruns faster but will incur the wrath of your sysadmin',
+        type=str2bool,
+        nargs='?',
+        const=True,
+        dest='clean',
+        default=True,
+    )
+
+    base_group.add_argument(
+        '--build',
+        help='Build conda environments and then exits. Equivalent to \"--snakemake-cmds \'--conda-create-envs-only True \' \"',
+        type=str2bool,
+        nargs='?',
+        const=True,
+        dest='build',
+    )
+
+    base_group.add_argument(
+        '--snakemake-cmds',
+        help='Additional commands to supplied to snakemake in the form of a single string'
+             'e.g. "--print-compilation True". '
+             'NOTE: Most commands in snakemake -h are valid but some commands may clash with commands '
+             'aviary directly supplies to snakemake. Please make'
+             "sure your additional commands don't clash.",
+        dest='cmds',
+        default='',
+    )
+
+    ####################################################################
+    qc_group = argparse.ArgumentParser(formatter_class=CustomHelpFormatter,
+                                               add_help=False)
+    qc_group.add_argument(
+        '-r', '--reference-filter', '--reference_filter',
+        help='Reference filter file to aid in the assembly',
+        dest="reference_filter",
+        nargs=1,
+        default='none'
+    )
+
+    qc_group.add_argument(
+        '--min-read-size', '--min_read_size',
+        help='Minimum long read size when filtering using Filtlong',
+        dest="min_read_size",
+        default=1000
+    )
+
+    qc_group.add_argument(
+        '--min-mean-q', '--min_mean_q',
+        help='Minimum mean quality threshold',
+        dest="min_mean_q",
+        default=80
+    )
+
+    qc_group.add_argument(
+        '--keep-percent', '--keep_percent',
+        help='Percentage of reads passing quality thresholds kept by filtlong',
+        dest="keep_percent",
+        default=99
+    )
+
+
+    ####################################################################
+
+    short_read_group = argparse.ArgumentParser(formatter_class=CustomHelpFormatter,
+                                         add_help=False)
+    read_group_exclusive = short_read_group.add_mutually_exclusive_group()
+
+    read_group_exclusive.add_argument(
+        '-1', '--pe-1', '--paired-reads-1', '--paired_reads_1', '--pe1',
+        help='A space separated list of forwards read files to use for the binning process'
+             'NOTE: If performing assembly and multiple files are provided then only '
+             'the first file will be used for assembly.',
+        dest='pe1',
+        nargs='*',
+        default="none"
+    )
+
+    short_read_group.add_argument(
+        '-2', '--pe-2', '--paired-reads-2', '--paired_reads_2', '--pe2',
+        help='A space separated list of forwards read files to use for the binning process'
+             'NOTE: If performing assembly and multiple files are provided then only '
+             'the first file will be used for assembly.',
+        dest='pe2',
+        nargs='*',
+        default="none"
+    )
+
+    read_group_exclusive.add_argument(
+        '-i','--interleaved',
+        help='A space separated list of interleaved read files for the binning process '
+             'NOTE: If performing assembly and multiple files are provided then only '
+             'the first file will be used for assembly.',
+        dest='interleaved',
+        nargs='*',
+        default="none"
+    )
+
+    read_group_exclusive.add_argument(
+        '-c', '--coupled',
+        help='Forward and reverse read files in a coupled space separated list. '
+             'NOTE: If performing assembly and multiple files are provided then only '
+             'the first two files will be used for assembly.',
+        dest='coupled',
+        nargs='*',
+        default="none"
+    )
+
+    ####################################################################
+
+    long_read_group = argparse.ArgumentParser(formatter_class=CustomHelpFormatter,
+                                              add_help=False)
+    long_read_group.add_argument(
+        '-l', '--longreads', '--long-reads', '--long_reads',
+        help='A space separated list of interleaved read files for the binning process. NOTE: If performing assembly and '
+             'multiple long read files are provided, then only the first file is used for assembly. ',
+        dest='longreads',
+        nargs='*',
+        default="none"
+    )
+
+    long_read_group.add_argument(
+        '-z', '--longread-type', '--longread_type', '--long_read_type', '--long-read-type',
+        help='Whether the sequencing platform and technology for the longreads. '
+             '"rs" for PacBio RSII, "sq" for PacBio Sequel, "ccs" for PacBio CCS '
+             'reads and "ont" for Oxford Nanopore',
+        dest='longread_type',
+        nargs=1,
+        default="ont",
+        choices=["ont", "rs", "sq", "ccs"],
+    )
+
+    ####################################################################
+
+    annotation_group = argparse.ArgumentParser(add_help=False)
+
+    annotation_group.add_argument(
+        '--enrichm-db-path', '--enrichm_db_path',
+        help='Path to the local EnrichM Database files',
+        dest='enrichm_db_path',
+        default=Config.get_enrichm_db_path(),
+    )
+
+    ####################################################################
+
+    binning_group = argparse.ArgumentParser(formatter_class=CustomHelpFormatter,
+                                            add_help=False)
+
+    binning_group.add_argument(
+        '-s', '--min-contig-size', '--min_contig_size',
+        help='Minimum contig size in base pairs to be considered for binning',
+        dest='min_contig_size',
+        default=1500
+    )
+
+    binning_group.add_argument(
+        '-b', '--min-bin-size', '--min_bin_size',
+        help='Minimum bin size in base pairs for a MAG',
+        dest='min_bin_size',
+        default=200000
+    )
+
+    ####################################################################
+    mag_group = argparse.ArgumentParser(formatter_class=CustomHelpFormatter,
+                                        add_help=False)
+    mag_group_exclusive = mag_group.add_mutually_exclusive_group()
+
+    mag_group_exclusive.add_argument(
+        '-f', '--genome-fasta-files', '--genome_fasta_files',
+        help='MAGs to be annotated',
+        dest='mags',
+        nargs='*',
+        required=False,
+    )
+
+    mag_group_exclusive.add_argument(
+        '-d', '--genome-fasta-directory', '--genome_fasta_directory',
+        help='Directory containing MAGs to be annotated',
+        dest='directory',
+        required=False,
+    )
+
+    mag_group.add_argument(
+        '-x', '--fasta-extension', '--fasta_extension',
+        help='File extension of fasta files in --genome-fasta-directory',
+        dest='ext',
+        required=False,
+        default='fa'
+    )
+
+    #####################################################################
+    isolate_group = argparse.ArgumentParser(formatter_class=CustomHelpFormatter,
+                                            add_help=False)
+
+    isolate_group.add_argument(
+        '--guppy-model', '--guppy_model',
+        help='The guppy model used by medaka to perform polishing',
+        dest='guppy_model',
+        nargs=1,
+        required=False,
+        default='r941_min_high_g360'
+    )
+
+    isolate_group.add_argument(
+        '-g', '--genome-size', '--genome_size',
+        help='Approximate size of the isolate genome to be assembled',
+        dest='genome_size',
+        nargs=1,
+        required=False,
+        default=5000000
+    )
+
+    #####################################################################
+    cluster_group = argparse.ArgumentParser(formatter_class=CustomHelpFormatter, add_help=False)
+
+    cluster_group.add_argument(
+        '--previous-runs', '--previous_runs',
+        help='The paths to the previous finished runs of Aviary. Must contain the bins/checkm.out and bins/final_bins'
+             'outputs',
+        dest='previous_runs',
+        nargs='*',
+        required=True,
+    )
+
+    #####################################################################
+    # viral_group = argparse.ArgumentParser(formatter_class=CustomHelpFormatter,
+    #                                         add_help=False)
+    #
+    # viral_group.add_argument(
+    #     '--virsorter-data', '--virsorter_data',
+    #     help='The guppy model used by medaka to perform polishing',
+    #     dest='guppy_model',
+    #     nargs=1,
+    #     required=False,
+    #     default='r941_min_high_g360'
+    # )
+    #
+    # viral_group.add_argument(
+    #     '-g', '--genome-size', '--genome_size',
+    #     help='Approximate size of the isolate genome to be assembled',
+    #     dest='genome_size',
+    #     nargs=1,
+    #     required=False,
+    #     default=5000000
+    # )
+
+    #~#~#~#~#~#~#~#~#~#~#~#~#~   sub-parsers   ~#~#~#~#~#~#~#~#~#~#~#~#~#
+    ##########################   ~ CLUSTER ~  ###########################
+
+    cluster_options = subparsers.add_parser('cluster',
+                                             description='Cluster samples together based on OTU content. '
+                                                         'Samples that cluster together should be used for assembly and binning.',
+                                             formatter_class=CustomHelpFormatter,
+                                             parents=[short_read_group, long_read_group, base_group],
+                                             epilog=
+                                             '''
+                                                                ......:::::: CLUSTER ::::::......
+                                 
+                                             aviary cluster -1 *.1.fq.gz -2 *.2.fq.gz --longreads *.nanopore.fastq.gz 
+                                 
+                                             ''')
+
+    cluster_options.add_argument(
+        '-w', '--workflow',
+        help='Main workflow to run',
+        dest='workflow',
+        default='cluster_samples',
+    )
+
+    ##########################  ~ ASSEMBLE ~  ###########################
+
+    assemble_options = subparsers.add_parser('assemble',
+                                              description='Step-down hybrid assembly using long and short reads, or assembly using only short or long reads.',
+                                              formatter_class=CustomHelpFormatter,
+                                              parents=[qc_group, short_read_group, long_read_group, binning_group, base_group],
+                                              epilog=
+        '''
+                                        ......:::::: ASSEMBLE ::::::......
+
+        aviary assemble -1 *.1.fq.gz -2 *.2.fq.gz --longreads *.nanopore.fastq.gz --long_read_type ont
+
+        ''')
+
+
+    assemble_options.add_argument(
+        '-w', '--workflow',
+        help='Main workflow to run',
+        dest='workflow',
+        default='complete_assembly',
+    )
+
+    ##########################  ~ RECOVER ~   ###########################
+
+    recover_options = subparsers.add_parser('recover',
+                                            description='The complete binning pipeline',
+                                            formatter_class=CustomHelpFormatter,
+                                            parents=[qc_group, short_read_group, long_read_group, binning_group, base_group],
+                                            epilog=
+    '''
+                                           ......:::::: RECOVER ::::::......
+    
+    aviary recover --assembly scaffolds.fasta -1 *.1.fq.gz -2 *.2.fq.gz --longreads *.nanopore.fastq.gz --long_read_type ont
+
+    ''')
+
+    recover_options.add_argument(
+        '-a', '--assembly',
+        help='FASTA file containing scaffolded contigs of the metagenome assembly',
+        dest="assembly",
+        nargs=1,
+        required=False,
+    )
+
+    recover_options.add_argument(
+        '-w', '--workflow',
+        help='Main workflow to run',
+        dest='workflow',
+        default='recover_mags',
+    )
+
+    ##########################  ~ ANNOTATE ~   ###########################
+
+    annotate_options = subparsers.add_parser('annotate',
+                                              description='The complete binning pipeline',
+                                              formatter_class=CustomHelpFormatter,
+                                              parents=[mag_group, annotation_group, base_group],
+                                              epilog=
+                                            '''
+                                                  ......:::::: ANNOTATE ::::::......
+                                        
+                                            aviary annotate --genome-fasta-files *.fasta
+                                        
+                                            ''')
+
+    annotate_options.add_argument(
+        '-w', '--workflow',
+        help='Main workflow to run',
+        dest='workflow',
+        default='complete_annotation',
+    )
+
+    ##########################  ~ GENOTYPE ~   ###########################
+
+    genotype_options = subparsers.add_parser('genotype',
+                                             description='The complete binning pipeline',
+                                             formatter_class=CustomHelpFormatter,
+                                             parents=[mag_group, short_read_group, long_read_group, base_group],
+                                             epilog=
+                                             '''
+                                                     ......:::::: GENOTYPE ::::::......
+
+                                             aviary genotype --genome-fasta-files *.fasta
+
+                                             ''')
+
+    genotype_options.add_argument(
+        '-w', '--workflow',
+        help='Main workflow to run',
+        dest='workflow',
+        default='create_webpage_genotype',
+    )
+
+    ##########################  ~ CLUSTER ~   ###########################
+
+    cluster_options = subparsers.add_parser('cluster',
+                                             description='Clusters previous aviary runs together and performs'
+                                                         'dereplication using Galah',
+                                             formatter_class=CustomHelpFormatter,
+                                             parents=[base_group, cluster_group],
+                                             epilog=
+                                             '''
+                                                     ......:::::: CLUSTER ::::::......
+
+                                             aviary cluster --previous-runs aviary_output_folder_1/ aviary_output_folder_2/
+
+                                             ''')
+
+    cluster_options.add_argument(
+        '-w', '--workflow',
+        help='Main workflow to run',
+        dest='workflow',
+        default='complete_cluster',
+    )
+
+    ##########################  ~ VIRAL ~   ###########################
+
+    viral_options = subparsers.add_parser('viral',
+                                              description='The complete binning pipeline',
+                                              formatter_class=CustomHelpFormatter,
+                                              parents=[mag_group, short_read_group, long_read_group, base_group],
+                                              epilog=
+                                              '''
+                                                      ......:::::: VIRAL ::::::...... 
+     
+                                              aviary viral --genome-fasta-files *.fasta
+     
+                                              ''')
+
+    viral_options.add_argument(
+        '-w', '--workflow',
+        help='Main workflow to run',
+        dest='workflow',
+        default='create_webpage_genotype',
+    )
+
+    ##########################   ~ COMPLETE ~  ###########################
+
+    complete_options = subparsers.add_parser('complete',
+                                            description='Cluster samples together based on OTU content. '
+                                                        'Samples that cluster together should be used for assembly and binning.',
+                                            formatter_class=CustomHelpFormatter,
+                                            parents=[short_read_group, long_read_group, binning_group, annotation_group, base_group],
+                                            epilog=
+                                            '''
+                                                               ......:::::: COMPLETE ::::::......
+
+                                            aviary complete -1 *.1.fq.gz -2 *.2.fq.gz --longreads *.nanopore.fastq.gz 
+
+                                            ''')
+
+    complete_options.add_argument(
+        '-w', '--workflow',
+        help='Main workflow to run',
+        dest='workflow',
+        default='complete_workflow',
+    )
+
+    ##########################  ~ ISOLATE ~  ###########################
+
+    isolate_options = subparsers.add_parser('isolate',
+                                             description='Step-down hybrid assembly using long and short reads, or assembly using only short or long reads.',
+                                             formatter_class=CustomHelpFormatter,
+                                             parents=[qc_group, short_read_group, long_read_group, isolate_group, binning_group, base_group],
+                                             epilog=
+                                             '''
+                                                                             ......:::::: ISOLATE ::::::......
+                                 
+                                             aviary isolate -1 *.1.fq.gz -2 *.2.fq.gz --longreads *.nanopore.fastq.gz --long_read_type ont
+                                 
+                                             ''')
+
+    isolate_options.add_argument(
+        '-w', '--workflow',
+        help='Main workflow to run',
+        dest='workflow',
+        default='create_webpage_assemble',
+    )
+
+    ##########################   ~ configure ~  ###########################
+
+    configure_options = subparsers.add_parser('configure',
+                                            description='Sets the conda environment variables for future runs. ',
+                                            formatter_class=CustomHelpFormatter,
+                                            epilog=
+                                            '''
+                                                               ......:::::: CONFIGURE ::::::......
+
+                                            aviary configure --conda-prefix ~/.conda --gtdb-path ~/gtdbtk/release202/ 
+
+                                            ''')
+
+    configure_options.add_argument(
+        '--conda-prefix', '--conda_prefix',
+        help='Path to the location of installed conda environments, or where to install new environments',
+        dest='conda_prefix',
+        required=False,
+    )
+
+    configure_options.add_argument(
+        '--gtdb-path', '--gtdb_path',
+        help='Path to the local gtdb files',
+        dest='gtdb_path',
+        required=False,
+    )
+
+    configure_options.add_argument(
+        '--busco-db-path', '--busco_db_path',
+        help='Path to the local BUSCO database files',
+        dest='busco_db_path',
+        required=False,
+    )
+
+    configure_options.add_argument(
+        '--enrichm-db-path', '--enrichm_db_path',
+        help='Path to the local EnrichM database files',
+        dest='enrichm_db_path',
+        required=False,
     )
 
     ###########################################################################
@@ -275,72 +710,44 @@ def main():
         logging.info("Command - %s" % ' '.join(sys.argv))
         logging.info("Version - %s" % __version__)
 
-        prefix = args.output
-        if not os.path.exists(prefix):
-            os.makedirs(prefix)
-        if args.interleaved == "none":
-            processor = aviary(args.assembly,
-                               args.pe1,
-                               args.pe2,
-                               args.longreads,
-                               args.longread_type,
-                               int(args.max_threads),
-                               int(args.pplacer_threads),
-                               int(args.max_memory),
-                               args.gtdb_path,
-                               args.output,
-                               args.conda_prefix,
-                               args)
-        elif args.pe2 == "none" and args.interleaved != "none":
-            processor = aviary(args.assembly, args.interleaved, args.pe2, args.longreads, args.longread_type,
-                               int(args.max_threads),
-                               int(args.pplacer_threads),
-                               int(args.max_memory),
-                               args.gtdb_path,
-                               args.output, args.conda_prefix, args)
-        elif args.longreads != "none":
-            processor = aviary(args.assembly, args.pe1, args.pe2,
-                               args.longreads, args.longread_type,
-                               int(args.max_threads),
-                               int(args.pplacer_threads),
-                               int(args.max_memory),
-                               args.gtdb_path,
-                               args.output, args.conda_prefix, args)
+        if args.subparser_name == 'configure':
+            # Set the environment variables if manually configuring
+            if args.conda_prefix is not None:
+                Config.set_conda_path(args.conda_prefix)
+
+            if args.gtdb_path is not None:
+                Config.set_gtdb_path(args.gtdb_path)
+
+            if args.busco_db_path is not None:
+                Config.set_busco_db_path(args.busco_db_path)
+
+            if args.enrichm_db_path is not None:
+                Config.set_enrichm_db_path(args.enrichm_db_path)
+
         else:
-            sys.exit("Missing any input read files...")
+            prefix = args.output
+            if not os.path.exists(prefix):
+                os.makedirs(prefix)
 
-        processor.make_config()
-        processor.run_workflow(workflow=args.workflow, cores=int(args.n_cores), dryrun=args.dryrun, conda_frontend=args.conda_frontend)
+            processor = Processor(args,
+                               args.gtdb_path,
+                               args.conda_prefix)
 
-def str2bool(v):
-    if isinstance(v, bool):
-        return v
-    if v.lower() in ('yes', 'true', 't', 'y', '1'):
-        return True
-    elif v.lower() in ('no', 'false', 'f', 'n', '0'):
-        return False
-    else:
-        raise argparse.ArgumentTypeError('Boolean value expected.')
+            processor.make_config()
 
+            if args.build:
+                try:
+                    args.cmds = args.cmds + '--conda-create-envs-only '
+                except TypeError:
+                    args.cmds = '--conda-create-envs-only '
 
-def get_snakefile(file="Snakefile"):
-    sf = os.path.join(os.path.dirname(os.path.abspath(__file__)), file)
-    if not os.path.exists(sf):
-        sys.exit("Unable to locate the Snakemake workflow file; tried %s" % sf)
-    return sf
+            processor.run_workflow(workflow=args.workflow,
+                                   cores=int(args.n_cores),
+                                   dryrun=args.dryrun,
+                                   clean=args.clean,
+                                   conda_frontend=args.conda_frontend,
+                                   snakemake_args=args.cmds)
 
-
-def update_config(config):
-    """
-    Populates config file with default config values.
-    And made changes if necessary.
-    """
-
-    # get default values and update them with values specified in config file
-    default_config = make_default_config()
-    utils.update_config(default_config, config)
-
-    return default_config
 
 ###############################################################################
 ################################ - Classes - ##################################
@@ -372,138 +779,6 @@ class CustomHelpFormatter(argparse.HelpFormatter):
 
     def _fill_text(self, text, width, indent):
         return ''.join([indent + line for line in text.splitlines(True)])
-
-class aviary:
-    def __init__(self,
-                 assembly="none",
-                 pe1="none",
-                 pe2="none",
-                 longreads="none",
-                 longread_type="nanopore",
-                 max_threads=16,
-                 pplacer_threads=16,
-                 max_memory=250,
-                 gtdbtk=Config.get_gtdb_path(),
-                 output=".",
-                 conda_prefix=Config.get_conda_path(),
-                 args=None
-                 ):
-        self.assembly = assembly
-        self.pe1 = pe1
-        self.pe2 = pe2
-        self.longreads = longreads
-        self.longread_type = longread_type
-        self.threads = max_threads
-        self.max_memory = max_memory
-        self.pplacer_threads = min(int(pplacer_threads), 48)
-        self.gtdbtk = gtdbtk
-        self.output = output
-        self.conda_prefix = conda_prefix
-        if args is not None:
-            self.min_contig_size = args.min_contig_size
-            self.min_bin_size = args.min_bin_size
-
-    def make_config(self):
-        """
-        Reads template config file with comments from ./template_config.yaml
-        updates it by the parameters provided.
-        Args:
-            config (str): output file path for yaml
-            database_dir (str): location of downloaded databases
-            threads (int): number of threads per node to utilize
-            assembler (str): either spades or megahit
-            data_type (str): this is either metagenome or metatranscriptome
-        """
-
-        self.config = os.path.join(self.output, 'template_config.yaml')
-
-        yaml = YAML()
-        yaml.version = (1, 1)
-        yaml.default_flow_style = False
-
-        template_conf_file = os.path.join(os.path.dirname(os.path.abspath(__file__)),
-                                          "template_config.yaml")
-
-        with open(template_conf_file) as template_config:
-            conf = yaml.load(template_config)
-
-        if self.assembly != "none":
-            self.assembly = [os.path.abspath(p) for p in self.assembly]
-        if self.pe1 != "none":
-            self.pe1 = [os.path.abspath(p) for p in self.pe1]
-        if self.pe2 != "none":
-            self.pe2 = [os.path.abspath(p) for p in self.pe2]
-        if self.longreads != "none":
-            self.longreads = [os.path.abspath(p) for p in self.longreads]
-            
-        conf["fasta"] = self.assembly
-        conf["max_threads"] = self.threads
-        conf["pplacer_threads"] = self.pplacer_threads
-        conf["max_memory"] = self.max_memory
-
-
-        conf["short_reads_1"] = self.pe1
-        conf["short_reads_2"] = self.pe2
-        conf["long_reads"] = self.longreads
-        conf["long_read_type"] = self.longread_type
-        conf["min_contig_size"] = self.min_contig_size
-        conf["min_bin_size"] = self.min_bin_size
-
-        conf["gtdbtk_folder"] = os.path.abspath(self.gtdbtk)
-
-
-        with open(self.config, "w") as f:
-            yaml.dump(conf, f)
-        logging.info(
-            "Configuration file written to %s\n"
-            "You may want to edit it using any text editor." % self.config
-        )
-
-    def validate_config(self):
-        load_configfile(self.config)
-
-
-    def run_workflow(self, workflow="recover_mags", cores=16, profile=None, dryrun=False, conda_frontend="mamba", snakemake_args = ""):
-        """Runs the aviary pipeline
-        By default all steps are executed
-        Needs a config-file which is generated by given inputs.
-        Most snakemake arguments can be appended to the command for more info see 'snakemake --help'
-        """
-
-        if not os.path.exists(self.config):
-            logging.critical(f"config-file not found: {self.config}\n")
-            sys.exit(1)
-
-        self.validate_config()
-
-        conf = load_configfile(self.config)
-
-        cmd = (
-            "snakemake --snakefile {snakefile} --directory {working_dir} "
-            "{jobs} --rerun-incomplete "
-            "--configfile '{config_file}' --nolock "
-            " {profile} {conda_frontend} --use-conda {conda_prefix} {dryrun} "
-            " {target_rule} "
-            " {args} "
-        ).format(
-            snakefile=get_snakefile(),
-            working_dir=self.output,
-            jobs="--jobs {}".format(cores) if cores is not None else "",
-            config_file=self.config,
-            profile="" if (profile is None) else "--profile {}".format(profile),
-            dryrun="--dryrun" if dryrun else "",
-            args=" ".join(snakemake_args),
-            target_rule=workflow if workflow != "None" else "",
-            conda_prefix="--conda-prefix " + self.conda_prefix,
-            conda_frontend="--conda-frontend " + conda_frontend
-        )
-        logging.info("Executing: %s" % cmd)
-        try:
-            subprocess.check_call(cmd, shell=True)
-        except subprocess.CalledProcessError as e:
-            # removes the traceback
-            logging.critical(e)
-            exit(1)
 
 if __name__ == '__main__':
 

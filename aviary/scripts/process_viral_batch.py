@@ -19,7 +19,7 @@ def process_batch(batch_file_path):
             except FileExistsError:
                 print("Directory already exists for sample %s" % identifier)
             # Symbolically link to main aviary folder === BAD IDEA ===
-            # subprocess.Popen("ln -s %s/Snakefile %s/data/%s/"
+            # subprocess.Popen("ln -s %s/annotation.smk %s/data/%s/"
             #                  % (main_directory, main_directory, identifier), shell=True).wait()
             # subprocess.Popen("cp %s/template_config.yaml %s/data/%s/"
                              # % (main_directory, main_directory, identifier), shell=True).wait()
@@ -71,7 +71,7 @@ def process_batch(batch_file_path):
 
             os.chdir("%s/data/%s" % (main_directory, identifier))
             # Run a new snakemake process using the updated template_config.yaml
-            subprocess.Popen("snakemake --use-conda --conda-prefix %s/.snakemake/ -s %s/Snakefile --cores %d recover_mags"
+            subprocess.Popen("snakemake --use-conda --conda-prefix %s/.snakemake/ -s %s/annotation.smk --cores %d recover_mags"
                              % (main_directory, main_directory, snakemake.threads), shell=True).wait()
             os.chdir(main_directory)
 

@@ -1,0 +1,6 @@
+channels:
+  - bioconda
+dependencies:
+  - circlator = 1.5.5
+  - canu = 1.6
+  - spades = 3.9.0

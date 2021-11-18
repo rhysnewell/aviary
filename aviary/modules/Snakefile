@@ -1,0 +1,132 @@
+ruleorder: skip_long_assembly > get_reads_list_ref > link_reads > short_only
+ruleorder: filtlong_no_reference > link_reads
+
+onsuccess:
+    print("Aviary finished, no error")
+
+onerror:
+    print("An error occurred")
+
+onstart:
+    import os
+    import sys
+
+    from snakemake.utils import logger, min_version
+
+    # minimum required snakemake version
+    min_version("6.0")
+    long_reads = config["long_reads"]
+    fasta = config["fasta"]
+    short_reads_1 = config["short_reads_1"]
+    short_reads_2 = config["short_reads_2"]
+    min_contig_size = config["min_contig_size"]
+    min_bin_size = config["min_bin_size"]
+    gtdbtk_folder = config["gtdbtk_folder"]
+    busco_folder = config["busco_folder"]
+    threads = config["max_threads"]
+    ## pplacer deadlocks on too many threads
+    pplacer_threads = min(48, int(config["pplacer_threads"]))
+
+    if long_reads == "none" and short_reads_1 == "none":
+        sys.exit("Need at least one of long_reads or short_reads_1")
+    if long_reads != "none" and not os.path.exists(long_reads[0]):
+        sys.exit("long_reads does not point to a file")
+    if short_reads_1 != "none" and not os.path.exists(short_reads_1[0]):
+        sys.exit("short_reads_1 does not point to a file")
+    if short_reads_2 != "none" and not os.path.exists(short_reads_2[0]):
+        sys.exit("short_reads_2 does not point to a file")
+    if gtdbtk_folder != "none" and not os.path.exists(gtdbtk_folder):
+        sys.stderr.write("gtdbtk_folder does not point to a folder\n")
+    if busco_folder != "none" and not os.path.exists(busco_folder):
+        sys.stderr.write("busco_folder does not point to a folder\n")
+
+
+from snakemake.utils import min_version
+import os
+min_version("6.0")
+
+module qc:
+    snakefile: "quality_control/qc.smk"
+    config: config
+
+module cluster:
+    snakefile: "cluster/clustering.smk"
+    config: config
+
+module assembly:
+    snakefile: "assembly/assembly.smk"
+    config: config
+
+module isolate:
+    snakefile: "assembly/isolate.smk"
+    config: config
+
+module binning:
+    snakefile: "binning/binning.smk"
+    config: config
+
+module annotation:
+    snakefile: "annotation/annotation.smk"
+    config: config
+
+module strain_analysis:
+    snakefile: "strain_analysis/strain_analysis.smk"
+    config: config
+
+module viral_analysis:
+    snakefile: "viral_analysis/viral_analysis.smk"
+    config: config
+
+module benchmarking:
+    snakefile: "benchmarking/benchmarking.smk"
+    config: config
+
+use rule * from qc as *
+
+use rule * from cluster as *
+
+use rule * from assembly as *
+
+use rule * from isolate as *
+
+use rule * from binning as *
+
+use rule * from annotation as *
+
+use rule * from strain_analysis as *
+
+use rule * from viral_analysis as *
+
+use rule * from benchmarking as *
+
+if config["fasta"] == "none":
+    config["fasta"] = "assembly/final_contigs.fasta"
+
+
+# Create summary webpage
+rule create_webpage:
+    input:
+        checkm_file = "bins/checkm.out",
+        final_bins = "bins/done",
+        busco_done = "annotation/busco/done",
+        enrichm_done = "annotation/enrichm/done",
+        fasta = config['fasta'],
+        long_reads_qc_html = "www/nanoplot/longReadsNanoPlot-report.html",
+        short_reads_fastqc_html = "www/fastqc/done",
+        long_reads_fastqc_html = "www/fastqc_long/done",
+        genes_gff = "annotation/genes.gff",
+        gtdbtk_done = "taxonomy/gtdbtk/done",
+        singlem_done = "diversity/singlem_out/singlem_appraise.svg",
+        # strain_profile = "data/instrain/output/instrain_scaffold_info.tsv"
+    output:
+        "www/index.html"
+    threads:
+        config["max_threads"]
+    conda:
+        "../envs/webpage.yaml"
+    script:
+        "scripts/create_aviary_webpage.py"
+
+
+
+

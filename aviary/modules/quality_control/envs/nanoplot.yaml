@@ -1,0 +1,6 @@
+channels:
+  - bioconda
+dependencies:
+  - nanoplot = 1.30.0
+  - seaborn-base = 0.10.1
+  - seaborn = 0.10.1
