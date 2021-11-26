@@ -161,10 +161,19 @@ class Processor:
             self.previous_runs = [os.path.abspath(run) for run in args.previous_runs]
         except AttributeError:
             self.previous_runs = 'none'
-        # if args.coassemble is not None:
-        #     self.coassemble = True
-        # else:
-        #     self.coassemble = False
+        
+        try:
+            self.min_completeness = args.min_completeness
+            self.max_contamination = args.max_contamination
+            self.ani = args.ani
+            self.precluster_ani = args.precluster_ani
+            self.precluster_method = args.precluster_method
+        except AttributeError:
+            elf.min_completeness = 'none'
+            self.max_contamination = 'none'
+            self.ani = 'none'
+            self.precluster_ani = 'none'
+            self.precluster_method = 'none'
 
     def make_config(self):
         """
@@ -212,6 +221,11 @@ class Processor:
         conf["mag_extension"] = self.mag_extension
         conf["mags"] = self.mags
         conf["previous_runs"] = self.previous_runs
+        conf["min_completeness"] = self.min_completeness
+        conf["max_contamination"] = self.max_contamination
+        conf["ani"] = self.ani
+        conf["precluster_ani"] = self.precluster_ani
+        conf["precluster_method"] = self.precluster_method
 
         with open(self.config, "w") as f:
             yaml.dump(conf, f)
