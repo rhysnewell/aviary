@@ -169,7 +169,7 @@ class Processor:
             self.precluster_ani = args.precluster_ani
             self.precluster_method = args.precluster_method
         except AttributeError:
-            elf.min_completeness = 'none'
+            self.min_completeness = 'none'
             self.max_contamination = 'none'
             self.ani = 'none'
             self.precluster_ani = 'none'
