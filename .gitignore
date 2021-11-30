@@ -1,5 +1,6 @@
 *pyc
 .idea/
+.idea/*
 aviary.egg-info
 dist
 .snakemake

@@ -420,6 +420,41 @@ def main():
         required=True,
     )
 
+    cluster_group.add_argument(
+        '--ani',
+        help='Overall ANI level to dereplicate at with Galah.',
+        dest='ani',
+        default='0.97'
+    )
+
+    cluster_group.add_argument(
+        '--precluster-ani', '--precluster_ani',
+        help='Require at least this dashing-derived ANI for preclustering and to avoid FastANI on distant lineages within preclusters.',
+        dest='precluster_ani',
+        default='0.95'
+    )
+
+    cluster_group.add_argument(
+        '--precluster-method', '--precluster_method',
+        help="method of calculating rough ANI for dereplication. 'dashing' for HyperLogLog, 'finch' for finch MinHash.",
+        dest='precluster_method',
+        default='dashing'
+    )
+
+    cluster_group.add_argument(
+        '--min-completeness', '--min_completeness',
+        help="Ignore genomes with less completeness than this percentage.",
+        dest='min_completeness',
+        default='70'
+    )
+
+    cluster_group.add_argument(
+        '--max-contamination', '--max_contamination',
+        help="Ignore genomes with more contamination than this percentage.",
+        dest='max_contamination',
+        default='10'
+    )
+
     #####################################################################
     # viral_group = argparse.ArgumentParser(formatter_class=CustomHelpFormatter,
     #                                         add_help=False)
@@ -567,11 +602,12 @@ def main():
                                              parents=[base_group, cluster_group],
                                              epilog=
                                              '''
-                                                     ......:::::: CLUSTER ::::::......
+                                                                   ......:::::: CLUSTER ::::::......
 
                                              aviary cluster --previous-runs aviary_output_folder_1/ aviary_output_folder_2/
 
                                              ''')
+
 
     cluster_options.add_argument(
         '-w', '--workflow',

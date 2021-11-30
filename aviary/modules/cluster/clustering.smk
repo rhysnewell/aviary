@@ -64,24 +64,36 @@ rule run_galah:
     output:
         dereplicated_set = "data/dereplicated_clusters.txt"
     params:
-        derep_ani = 0.97,
-        precluster_ani = 0.90,
-        min_completeness = 70,
-        min_contamination = 10,
+        derep_ani = config["ani"],
+        precluster_ani = config["precluster_ani"],
+        precluster_method = config["precluster_method"],
+        min_completeness = config["min_completeness"],
+        min_contamination = config["max_contamination"],
     threads:
         config['max_threads']
     conda:
         "../../envs/coverm.yaml"
     shell:
-        "coverm cluster -t {threads} --checkm-tab-table {input.checkm} " 
+        "galah cluster -t {threads} --checkm-tab-table {input.checkm} " 
         "--genome-fasta-list {input.genome_list} --output-cluster-definition {output.dereplicated_set} "
-        "--ani {params.derep_ani} --precluster-ani {params.precluster_ani} "
-        "--min-completeness {params.min_completeness} --max-contamination {params.min_contamination}"
+        "--ani {params.derep_ani} --precluster-ani {params.precluster_ani} --precluster-method {params.precluster_method} "
+        "--min-completeness {params.min_completeness} --max-contamination {params.min_contamination} "
+        "--output-representative-fasta-directory representative_genomes/ "
 
+rule representative_checkm:
+    input:
+        dereplicated_clusters = "data/dereplicated_clusters.txt",
+        combined_checkm = "data/combined_checkm.tsv"
+    output:
+        representative_checkm = "data/representative_checkm.tsv",
+    shell:
+        "grep \'Bin Id\' {input.combined_checkm} >> {output.representative_checkm}; "
+        "cut -f1 {input.dereplicated_clusters} | uniq | parallel -j 1 \"grep {{.}} {input.combined_checkm} >> {output.representative_checkm}\""
 
 rule complete_cluster:
     input:
-        dereplicated_clusters = "data/dereplicated_clusters.txt"
+        dereplicated_clusters = "data/dereplicated_clusters.txt",
+        representative_checkm = "data/representative_checkm.tsv"
     output:
         representative_paths = "data/representative_paths.txt",
         representative_taxa_bac = "data/representatives.bac120.summary.tsv",
@@ -92,7 +104,7 @@ rule complete_cluster:
         import pandas as pd
 
         clusters = pd.read_csv(input.dereplicated_clusters, sep="\t", header=None)
-        representatives = clusters[0].unique()
+        representatives = clusters[0].apply(lambda bin: bin.replace(".fa", "")).unique()
         previous_runs = params.previous_runs
 
         runs_bac = [pd.read_csv(os.path.abspath(run) + "/taxonomy/gtdbtk/gtdbtk.bac120.summary.tsv", sep="\t") for run in previous_runs]

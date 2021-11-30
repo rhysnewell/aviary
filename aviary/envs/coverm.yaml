@@ -2,7 +2,8 @@ channels:
   - bioconda
   - conda-forge
 dependencies:
-  - coverm = 0.6
+  - coverm >= 0.6
+  - galah >= 0.3
   - parallel
   - dashing
   - fastani
