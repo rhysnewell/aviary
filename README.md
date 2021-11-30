@@ -36,12 +36,12 @@ aviary --help
 The resulting output should contain a list of the available aviary modules:
 ```
 
-                ......:::::: AVIARY ::::::......
+                    ......:::::: AVIARY ::::::......
 
 A comprehensive metagenomics bioinformatics pipeline
 
 Metagenome assembly, binning, and annotation:
-        cluster   - Clusters samples based on OTU content using SingleM **TBC**
+        cluster   - Clusters and dereplicates bins across multiple aviary runs
         assemble  - Perform hybrid assembly using short and long reads,
                     or assembly using only short reads
         recover   - Recover MAGs from provided assembly using a variety
@@ -93,7 +93,7 @@ conda env create -n aviary -f aviary.yml
 # Module details
 |__method__ |__description__ |
 | --- | --- |
-|`cluster`|Module under development|
+|`cluster`|Dereplicate/choose representative genomes from multiple aviary runs|
 |`assemble`|Perform quality control and assembly of provided reads. Will provide hybrid assembly if given long and short reads|
 |`recover`|Recover MAGs from provided assembly using a variety of binning algorithms. Also perform quality checks on recovered MAGs and taxonomic classification.|
 |`annotate`|Module under development|
