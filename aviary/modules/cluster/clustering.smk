@@ -107,12 +107,23 @@ rule complete_cluster:
         representatives = clusters[0].apply(lambda bin: bin.replace(".fa", "")).unique()
         previous_runs = params.previous_runs
 
-        runs_bac = [pd.read_csv(os.path.abspath(run) + "/taxonomy/gtdbtk/gtdbtk.bac120.summary.tsv", sep="\t") for run in previous_runs]
-        runs_arc = [pd.read_csv(os.path.abspath(run) + "/taxonomy/gtdbtk/gtdbtk.ar122.summary.tsv", sep="\t") for run in previous_runs]
+        runs_bac = []
+        runs_arc = []
 
-        for (df_bac, df_arc, run) in zip(runs_bac, runs_arc, previous_runs):
-            df_bac['user_genome'] = df_bac['user_genome'].apply(lambda bin: os.path.abspath(run) + "/bins/final_bins/" + str(bin))
-            df_arc['user_genome'] = df_arc['user_genome'].apply(lambda bin: os.path.abspath(run) + "/bins/final_bins/" + str(bin))
+        for run in previous_runs:
+            try:
+                df_bac = pd.read_csv(os.path.abspath(run) + "/taxonomy/gtdbtk/gtdbtk.bac120.summary.tsv", sep="\t")
+                df_bac['user_genome'] = df_bac['user_genome'].apply(lambda bin: os.path.abspath(run) + "/bins/final_bins/" + str(bin))
+                runs_bac.append(df_bac)
+            except FileNotFoundError:
+                pass
+
+            try:
+                df_arc = pd.read_csv(os.path.abspath(run) + "/taxonomy/gtdbtk/gtdbtk.ar122.summary.tsv", sep="\t")
+                df_arc['user_genome'] = df_arc['user_genome'].apply(lambda bin: os.path.abspath(run) + "/bins/final_bins/" + str(bin))
+                runs_arc.append(df_arc)
+            except FileNotFoundError:
+                pass
 
         concat_bac = pd.concat(runs_bac)
         concat_bac = concat_bac[concat_bac['user_genome'].isin(representatives)]
