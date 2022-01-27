@@ -551,6 +551,13 @@ def main():
         default='recover_mags',
     )
 
+    recover_options.add_argument(
+        '--checkm2-db-path', '--checkm2_db_path',
+        help=argparse.SUPPRESS,
+        dest='checkm2_db_path',
+        required=False,
+    )
+
     ##########################  ~ ANNOTATE ~   ###########################
 
     annotate_options = subparsers.add_parser('annotate',
@@ -721,6 +728,13 @@ def main():
         required=False,
     )
 
+    configure_options.add_argument(
+        '--checkm2-db-path', '--checkm2_db_path',
+        help=argparse.SUPPRESS,
+        dest='checkm2_db_path',
+        required=False,
+    )
+
     ###########################################################################
     # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ #
     # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~ Parsing input ~~~~~~~~~~~~~~~~~~~~~~~~~~~~ #
@@ -759,6 +773,9 @@ def main():
 
             if args.enrichm_db_path is not None:
                 Config.set_enrichm_db_path(args.enrichm_db_path)
+
+            if args.checkm2_db_path is not None:
+                Config.set_checkm2_db_path(args.checkm2_db_path)
 
         else:
             prefix = args.output

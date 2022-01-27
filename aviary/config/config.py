@@ -281,3 +281,60 @@ def set_conda_path(path):
         subprocess.Popen(
             'echo "export CONDA_ENV_PATH=%s" >> ~/.bashrc' %
             (os.environ['CONDA_ENV_PATH']), shell=True).wait()
+
+
+"""
+Load the reference package. This will fail if the directory doesn't exist.
+"""
+def get_checkm2_db_path():
+    try:
+        source_conda_env()
+        CHECKM2DB = os.environ['CHECKM2DB']
+        return CHECKM2DB
+    except KeyError:
+        try:
+            source_conda_env()
+            CHECKM2DB = os.environ['CHECKM2DB']
+            return CHECKM2DB
+        except KeyError:
+            try:
+                source_bashrc()
+                CHECKM2DB = os.environ['CHECKM2DB']
+                return CHECKM2DB
+            except KeyError:
+                print('\n' + '=' * 100)
+                print(' ERROR '.center(100))
+                print('_' * 100 + '\n')
+                print("The 'CHECKM2DB' environment variable is not defined.".center(100) + '\n')
+                print('Please set this variable to your reference data package.'.center(100))
+                print('https://github.com/chklovski/CheckM2'.center(100))
+                print('Alternatively, use --checkm2-db-path flag.'.center(100))
+                print('=' * 100)
+
+                signal.alarm(120)
+                os.environ['CHECKM2DB'] = input('Input CHECKM2DB now:')
+                try:
+                    subprocess.Popen('mkdir -p %s/etc/conda/activate.d/; mkdir -p %s/etc/conda/deactivate.d/; echo "export CHECKM2DB=%s" >> %s/etc/conda/activate.d/aviary.sh; echo "unset CHECKM2DB" >> %s/etc/conda/deactivate.d/aviary.sh; ' %
+                            (os.environ['CONDA_PREFIX'], os.environ['CONDA_PREFIX'], os.environ['CHECKM2DB'], os.environ['CONDA_PREFIX'], os.environ['CONDA_PREFIX']), shell=True).wait()
+                except KeyError:
+                    subprocess.Popen(
+                        'echo "export CHECKM2DB=%s" >> ~/.bashrc' %
+                        (os.environ['CHECKM2DB']), shell=True).wait()
+                signal.alarm(0)
+                print('=' * 100)
+                print('Reactivate your aviary conda environment or source ~/.bashrc to suppress this message.'.center(100))
+                print('=' * 100)
+
+                return os.environ['CHECKM2DB']
+
+def set_checkm2_db_path(path):
+    os.environ['CHECKM2DB'] = path
+    try:
+        subprocess.Popen(
+            'mkdir -p %s/etc/conda/activate.d/; mkdir -p %s/etc/conda/deactivate.d/; echo "export CHECKM2DB=%s" >> %s/etc/conda/activate.d/aviary.sh; echo "unset CHECKM2DB" >> %s/etc/conda/deactivate.d/aviary.sh; ' %
+            (os.environ['CONDA_PREFIX'], os.environ['CONDA_PREFIX'], os.environ['CHECKM2DB'],
+             os.environ['CONDA_PREFIX'], os.environ['CONDA_PREFIX']), shell=True).wait()
+    except KeyError:
+        subprocess.Popen(
+            'echo "export CHECKM2DB=%s" >> ~/.bashrc' %
+            (os.environ['CHECKM2DB']), shell=True).wait()
