@@ -296,7 +296,8 @@ rule rosella:
         min_bin_size = config["min_bin_size"]
     group: 'binning'
     output:
-        "data/rosella_bins/done"
+        kmers = "data/rosella_bins/rosella_kmer_table.tsv",
+        done = "data/rosella_bins/done"
     conda:
         "envs/rosella.yaml"
     threads:
@@ -306,7 +307,7 @@ rule rosella:
     shell:
         "rosella bin -r {input.fasta} -i {input.coverage} -t {threads} -o data/rosella_bins "
         "--min-contig-size {params.min_contig_size} --min-bin-size {params.min_bin_size} --n-neighbors 200 && "
-        "touch {output[0]} || touch {output[0]}"
+        "touch {output.done} || touch {output.done}"
 
 
 rule das_tool:
@@ -345,36 +346,38 @@ rule das_tool:
         Fasta_to_Scaffolds2Bin.sh -i data/vamb_bins/bins -e fna > data/vamb_bins.tsv; 
         Fasta_to_Scaffolds2Bin.sh -i data/rosella_bins -e fna > data/rosella_bins.tsv; 
         scaffold2bin_files=$(find data/*bins*.tsv -not -empty -exec ls {{}} \; | tr "\n" ',' | sed "s/,$//g"); 
-        DAS_Tool --search_engine diamond --write_bin_evals 1 --write_bins 1 -t {threads} \
+        DAS_Tool --search_engine diamond --write_bin_evals 1 --write_bins 1 -t {threads} --score_threshold -42 \
          -i $scaffold2bin_files \
          -c {input.fasta} \
          -o data/das_tool_bins/das_tool && \
         touch data/das_tool_bins/done
         """
 
-rule galah_dereplicate:
+rule rosella_refine:
     input:
-        checkm = 'data/checkm.out',
-        das_tool = 'data/das_tool_bins/done'
+        checkm = 'data/das_tool_bins/checkm.out',
+        das_tool = 'data/das_tool_bins/done',
+        coverage = "data/coverm.cov",
+        fasta = config["fasta"],
+        kmers = "data/rosella_bins/rosella_kmer_table.tsv"
     output:
-        final_bins_dir = directory('bins/final_bins/'),
-        final_bins_fin = temp('bins/final_bins/done')
+        'bins/checkm.out'
     params:
-        derep_ani = 0.97
+        min_bin_size = config["min_bin_size"],
+        max_iterations = 5,
+        pplacer_threads = config["pplacer_threads"],
+        max_contamination = 10
     threads:
-        config['max_threads']
+        config["max_threads"]
     conda:
-        "../../envs/coverm.yaml"
-    shell:
-        "mv data/das_tool_bins/das_tool_DASTool_bins bins/non_dereplicated_bins; "
-        "coverm cluster --precluster-method finch -t {threads} --checkm-tab-table {input.checkm} " \
-        "--genome-fasta-directory bins/non_dereplicated_bins -x fa --output-representative-fasta-directory {output.final_bins_dir} --ani {params.derep_ani}; "
-        "touch {output.final_bins_fin}"
+        "envs/rosella.yaml"
+    script:
+        "scripts/rosella_refine.py"
 
 
 rule get_abundances:
     input:
-        "bins/final_bins/done"
+        "bins/checkm.out"
     group: 'binning'
     output:
         "data/coverm_abundances.tsv"
@@ -385,26 +388,26 @@ rule get_abundances:
     script:
         "scripts/get_abundances.py"
 
-rule checkm:
+rule checkm_das_tool:
     input:
         done = "data/das_tool_bins/done"
     params:
         pplacer_threads = config["pplacer_threads"]
     group: 'binning'
     output:
-        "data/checkm.out"
+        "data/das_tool_bins/checkm.out"
     conda:
         "../../envs/checkm.yaml"
     threads:
         config["max_threads"]
     shell:
         'checkm lineage_wf -t {threads} --pplacer_threads {params.pplacer_threads} '
-        '-x fa data/das_tool_bins/das_tool_DASTool_bins data/checkm --tab_table -f data/checkm.out'
+        '-x fa data/das_tool_bins/das_tool_DASTool_bins data/das_tool_bins/checkm --tab_table -f data/das_tool_bins/checkm.out'
 
 
 rule gtdbtk:
     input:
-        done_file = "bins/final_bins/done",
+        done_file = "bins/checkm.out",
         dereplicated_bin_folder = "bins/final_bins/"
     group: 'binning'
     output:
@@ -418,7 +421,7 @@ rule gtdbtk:
         config["max_threads"]
     shell:
         "export GTDBTK_DATA_PATH={params.gtdbtk_folder} && "
-        "gtdbtk classify_wf --cpus {threads} --pplacer_cpus {params.pplacer_threads} --extension fa "
+        "gtdbtk classify_wf --cpus {threads} --pplacer_cpus {params.pplacer_threads} --extension fna "
         "--genome_dir {input.dereplicated_bin_folder} --out_dir data/gtdbtk && touch data/gtdbtk/done"
 
 
@@ -445,18 +448,18 @@ rule singlem_appraise:
     conda:
         "../../envs/singlem.yaml"
     shell:
-        "singlem pipe --threads {params.pplacer_threads} --sequences bins/final_bins/*.fa --otu_table data/singlem_out/genomes.otu_table.csv; "
+        "singlem pipe --threads {params.pplacer_threads} --sequences bins/final_bins/* --otu_table data/singlem_out/genomes.otu_table.csv; "
         "singlem pipe --threads {params.pplacer_threads} --sequences {params.fasta} --otu_table data/singlem_out/assembly.otu_table.csv; "
         "singlem appraise --metagenome_otu_tables {input.metagenome} --genome_otu_tables data/singlem_out/genomes.otu_table.csv "
         "--assembly_otu_table data/singlem_out/assembly.otu_table.csv "
         "--plot data/singlem_out/singlem_appraise.svg --output_binned_otu_table data/singlem_out/binned.otu_table.csv "
         "--output_unbinned_otu_table data/singlem_out/unbinned.otu_table.csv"
 
+
 rule recover_mags:
     input:
-        final_bins = "bins/final_bins/done",
+        final_bins = "bins/checkm.out",
         gtdbtk = "data/gtdbtk/done",
-        checkm = "data/checkm.out",
         coverm = "data/coverm_abundances.tsv",
         singlem = "data/singlem_out/singlem_appraise.svg"
     conda:
@@ -471,7 +474,6 @@ rule recover_mags:
         config["max_threads"]
     shell:
         # Use --precluster-method finch so dashing-related install problems are avoided i.e. https://github.com/dnbaker/dashing/issues/41
-        "mv data/checkm.out bins/; "
         "mv data/coverm_abundances.tsv bins/; "
         "mv data/coverm.cov bins/; "
         "mv data/*_bins* bins/; "
@@ -496,11 +498,7 @@ rule dereplicate_and_get_abundances_paired:
     conda:
         "../../envs/coverm.yaml"
     shell:
-        "mv bins/final_bins/ bins/non_dereplicated_bins; "
-        "coverm cluster --precluster-method finch -t {threads} --checkm-tab-table bins/checkm.out "
-        "--genome-fasta-directory bins/non_dereplicated_bins -x fa --output-representative-fasta-directory {params.final_bins} --ani {params.derep_ani}; "
-        "coverm genome -t {threads} -d bins/final_bins/ -1 {input.pe_1} -2 {input.pe_2} --min-covered-fraction 0.0 -x fa > bins/coverm_abundances.tsv; "
-        "touch bins/final_bins/done"
+        "coverm genome -t {threads} -d bins/final_bins/ -1 {input.pe_1} -2 {input.pe_2} --min-covered-fraction 0.0 -x fna > bins/coverm_abundances.tsv; "
 
 # Special rule to help out with a buggy output
 rule dereplicate_and_get_abundances_interleaved:
@@ -516,8 +514,4 @@ rule dereplicate_and_get_abundances_interleaved:
     conda:
         "../../envs/coverm.yaml"
     shell:
-        "mv bins/final_bins/ bins/non_dereplicated_bins; "
-        "coverm cluster --precluster-method finch -t {threads} --checkm-tab-table bins/checkm.out "
-        "--genome-fasta-directory bins/non_dereplicated_bins -x fa --output-representative-fasta-directory {params.final_bins} --ani {params.derep_ani}; "
-        "coverm genome -t {threads} -d bins/final_bins/ --interleaved {input.pe_1} --min-covered-fraction 0.0 -x fa > bins/coverm_abundances.tsv; "
-        "touch bins/final_bins/done"
+        "coverm genome -t {threads} -d bins/final_bins/ --interleaved {input.pe_1} --min-covered-fraction 0.0 -x fna > bins/coverm_abundances.tsv; "

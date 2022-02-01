@@ -2,5 +2,5 @@ channels:
   - bioconda
   - conda-forge
 dependencies:
-  - checkm-genome = 1.1.2
+  - checkm-genome >= 1.1.2
   - parallel
