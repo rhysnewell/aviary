@@ -1,5 +1,6 @@
 import subprocess
 import os
+import shutil
 import pandas as pd
 
 
@@ -11,7 +12,8 @@ def refinery():
     """
     # These will change
     current_iteration = 0
-    current_checkm = pd.read_csv(snakemake.input.checkm, sep='\t', comment="[")
+    checkm_path = snakemake.input.checkm
+    current_checkm = pd.read_csv(checkm_path, sep='\t', comment="[")
     bin_folder = "data/das_tool_bins/das_tool_DASTool_bins/"
     extension = "fa"
 
@@ -19,25 +21,26 @@ def refinery():
     coverage = snakemake.input.coverage
     assembly = snakemake.input.fasta
     kmers = snakemake.input.kmers
-    min_bin_size = snakemake.input.min_bin_size
+    min_bin_size = snakemake.params.min_bin_size
     max_iterations = int(snakemake.params.max_iterations)
-    pplacer_threads = int(snakemake.input.pplacer_threads)
+    pplacer_threads = int(snakemake.params.pplacer_threads)
     threads = int(snakemake.threads)
     max_contamination = int(snakemake.params.max_contamination)
     contaminated_bin_folder = "data/refined_bins/contaminated_bins"
     final_bins = "data/refined_bins/final_bins"
 
-    subprocess.Popen(f"mkdir -p {contaminated_bin_folder}").wait()
-    subprocess.Popen(f"mkdir -p {final_bins}").wait()
+    os.makedirs(contaminated_bin_folder, exist_ok=True)
+    os.makedirs(final_bins, exist_ok=True)
 
-    final_checkm = current_checkm[current_checkm["Contamination"] <= 10]
+    final_checkm = current_checkm.copy().loc[current_checkm["Contamination"] <= 10].copy()
     final_checkm = move_finished_bins(final_checkm, bin_folder, extension, final_bins)
+
 
     while current_iteration < max_iterations:
 
         # delete previous contaminated set
         if current_iteration != 0:
-            subprocess.Popen(f"rm {contaminated_bin_folder}").wait()
+            os.remove(f"{contaminated_bin_folder}")
             extension = "fna"
 
         # put contaminated bins in one folder. If no contaminated bins then break
@@ -52,7 +55,7 @@ def refinery():
         output_folder = f"data/refined_bins/rosella_refined_{current_iteration}"
 
         # Refine the contaminated bins
-        refine(assembly, coverage, kmers, current_checkm,
+        refine(assembly, coverage, kmers, checkm_path,
                contaminated_bin_folder, extension, min_bin_size,
                threads, output_folder, max_contamination)
 
@@ -63,7 +66,9 @@ def refinery():
         get_checkm_results(bin_folder, threads, pplacer_threads)
 
         # update the checkm results and counter
-        current_checkm = pd.read_csv(f"{bin_folder}/checkm.out", sep='\t', comment='[')
+        checkm_path = f"{bin_folder}/checkm.out"
+        current_checkm = pd.read_csv(checkm_path, sep='\t', comment='[')
+
         bins_to_keep = current_checkm[current_checkm["Contamination"] <= max_contamination]
         bins_to_keep = move_finished_bins(bins_to_keep, bin_folder, "fna", final_bins, current_iteration)
         final_checkm = pd.concat([final_checkm, bins_to_keep])
@@ -71,9 +76,9 @@ def refinery():
 
     final_checkm.to_csv("data/checkm.out", sep='\t', index=False)
     final_output_folder = "bins/"
-    subprocess.Popen(f"{final_output_folder}").wait()
-    subprocess.Popen(f"mv {final_bins} {final_output_folder}").wait()
-    subprocess.Popen(f"cp data/checkm.out bins/checkm.out").wait()
+    os.makedirs(final_output_folder, exist_ok=True)
+    shutil.move(final_bins, final_output_folder)
+    shutil.copy("data/checkm.out", "bins/checkm.out")
 
 
 
@@ -101,7 +106,11 @@ def move_finished_bins(
             new_bin_id = bin_id
 
         new_bin_ids.append(new_bin_id)
-        subprocess.Popen(f"mv {input_folder}/{bin_id}.{input_extension} {output_folder}/{new_bin_id}.fna").wait()
+        try:
+            shutil.move(f"{input_folder}/{bin_id}.{input_extension}", f"{output_folder}/{new_bin_id}.fna")
+        except FileNotFoundError:
+            # File already moved
+            continue
 
     checkm[column_name] = new_bin_ids
 
@@ -118,18 +127,21 @@ def collect_contaminated_bins(
     contaminated = checkm[checkm["Contamination"] > max_contamination]
 
     # check that there is at least one contaminated bin
-    if not contaminated.shape[0] >= 1: return False
+    if contaminated.shape[0] == 0: return False
 
     try:
-        bins = checkm["Bin Id"]
+        bins = contaminated["Bin Id"]
     except KeyError:
         # checkm2 input
-        bins = checkm["Name"]
+        bins = contaminated["Name"]
 
 
-    bins = [f"{bin_folder}/{bin_id}.{extension}" for bin_id in bins]
     for bin_id in bins:
-        subprocess.Popen(f"mv {bin_id} {output_folder}").wait()
+        try:
+            shutil.move(f"{bin_folder}/{bin_id}.{extension}", f"{output_folder}/{bin_id}.{extension}")
+        except FileNotFoundError:
+            # file already moved
+            continue
 
     return True
 
@@ -139,9 +151,10 @@ def refine(
         bin_folder, extension, min_bin_size,
         threads, output_folder, max_contamination,
 ):
-    subprocess.Popen(f"rosella refine -a {assembly} --coverage-values {coverage} --kmer-frequencies {kmers} "
+    # TODO: Put kmer-frequencies in once rosella is patched to 0.4.1
+    subprocess.Popen(f"rosella refine -a {assembly} --coverage-values {coverage} "
                      f"-d {bin_folder} -x {extension} --checkm-file {checkm} --max-contamination {max_contamination} "
-                     f"--min-bin-size {min_bin_size} -t {threads} -o {output_folder}").wait()
+                     f"--min-bin-size {min_bin_size} -t {threads} -o {output_folder}", shell=True).wait()
 
 def get_checkm_results(
         refined_folder,
@@ -149,7 +162,7 @@ def get_checkm_results(
         pplacer_threads,
 ):
     subprocess.Popen(f"checkm lineage_wf -t {threads} --pplacer_threads {pplacer_threads} -x fna "
-                     f"--tab_table -f {refined_folder}/checkm.out {refined_folder}").wait()
+                     f"--tab_table -f {refined_folder}/checkm.out {refined_folder} {refined_folder}/checkm", shell=True).wait()
 
 if __name__ == '__main__':
     refinery()
