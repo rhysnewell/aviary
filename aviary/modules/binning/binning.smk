@@ -476,7 +476,7 @@ rule recover_mags:
         # Use --precluster-method finch so dashing-related install problems are avoided i.e. https://github.com/dnbaker/dashing/issues/41
         "mv data/coverm_abundances.tsv bins/; "
         "mv data/coverm.cov bins/; "
-        "mv data/*_bins* bins/; "
+        # "mv data/*_bins* bins/; "
         "mv data/singlem_out/ diversity/; "
         "mv data/gtdbtk/ taxonomy/; "
         "touch bins/done; "

@@ -71,7 +71,7 @@ def refinery():
         checkm_path = f"{bin_folder}/checkm.out"
         current_checkm = pd.read_csv(checkm_path, sep='\t', comment='[')
 
-        bins_to_keep = current_checkm[current_checkm["Contamination"] <= max_contamination]
+        bins_to_keep = current_checkm.copy().loc[current_checkm["Contamination"] <= max_contamination]
         bins_to_keep = move_finished_bins(bins_to_keep, bin_folder, "fna", final_bins, current_iteration)
         final_checkm = pd.concat([final_checkm, bins_to_keep])
         current_iteration += 1
@@ -80,7 +80,7 @@ def refinery():
     final_output_folder = "bins/"
     os.makedirs(final_output_folder, exist_ok=True)
     shutil.move(final_bins, final_output_folder)
-    shutil.copy("data/checkm.out", "bins/checkm.out")
+    final_checkm.to_csv("bins/checkm.out", sep='\t', index=False)
 
 
 
