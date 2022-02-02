@@ -183,7 +183,7 @@ rule metabat2:
         coverage = "data/coverm.cov",
         fasta = config["fasta"]
     params:
-        min_contig_size = config["min_contig_size"],
+        min_contig_size = max(int(config["min_contig_size"]), 1500),
         min_bin_size = config["min_bin_size"]
     group: 'binning'
     output:
@@ -210,7 +210,7 @@ rule metabat_spec:
     conda:
         "envs/metabat2.yaml"
     params:
-        min_contig_size = config["min_contig_size"],
+        min_contig_size = max(int(config["min_contig_size"]), 1500),
         min_bin_size = config["min_bin_size"]
     benchmark:
         "benchmarks/metabat_spec.benchmark.txt"
@@ -231,7 +231,7 @@ rule metabat_sspec:
     conda:
         "envs/metabat2.yaml"
     params:
-        min_contig_size = config["min_contig_size"],
+        min_contig_size = max(int(config["min_contig_size"]), 1500),
         min_bin_size = config["min_bin_size"]
     benchmark:
         "benchmarks/metabat_sspec.benchmark.txt"
@@ -252,7 +252,7 @@ rule metabat_sens:
     conda:
         "envs/metabat2.yaml"
     params:
-        min_contig_size = config["min_contig_size"],
+        min_contig_size = max(int(config["min_contig_size"]), 1500),
         min_bin_size = config["min_bin_size"]
     benchmark:
         "benchmarks/metabat_sens.benchmark.txt"
@@ -273,7 +273,7 @@ rule metabat_ssens:
     conda:
         "envs/metabat2.yaml"
     params:
-        min_contig_size = config["min_contig_size"],
+        min_contig_size = max(int(config["min_contig_size"]), 1500),
         min_bin_size = config["min_bin_size"]
     benchmark:
         "benchmarks/metabat_ssens.benchmark.txt"
@@ -407,14 +407,14 @@ rule checkm_das_tool:
 
 rule gtdbtk:
     input:
-        done_file = "bins/checkm.out",
-        dereplicated_bin_folder = "bins/final_bins/"
+        done_file = "bins/checkm.out"
     group: 'binning'
     output:
         done = "data/gtdbtk/done"
     params:
         gtdbtk_folder = config['gtdbtk_folder'],
-        pplacer_threads = config["pplacer_threads"]        
+        pplacer_threads = config["pplacer_threads"],
+        bin_folder = "bins/final_bins"
     conda:
         "../../envs/gtdbtk.yaml"
     threads:
@@ -422,7 +422,7 @@ rule gtdbtk:
     shell:
         "export GTDBTK_DATA_PATH={params.gtdbtk_folder} && "
         "gtdbtk classify_wf --cpus {threads} --pplacer_cpus {params.pplacer_threads} --extension fna "
-        "--genome_dir {input.dereplicated_bin_folder} --out_dir data/gtdbtk && touch data/gtdbtk/done"
+        "--genome_dir {params.bin_folder} --out_dir data/gtdbtk && touch data/gtdbtk/done"
 
 
 rule singlem_pipe_reads:
@@ -438,7 +438,7 @@ rule singlem_appraise:
     input:
         metagenome = "data/singlem_out/metagenome.combined_otu_table.csv",
         gtdbtk_done = "data/gtdbtk/done",
-        bins = "bins/final_bins/"
+        bins_complete = "bins/checkm.out"
     group: 'binning'
     output:
         "data/singlem_out/singlem_appraise.svg"
