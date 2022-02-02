@@ -1,7 +1,8 @@
-import subprocess
-import os
-import shutil
 import pandas as pd
+import subprocess
+import shutil
+import glob
+import os
 
 
 def refinery():
@@ -40,7 +41,8 @@ def refinery():
 
         # delete previous contaminated set
         if current_iteration != 0:
-            os.remove(f"{contaminated_bin_folder}")
+            files = glob.glob(f'{contaminated_bin_folder}/*')
+            [os.remove(file) for file in files]
             extension = "fna"
 
         # put contaminated bins in one folder. If no contaminated bins then break
