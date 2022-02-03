@@ -38,6 +38,11 @@ setup(
     data_files=[(".", ["README.md", "LICENSE"])],
     include_package_data=True,
     install_requires= [
+        "snakemake",
+        "numpy",
+        "ruamel.yaml>=0.15.99",
+        "pandas",
+        "biopython",
     ],
     # install via conda: click, pandas, pyyaml, snakemake
     entry_points={

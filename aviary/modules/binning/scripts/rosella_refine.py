@@ -109,7 +109,7 @@ def move_finished_bins(
 
         new_bin_ids.append(new_bin_id)
         try:
-            shutil.move(f"{input_folder}/{bin_id}.{input_extension}", f"{output_folder}/{new_bin_id}.fna")
+            shutil.copy(f"{input_folder}/{bin_id}.{input_extension}", f"{output_folder}/{new_bin_id}.fna")
         except FileNotFoundError:
             # File already moved
             continue
@@ -140,7 +140,7 @@ def collect_contaminated_bins(
 
     for bin_id in bins:
         try:
-            shutil.move(f"{bin_folder}/{bin_id}.{extension}", f"{output_folder}/{bin_id}.{extension}")
+            shutil.copy(f"{bin_folder}/{bin_id}.{extension}", f"{output_folder}/{bin_id}.{extension}")
         except FileNotFoundError:
             # file already moved
             continue
@@ -153,8 +153,8 @@ def refine(
         bin_folder, extension, min_bin_size,
         threads, output_folder, max_contamination,
 ):
-    # TODO: Put kmer-frequencies in once rosella is patched to 0.4.1
-    subprocess.Popen(f"rosella refine -a {assembly} --coverage-values {coverage} "
+
+    subprocess.Popen(f"rosella refine -a {assembly} --coverage-values {coverage} --kmer-frequencies {kmers} "
                      f"-d {bin_folder} -x {extension} --checkm-file {checkm} --max-contamination {max_contamination} "
                      f"--min-bin-size {min_bin_size} -t {threads} -o {output_folder}", shell=True).wait()
 
