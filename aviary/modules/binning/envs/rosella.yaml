@@ -1,8 +1,12 @@
 channels:
+  - numba
   - bioconda
   - conda-forge
   - defaults
 dependencies:
-  - rosella==0.3.3
-  - flight-genome==1.1.3
+  - numba==0.55
+  - rosella>=0.4.1
+  - flight-genome>=1.4.1
+  - pebble
+  - checkm-genome
   - biopython

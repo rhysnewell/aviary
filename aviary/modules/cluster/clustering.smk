@@ -125,13 +125,21 @@ rule complete_cluster:
             except FileNotFoundError:
                 pass
 
-        concat_bac = pd.concat(runs_bac)
-        concat_bac = concat_bac[concat_bac['user_genome'].isin(representatives)]
-        concat_bac.to_csv("data/representatives.bac120.summary.tsv", index=False)
+        try:
+            concat_bac = pd.concat(runs_bac)
+            concat_bac = concat_bac[concat_bac['user_genome'].isin(representatives)]
+            concat_bac.to_csv("data/representatives.bac120.summary.tsv", index=False)
+        except ValueError:
+            # No values to concat
+            pass
 
-        concat_arc = pd.concat(runs_arc)
-        concat_arc = concat_arc[concat_arc['user_genome'].isin(representatives)]
-        concat_arc.to_csv("data/representatives.ar122.summary.tsv", index=False)
+        try:
+            concat_arc = pd.concat(runs_arc)
+            concat_arc = concat_arc[concat_arc['user_genome'].isin(representatives)]
+            concat_arc.to_csv("data/representatives.ar122.summary.tsv", index=False)
+        except ValueError:
+            # No values to concate
+            pass
 
         pd.DataFrame(representatives).to_csv("data/representative_paths.txt", index=False, header=False)
 

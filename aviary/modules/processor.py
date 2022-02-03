@@ -175,6 +175,14 @@ class Processor:
             self.precluster_ani = 'none'
             self.precluster_method = 'none'
 
+        # try:
+        #     self.checkm2_db = args.checkm2_db_path
+        # except AttributeError:
+        try:
+            self.checkm2_db = os.environ['CHECKM2DB']
+        except KeyError:
+            self.checkm2_db = 'none'
+
     def make_config(self):
         """
         Reads template config file with comments from ./template_config.yaml
@@ -217,6 +225,7 @@ class Processor:
         conf["min_contig_size"] = int(self.min_contig_size)
         conf["min_bin_size"] = int(self.min_bin_size)
         conf["gtdbtk_folder"] = os.path.abspath(self.gtdbtk)
+        conf["checkm2_db_path"] = self.checkm2_db
         conf["mag_directory"] = self.mag_directory
         conf["mag_extension"] = self.mag_extension
         conf["mags"] = self.mags

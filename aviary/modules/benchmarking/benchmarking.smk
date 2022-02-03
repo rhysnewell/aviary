@@ -7,7 +7,7 @@ rule rerun_rosella:
         min_bin_size = config["min_bin_size"]
     group: 'binning'
     output:
-        "data/rosella_bins/rerun"
+        temp("data/rosella_bins/rerun")
     conda:
         "../binning/envs/rosella.yaml"
     threads:
@@ -16,8 +16,8 @@ rule rerun_rosella:
         "benchmarks/rosella_rerun.benchmark.txt"
     shell:
         "rm -f data/rosella_bins/*.fna; rm -f data/rosella_bins/checkm.out; rm -rf data/rosella_bins/checkm/; "
-        "rosella bin -r {input.fasta} -i {input.coverage} -t {threads} -o data/rosella_bins --b-tail 0.4 "
-        "--min-contig-size {params.min_contig_size} --min-bin-size {params.min_bin_size} && "
+        "rosella bin -r {input.fasta} -i {input.coverage} -t {threads} -o data/rosella_bins "
+        "--min-contig-size {params.min_contig_size} --min-bin-size {params.min_bin_size} --n-neighbors 200 && "
         "touch data/rosella_bins/rerun"
 
 
@@ -33,7 +33,7 @@ rule rosella_checkm:
     shell:
         'checkm lineage_wf -t {threads} --pplacer_threads {params.pplacer_threads} '
         '-x fna data/rosella_bins/ data/rosella_bins/checkm '
-        '--tab_table -f data/rosella_bins/checkm.out && rm data/rosella_bins/rerun'
+        '--tab_table -f data/rosella_bins/checkm.out'
 
 
 rule benchmark_vamb:
@@ -86,6 +86,319 @@ rule binner_result:
         "rm -f \*.fna; "
         "checkm lineage_wf -t {threads} --pplacer_threads {params.pplacer_threads} -x fna --tab_table ./ checkm > checkm.out; "
         "touch done && cd ../../"
+
+
+rule checkm2_all_bins:
+    input:
+        checkm1_done = "data/all_bins/done"
+    output:
+        checkm2_report = "data/checkm2_all_bins/quality_report.tsv"
+    threads:
+        config["max_threads"]
+    params:
+        checkm2_db_path = config["checkm2_db_path"]
+    conda:
+        "envs/checkm2.yaml"
+    shell:
+        "export CHECKM2DB={params.checkm2_db_path}; "
+        "checkm2 predict -i data/all_bins/ -x fna -o data/checkm2_all_bins/ -t {threads} --force"
+
+rule checkm2_das_tool:
+    input:
+        das_tool_wr = "data/das_tool_bins/done",
+        das_tool_nr = "data/das_tool_without_rosella/done"
+    output:
+        checkm2_report_wr = "data/checkm2_das_tool_wr/quality_report.tsv",
+        checkm2_report_nr = "data/checkm2_das_tool_nr/quality_report.tsv"
+    threads:
+        config["max_threads"]
+    params:
+        checkm2_db_path = config["checkm2_db_path"]
+    conda:
+        "envs/checkm2.yaml"
+    shell:
+        "export CHECKM2DB={params.checkm2_db_path}; "
+        "checkm2 predict -i data/das_tool_bins/das_tool_DASTool_bins/ -x fa -o data/checkm2_das_tool_wr/ -t {threads} --force; "
+        "checkm2 predict -i data/das_tool_without_rosella/das_tool_DASTool_bins/ -x fa -o data/checkm2_das_tool_nr/ -t {threads} --force"
+
+
+rule checkm2_refined:
+    input:
+        m2_refined = "data/rosella_refine_metabat2/checkm.out",
+        ro_refined = "data/rosella_refine_rosella/checkm.out",
+        dt_refined = "data/rosella_refine_das_tool/checkm.out"
+    output:
+        m2_report = "data/m2_refined_checkm2/quality_report.tsv",
+        ro_report = "data/ro_refined_checkm2/quality_report.tsv",
+        dt_report = "data/dt_refined_checkm2/quality_report.tsv"
+    threads:
+        config["max_threads"]
+    params:
+        checkm2_db_path = config["checkm2_db_path"]
+    conda:
+        "envs/checkm2.yaml"
+    shell:
+        "export CHECKM2DB={params.checkm2_db_path}; "
+        "checkm2 predict -i data/rosella_refine_metabat2/ -x fna -o data/m2_refined_checkm2/ -t {threads} --force || touch {output.m2_report}; "
+        "checkm2 predict -i data/rosella_refine_rosella/ -x fna -o data/ro_refined_checkm2/ -t {threads} --force || touch {output.ro_report}; "
+        "checkm2 predict -i data/rosella_refine_das_tool/ -x fna -o data/dt_refined_checkm2/ -t {threads} --force || touch {output.dt_report}; "
+
+# rule fraction_recovered:
+#     input:
+#         metabat2_done = "data/metabat_bins_2/done",
+#         concoct_done = "data/concoct_bins/done",
+#         maxbin_done = "data/maxbin2_bins/done",
+#         metabat_sspec = "data/metabat_bins_sspec/done",
+#         metabat_spec = "data/metabat_bins_spec/done",
+#         metabat_ssens = "data/metabat_bins_ssens/done",
+#         metabat_sense = "data/metabat_bins_sens/done",
+#         rosella_done = "data/rosella_bins/done",
+#         vamb_done = "data/vamb_bins/done"
+#     output:
+#         metabat2_cov = "data/metabat_bins_2/coverm.cov",
+#         concoct_cov = "data/concoct_bins/coverm.cov",
+#         maxbin_cov = "data/maxbin2_bins/coverm.cov",
+#         metabat_sspec_cov = "data/metabat_bins_sspec/coverm.cov",
+#         metabat_spec_cov = "data/metabat_bins_spec/coverm.cov",
+#         metabat_ssens_cov = "data/metabat_bins_ssens/coverm.cov",
+#         metabat_sense_cov = "data/metabat_bins_sens/coverm.cov",
+#         rosella_cov = "data/rosella_bins/coverm.cov",
+#         vamb_cov = "data/vamb_bins/coverm.cov"
+#     conda:
+#         "../../envs/coverm.yaml"
+#     shell:
+#         ""
+
+rule rosella_refine_benchmark_1:
+    input:
+        checkm1_done = "data/all_bins/checkm.out",
+        coverages = "data/coverm.cov",
+        rosella_done = "data/rosella_bins/done",
+        assembly = config["fasta"]
+    output:
+        refine1 = "data/rosella_refine_rosella/done",
+    conda:
+        "../binning/envs/rosella.yaml",
+    threads:
+        config["max_threads"]
+    shell:
+        "rosella refine -a {input.assembly} --coverage-values {input.coverages} -f data/all_bins/rosella*.fna "
+        "--checkm-file {input.checkm1_done} -o data/rosella_refine_rosella -t {threads} --contaminated-only && "
+        "touch {output.refine1} || touch {output.refine1} "
+
+rule rosella_refine_benchmark_2:
+    input:
+        checkm1_done = "data/all_bins/checkm.out",
+        coverages = "data/coverm.cov",
+        rosella_done = "data/metabat_bins_2/done",
+        assembly = config["fasta"]
+    output:
+        refine2 = "data/rosella_refine_metabat2/done",
+    conda:
+        "../binning/envs/rosella.yaml",
+    threads:
+        config["max_threads"]
+    shell:
+        "rosella refine -a {input.assembly} --coverage-values {input.coverages} -f data/all_bins/*metabat2*.fna "
+        "--checkm-file {input.checkm1_done} -o data/rosella_refine_metabat2 -t {threads} --contaminated-only && "
+        "touch {output.refine2} || touch {output.refine2} "
+
+rule rosella_refine_benchmark_3:
+    input:
+        checkm_done = "data/checkm.out",
+        das_tool_done = "data/das_tool_bins/done",
+        coverages = "data/coverm.cov",
+        assembly = config["fasta"]
+    output:
+        refine3 = "data/rosella_refine_das_tool/done"
+    conda:
+        "../binning/envs/rosella.yaml",
+    threads:
+        config["max_threads"]
+    shell:
+        "rosella refine -a {input.assembly} --coverage-values {input.coverages} -d data/das_tool_bins/das_tool_DASTool_bins/ -x fa "
+        "--checkm-file {input.checkm_done} -o data/rosella_refine_das_tool -t {threads} --contaminated-only && "
+        "touch {output.refine3} || touch {output.refine3} "
+
+rule checkm1_rosella_refine_1:
+    input:
+        refine1 = "data/rosella_refine_rosella/done",
+    output:
+        checkm1_done = "data/rosella_refine_rosella/checkm.out",
+    params:
+        pplacer_threads = config["pplacer_threads"]
+    threads:
+        config["max_threads"]
+    conda:
+        "../../envs/checkm.yaml"
+    shell:
+        "checkm lineage_wf -t {threads} --pplacer_threads {params.pplacer_threads} -x fna "
+        "--tab_table data/rosella_refine_rosella/ data/rosella_refine_rosella/checkm > {output.checkm1_done} || touch {output.checkm1_done}"
+
+
+rule checkm1_rosella_refine_2:
+    input:
+        refine1 = "data/rosella_refine_metabat2/done",
+    output:
+        checkm1_done = "data/rosella_refine_metabat2/checkm.out",
+    params:
+        pplacer_threads = config["pplacer_threads"]
+    threads:
+        config["max_threads"]
+    conda:
+        "../../envs/checkm.yaml"
+    shell:
+        "checkm lineage_wf -t {threads} --pplacer_threads {params.pplacer_threads} -x fna "
+        "--tab_table data/rosella_refine_metabat2/ data/rosella_refine_metabat2/checkm > {output.checkm1_done} || touch {output.checkm1_done}"
+
+
+rule checkm1_rosella_refine_3:
+    input:
+        refine1 = "data/rosella_refine_das_tool/done",
+    output:
+        checkm1_done = "data/rosella_refine_das_tool/checkm.out",
+    params:
+        pplacer_threads = config["pplacer_threads"]
+    threads:
+        config["max_threads"]
+    conda:
+        "../../envs/checkm.yaml"
+    shell:
+        "checkm lineage_wf -t {threads} --pplacer_threads {params.pplacer_threads} -x fna "
+        "--tab_table data/rosella_refine_das_tool/ data/rosella_refine_das_tool/checkm > {output.checkm1_done} || touch {output.checkm1_done}"
+
+
+rule benchmark_refine:
+    input:
+        "data/rosella_refine_metabat2/checkm.out",
+        "data/rosella_refine_rosella/checkm.out",
+        "data/rosella_refine_das_tool/checkm.out"
+    output:
+        temp("data/refined")
+    shell:
+        "touch data/refined"
+
+rule bin_statistics:
+    input:
+        checkm1_done = "data/all_bins/checkm.out",
+        m2_refined = "data/rosella_refine_metabat2/checkm.out",
+        ro_refined = "data/rosella_refine_rosella/checkm.out",
+        dt_refined = "data/rosella_refine_das_tool/checkm.out",
+        dastool_wr = "data/checkm.out",
+        dastool_nr = "data/checkm_without_rosella.out",
+        coverage_file = "data/coverm.cov"
+    output:
+        bin_stats = "data/bin_stats/all_bin_stats.tsv",
+        m2_stats = "data/bin_stats/m2_refined_bin_stats.tsv",
+        ro_stats = "data/bin_stats/ro_refined_bin_stats.tsv",
+        dt_stats = "data/bin_stats/dt_refined_bin_stats.tsv",
+        das_tool_wr_stats = "data/bin_stats/das_tool_wr_stats.tsv",
+        das_tool_nr_stats = "data/bin_stats/das_tool_nr_stats.tsv",
+    run:
+        import glob
+        import pandas as pd
+        from Bio import SeqIO
+        import os
+        from pathlib import Path
+
+        if not os.path.exists("data/bin_stats"): os.makedirs("data/bin_stats")
+
+        def retrieve_stats(bin_folder, bin_extension, coverage_file, checkm_file):
+            """
+            Retrieves information about all bins within `bin_folder` given the file extension `bin_extension`
+            returns a dict containing the bin_id, number of contigs, size in base pairs, completeness, and contamination
+            """
+            output_dict = {"bin_id": [], "n_contigs": [], "size": [], "completeness": [], "contamination": []}
+
+            for fasta_path in glob.glob(f"{bin_folder}/*.{bin_extension}"):
+                bin_id = fasta_path.split("/")[-1]
+                bin_id = bin_id.replace(f".{bin_extension}", "")
+                output_dict["bin_id"].append(bin_id)
+
+                contig_ids = []
+                for sequence in SeqIO.parse(open(fasta_path), "fasta"):
+                    contig_ids.append(sequence.id)
+
+                output_dict["n_contigs"].append(len(contig_ids))
+                output_dict["size"].append(coverage_file[coverage_file["contigName"].isin(contig_ids)]['contigLen'].sum())
+
+                try:
+                    # checkm1 uses Bin Id
+                    checkm_stats = checkm_file[checkm_file["Bin Id"] == bin_id]
+                except KeyError:
+                    # checkm2 uses Name
+                    checkm_stats = checkm_file[checkm_file["Name"] == bin_id]
+
+                output_dict["completeness"].append(checkm_stats["Completeness"].values[0])
+                output_dict["contamination"].append(checkm_stats["Contamination"].values[0])
+
+            return output_dict
+
+        coverage_file = pd.read_csv(input.coverage_file, sep='\t')
+
+        # checkm file for all bins
+        all_bins_checkm = pd.read_csv(input.checkm1_done, sep='\t', comment="[")
+
+        # retrieve stats for all bins
+        all_bin_stats = retrieve_stats("data/all_bins/", "fna", coverage_file, all_bins_checkm)
+        all_bin_stats = pd.DataFrame(data = all_bin_stats)
+        all_bin_stats.to_csv(output.bin_stats, sep='\t', index=False)
+
+        # repeat for both das_tool runs
+        das_tool_wr_checkm = pd.read_csv(input.dastool_wr, sep='\t', comment="[")
+        das_tool_nr_checkm = pd.read_csv(input.dastool_nr, sep='\t', comment="[")
+
+        das_tool_wr_stats = retrieve_stats("data/das_tool_bins/das_tool_DASTool_bins/", "fa", coverage_file, das_tool_wr_checkm)
+        das_tool_wr_stats = pd.DataFrame(data = das_tool_wr_stats)
+        das_tool_wr_stats.to_csv(output.das_tool_wr_stats, sep='\t', index=False)
+
+        das_tool_nr_stats = retrieve_stats("data/das_tool_without_rosella/das_tool_DASTool_bins/", "fa", coverage_file, das_tool_nr_checkm)
+        das_tool_nr_stats = pd.DataFrame(data = das_tool_nr_stats)
+        das_tool_nr_stats.to_csv(output.das_tool_nr_stats, sep='\t', index=False)
+
+        # repeat for both refine runs
+        try:
+            ro_checkm = pd.read_csv(input.ro_refined, sep='\t', comment="[")
+            ro_stats = retrieve_stats("data/rosella_refine_rosella/", "fna", coverage_file, ro_checkm)
+            ro_stats = pd.DataFrame(data = ro_stats)
+            ro_stats.to_csv(output.ro_stats, sep='\t', index=False)
+        except FileNotFoundError:
+            Path(output.ro_stats).touch()
+
+        try:
+            m2_checkm = pd.read_csv(input.m2_refined, sep='\t', comment="[")
+            m2_stats = retrieve_stats("data/rosella_refine_metabat2/", "fna", coverage_file, m2_checkm)
+            m2_stats = pd.DataFrame(data = m2_stats)
+            m2_stats.to_csv(output.m2_stats, sep='\t', index=False)
+        except FileNotFoundError:
+            Path(output.m2_stats).touch()
+
+        try:
+            dt_checkm = pd.read_csv(input.dt_refined, sep='\t', comment="[")
+            dt_stats = retrieve_stats("data/rosella_refine_das_tool/", "fna", coverage_file, dt_checkm)
+            dt_stats = pd.DataFrame(data = dt_stats)
+            dt_stats.to_csv(output.dt_stats, sep='\t', index=False)
+        except FileNotFoundError:
+            Path(output.dt_stats).touch()
+
+rule get_stats:
+    input:
+        bin_stats = "data/bin_stats/all_bin_stats.tsv",
+        m2_refined_stats = "data/bin_stats/m2_refined_bin_stats.tsv",
+        ro_refined_stats = "data/bin_stats/ro_refined_bin_stats.tsv",
+        dt_refined_stats = "data/bin_stats/dt_refined_bin_stats.tsv",
+        das_tool_wr_stats = "data/bin_stats/das_tool_wr_stats.tsv",
+        das_tool_nr_stats = "data/bin_stats/das_tool_nr_stats.tsv",
+        checkm2_report = "data/checkm2_all_bins/quality_report.tsv",
+        checkm2_report_wr = "data/checkm2_das_tool_wr/quality_report.tsv",
+        checkm2_report_nr = "data/checkm2_das_tool_nr/quality_report.tsv",
+        m2_report = "data/m2_refined_checkm2/quality_report.tsv",
+        ro_report = "data/ro_refined_checkm2/quality_report.tsv",
+        dt_report = "data/dt_refined_checkm2/quality_report.tsv"
+    output:
+        done = "data/stats_done"
+    shell:
+        "touch data/stats_done"
 
 rule das_tool_without_rosella:
     input:
