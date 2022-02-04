@@ -321,11 +321,11 @@ def main():
         '-z', '--longread-type', '--longread_type', '--long_read_type', '--long-read-type',
         help='Whether the sequencing platform and technology for the longreads. '
              '"rs" for PacBio RSII, "sq" for PacBio Sequel, "ccs" for PacBio CCS '
-             'reads and "ont" for Oxford Nanopore',
+             'reads, "ont" for Oxford Nanopore and "ont_hq" for Oxford Nanopore high quality reads (Guppy5+ or Q20)',
         dest='longread_type',
         nargs=1,
         default="ont",
-        choices=["ont", "rs", "sq", "ccs"],
+        choices=["ont","ont_hq", "rs", "sq", "ccs"],
     )
 
     ####################################################################

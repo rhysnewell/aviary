@@ -39,7 +39,7 @@ for rounds in range(snakemake.params.rounds):
             else:
                 subprocess.Popen("minimap2 -t %d -x sr %s %s > %s" % (snakemake.threads, reference, reads, paf),
                                  shell=True).wait()
-        elif snakemake.config["long_read_type"] == 'ont':
+        elif snakemake.config["long_read_type"] in ['ont', 'ont_hq']:
             subprocess.Popen("minimap2 -t %d -x map-ont %s %s > %s" % (snakemake.threads, reference, reads, paf), shell=True).wait()
         else:
             subprocess.Popen("minimap2 -t %d -x map-pb %s %s > %s" % (snakemake.threads, reference, reads, paf), shell=True).wait()
