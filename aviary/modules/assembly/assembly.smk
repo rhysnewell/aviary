@@ -408,7 +408,7 @@ rule spades_assembly:
         actualsize=$(stat -c%s data/short_reads.filt.fastq.gz);
         if [ $actualsize -ge $minimumsize ]
         then
-            if [ {params.long_read_type} = "ont" ]
+            if [ {params.long_read_type} = "ont" || {params.long_read_type} = "ont_hq" ]
             then
                 spades.py --memory {params.max_memory} --meta --nanopore {input.long_reads} --12 {input.fastq} \
                 -o data/spades_assembly -t {threads} -k 21,33,55,81,99,127 && \
