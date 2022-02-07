@@ -181,6 +181,8 @@ rule rosella_refine_benchmark_1:
         "../binning/envs/rosella.yaml",
     threads:
         config["max_threads"]
+    benchmark:
+        "benchmarks/rosella_refine_rosella.txt"
     shell:
         "rosella refine -a {input.assembly} --coverage-values {input.coverages} -f data/all_bins/rosella*.fna "
         "--checkm-file {input.checkm1_done} -o data/rosella_refine_rosella -t {threads} --contaminated-only && "
@@ -198,6 +200,8 @@ rule rosella_refine_benchmark_2:
         "../binning/envs/rosella.yaml",
     threads:
         config["max_threads"]
+    benchmark:
+        "benchmarks/rosella_refine_metabat2.txt"
     shell:
         "rosella refine -a {input.assembly} --coverage-values {input.coverages} -f data/all_bins/*metabat2*.fna "
         "--checkm-file {input.checkm1_done} -o data/rosella_refine_metabat2 -t {threads} --contaminated-only && "
@@ -215,6 +219,8 @@ rule rosella_refine_benchmark_3:
         "../binning/envs/rosella.yaml",
     threads:
         config["max_threads"]
+    benchmark: 
+        "benchmarks/rosella_refine_dastool.txt"
     shell:
         "rosella refine -a {input.assembly} --coverage-values {input.coverages} -d data/das_tool_bins/das_tool_DASTool_bins/ -x fa "
         "--checkm-file {input.checkm_done} -o data/rosella_refine_das_tool -t {threads} --contaminated-only && "

@@ -468,8 +468,7 @@ rule recover_mags:
     output:
         bins = "bins/done",
         taxonomy = "taxonomy/done",
-        diversity = 'diversity/done',
-        quality = 'bins/checkm.out'
+        diversity = 'diversity/done'
     threads:
         config["max_threads"]
     shell:
