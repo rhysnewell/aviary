@@ -102,14 +102,22 @@ for rounds in range(snakemake.params.rounds):
                     excluded_reads.add(qname)
     with open(os.path.join(out, "reads.%s.%d.lst" % (snakemake.params.prefix, rounds)), "w") as o:
         for i in included_reads:
-            # if reads == 'data/short_reads.fastq.gz':
-            #     o.write(i + '/1\n')
-            #     o.write(i + '/2\n')
-            # else:
-            o.write(i + '\n')
+            if reads == 'data/short_reads.fastq.gz' or snakemake.config['short_reads_2'] == 'none':
+                o.write(i + '/1\n')
+                o.write(i + '/2\n')
+            else:
+                o.write(i + '\n')
     logging.info("Retrieving reads...")
-    subprocess.Popen("seqkit -j %d grep --pattern-file %s/reads.%s.%d.lst %s | pigz -p %d > %s/reads.%s.%d.fastq.gz" % \
-                     (snakemake.threads, out, snakemake.params.prefix, rounds, reads, snakemake.threads, out, snakemake.params.prefix, rounds), shell=True).wait()
+    if reads != 'data/short_reads.fastq.gz':
+        for read in reads:
+            seqkit_command = f"seqkit -j {snakemake.threads} grep --pattern-file {out}/reads.{snakemake.params.prefix}.{rounds}.lst {read} | pigz -p {snakemake.threads} >> {out}/reads.{snakemake.params.prefix}.{rounds}.fastq.gz"
+            print(seqkit_command)
+            subprocess.Popen(seqkit_command, shell=True).wait()
+    else:
+        seqkit_command = f"seqkit -j {snakemake.threads} grep --pattern-file {out}/reads.{snakemake.params.prefix}.{rounds}.lst {reads} | pigz -p {snakemake.threads} >> {out}/reads.{snakemake.params.prefix}.{rounds}.fastq.gz"
+        print(seqkit_command)
+        subprocess.Popen(seqkit_command, shell=True).wait()
+
     logging.info("Performing round %d of racon polishing..." % (rounds))
     subprocess.Popen("racon -m 8 -x -6 -g -8 -w 500 -t %d -u %s/reads.%s.%d.fastq.gz %s/filtered.%s.%d.paf %s/filtered.%s.%d.fa"
                      " > %s/filtered.%s.%d.pol.fa" % (snakemake.threads, out, snakemake.params.prefix, rounds, out,

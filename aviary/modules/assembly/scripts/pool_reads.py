@@ -85,7 +85,11 @@ for read in samfile.fetch(until_eof=True):
 for i in outreads:
     with open("data/binned_reads/r" + i + '.short.list', 'w') as read_list:
         for j in outreads[i]:
-            read_list.write(j + '\n')
+            if reads == 'data/short_reads.fastq.gz' or snakemake.config['short_reads_2'] == 'none':
+                read_list.write(j + '/1\n')
+                read_list.write(j + '/2\n')
+            else:
+                read_list.write(j + '\n')
     out_dict[i] += ["data/binned_reads/r" + i + '.short.list', str(outbases[i])]
 
 with open(snakemake.output.list, 'w') as o:

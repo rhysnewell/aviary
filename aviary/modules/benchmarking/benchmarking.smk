@@ -65,7 +65,7 @@ rule binner_result:
         vamb_done = "data/vamb_bins/done",
     group: 'binning'
     output:
-         "data/all_bins/done"
+         "data/all_bins/checkm.out"
     params:
         pplacer_threads = config['pplacer_threads']
     conda:
@@ -209,7 +209,7 @@ rule rosella_refine_benchmark_2:
 
 rule rosella_refine_benchmark_3:
     input:
-        checkm_done = "data/checkm.out",
+        checkm_done = "data/das_tool_bins/checkm.out",
         das_tool_done = "data/das_tool_bins/done",
         coverages = "data/coverm.cov",
         assembly = config["fasta"]
@@ -290,7 +290,7 @@ rule bin_statistics:
         m2_refined = "data/rosella_refine_metabat2/checkm.out",
         ro_refined = "data/rosella_refine_rosella/checkm.out",
         dt_refined = "data/rosella_refine_das_tool/checkm.out",
-        dastool_wr = "data/checkm.out",
+        dastool_wr = "data/das_tool_bins/checkm.out",
         dastool_nr = "data/checkm_without_rosella.out",
         coverage_file = "data/coverm.cov"
     output:
@@ -465,7 +465,7 @@ rule rosella_benchmark:
     input:
         "data/all_bins/done",
         "data/das_tool_bins/done",
-        "data/checkm.out",
+        "data/das_tool_bins/checkm.out",
         "data/checkm_without_rosella.out",
         # "data/coverm_abundances.tsv",
     group: 'binning'
