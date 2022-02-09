@@ -473,11 +473,13 @@ rule recover_mags:
         config["max_threads"]
     shell:
         # Use --precluster-method finch so dashing-related install problems are avoided i.e. https://github.com/dnbaker/dashing/issues/41
-        "mv data/coverm_abundances.tsv bins/; "
-        "mv data/coverm.cov bins/; "
+        "cd bins/; "
+        "ln -s ../data/coverm_abundances.tsv ./; "
+        "ln -s ../data/coverm.cov ./; "
+        "cd ../; "
         # "mv data/*_bins* bins/; "
-        "mv data/singlem_out/ diversity/; "
-        "mv data/gtdbtk/ taxonomy/; "
+        "ln -s data/singlem_out/ diversity/; "
+        "ln -s data/gtdbtk/ taxonomy/; "
         "touch bins/done; "
         "touch diversity/done; "
         "touch taxonomy/done; "

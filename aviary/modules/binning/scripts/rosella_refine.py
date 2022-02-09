@@ -79,7 +79,11 @@ def refinery():
     final_checkm.to_csv("data/checkm.out", sep='\t', index=False)
     final_output_folder = "bins/"
     os.makedirs(final_output_folder, exist_ok=True)
-    shutil.move(final_bins, final_output_folder)
+    if not os.path.exists(final_output_folder):
+        os.symlink(os.path.abspath(final_bins), os.path.abspath(final_output_folder), target_is_directory=True)
+    elif not os.path.islink(final_output_folder):
+        os.rmdir(final_output_folder)
+        os.symlink(os.path.abspath(final_bins), os.path.abspath(final_output_folder), target_is_directory=True)
     final_checkm.to_csv("bins/checkm.out", sep='\t', index=False)
 
 

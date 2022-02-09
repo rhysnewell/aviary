@@ -614,7 +614,9 @@ rule complete_assembly:
     output:
         'assembly/final_contigs.fasta'
     shell:
-        'mkdir -p assembly; mv data/final_contigs.fasta assembly/; '
+        'mkdir -p assembly; '
+        'cd assembly; '
+        'ln -s ../data/final_contigs.fasta ./; '
 
 rule complete_assembly_with_qc:
     input:
@@ -624,5 +626,7 @@ rule complete_assembly_with_qc:
     output:
         'assembly/final_contigs.fasta'
     shell:
-        'mkdir -p assembly; mv data/final_contigs.fasta assembly/; '
+        'mkdir -p assembly; '
+        'cd assembly; '
+        'ln -s ../data/final_contigs.fasta ./; '
 
