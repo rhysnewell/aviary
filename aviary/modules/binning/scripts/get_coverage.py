@@ -2,7 +2,7 @@ import subprocess
 import os
 
 if snakemake.config["long_reads"] != "none" and not os.path.exists("data/long_cov.tsv"):
-    if snakemake.config["long_read_type"][0] == "ont":
+    if snakemake.config["long_read_type"][0] in ["ont", "ont_hq"]:
         subprocess.Popen("coverm contig -t %d -r %s --single %s -p minimap2-ont -m length trimmed_mean variance --bam-file-cache-directory data/binning_bams/ --discard-unmapped --min-read-percent-identity 0.7 > data/long_cov.tsv" %
                          (snakemake.threads, snakemake.input.fasta, " ".join(snakemake.config["long_reads"])), shell=True).wait()
     elif snakemake.config["long_read_type"][0] in ["rs", "sq", "ccs"]:

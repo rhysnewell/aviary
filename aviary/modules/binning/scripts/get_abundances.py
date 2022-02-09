@@ -4,7 +4,7 @@ import sys
 
 
 if snakemake.config["long_reads"] != "none":
-    if snakemake.config["long_read_type"][0] == "ont":
+    if snakemake.config["long_read_type"][0] in ["ont", "ont_hq"]:
         subprocess.Popen("coverm genome -t %d -d bins/final_bins/ --single %s -p minimap2-ont --min-covered-fraction 0.0 -x fna %s > data/long_abundances.tsv" %
                          (snakemake.threads, " ".join(snakemake.config["long_reads"]),
                           '--bam-file-cache-directory data/binned_bams/ --discard-unmapped' if snakemake.config['strain_analysis'] is True else ''), shell=True).wait()
