@@ -340,9 +340,9 @@ rule filter_illumina_assembly:
         fasta = "data/flye_high_cov.fasta"
     group: 'assembly'
     output:
-        bam = temp("data/sr_vs_long.sort.bam"),
-        bai = temp("data/sr_vs_long.sort.bam.bai"),
-        fastq = temp("data/short_reads.filt.fastq.gz")
+        bam = "data/sr_vs_long.sort.bam",
+        bai = "data/sr_vs_long.sort.bam.bai",
+        fastq = "data/short_reads.filt.fastq.gz"
     conda:
         "../../envs/minimap2.yaml"
     threads:
@@ -531,7 +531,7 @@ rule pool_reads:
         metabat_done = "data/metabat_bins/done",
     group: 'assembly'
     output:
-        list = temp("data/list_of_lists.txt")
+        list = "data/list_of_lists.txt"
     conda:
         "envs/pysam.yaml"
     benchmark:
