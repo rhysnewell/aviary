@@ -74,3 +74,6 @@ with open(snakemake.output.fasta, 'w') as o:
                     o.write('>unicycler_' + str(count) + '\n')
                 else:
                     o.write(line)
+
+if not os.path.exists(snakemake.output.fasta):
+    open(snakemake.output.fasta, 'a').close()
