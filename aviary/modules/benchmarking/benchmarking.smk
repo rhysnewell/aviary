@@ -90,7 +90,7 @@ rule binner_result:
 
 rule checkm2_all_bins:
     input:
-        checkm1_done = "data/all_bins/done"
+        checkm1_done = "data/all_bins/checkm.out"
     output:
         checkm2_report = "data/checkm2_all_bins/quality_report.tsv"
     threads:
@@ -105,7 +105,7 @@ rule checkm2_all_bins:
 
 rule checkm2_das_tool:
     input:
-        das_tool_wr = "data/das_tool_bins/done",
+        das_tool_wr = "data/das_tool_bins/checkm.out",
         das_tool_nr = "data/das_tool_without_rosella/done"
     output:
         checkm2_report_wr = "data/checkm2_das_tool_wr/quality_report.tsv",
@@ -210,7 +210,6 @@ rule rosella_refine_benchmark_2:
 rule rosella_refine_benchmark_3:
     input:
         checkm_done = "data/das_tool_bins/checkm.out",
-        das_tool_done = "data/das_tool_bins/done",
         coverages = "data/coverm.cov",
         assembly = config["fasta"]
     output:
@@ -463,8 +462,7 @@ rule checkm_without_rosella:
 
 rule rosella_benchmark:
     input:
-        "data/all_bins/done",
-        "data/das_tool_bins/done",
+        "data/all_bins/checkm.out",
         "data/das_tool_bins/checkm.out",
         "data/checkm_without_rosella.out",
         # "data/coverm_abundances.tsv",

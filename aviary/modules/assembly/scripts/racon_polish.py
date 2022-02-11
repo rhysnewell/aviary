@@ -108,7 +108,7 @@ for rounds in range(snakemake.params.rounds):
             else:
                 o.write(i + '\n')
     logging.info("Retrieving reads...")
-    if reads != 'data/short_reads.fastq.gz':
+    if not isinstance(reads, str):
         for read in reads:
             seqkit_command = f"seqkit -j {snakemake.threads} grep --pattern-file {out}/reads.{snakemake.params.prefix}.{rounds}.lst {read} | pigz -p {snakemake.threads} >> {out}/reads.{snakemake.params.prefix}.{rounds}.fastq.gz"
             print(seqkit_command)
