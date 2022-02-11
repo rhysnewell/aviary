@@ -56,6 +56,9 @@ def refinery():
 
         output_folder = f"data/refined_bins/rosella_refined_{current_iteration}"
 
+        if os.path.exists(output_folder):
+            current_iteration += 1
+            continue
         # Refine the contaminated bins
         refine(assembly, coverage, kmers, checkm_path,
                contaminated_bin_folder, extension, min_bin_size,
@@ -77,13 +80,13 @@ def refinery():
         current_iteration += 1
 
     final_checkm.to_csv("data/checkm.out", sep='\t', index=False)
-    final_output_folder = "bins/"
-    os.makedirs(final_output_folder, exist_ok=True)
+    final_output_folder = "bins/final_bins/"
+    os.makedirs("bins/", exist_ok=True)
     if not os.path.exists(final_output_folder):
         os.symlink(os.path.abspath(final_bins), os.path.abspath(final_output_folder), target_is_directory=True)
     elif not os.path.islink(final_output_folder):
         os.rmdir(final_output_folder)
-        os.symlink(os.path.abspath(final_bins), os.path.abspath(final_output_folder), target_is_directory=True)
+        os.symlink(os.path.abspath(final_bins), os.path.abspath(final_output_folder), target_s_directory=True)
     final_checkm.to_csv("bins/checkm.out", sep='\t', index=False)
 
 

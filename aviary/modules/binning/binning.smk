@@ -148,7 +148,7 @@ rule vamb_binning:
     will be no bins produced by it but all other files will be there
     """
     input:
-        coverage = "data/coverm.filt.cov",
+        coverage = "data/coverm.cov",
         fasta = config["fasta"],
     params:
         min_bin_size = config["min_bin_size"],
@@ -164,7 +164,7 @@ rule vamb_binning:
          config["max_threads"]
     shell:
         "rm -rf data/vamb_bins/; "
-        "bash -c 'vamb --outdir data/vamb_bins/ -p {threads} --jgi data/coverm.filt.cov --fasta {input.fasta} "
+        "bash -c 'vamb --outdir data/vamb_bins/ -p {threads} --jgi {input.coverage} --fasta {input.fasta} "
         "--minfasta {params.min_bin_size} -m {params.min_contig_size} && touch {output[0]}' || "
         "touch {output[0]} && mkdir -p data/vamb_bins/bins"
 
@@ -361,7 +361,8 @@ rule rosella_refine:
         fasta = config["fasta"],
         kmers = "data/rosella_bins/rosella_kmer_table.tsv"
     output:
-        'bins/checkm.out'
+        'bins/checkm.out',
+        'bins/final_bins'
     params:
         min_bin_size = config["min_bin_size"],
         max_iterations = 5,
@@ -405,26 +406,6 @@ rule checkm_das_tool:
         '-x fa data/das_tool_bins/das_tool_DASTool_bins data/das_tool_bins/checkm --tab_table -f data/das_tool_bins/checkm.out'
 
 
-rule gtdbtk:
-    input:
-        done_file = "bins/checkm.out"
-    group: 'binning'
-    output:
-        done = "data/gtdbtk/done"
-    params:
-        gtdbtk_folder = config['gtdbtk_folder'],
-        pplacer_threads = config["pplacer_threads"],
-        bin_folder = "bins/final_bins"
-    conda:
-        "../../envs/gtdbtk.yaml"
-    threads:
-        config["max_threads"]
-    shell:
-        "export GTDBTK_DATA_PATH={params.gtdbtk_folder} && "
-        "gtdbtk classify_wf --cpus {threads} --pplacer_cpus {params.pplacer_threads} --extension fna "
-        "--genome_dir {params.bin_folder} --out_dir data/gtdbtk && touch data/gtdbtk/done"
-
-
 rule singlem_pipe_reads:
     group: 'binning'
     output:
@@ -445,11 +426,13 @@ rule singlem_appraise:
     params:
         pplacer_threads = config['pplacer_threads'],
         fasta = config['fasta']
+    threads:
+        config["pplacer_threads"]
     conda:
         "../../envs/singlem.yaml"
     shell:
-        "singlem pipe --threads {params.pplacer_threads} --sequences bins/final_bins/* --otu_table data/singlem_out/genomes.otu_table.csv; "
-        "singlem pipe --threads {params.pplacer_threads} --sequences {params.fasta} --otu_table data/singlem_out/assembly.otu_table.csv; "
+        "singlem pipe --threads {threads} --sequences bins/final_bins/*.fna --otu_table data/singlem_out/genomes.otu_table.csv; "
+        "singlem pipe --threads {threads} --sequences {params.fasta} --otu_table data/singlem_out/assembly.otu_table.csv; "
         "singlem appraise --metagenome_otu_tables {input.metagenome} --genome_otu_tables data/singlem_out/genomes.otu_table.csv "
         "--assembly_otu_table data/singlem_out/assembly.otu_table.csv "
         "--plot data/singlem_out/singlem_appraise.svg --output_binned_otu_table data/singlem_out/binned.otu_table.csv "
