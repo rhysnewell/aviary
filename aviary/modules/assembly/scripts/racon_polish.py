@@ -84,7 +84,8 @@ for rounds in range(snakemake.params.rounds):
             qname, qlen, qstart, qstop, strand, ref, rlen, rstart, rstop = line.split()[:9]
             qlen, qstart, qstop, rlen, rstart, rstop = map(int, [qlen, qstart, qstop, rlen, rstart, rstop])
             if snakemake.params.illumina:
-                qname = qname[:-2]
+                if qname[:-2] in ['/1', '/2']:
+                    qname = qname[:-2]
             if ref in low_cov:
                 paf_file.write(line)
                 included_reads.add(qname)
