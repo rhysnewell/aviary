@@ -309,6 +309,92 @@ rule rosella:
         "--min-contig-size {params.min_contig_size} --min-bin-size {params.min_bin_size} --n-neighbors 200 && "
         "touch {output.done} || touch {output.done}"
 
+rule checkm_rosella:
+    input:
+        done = "data/rosella_bins/done"
+    params:
+        pplacer_threads = config["pplacer_threads"],
+        bin_folder = "data/rosella_bins/",
+        extension = "fna"
+    group: 'binning'
+    output:
+        output_file = "data/rosella_bins/checkm.out"
+    conda:
+        "../../envs/checkm.yaml"
+    threads:
+        config["max_threads"]
+    shell:
+        'checkm lineage_wf -t {threads} --pplacer_threads {params.pplacer_threads} '
+        '-x {params.extension} {params.bin_folder} {params.bin_folder}/checkm --tab_table -f {output.output_file}'
+
+rule checkm_metabat2:
+    input:
+        done = "data/metabat_bins_2/done"
+    params:
+        pplacer_threads = config["pplacer_threads"],
+        bin_folder = "data/metabat_bins_2/",
+        extension = "fa"
+    group: 'binning'
+    output:
+        output_file = "data/metabat_bins_2/checkm.out"
+    conda:
+        "../../envs/checkm.yaml"
+    threads:
+        config["max_threads"]
+    shell:
+        'checkm lineage_wf -t {threads} --pplacer_threads {params.pplacer_threads} '
+        '-x {params.extension} {params.bin_folder} {params.bin_folder}/checkm --tab_table -f {output.output_file}'
+
+rule refine_rosella:
+    input:
+        checkm = 'data/rosella_bins/checkm.out',
+        rosella = 'data/rosella_bins/done',
+        coverage = "data/coverm.cov",
+        fasta = config["fasta"],
+        kmers = "data/rosella_bins/rosella_kmer_table.tsv"
+    output:
+        'data/rosella_refined/done'
+    params:
+        bin_folder = "data/rosella_bins/",
+        extension = "fna",
+        output_folder = "data/rosella_refined/",
+        min_bin_size = config["min_bin_size"],
+        max_iterations = 5,
+        pplacer_threads = config["pplacer_threads"],
+        max_contamination = 10,
+        final_refining = False
+    threads:
+        config["max_threads"]
+    conda:
+        "envs/rosella.yaml"
+    script:
+        "scripts/rosella_refine.py"
+
+rule refine_metabat2:
+    input:
+        checkm = 'data/metabat_bins_2/checkm.out',
+        rosella = 'data/metabat_bins_2/done',
+        coverage = "data/coverm.cov",
+        fasta = config["fasta"],
+        kmers = "data/rosella_bins/rosella_kmer_table.tsv"
+    output:
+        'data/metabat2_refined/done'
+    params:
+        bin_folder = "data/metabat_bins_2/",
+        extension = "fa",
+        output_folder = "data/metabat2_refined/",
+        min_bin_size = config["min_bin_size"],
+        max_iterations = 5,
+        pplacer_threads = config["pplacer_threads"],
+        max_contamination = 10,
+        final_refining = False
+    threads:
+        config["max_threads"]
+    conda:
+        "envs/rosella.yaml"
+    script:
+        "scripts/rosella_refine.py"
+
 
 rule das_tool:
     """
@@ -316,14 +402,14 @@ rule das_tool:
     """
     input:
         fasta = config["fasta"],
-        metabat2_done = "data/metabat_bins_2/done",
+        metabat2_done = "data/metabat2_refined/done",
         concoct_done = "data/concoct_bins/done",
         maxbin_done = "data/maxbin2_bins/done",
         metabat_sspec = "data/metabat_bins_sspec/done",
         metabat_spec = "data/metabat_bins_spec/done",
         metabat_ssens = "data/metabat_bins_ssens/done",
         metabat_sense = "data/metabat_bins_sens/done",
-        rosella_done = "data/rosella_bins/done",
+        rosella_done = "data/rosella_refined/done",
         vamb_done = "data/vamb_bins/done",
     group: 'binning'
     output:
@@ -336,7 +422,6 @@ rule das_tool:
         "benchmarks/das_tool.benchmark.txt"
     shell:
         """
-        Fasta_to_Scaffolds2Bin.sh -i data/metabat_bins_2 -e fa > data/metabat_bins_2.tsv; 
         Fasta_to_Scaffolds2Bin.sh -i data/metabat_bins_sspec -e fa > data/metabat_bins_sspec.tsv; 
         Fasta_to_Scaffolds2Bin.sh -i data/metabat_bins_ssens -e fa > data/metabat_bins_ssens.tsv; 
         Fasta_to_Scaffolds2Bin.sh -i data/metabat_bins_sens -e fa > data/metabat_bins_sens.tsv; 
@@ -344,7 +429,8 @@ rule das_tool:
         Fasta_to_Scaffolds2Bin.sh -i data/concoct_bins -e fa > data/concoct_bins.tsv; 
         Fasta_to_Scaffolds2Bin.sh -i data/maxbin2_bins -e fasta > data/maxbin_bins.tsv; 
         Fasta_to_Scaffolds2Bin.sh -i data/vamb_bins/bins -e fna > data/vamb_bins.tsv; 
-        Fasta_to_Scaffolds2Bin.sh -i data/rosella_bins -e fna > data/rosella_bins.tsv; 
+        Fasta_to_Scaffolds2Bin.sh -i data/rosella_refined/final_bins/ -e fna > data/rosella_refined_bins.tsv; 
+        Fasta_to_Scaffolds2Bin.sh -i data/metabat2_refined/final_bins/ -e fna > data/metabat2_refined_bins.tsv; 
         scaffold2bin_files=$(find data/*bins*.tsv -not -empty -exec ls {{}} \; | tr "\n" ',' | sed "s/,$//g"); 
         DAS_Tool --search_engine diamond --write_bin_evals 1 --write_bins 1 -t {threads} --score_threshold -42 \
          -i $scaffold2bin_files \
@@ -353,7 +439,7 @@ rule das_tool:
         touch data/das_tool_bins/done
         """
 
-rule rosella_refine:
+rule refine_dastool:
     input:
         checkm = 'data/das_tool_bins/checkm.out',
         das_tool = 'data/das_tool_bins/done',
@@ -362,12 +448,16 @@ rule rosella_refine:
         kmers = "data/rosella_bins/rosella_kmer_table.tsv"
     output:
         'bins/checkm.out',
-        'bins/final_bins'
+        directory('bins/final_bins')
     params:
+        bin_folder = "data/das_tool_bins/das_tool_DASTool_bins/",
+        extension = "fa",
+        output_folder = "data/refined_bins/",
         min_bin_size = config["min_bin_size"],
         max_iterations = 5,
         pplacer_threads = config["pplacer_threads"],
-        max_contamination = 10
+        max_contamination = 10,
+        final_refining = True
     threads:
         config["max_threads"]
     conda:

@@ -272,6 +272,59 @@ rule checkm1_rosella_refine_3:
         "checkm lineage_wf -t {threads} --pplacer_threads {params.pplacer_threads} -x fna "
         "--tab_table data/rosella_refine_das_tool/ data/rosella_refine_das_tool/checkm > {output.checkm1_done} || touch {output.checkm1_done}"
 
+rule das_tool_with_refine:
+    """
+    Runs dasTool on the output of all binning algorithms. If a binner failed to produce bins then their output is ignored
+    """
+    input:
+        fasta = config["fasta"],
+        metabat2_done = "data/metabat_bins_2.tsv",
+        concoct_done = "data/concoct_bins.tsv",
+        maxbin_done = "data/maxbin_bins.tsv",
+        metabat_sspec = "data/metabat_bins_sspec.tsv",
+        metabat_spec = "data/metabat_bins_spec.tsv",
+        metabat_ssens = "data/metabat_bins_ssens.tsv",
+        metabat_sense = "data/metabat_bins_sens.tsv",
+        rosella_done = "data/rosella_bins.tsv",
+        vamb_done = "data/vamb_bins.tsv",
+        rosella_refine = "data/rosella_refine_rosella/checkm.out",
+        metabat_refine = "data/rosella_refine_metabat2/checkm.out"
+    group: 'binning'
+    output:
+        das_tool_done = "data/das_tool_with_refine/done"
+    threads:
+        config["max_threads"]
+    conda:
+        "../binning/envs/das_tool.yaml"
+    benchmark:
+        "benchmarks/das_tool_refine.benchmark.txt"
+    shell:
+        """
+        Fasta_to_Scaffolds2Bin.sh -i data/rosella_refine_rosella -e fna > data/rosella_refine_bins.tsv; 
+        Fasta_to_Scaffolds2Bin.sh -i data/rosella_refine_metabat2 -e fna > data/metabat_refine_bins.tsv; 
+        scaffold2bin_files=$(find data/*bins*.tsv -not -empty -exec ls {{}} \; | tr "\n" ',' | sed "s/,$//g"); 
+        DAS_Tool --search_engine diamond --write_bin_evals 1 --write_bins 1 -t {threads} --score_threshold -42 \
+         -i $scaffold2bin_files \
+         -c {input.fasta} \
+         -o data/das_tool_with_refine/das_tool && \
+        touch data/das_tool_with_refine/done
+        """
+
+rule checkm_das_tool_refine:
+    input:
+        done = "data/das_tool_with_refine/done"
+    params:
+        pplacer_threads = config["pplacer_threads"]
+    group: 'binning'
+    output:
+        "data/das_tool_with_refine/checkm.out"
+    conda:
+        "../../envs/checkm.yaml"
+    threads:
+        config["max_threads"]
+    shell:
+        'checkm lineage_wf -t {threads} --pplacer_threads {params.pplacer_threads} '
+        '-x fa data/das_tool_with_refine/das_tool_DASTool_bins data/das_tool_with_refine/checkm --tab_table -f data/das_tool_with_refine/checkm.out'
 
 rule benchmark_refine:
     input:
@@ -499,4 +552,27 @@ rule reset_rosella:
         'rm -rf data/gtdbtk; '
         'rm -rf data/all_bins/; '
         'rm -rf data/done; '
+        'rm -rf bins/; '
+        'rm -rf taxonomy/; '
+        'rm -rf diversity/'
         'touch data/reset_rosella; '
+
+rule reset_recover:
+    log:
+        temp('data/reset_recover')
+    shell:
+        'rm -f data/rosella_bins.tsv; '
+        'rm -f data/metabat_bin_2.tsv; '
+        'rm -rf data/refined_bins/; '
+        'rm -rf data/rosella_refined/; '
+        'rm -rf data/metabat2_refined/; '
+        'rm -rf data/das_tool_bins/; '
+        'rm -rf data/checkm; '
+        'rm -rf data/checkm.out; '
+        'rm -rf data/gtdbtk; '
+        'rm -rf data/all_bins/; '
+        'rm -rf data/done; '
+        'rm -rf bins/; '
+        'rm -rf taxonomy/; '
+        'rm -rf diversity/'
+        'touch data/reset_recover; '
