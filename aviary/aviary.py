@@ -166,13 +166,6 @@ def main():
     )
 
     base_group.add_argument(
-        '--gtdb-path', '--gtdb_path',
-        help='Path to the local gtdb files',
-        dest='gtdb_path',
-        default=Config.get_gtdb_path(),
-    )
-
-    base_group.add_argument(
         '--dry-run', '--dry_run', '--dryrun',
         help='Perform snakemake dry run, tests workflow order and conda environments',
         type=str2bool,
@@ -321,11 +314,11 @@ def main():
         '-z', '--longread-type', '--longread_type', '--long_read_type', '--long-read-type',
         help='Whether the sequencing platform and technology for the longreads. '
              '"rs" for PacBio RSII, "sq" for PacBio Sequel, "ccs" for PacBio CCS '
-             'reads and "ont" for Oxford Nanopore',
+             'reads, "ont" for Oxford Nanopore and "ont_hq" for Oxford Nanopore high quality reads (Guppy5+ or Q20)',
         dest='longread_type',
         nargs=1,
         default="ont",
-        choices=["ont", "rs", "sq", "ccs"],
+        choices=["ont","ont_hq", "rs", "sq", "ccs"],
     )
 
     ####################################################################
@@ -337,6 +330,13 @@ def main():
         help='Path to the local EnrichM Database files',
         dest='enrichm_db_path',
         default=Config.get_enrichm_db_path(),
+    )
+
+    annotation_group.add_argument(
+        '--gtdb-path', '--gtdb_path',
+        help='Path to the local gtdb files',
+        dest='gtdb_path',
+        default=Config.get_gtdb_path(),
     )
 
     ####################################################################
@@ -363,13 +363,13 @@ def main():
                                         add_help=False)
     mag_group_exclusive = mag_group.add_mutually_exclusive_group()
 
-    mag_group_exclusive.add_argument(
-        '-f', '--genome-fasta-files', '--genome_fasta_files',
-        help='MAGs to be annotated',
-        dest='mags',
-        nargs='*',
-        required=False,
-    )
+    # mag_group_exclusive.add_argument(
+    #     '-f', '--genome-fasta-files', '--genome_fasta_files',
+    #     help='MAGs to be annotated',
+    #     dest='mags',
+    #     nargs='*',
+    #     required=False,
+    # )
 
     mag_group_exclusive.add_argument(
         '-d', '--genome-fasta-directory', '--genome_fasta_directory',
@@ -383,7 +383,7 @@ def main():
         help='File extension of fasta files in --genome-fasta-directory',
         dest='ext',
         required=False,
-        default='fa'
+        default='fna'
     )
 
     #####################################################################
@@ -783,7 +783,6 @@ def main():
                 os.makedirs(prefix)
 
             processor = Processor(args,
-                               args.gtdb_path,
                                args.conda_prefix)
 
             processor.make_config()

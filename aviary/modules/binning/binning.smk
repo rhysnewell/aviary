@@ -148,7 +148,7 @@ rule vamb_binning:
     will be no bins produced by it but all other files will be there
     """
     input:
-        coverage = "data/coverm.filt.cov",
+        coverage = "data/coverm.cov",
         fasta = config["fasta"],
     params:
         min_bin_size = config["min_bin_size"],
@@ -164,7 +164,7 @@ rule vamb_binning:
          config["max_threads"]
     shell:
         "rm -rf data/vamb_bins/; "
-        "bash -c 'vamb --outdir data/vamb_bins/ -p {threads} --jgi data/coverm.filt.cov --fasta {input.fasta} "
+        "bash -c 'vamb --outdir data/vamb_bins/ -p {threads} --jgi {input.coverage} --fasta {input.fasta} "
         "--minfasta {params.min_bin_size} -m {params.min_contig_size} && touch {output[0]}' || "
         "touch {output[0]} && mkdir -p data/vamb_bins/bins"
 
@@ -309,6 +309,92 @@ rule rosella:
         "--min-contig-size {params.min_contig_size} --min-bin-size {params.min_bin_size} --n-neighbors 200 && "
         "touch {output.done} || touch {output.done}"
 
+rule checkm_rosella:
+    input:
+        done = "data/rosella_bins/done"
+    params:
+        pplacer_threads = config["pplacer_threads"],
+        bin_folder = "data/rosella_bins/",
+        extension = "fna"
+    group: 'binning'
+    output:
+        output_file = "data/rosella_bins/checkm.out"
+    conda:
+        "../../envs/checkm.yaml"
+    threads:
+        config["max_threads"]
+    shell:
+        'checkm lineage_wf -t {threads} --pplacer_threads {params.pplacer_threads} '
+        '-x {params.extension} {params.bin_folder} {params.bin_folder}/checkm --tab_table -f {output.output_file}'
+
+rule checkm_metabat2:
+    input:
+        done = "data/metabat_bins_2/done"
+    params:
+        pplacer_threads = config["pplacer_threads"],
+        bin_folder = "data/metabat_bins_2/",
+        extension = "fa"
+    group: 'binning'
+    output:
+        output_file = "data/metabat_bins_2/checkm.out"
+    conda:
+        "../../envs/checkm.yaml"
+    threads:
+        config["max_threads"]
+    shell:
+        'checkm lineage_wf -t {threads} --pplacer_threads {params.pplacer_threads} '
+        '-x {params.extension} {params.bin_folder} {params.bin_folder}/checkm --tab_table -f {output.output_file}'
+
+rule refine_rosella:
+    input:
+        checkm = 'data/rosella_bins/checkm.out',
+        rosella = 'data/rosella_bins/done',
+        coverage = "data/coverm.cov",
+        fasta = config["fasta"],
+        kmers = "data/rosella_bins/rosella_kmer_table.tsv"
+    output:
+        'data/rosella_refined/done'
+    params:
+        bin_folder = "data/rosella_bins/",
+        extension = "fna",
+        output_folder = "data/rosella_refined/",
+        min_bin_size = config["min_bin_size"],
+        max_iterations = 5,
+        pplacer_threads = config["pplacer_threads"],
+        max_contamination = 10,
+        final_refining = False
+    threads:
+        config["max_threads"]
+    conda:
+        "envs/rosella.yaml"
+    script:
+        "scripts/rosella_refine.py"
+
+rule refine_metabat2:
+    input:
+        checkm = 'data/metabat_bins_2/checkm.out',
+        rosella = 'data/metabat_bins_2/done',
+        coverage = "data/coverm.cov",
+        fasta = config["fasta"],
+        kmers = "data/rosella_bins/rosella_kmer_table.tsv"
+    output:
+        'data/metabat2_refined/done'
+    params:
+        bin_folder = "data/metabat_bins_2/",
+        extension = "fa",
+        output_folder = "data/metabat2_refined/",
+        min_bin_size = config["min_bin_size"],
+        max_iterations = 5,
+        pplacer_threads = config["pplacer_threads"],
+        max_contamination = 10,
+        final_refining = False
+    threads:
+        config["max_threads"]
+    conda:
+        "envs/rosella.yaml"
+    script:
+        "scripts/rosella_refine.py"
+
 
 rule das_tool:
     """
@@ -316,14 +402,14 @@ rule das_tool:
     """
     input:
         fasta = config["fasta"],
-        metabat2_done = "data/metabat_bins_2/done",
+        metabat2_done = "data/metabat2_refined/done",
         concoct_done = "data/concoct_bins/done",
         maxbin_done = "data/maxbin2_bins/done",
         metabat_sspec = "data/metabat_bins_sspec/done",
         metabat_spec = "data/metabat_bins_spec/done",
         metabat_ssens = "data/metabat_bins_ssens/done",
         metabat_sense = "data/metabat_bins_sens/done",
-        rosella_done = "data/rosella_bins/done",
+        rosella_done = "data/rosella_refined/done",
         vamb_done = "data/vamb_bins/done",
     group: 'binning'
     output:
@@ -336,7 +422,6 @@ rule das_tool:
         "benchmarks/das_tool.benchmark.txt"
     shell:
         """
-        Fasta_to_Scaffolds2Bin.sh -i data/metabat_bins_2 -e fa > data/metabat_bins_2.tsv; 
         Fasta_to_Scaffolds2Bin.sh -i data/metabat_bins_sspec -e fa > data/metabat_bins_sspec.tsv; 
         Fasta_to_Scaffolds2Bin.sh -i data/metabat_bins_ssens -e fa > data/metabat_bins_ssens.tsv; 
         Fasta_to_Scaffolds2Bin.sh -i data/metabat_bins_sens -e fa > data/metabat_bins_sens.tsv; 
@@ -344,7 +429,8 @@ rule das_tool:
         Fasta_to_Scaffolds2Bin.sh -i data/concoct_bins -e fa > data/concoct_bins.tsv; 
         Fasta_to_Scaffolds2Bin.sh -i data/maxbin2_bins -e fasta > data/maxbin_bins.tsv; 
         Fasta_to_Scaffolds2Bin.sh -i data/vamb_bins/bins -e fna > data/vamb_bins.tsv; 
-        Fasta_to_Scaffolds2Bin.sh -i data/rosella_bins -e fna > data/rosella_bins.tsv; 
+        Fasta_to_Scaffolds2Bin.sh -i data/rosella_refined/final_bins/ -e fna > data/rosella_refined_bins.tsv; 
+        Fasta_to_Scaffolds2Bin.sh -i data/metabat2_refined/final_bins/ -e fna > data/metabat2_refined_bins.tsv; 
         scaffold2bin_files=$(find data/*bins*.tsv -not -empty -exec ls {{}} \; | tr "\n" ',' | sed "s/,$//g"); 
         DAS_Tool --search_engine diamond --write_bin_evals 1 --write_bins 1 -t {threads} --score_threshold -42 \
          -i $scaffold2bin_files \
@@ -353,7 +439,7 @@ rule das_tool:
         touch data/das_tool_bins/done
         """
 
-rule rosella_refine:
+rule refine_dastool:
     input:
         checkm = 'data/das_tool_bins/checkm.out',
         das_tool = 'data/das_tool_bins/done',
@@ -361,12 +447,17 @@ rule rosella_refine:
         fasta = config["fasta"],
         kmers = "data/rosella_bins/rosella_kmer_table.tsv"
     output:
-        'bins/checkm.out'
+        'bins/checkm.out',
+        directory('bins/final_bins')
     params:
+        bin_folder = "data/das_tool_bins/das_tool_DASTool_bins/",
+        extension = "fa",
+        output_folder = "data/refined_bins/",
         min_bin_size = config["min_bin_size"],
         max_iterations = 5,
         pplacer_threads = config["pplacer_threads"],
-        max_contamination = 10
+        max_contamination = 10,
+        final_refining = True
     threads:
         config["max_threads"]
     conda:
@@ -405,26 +496,6 @@ rule checkm_das_tool:
         '-x fa data/das_tool_bins/das_tool_DASTool_bins data/das_tool_bins/checkm --tab_table -f data/das_tool_bins/checkm.out'
 
 
-rule gtdbtk:
-    input:
-        done_file = "bins/checkm.out"
-    group: 'binning'
-    output:
-        done = "data/gtdbtk/done"
-    params:
-        gtdbtk_folder = config['gtdbtk_folder'],
-        pplacer_threads = config["pplacer_threads"],
-        bin_folder = "bins/final_bins"
-    conda:
-        "../../envs/gtdbtk.yaml"
-    threads:
-        config["max_threads"]
-    shell:
-        "export GTDBTK_DATA_PATH={params.gtdbtk_folder} && "
-        "gtdbtk classify_wf --cpus {threads} --pplacer_cpus {params.pplacer_threads} --extension fna "
-        "--genome_dir {params.bin_folder} --out_dir data/gtdbtk && touch data/gtdbtk/done"
-
-
 rule singlem_pipe_reads:
     group: 'binning'
     output:
@@ -445,11 +516,13 @@ rule singlem_appraise:
     params:
         pplacer_threads = config['pplacer_threads'],
         fasta = config['fasta']
+    threads:
+        config["pplacer_threads"]
     conda:
         "../../envs/singlem.yaml"
     shell:
-        "singlem pipe --threads {params.pplacer_threads} --sequences bins/final_bins/* --otu_table data/singlem_out/genomes.otu_table.csv; "
-        "singlem pipe --threads {params.pplacer_threads} --sequences {params.fasta} --otu_table data/singlem_out/assembly.otu_table.csv; "
+        "singlem pipe --threads {threads} --sequences bins/final_bins/*.fna --otu_table data/singlem_out/genomes.otu_table.csv; "
+        "singlem pipe --threads {threads} --sequences {params.fasta} --otu_table data/singlem_out/assembly.otu_table.csv; "
         "singlem appraise --metagenome_otu_tables {input.metagenome} --genome_otu_tables data/singlem_out/genomes.otu_table.csv "
         "--assembly_otu_table data/singlem_out/assembly.otu_table.csv "
         "--plot data/singlem_out/singlem_appraise.svg --output_binned_otu_table data/singlem_out/binned.otu_table.csv "
@@ -468,17 +541,18 @@ rule recover_mags:
     output:
         bins = "bins/done",
         taxonomy = "taxonomy/done",
-        diversity = 'diversity/done',
-        quality = 'bins/checkm.out'
+        diversity = 'diversity/done'
     threads:
         config["max_threads"]
     shell:
         # Use --precluster-method finch so dashing-related install problems are avoided i.e. https://github.com/dnbaker/dashing/issues/41
-        "mv data/coverm_abundances.tsv bins/; "
-        "mv data/coverm.cov bins/; "
+        "cd bins/; "
+        "ln -s ../data/coverm_abundances.tsv ./; "
+        "ln -s ../data/coverm.cov ./; "
+        "cd ../; "
         # "mv data/*_bins* bins/; "
-        "mv data/singlem_out/ diversity/; "
-        "mv data/gtdbtk/ taxonomy/; "
+        "ln -s data/singlem_out/ diversity/; "
+        "ln -s data/gtdbtk/ taxonomy/; "
         "touch bins/done; "
         "touch diversity/done; "
         "touch taxonomy/done; "

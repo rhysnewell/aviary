@@ -83,12 +83,10 @@ def get_snakefile(file="Snakefile"):
 class Processor:
     def __init__(self,
                  args,
-                 gtdbtk=Config.get_gtdb_path(),
                  conda_prefix=Config.get_conda_path(),
                  ):
 
 
-        self.gtdbtk = gtdbtk
         self.conda_prefix = conda_prefix
 
         try:
@@ -147,10 +145,17 @@ class Processor:
         except AttributeError:
             self.mag_directory = 'none'
 
+
         try:
-            self.mags = args.mags
+            self.gtdbtk = args.gtdb_path
+            self.enrichm = args.enrichm_db_path
         except AttributeError:
-            self.mags = 'none'
+            self.gtdbtk = Config.get_gtdb_path()
+            self.enrichm = Config.get_enrichm_db_path()
+        # try:
+        #     self.mags = args.mags
+        # except AttributeError:
+        #     self.mags = 'none'
 
         try:
             self.mag_extension = args.ext
@@ -224,11 +229,13 @@ class Processor:
         conf["long_read_type"] = self.longread_type
         conf["min_contig_size"] = int(self.min_contig_size)
         conf["min_bin_size"] = int(self.min_bin_size)
-        conf["gtdbtk_folder"] = os.path.abspath(self.gtdbtk)
+        conf["gtdbtk_folder"] = self.gtdbtk
+        conf["enrichm_folder"] = self.enrichm
+
         conf["checkm2_db_path"] = self.checkm2_db
         conf["mag_directory"] = self.mag_directory
         conf["mag_extension"] = self.mag_extension
-        conf["mags"] = self.mags
+        # conf["mags"] = self.mags
         conf["previous_runs"] = self.previous_runs
         conf["min_completeness"] = self.min_completeness
         conf["max_contamination"] = self.max_contamination

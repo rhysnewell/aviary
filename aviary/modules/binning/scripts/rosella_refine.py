@@ -15,8 +15,8 @@ def refinery():
     current_iteration = 0
     checkm_path = snakemake.input.checkm
     current_checkm = pd.read_csv(checkm_path, sep='\t', comment="[")
-    bin_folder = "data/das_tool_bins/das_tool_DASTool_bins/"
-    extension = "fa"
+    bin_folder = snakemake.params.bin_folder
+    extension = snakemake.params.extension
 
     # These will not change
     coverage = snakemake.input.coverage
@@ -27,8 +27,8 @@ def refinery():
     pplacer_threads = int(snakemake.params.pplacer_threads)
     threads = int(snakemake.threads)
     max_contamination = int(snakemake.params.max_contamination)
-    contaminated_bin_folder = "data/refined_bins/contaminated_bins"
-    final_bins = "data/refined_bins/final_bins"
+    contaminated_bin_folder = snakemake.params.output_folder + "/contaminated_bins"
+    final_bins = snakemake.params.output_folder + "/final_bins"
 
     os.makedirs(contaminated_bin_folder, exist_ok=True)
     os.makedirs(final_bins, exist_ok=True)
@@ -54,8 +54,11 @@ def refinery():
             final_checkm = pd.concat([final_checkm, bins_to_keep])
             break
 
-        output_folder = f"data/refined_bins/rosella_refined_{current_iteration}"
+        output_folder = f"{snakemake.params.output_folder}/rosella_refined_{current_iteration}"
 
+        if os.path.exists(output_folder):
+            current_iteration += 1
+            continue
         # Refine the contaminated bins
         refine(assembly, coverage, kmers, checkm_path,
                contaminated_bin_folder, extension, min_bin_size,
@@ -65,7 +68,11 @@ def refinery():
         bin_folder = output_folder
 
         # retrieve the checkm results for the refined bins
-        get_checkm_results(bin_folder, threads, pplacer_threads)
+        try:
+            get_checkm_results(bin_folder, threads, pplacer_threads)
+        except FileNotFoundError:
+            # No bins to refine, break out and move on
+            break
 
         # update the checkm results and counter
         checkm_path = f"{bin_folder}/checkm.out"
@@ -76,11 +83,18 @@ def refinery():
         final_checkm = pd.concat([final_checkm, bins_to_keep])
         current_iteration += 1
 
-    final_checkm.to_csv("data/checkm.out", sep='\t', index=False)
-    final_output_folder = "bins/"
-    os.makedirs(final_output_folder, exist_ok=True)
-    shutil.move(final_bins, final_output_folder)
-    final_checkm.to_csv("bins/checkm.out", sep='\t', index=False)
+    if snakemake.params.final_refining:
+        final_checkm.to_csv("data/checkm.out", sep='\t', index=False)
+        final_output_folder = "bins/final_bins/"
+        os.makedirs("bins/", exist_ok=True)
+        if not os.path.exists(final_output_folder):
+            os.symlink(os.path.abspath(final_bins), os.path.abspath(final_output_folder), target_is_directory=True)
+        elif not os.path.islink(final_output_folder):
+            os.rmdir(final_output_folder)
+            os.symlink(os.path.abspath(final_bins), os.path.abspath(final_output_folder), target_s_directory=True)
+        final_checkm.to_csv("bins/checkm.out", sep='\t', index=False)
+    else:
+        open(f"{snakemake.params.output_folder}/done", "a").close()
 
 
 

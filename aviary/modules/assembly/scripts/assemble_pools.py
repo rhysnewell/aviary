@@ -30,13 +30,13 @@ with open(snakemake.input.list) as f:
         out_assemblies.append('data/final_assemblies/%s_unicyc/assembly.fasta' % mb_bin)
         if not os.path.exists('data/final_assemblies/%s_unicyc/assembly.fasta' % mb_bin):
             if short_reads == 'none':
-                subprocess.Popen("unicycler -t %d -l %s -o data/final_assemblies/%s_unicyc" % (
+                subprocess.Popen("unicycler --verbosity 0 -t %d -l %s -o data/final_assemblies/%s_unicyc" % (
                     snakemake.threads, long_reads, mb_bin), shell=True).wait()
             elif no_long:
-                subprocess.Popen("unicycler -t %d -1 %s -2 %s -o data/final_assemblies/%s_unicyc" % (
+                subprocess.Popen("unicycler --verbosity 0 -t %d -1 %s -2 %s -o data/final_assemblies/%s_unicyc" % (
                 snakemake.threads, short_reads_1, short_reads_2, mb_bin), shell=True).wait()
             else:
-                subprocess.Popen("unicycler -t %d -1 %s -2 %s -l %s -o data/final_assemblies/%s_unicyc" % (
+                subprocess.Popen("unicycler --verbosity 0 -t %d -1 %s -2 %s -l %s -o data/final_assemblies/%s_unicyc" % (
                     snakemake.threads, short_reads_1, short_reads_2, long_reads, mb_bin), shell=True).wait()
 
 unbinned_set = set()
@@ -74,3 +74,6 @@ with open(snakemake.output.fasta, 'w') as o:
                     o.write('>unicycler_' + str(count) + '\n')
                 else:
                     o.write(line)
+
+if not os.path.exists(snakemake.output.fasta):
+    open(snakemake.output.fasta, 'a').close()

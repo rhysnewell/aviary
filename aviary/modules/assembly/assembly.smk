@@ -340,9 +340,9 @@ rule filter_illumina_assembly:
         fasta = "data/flye_high_cov.fasta"
     group: 'assembly'
     output:
-        bam = temp("data/sr_vs_long.sort.bam"),
-        bai = temp("data/sr_vs_long.sort.bam.bai"),
-        fastq = temp("data/short_reads.filt.fastq.gz")
+        bam = "data/sr_vs_long.sort.bam",
+        bai = "data/sr_vs_long.sort.bam.bai",
+        fastq = "data/short_reads.filt.fastq.gz"
     conda:
         "../../envs/minimap2.yaml"
     threads:
@@ -408,7 +408,7 @@ rule spades_assembly:
         actualsize=$(stat -c%s data/short_reads.filt.fastq.gz);
         if [ $actualsize -ge $minimumsize ]
         then
-            if [ {params.long_read_type} = "ont" ]
+            if [ {params.long_read_type} = "ont" ] || [ {params.long_read_type} = "ont_hq" ]
             then
                 spades.py --memory {params.max_memory} --meta --nanopore {input.long_reads} --12 {input.fastq} \
                 -o data/spades_assembly -t {threads} -k 21,33,55,81,99,127 && \
@@ -531,7 +531,7 @@ rule pool_reads:
         metabat_done = "data/metabat_bins/done",
     group: 'assembly'
     output:
-        list = temp("data/list_of_lists.txt")
+        list = "data/list_of_lists.txt"
     conda:
         "envs/pysam.yaml"
     benchmark:
@@ -614,7 +614,9 @@ rule complete_assembly:
     output:
         'assembly/final_contigs.fasta'
     shell:
-        'mkdir -p assembly; mv data/final_contigs.fasta assembly/; '
+        'mkdir -p assembly; '
+        'cd assembly; '
+        'ln -s ../data/final_contigs.fasta ./; '
 
 rule complete_assembly_with_qc:
     input:
@@ -624,5 +626,7 @@ rule complete_assembly_with_qc:
     output:
         'assembly/final_contigs.fasta'
     shell:
-        'mkdir -p assembly; mv data/final_contigs.fasta assembly/; '
+        'mkdir -p assembly; '
+        'cd assembly; '
+        'ln -s ../data/final_contigs.fasta ./; '
 
