@@ -130,12 +130,12 @@ def main():
         default=8,
     )
 
-    base_group.add_argument(
-        '-p', '--pplacer-threads', '--pplacer_threads',
-        help='The number of threads given to pplacer, values above 48 will be scaled down',
-        dest='pplacer_threads',
-        default=8,
-    )
+    # base_group.add_argument(
+    #     '-p', '--pplacer-threads', '--pplacer_threads',
+    #     help='The number of threads given to pplacer, values above 48 will be scaled down',
+    #     dest='pplacer_threads',
+    #     default=8,
+    # )
 
     base_group.add_argument(
         '-n', '--n-cores', '--n_cores',
@@ -221,6 +221,14 @@ def main():
     ####################################################################
     qc_group = argparse.ArgumentParser(formatter_class=CustomHelpFormatter,
                                                add_help=False)
+
+    qc_group.add_argument(
+        '-g', '--gold-standard-assembly', '--gold_standard_assembly',
+        help='Gold standard assembly to compare either the Aviary assembly or a given input assembly against',
+        dest="gold_standard",
+        default='none'
+    )
+
     qc_group.add_argument(
         '-r', '--reference-filter', '--reference_filter',
         help='Reference filter file to aid in the assembly',
@@ -400,7 +408,7 @@ def main():
     )
 
     isolate_group.add_argument(
-        '-g', '--genome-size', '--genome_size',
+        '--genome-size', '--genome_size',
         help='Approximate size of the isolate genome to be assembled',
         dest='genome_size',
         nargs=1,
@@ -469,7 +477,7 @@ def main():
     # )
     #
     # viral_group.add_argument(
-    #     '-g', '--genome-size', '--genome_size',
+    #     '--genome-size', '--genome_size',
     #     help='Approximate size of the isolate genome to be assembled',
     #     dest='genome_size',
     #     nargs=1,

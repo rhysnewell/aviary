@@ -95,9 +95,12 @@ class Processor:
             self.assembly = 'none'
 
         try:
-            self.reference_filter = args.reference_filter
+
+            self.reference_filter = os.path.abspath(args.reference_filter) if args.reference_filter != 'none' else 'none'
+            self.gold_standard = os.path.abspath(args.gold_standard) if args.gold_standard != 'none' else 'none'
         except AttributeError:
             self.reference_filter = 'none'
+            self.gold_standard = 'none'
 
         try:
             self.longreads = args.longreads
@@ -109,11 +112,7 @@ class Processor:
             self.longread_type = 'none'
         self.threads = args.max_threads
         self.max_memory = args.max_memory
-
-        try:
-            self.pplacer_threads = min(int(args.pplacer_threads), 48)
-        except AttributeError:
-            self.pplacer_threads = 8
+        self.pplacer_threads = min(int(self.threads), 48)
 
         try:
             self.min_contig_size = args.min_contig_size
@@ -141,7 +140,7 @@ class Processor:
             self.pe2 = 'none'
 
         try:
-            self.mag_directory = args.directory
+            self.mag_directory = os.path.abspath(args.directory) if args.directory != 'none' else 'none'
         except AttributeError:
             self.mag_directory = 'none'
 
@@ -220,6 +219,7 @@ class Processor:
 
         conf["fasta"] = self.assembly
         conf["reference_filter"] = self.reference_filter
+        conf["gsa"] = self.gold_standard
         conf["max_threads"] = int(self.threads)
         conf["pplacer_threads"] = int(self.pplacer_threads)
         conf["max_memory"] = int(self.max_memory)

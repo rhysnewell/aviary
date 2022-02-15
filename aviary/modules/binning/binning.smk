@@ -413,7 +413,7 @@ rule das_tool:
         vamb_done = "data/vamb_bins/done",
     group: 'binning'
     output:
-        das_tool_done = "data/das_tool_bins/done"
+        das_tool_done = "data/das_tool_bins_pre_refine/done"
     threads:
         config["max_threads"]
     conda:
@@ -435,14 +435,14 @@ rule das_tool:
         DAS_Tool --search_engine diamond --write_bin_evals 1 --write_bins 1 -t {threads} --score_threshold -42 \
          -i $scaffold2bin_files \
          -c {input.fasta} \
-         -o data/das_tool_bins/das_tool && \
-        touch data/das_tool_bins/done
+         -o data/das_tool_bins_pre_refine/das_tool && \
+        touch data/das_tool_bins_pre_refine/done
         """
 
 rule refine_dastool:
     input:
-        checkm = 'data/das_tool_bins/checkm.out',
-        das_tool = 'data/das_tool_bins/done',
+        checkm = 'data/das_tool_bins_pre_refine/checkm.out',
+        das_tool = 'data/das_tool_bins_pre_refine/done',
         coverage = "data/coverm.cov",
         fasta = config["fasta"],
         kmers = "data/rosella_bins/rosella_kmer_table.tsv"
@@ -450,7 +450,7 @@ rule refine_dastool:
         'bins/checkm.out',
         directory('bins/final_bins')
     params:
-        bin_folder = "data/das_tool_bins/das_tool_DASTool_bins/",
+        bin_folder = "data/das_tool_bins_pre_refine/das_tool_DASTool_bins/",
         extension = "fa",
         output_folder = "data/refined_bins/",
         min_bin_size = config["min_bin_size"],
@@ -481,19 +481,19 @@ rule get_abundances:
 
 rule checkm_das_tool:
     input:
-        done = "data/das_tool_bins/done"
+        done = "data/das_tool_bins_pre_refine/done"
     params:
         pplacer_threads = config["pplacer_threads"]
     group: 'binning'
     output:
-        "data/das_tool_bins/checkm.out"
+        "data/das_tool_bins_pre_refine/checkm.out"
     conda:
         "../../envs/checkm.yaml"
     threads:
         config["max_threads"]
     shell:
         'checkm lineage_wf -t {threads} --pplacer_threads {params.pplacer_threads} '
-        '-x fa data/das_tool_bins/das_tool_DASTool_bins data/das_tool_bins/checkm --tab_table -f data/das_tool_bins/checkm.out'
+        '-x fa data/das_tool_bins_pre_refine/das_tool_DASTool_bins data/das_tool_bins_pre_refine/checkm --tab_table -f data/das_tool_bins_pre_refine/checkm.out'
 
 
 rule singlem_pipe_reads:

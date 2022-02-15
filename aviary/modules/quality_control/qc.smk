@@ -3,6 +3,9 @@ ruleorder: complete_qc_all > complete_qc_long > complete_qc_short
 # ruleorder: filtlong_paired > filtlong_single
 # ruleorder: filtlong_paired > filtlong_no_reference
 
+if config['fasta'] == 'none':
+    config['fasta'] = 'assembly/final_contigs.fasta'
+
 # If you don't want to filter the reads using a genome just link them into the folder
 rule link_reads:
     input:
@@ -146,6 +149,61 @@ rule nanoplot:
     shell:
         "NanoPlot -o www/nanoplot -p longReads -t {threads} --fastq {input.long}; touch www/nanoplot/done"
 
+rule metaquast:
+    """
+    MetaQuast on input assembly. Compare against GSA if one is provided
+    """
+    input:
+        assembly = config['fasta']
+    params:
+        gsa = f" -r {config['gsa']} " if config['gsa'] != 'none' else ""
+    output:
+        "www/metaquast/report.txt"
+    threads:
+        config["max_threads"]
+    conda:
+        "envs/quast.yaml"
+    shell:
+        "metaquast.py {input.assembly} -t {threads} -o www/metaquast {params.gsa} --space-efficient"
+
+rule read_fraction_recovered:
+    """
+    CoverM genome on assembly to get percentage of reads mapping
+    """
+    input:
+        fasta = config["fasta"]
+    group: 'binning'
+    output:
+        "www/fraction_recovered/short_fraction_recovered" if config['short_reads_1'] != 'none' else "www/fraction_recovered/long_fraction_recovered"
+    conda:
+        "../../envs/coverm.yaml"
+    threads:
+        config["max_threads"]
+    script:
+        "scripts/fraction_recovered.py"
+
+rule assembly_size:
+    """
+    Uses the bbmap stats.sh script to retun N/L50 values and the distribution of contig sizes
+    """
+    input:
+        fasta = config["fasta"]
+    output:
+        sizes = "www/assembly_stats.txt"
+    shell:
+        "stats.sh {input.fasta} > {output.sizes}"
+
+
+rule assembly_quality:
+    """
+    Final return point for assembly quality statistics
+    """
+    input:
+        "www/metaquast/report.txt",
+        "www/fraction_recovered/short_fraction_recovered" if config['short_reads_1'] != 'none' else "www/fraction_recovered/long_fraction_recovered",
+        "www/assembly_stats.txt"
+    log:
+        temp('www/assembly_quality_stats')
 
 rule complete_qc_short:
     input:
