@@ -48,10 +48,6 @@ def refinery():
         # put contaminated bins in one folder. If no contaminated bins then break
         if not collect_contaminated_bins(
                 current_checkm, max_contamination, bin_folder, extension, contaminated_bin_folder):
-            current_checkm = pd.read_csv(f"{bin_folder}/checkm.out", sep='\t', comment='[')
-            bins_to_keep = current_checkm[current_checkm["Contamination"] <= max_contamination]
-            bins_to_keep = move_finished_bins(bins_to_keep, bin_folder, "fna", final_bins, current_iteration)
-            final_checkm = pd.concat([final_checkm, bins_to_keep])
             break
 
         output_folder = f"{snakemake.params.output_folder}/rosella_refined_{current_iteration}"

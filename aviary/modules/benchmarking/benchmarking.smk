@@ -637,3 +637,64 @@ rule reset_recover:
         'rm -rf taxonomy/; '
         'rm -rf diversity/'
         'touch data/reset_recover; '
+
+rule magpurify_metabat2:
+    input:
+        "data/metabat_bins_2/done",
+    output:
+        output_folder = directory("data/magpurify_metabat2/"),
+        checkm_out = "data/magpurify_metabat2/cleaned_bins/checkm.out"
+    threads:
+        config["max_threads"]
+    conda:
+        "envs/magpurify.yaml"
+    params:
+        pplacer_threads = config["pplacer_threads"]
+    shell:
+        "export MAGPURIFYDB=/home/n10853499/databases/MAGpurify-db-v1.0; "
+        "mkdir -p {output.output_folder}; "
+        "mkdir -p {output.output_folder}/cleaned_bins/; "
+        "ls data/metabat_bins_2/*.fa | parallel -j {threads} "
+        "'magpurify phylo-markers {{}} {output.output_folder}/{{/.}}; "
+        "magpurify clade-markers {{}} {output.output_folder}/{{/.}}; "
+        "magpurify tetra-freq {{}} {output.output_folder}/{{/.}}; "
+        "magpurify gc-content {{}} {output.output_folder}/{{/.}}; "
+        "magpurify known-contam {{}} {output.output_folder}/{{/.}}; "
+        "magpurify clean-bin {{}} {output.output_folder}/{{/.}} {output.output_folder}/cleaned_bins/{{/.}}_cleaned.fna'; "
+        "checkm lineage_wf -t {threads} --pplacer_threads {params.pplacer_threads} "
+        "-x fna {output.output_folder}/cleaned_bins/ {output.output_folder}/cleaned_bins/checkm "
+        "--tab_table -f {output.output_folder}/cleaned_bins/checkm.out"
+
+rule magpurify_rosella:
+    input:
+        "data/rosella_bins/done",
+    output:
+        output_folder = directory("data/magpurify_rosella/"),
+        checkm_out = "data/magpurify_rosella/cleaned_bins/checkm.out"
+    threads:
+        config["max_threads"]
+    conda:
+        "envs/magpurify.yaml"
+    params:
+        pplacer_threads = config["pplacer_threads"]
+    shell:
+        "export MAGPURIFYDB=/home/n10853499/databases/MAGpurify-db-v1.0; "
+        "mkdir -p {output.output_folder}; "
+        "mkdir -p {output.output_folder}/cleaned_bins/; "
+        "ls data/rosella_bins/*.fna | parallel -j {threads} "
+        "'magpurify phylo-markers {{}} {output.output_folder}/{{/.}}; "
+        "magpurify clade-markers {{}} {output.output_folder}/{{/.}}; "
+        "magpurify tetra-freq {{}} {output.output_folder}/{{/.}}; "
+        "magpurify gc-content {{}} {output.output_folder}/{{/.}}; "
+        "magpurify known-contam {{}} {output.output_folder}/{{/.}}; "
+        "magpurify clean-bin {{}} {output.output_folder}/{{/.}} {output.output_folder}/cleaned_bins/{{/.}}_cleaned.fna'; "
+        "checkm lineage_wf -t {threads} --pplacer_threads {params.pplacer_threads} "
+        "-x fna {output.output_folder}/cleaned_bins/ {output.output_folder}/cleaned_bins/checkm "
+        "--tab_table -f {output.output_folder}/cleaned_bins/checkm.out"
+
+rule complete_magpurify:
+    input:
+         checkm_out_1 = "data/magpurify_metabat2/cleaned_bins/checkm.out",
+         checkm_out_2 = "data/magpurify_rosella/cleaned_bins/checkm.out"
+    log:
+       temp("data/magpurify_done")

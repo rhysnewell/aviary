@@ -306,8 +306,7 @@ rule get_high_cov_contigs:
                 if line.startswith("L"):
                     if (line.split()[1], line.split()[2] == '+') in short_edges \
                             and (line.split()[3], line.split()[4] == '-') in short_edges \
-                            and not line.split()[1] == line.split()[3] \
-                            and not line.split()[5] == '0M':
+                            and not line.split()[1] == line.split()[3]: # and not line.split()[5] == '0M':
                         for i in short_edges[(line.split()[1], line.split()[2] == '+')]:
                             filtered_contigs.add(i)
                         for i in short_edges[(line.split()[3], line.split()[4] == '-')]:

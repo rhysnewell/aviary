@@ -130,12 +130,12 @@ def main():
         default=8,
     )
 
-    # base_group.add_argument(
-    #     '-p', '--pplacer-threads', '--pplacer_threads',
-    #     help='The number of threads given to pplacer, values above 48 will be scaled down',
-    #     dest='pplacer_threads',
-    #     default=8,
-    # )
+    base_group.add_argument(
+        '-p', '--pplacer-threads', '--pplacer_threads',
+        help=argparse.SUPPRESS,
+        dest='pplacer_threads',
+        default=8,
+    )
 
     base_group.add_argument(
         '-n', '--n-cores', '--n_cores',

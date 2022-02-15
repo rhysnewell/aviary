@@ -1,0 +1,7 @@
+channels:
+  - conda-forge
+  - bioconda
+dependencies:
+  - magpurify
+  - checkm-genome
+  - parallel
