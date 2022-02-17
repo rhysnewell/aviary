@@ -66,18 +66,17 @@ def refinery():
         # retrieve the checkm results for the refined bins
         try:
             get_checkm_results(bin_folder, threads, pplacer_threads)
+            # update the checkm results and counter
+            checkm_path = f"{bin_folder}/checkm.out"
+            current_checkm = pd.read_csv(checkm_path, sep='\t', comment='[')
+
+            bins_to_keep = current_checkm.copy().loc[current_checkm["Contamination"] <= max_contamination]
+            bins_to_keep = move_finished_bins(bins_to_keep, bin_folder, "fna", final_bins, current_iteration)
+            final_checkm = pd.concat([final_checkm, bins_to_keep])
+            current_iteration += 1
         except FileNotFoundError:
             # No bins to refine, break out and move on
             break
-
-        # update the checkm results and counter
-        checkm_path = f"{bin_folder}/checkm.out"
-        current_checkm = pd.read_csv(checkm_path, sep='\t', comment='[')
-
-        bins_to_keep = current_checkm.copy().loc[current_checkm["Contamination"] <= max_contamination]
-        bins_to_keep = move_finished_bins(bins_to_keep, bin_folder, "fna", final_bins, current_iteration)
-        final_checkm = pd.concat([final_checkm, bins_to_keep])
-        current_iteration += 1
 
     if snakemake.params.final_refining:
         final_checkm.to_csv("data/checkm.out", sep='\t', index=False)
