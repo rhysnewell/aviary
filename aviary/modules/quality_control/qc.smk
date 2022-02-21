@@ -11,12 +11,14 @@ rule link_reads:
     input:
         fastq = config["long_reads"],
     output:
-        temp("data/long_reads.fastq.gz")
+        "data/long_reads.fastq.gz"
     threads:
         config['max_threads']
     group: 'qc'
     run:
         import subprocess
+        import os
+        import sys
         if len(input.fastq) == 1: # Check if only one longread sample
             shell("ln -s {input.fastq} {output}")
         elif len(input.fastq) > 1:

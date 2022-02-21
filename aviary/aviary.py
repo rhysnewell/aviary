@@ -98,6 +98,12 @@ def str2bool(v):
         raise argparse.ArgumentTypeError('Boolean value expected.')
 
 def main():
+    # Source the conda environment variables in case users have previously set
+    # the variables using config but have not restarted the environment.
+    try:
+        Config.source_conda_env()
+    except FileNotFoundError:
+        Config.source_bashrc()
 
     ############################ ~ Main Parser ~ ##############################
     main_parser = argparse.ArgumentParser(prog='aviary',
@@ -162,7 +168,7 @@ def main():
         '--conda-prefix', '--conda_prefix',
         help='Path to the location of installed conda environments, or where to install new environments',
         dest='conda_prefix',
-        default=Config.get_conda_path(),
+        default=Config.get_software_db_path('CONDA_ENV_PATH', '--conda-prefix'),
     )
 
     base_group.add_argument(
@@ -255,7 +261,7 @@ def main():
         '--keep-percent', '--keep_percent',
         help='Percentage of reads passing quality thresholds kept by filtlong',
         dest="keep_percent",
-        default=99
+        default=100
     )
 
 
@@ -337,14 +343,21 @@ def main():
         '--enrichm-db-path', '--enrichm_db_path',
         help='Path to the local EnrichM Database files',
         dest='enrichm_db_path',
-        default=Config.get_enrichm_db_path(),
+        default=Config.get_software_db_path('ENRICHM_DB', '--enrichm-db-path'),
     )
 
     annotation_group.add_argument(
         '--gtdb-path', '--gtdb_path',
-        help='Path to the local gtdb files',
+        help='Path to the local gtdb database files',
         dest='gtdb_path',
-        default=Config.get_gtdb_path(),
+        default=Config.get_software_db_path('GTDBTK_DATA_PATH', '--gtdb-path'),
+    )
+
+    annotation_group.add_argument(
+        '--eggnog-db-path', '--eggnog_db_path',
+        help='Path to the local eggnog database files',
+        dest='eggnog_db_path',
+        default=Config.get_software_db_path('EGGNOG_DATA_DIR', '--eggnog-db-path'),
     )
 
     ####################################################################
@@ -717,7 +730,7 @@ def main():
 
     configure_options.add_argument(
         '--gtdb-path', '--gtdb_path',
-        help='Path to the local gtdb files',
+        help='Path to the local gtdb database files',
         dest='gtdb_path',
         required=False,
     )
@@ -729,17 +742,24 @@ def main():
         required=False,
     )
 
-    configure_options.add_argument(
-        '--enrichm-db-path', '--enrichm_db_path',
-        help='Path to the local EnrichM database files',
-        dest='enrichm_db_path',
-        required=False,
-    )
+    # configure_options.add_argument(
+    #     '--enrichm-db-path', '--enrichm_db_path',
+    #     help='Path to the local EnrichM database files',
+    #     dest='enrichm_db_path',
+    #     required=False,
+    # )
 
     configure_options.add_argument(
         '--checkm2-db-path', '--checkm2_db_path',
         help=argparse.SUPPRESS,
         dest='checkm2_db_path',
+        required=False,
+    )
+
+    configure_options.add_argument(
+        '--eggnog-db-path', '--eggnog_db_path',
+        help='Path to the local eggnog database files',
+        dest='eggnog_db_path',
         required=False,
     )
 
@@ -771,19 +791,22 @@ def main():
         if args.subparser_name == 'configure':
             # Set the environment variables if manually configuring
             if args.conda_prefix is not None:
-                Config.set_conda_path(args.conda_prefix)
+                Config.set_db_path(args.conda_prefix, db_name='CONDA_ENV_PATH')
 
             if args.gtdb_path is not None:
-                Config.set_gtdb_path(args.gtdb_path)
+                Config.set_db_path(args.gtdb_path, db_name='GTDBTK_DATA_PATH')
 
             if args.busco_db_path is not None:
-                Config.set_busco_db_path(args.busco_db_path)
+                Config.set_db_path(args.busco_db_path, db_name='BUSCO_DB')
 
             if args.enrichm_db_path is not None:
-                Config.set_enrichm_db_path(args.enrichm_db_path)
+                Config.set_db_path(args.enrichm_db_path, db_name='ENRICHM_DB')
 
             if args.checkm2_db_path is not None:
-                Config.set_checkm2_db_path(args.checkm2_db_path)
+                Config.set_db_path(args.checkm2_db_path, db_name='CHECKM2DB')
+
+            if args.eggnog_db_path is not None:
+                Config.set_db_path(args.eggnog_db_path, db_name='EGGNOG_DATA_DIR')
 
         else:
             prefix = args.output

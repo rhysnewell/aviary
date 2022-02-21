@@ -83,7 +83,7 @@ def get_snakefile(file="Snakefile"):
 class Processor:
     def __init__(self,
                  args,
-                 conda_prefix=Config.get_conda_path(),
+                 conda_prefix=Config.get_software_db_path('CONDA_ENV_PATH', '--conda-prefix'),
                  ):
 
 
@@ -147,10 +147,12 @@ class Processor:
 
         try:
             self.gtdbtk = args.gtdb_path
-            self.enrichm = args.enrichm_db_path
+            self.eggnog = args.eggnog_db_path
+            # self.enrichm = args.enrichm_db_path
         except AttributeError:
-            self.gtdbtk = Config.get_gtdb_path()
-            self.enrichm = Config.get_enrichm_db_path()
+            self.gtdbtk = Config.get_software_db_path('GTDBTK_DATA_PATH', '--gtdb-path')
+            self.eggnog = Config.get_software_db_path('EGGNOG_DATA_DIR', '--eggnog-db-path')
+            # self.enrichm = Config.get_software_db_path('ENRICHM_DB', '--enrichm-db-path')
         # try:
         #     self.mags = args.mags
         # except AttributeError:
@@ -183,7 +185,7 @@ class Processor:
         #     self.checkm2_db = args.checkm2_db_path
         # except AttributeError:
         try:
-            self.checkm2_db = os.environ['CHECKM2DB']
+            self.checkm2_db = Config.get_software_db_path('CHECKM2DB', '--checkm2-db-path')
         except KeyError:
             self.checkm2_db = 'none'
 
@@ -230,7 +232,8 @@ class Processor:
         conf["min_contig_size"] = int(self.min_contig_size)
         conf["min_bin_size"] = int(self.min_bin_size)
         conf["gtdbtk_folder"] = self.gtdbtk
-        conf["enrichm_folder"] = self.enrichm
+        conf["eggnog_folder"] = self.eggnog
+        # conf["enrichm_folder"] = self.enrichm
 
         conf["checkm2_db_path"] = self.checkm2_db
         conf["mag_directory"] = self.mag_directory

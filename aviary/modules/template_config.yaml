@@ -20,8 +20,6 @@ max_memory:
     250
 genome_size:
     5000000
-meta_genome_size:
-    50000000
 reference_filter:
     none
 strain_analysis:
@@ -39,20 +37,22 @@ instrain_params:
 profile_read_list:
     none
 min_long_read_length:
-    1000
+    500
 keep_percent:
     99
 min_mean_q:
-    80
+    40
 guppy_model:
     r941_min_high_g360
 gtdbtk_folder:
-    /work/microbiome/db/gtdb/data/releases/release202/
+    none
 busco_folder:
-    /work/microbiome/db/busco
-enrichm_folder:
+    none
+#enrichm_folder:
+#    none
+eggnog_folder:
     none
 virsorter_data:
-    /work/microbiome/db/virsorter_data_v2/virsorter-data
+    none
 email:
     somename@email.co

@@ -111,7 +111,6 @@ rule flye_assembly:
         graph = "data/flye/assembly_graph.gfa",
         info = "data/flye/assembly_info.txt"
     params:
-        genome_size = config["meta_genome_size"],
         long_read_type = config["long_read_type"]
     conda:
         "envs/flye.yaml"

@@ -18,14 +18,12 @@ rule assemble_reads_flye:
         contigs = "isolate/flye/assembly.fasta"
     conda:
         "envs/flye.yaml"
-    params:
-        genome_size = config["genome_size"]
     threads:
         config["max_threads"]
     benchmark:
         "benchmarks/assemble_reads_flye.benchmark.txt"
     shell:
-        "flye --nano-raw {input.reads} --threads {threads} -o isolate/flye -g {params.genome_size} --asm-coverage 100"
+        "flye --nano-raw {input.reads} --threads {threads} -o isolate/flye"
 
 
 rule polish_isolate_racon:

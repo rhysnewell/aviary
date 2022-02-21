@@ -53,288 +53,59 @@ def source_bashrc():
 """
 Load the reference package. This will fail if the directory doesn't exist.
 """
-def get_gtdb_path():
+def get_software_db_path(db_name='CONDA_ENV_PATH', software_flag='--conda-prefix'):
     try:
         source_conda_env()
-        GTDB_PATH = os.environ['GTDBTK_DATA_PATH']
-        return GTDB_PATH
+        SW_PATH = os.environ[db_name]
+        return SW_PATH
     except KeyError:
         try:
             source_conda_env()
-            GTDB_PATH = os.environ['GTDBTK_DATA_PATH']
-            return GTDB_PATH
-        except KeyError:
-            try:
-                source_bashrc()
-                GTDB_PATH = os.environ['GTDBTK_DATA_PATH']
-                return GTDB_PATH
-            except KeyError:
-                print('\n' + '=' * 100)
-                print(' ERROR '.center(100))
-                print('_' * 100 + '\n')
-                print("The 'GTDBTK_DATA_PATH' environment variable is not defined.".center(100) + '\n')
-                print('Please set this variable to your reference data package.'.center(100))
-                print('https://github.com/Ecogenomics/GTDBTk#installation'.center(100))
-                print('Alternatively, use --gtdb-path flag.'.center(100))
-                print('=' * 100)
-
-                signal.alarm(120)
-                os.environ['GTDBTK_DATA_PATH'] = input('Input GTDBTK_DATA_PATH now:')
-                try:
-                    subprocess.Popen('mkdir -p %s/etc/conda/activate.d/; mkdir -p %s/etc/conda/deactivate.d/; echo "export GTDBTK_DATA_PATH=%s" >> %s/etc/conda/activate.d/aviary.sh; echo "unset GTDBTK_DATA_PATH" >> %s/etc/conda/deactivate.d/aviary.sh; ' %
-                            (os.environ['CONDA_PREFIX'], os.environ['CONDA_PREFIX'], os.environ['GTDBTK_DATA_PATH'], os.environ['CONDA_PREFIX'], os.environ['CONDA_PREFIX']), shell=True).wait()
-                except KeyError:
-                    subprocess.Popen(
-                        'echo "export GTDBTK_DATA_PATH=%s" >> ~/.bashrc' %
-                        (os.environ['GTDBTK_DATA_PATH']), shell=True).wait()
-                signal.alarm(0)
-                print('=' * 100)
-                print('Reactivate your aviary conda environment or source ~/.bashrc to suppress this message.'.center(100))
-                print('=' * 100)
-
-                return os.environ['GTDBTK_DATA_PATH']
-
-def set_gtdb_path(path):
-    os.environ['GTDBTK_DATA_PATH'] = path
-    try:
-        subprocess.Popen(
-            'mkdir -p %s/etc/conda/activate.d/; mkdir -p %s/etc/conda/deactivate.d/; echo "export GTDBTK_DATA_PATH=%s" >> %s/etc/conda/activate.d/aviary.sh; echo "unset GTDBTK_DATA_PATH" >> %s/etc/conda/deactivate.d/aviary.sh; ' %
-            (os.environ['CONDA_PREFIX'], os.environ['CONDA_PREFIX'], os.environ['GTDBTK_DATA_PATH'],
-             os.environ['CONDA_PREFIX'], os.environ['CONDA_PREFIX']), shell=True).wait()
-    except KeyError:
-        subprocess.Popen(
-            'echo "export GTDBTK_DATA_PATH=%s" >> ~/.bashrc' %
-            (os.environ['GTDBTK_DATA_PATH']), shell=True).wait()
-
-"""
-Set the default enrichm db path.
-"""
-
-def get_enrichm_db_path():
-    try:
-        source_conda_env()
-        ENRICHM_DB = os.environ['ENRICHM_DB']
-        return ENRICHM_DB
-    except KeyError:
-        try:
-            source_conda_env()
-            ENRICHM_DB = os.environ['ENRICHM_DB']
-            return ENRICHM_DB
-        except KeyError:
-            try:
-                source_bashrc()
-                ENRICHM_DB = os.environ['ENRICHM_DB']
-                return ENRICHM_DB
-            except KeyError:
-                print('\n' + '=' * 100)
-                print(' ERROR '.center(100))
-                print('_' * 100 + '\n')
-                print("The 'ENRICHM_DB' environment variable is not defined.".center(100) + '\n')
-                print('Please set this variable to your default server/home directory conda environment path.'.center(100))
-                print('Alternatively, use --enrichm-db-path flag.'.center(100))
-                print('=' * 100)
-                signal.alarm(120)
-                os.environ['ENRICHM_DB'] = input('Input ENRICHM_DB now:')
-                try:
-                    subprocess.Popen(
-                        'mkdir -p %s/etc/conda/activate.d/; mkdir -p %s/etc/conda/deactivate.d/; echo "export ENRICHM_DB=%s" >> %s/etc/conda/activate.d/aviary.sh; echo "unset ENRICHM_DB" >> %s/etc/conda/deactivate.d/aviary.sh; ' %
-                        (os.environ['CONDA_PREFIX'], os.environ['CONDA_PREFIX'], os.environ['ENRICHM_DB'],
-                         os.environ['CONDA_PREFIX'], os.environ['CONDA_PREFIX']), shell=True).wait()
-                except KeyError:
-                    subprocess.Popen(
-                        'echo "export ENRICHM_DB=%s" >> ~/.bashrc' %
-                        (os.environ['ENRICHM_DB']), shell=True).wait()
-                signal.alarm(0)
-                print('=' * 100)
-                print('Reactivate your aviary conda environment or source ~/.bashrc to suppress this message.'.center(100))
-                print('=' * 100)
-
-                return os.environ['ENRICHM_DB']
-
-
-def set_enrichm_db_path(path):
-    os.environ['ENRICHM_DB'] = path
-    try:
-        subprocess.Popen(
-            'mkdir -p %s/etc/conda/activate.d/; mkdir -p %s/etc/conda/deactivate.d/; echo "export ENRICHM_DB=%s" >> %s/etc/conda/activate.d/aviary.sh; echo "unset ENRICHM_DB" >> %s/etc/conda/deactivate.d/aviary.sh; ' %
-            (os.environ['CONDA_PREFIX'], os.environ['CONDA_PREFIX'], os.environ['ENRICHM_DB'],
-             os.environ['CONDA_PREFIX'], os.environ['CONDA_PREFIX']), shell=True).wait()
-    except KeyError:
-        subprocess.Popen(
-            'echo "export ENRICHM_DB=%s" >> ~/.bashrc' %
-            (os.environ['ENRICHM_DB']), shell=True).wait()
-
-"""
-Set the default enrichm db path.
-"""
-
-
-def get_busco_db_path():
-    try:
-        source_conda_env()
-        BUSCO_DB = os.environ['BUSCO_DB']
-        return BUSCO_DB
-    except KeyError:
-        try:
-            source_conda_env()
-            BUSCO_DB = os.environ['BUSCO_DB']
-            return BUSCO_DB
-        except KeyError:
-            try:
-                source_bashrc()
-                BUSCO_DB = os.environ['BUSCO_DB']
-                return BUSCO_DB
-            except KeyError:
-                print('\n' + '=' * 100)
-                print(' ERROR '.center(100))
-                print('_' * 100 + '\n')
-                print("The 'BUSCO_DB' environment variable is not defined.".center(100) + '\n')
-                print('Please set this variable to your default server/home directory conda environment path now.'.center(100))
-                print('Alternatively, use --busco-db-path flag.'.center(100))
-                print('=' * 100)
-                signal.alarm(120)
-                os.environ['BUSCO_DB'] = input('Input BUSCO_DB now:')
-                try:
-                    subprocess.Popen(
-                        'mkdir -p %s/etc/conda/activate.d/; mkdir -p %s/etc/conda/deactivate.d/; echo "export BUSCO_DB=%s" >> %s/etc/conda/activate.d/aviary.sh; echo "unset BUSCO_DB" >> %s/etc/conda/deactivate.d/aviary.sh; ' %
-                        (os.environ['CONDA_PREFIX'], os.environ['CONDA_PREFIX'], os.environ['BUSCO_DB'],
-                         os.environ['CONDA_PREFIX'], os.environ['CONDA_PREFIX']), shell=True).wait()
-                except KeyError:
-                    subprocess.Popen(
-                        'echo "export BUSCO_DB=%s" >> ~/.bashrc' %
-                        (os.environ['BUSCO_DB']), shell=True).wait()
-                signal.alarm(0)
-                print('=' * 100)
-                print('Reactivate your aviary conda environment or source ~/.bashrc to suppress this message.'.center(100))
-                print('=' * 100)
-
-                return os.environ['BUSCO_DB']
-
-
-def set_busco_db_path(path):
-    os.environ['BUSCO_DB'] = path
-    try:
-        subprocess.Popen(
-            'mkdir -p %s/etc/conda/activate.d/; mkdir -p %s/etc/conda/deactivate.d/; echo "export BUSCO_DB=%s" >> %s/etc/conda/activate.d/aviary.sh; echo "unset BUSCO_DB" >> %s/etc/conda/deactivate.d/aviary.sh; ' %
-            (os.environ['CONDA_PREFIX'], os.environ['CONDA_PREFIX'], os.environ['BUSCO_DB'],
-             os.environ['CONDA_PREFIX'], os.environ['CONDA_PREFIX']), shell=True).wait()
-    except KeyError:
-        subprocess.Popen(
-            'echo "export BUSCO_DB=%s" >> ~/.bashrc' %
-            (os.environ['BUSCO_DB']), shell=True).wait()
-
-
-"""
-Set the default conda environment path.
-"""
-
-def get_conda_path():
-    try:
-        source_conda_env()
-        CONDA_PATH = os.environ['CONDA_ENV_PATH']
-        return CONDA_PATH
-    except KeyError:
-        try:
-            source_conda_env()
-            CONDA_PATH = os.environ['CONDA_ENV_PATH']
+            CONDA_PATH = os.environ[db_name]
             return CONDA_PATH
         except KeyError:
             try:
                 source_bashrc()
-                CONDA_PATH = os.environ['CONDA_ENV_PATH']
+                CONDA_PATH = os.environ[db_name]
                 return CONDA_PATH
             except KeyError:
                 print('\n' + '=' * 100)
                 print(' ERROR '.center(100))
                 print('_' * 100 + '\n')
-                print("The 'CONDA_ENV_PATH' environment variable is not defined.".center(100) + '\n')
+                print(f"The '{db_name}' environment variable is not defined.".center(100) + '\n')
                 print('Please set this variable to your default server/home directory conda environment path.'.center(100))
-                print('Alternatively, use --conda-prefix flag.'.center(100))
+                print(f'Alternatively, use {software_flag} flag.'.center(100))
                 print('=' * 100)
                 signal.alarm(120)
-                os.environ['CONDA_ENV_PATH'] = input('Input CONDA_ENV_PATH now:')
+                os.environ[db_name] = input(f'Input {db_name} now:')
                 try:
                     subprocess.Popen(
-                        'mkdir -p %s/etc/conda/activate.d/; mkdir -p %s/etc/conda/deactivate.d/; echo "export CONDA_ENV_PATH=%s" >> %s/etc/conda/activate.d/aviary.sh; echo "unset CONDA_ENV_PATH" >> %s/etc/conda/deactivate.d/aviary.sh; ' %
-                        (os.environ['CONDA_PREFIX'], os.environ['CONDA_PREFIX'], os.environ['CONDA_ENV_PATH'],
-                         os.environ['CONDA_PREFIX'], os.environ['CONDA_PREFIX']), shell=True).wait()
+                        'mkdir -p %s/etc/conda/activate.d/; mkdir -p %s/etc/conda/deactivate.d/; echo "export %s=%s" >> %s/etc/conda/activate.d/aviary.sh; echo "unset %s" >> %s/etc/conda/deactivate.d/aviary.sh; ' %
+                        (os.environ['CONDA_PREFIX'], os.environ['CONDA_PREFIX'], db_name, os.environ[db_name],
+                         os.environ['CONDA_PREFIX'], db_name, os.environ['CONDA_PREFIX']), shell=True).wait()
                 except KeyError:
                     subprocess.Popen(
-                        'echo "export CONDA_ENV_PATH=%s" >> ~/.bashrc' %
-                        (os.environ['CONDA_ENV_PATH']), shell=True).wait()
+                        'echo "export %s=%s" >> ~/.bashrc' %
+                        (db_name, os.environ[db_name]), shell=True).wait()
                 signal.alarm(0)
                 print('=' * 100)
                 print('Reactivate your aviary conda environment or source ~/.bashrc to suppress this message.'.center(100))
                 print('=' * 100)
 
-                return os.environ['CONDA_ENV_PATH']
-
-
-def set_conda_path(path):
-    os.environ['CONDA_ENV_PATH'] = path
-    try:
-        subprocess.Popen(
-            'mkdir -p %s/etc/conda/activate.d/; mkdir -p %s/etc/conda/deactivate.d/; echo "export CONDA_ENV_PATH=%s" >> %s/etc/conda/activate.d/aviary.sh; echo "unset CONDA_ENV_PATH" >> %s/etc/conda/deactivate.d/aviary.sh; ' %
-            (os.environ['CONDA_PREFIX'], os.environ['CONDA_PREFIX'], os.environ['CONDA_ENV_PATH'],
-             os.environ['CONDA_PREFIX'], os.environ['CONDA_PREFIX']), shell=True).wait()
-    except KeyError:
-        subprocess.Popen(
-            'echo "export CONDA_ENV_PATH=%s" >> ~/.bashrc' %
-            (os.environ['CONDA_ENV_PATH']), shell=True).wait()
+                return os.environ[db_name]
 
 
 """
-Load the reference package. This will fail if the directory doesn't exist.
+Sets an environmental variable and appends it to the conda activation script
 """
-def get_checkm2_db_path():
-    try:
-        source_conda_env()
-        CHECKM2DB = os.environ['CHECKM2DB']
-        return CHECKM2DB
-    except KeyError:
-        try:
-            source_conda_env()
-            CHECKM2DB = os.environ['CHECKM2DB']
-            return CHECKM2DB
-        except KeyError:
-            try:
-                source_bashrc()
-                CHECKM2DB = os.environ['CHECKM2DB']
-                return CHECKM2DB
-            except KeyError:
-                print('\n' + '=' * 100)
-                print(' ERROR '.center(100))
-                print('_' * 100 + '\n')
-                print("The 'CHECKM2DB' environment variable is not defined.".center(100) + '\n')
-                print('Please set this variable to your reference data package.'.center(100))
-                print('https://github.com/chklovski/CheckM2'.center(100))
-                print('Alternatively, use --checkm2-db-path flag.'.center(100))
-                print('=' * 100)
-
-                signal.alarm(120)
-                os.environ['CHECKM2DB'] = input('Input CHECKM2DB now:')
-                try:
-                    subprocess.Popen('mkdir -p %s/etc/conda/activate.d/; mkdir -p %s/etc/conda/deactivate.d/; echo "export CHECKM2DB=%s" >> %s/etc/conda/activate.d/aviary.sh; echo "unset CHECKM2DB" >> %s/etc/conda/deactivate.d/aviary.sh; ' %
-                            (os.environ['CONDA_PREFIX'], os.environ['CONDA_PREFIX'], os.environ['CHECKM2DB'], os.environ['CONDA_PREFIX'], os.environ['CONDA_PREFIX']), shell=True).wait()
-                except KeyError:
-                    subprocess.Popen(
-                        'echo "export CHECKM2DB=%s" >> ~/.bashrc' %
-                        (os.environ['CHECKM2DB']), shell=True).wait()
-                signal.alarm(0)
-                print('=' * 100)
-                print('Reactivate your aviary conda environment or source ~/.bashrc to suppress this message.'.center(100))
-                print('=' * 100)
-
-                return os.environ['CHECKM2DB']
-
-def set_checkm2_db_path(path):
-    os.environ['CHECKM2DB'] = path
+def set_db_path(path, db_name='CONDA_ENV_PATH'):
+    os.environ[db_name] = path
     try:
         subprocess.Popen(
-            'mkdir -p %s/etc/conda/activate.d/; mkdir -p %s/etc/conda/deactivate.d/; echo "export CHECKM2DB=%s" >> %s/etc/conda/activate.d/aviary.sh; echo "unset CHECKM2DB" >> %s/etc/conda/deactivate.d/aviary.sh; ' %
-            (os.environ['CONDA_PREFIX'], os.environ['CONDA_PREFIX'], os.environ['CHECKM2DB'],
-             os.environ['CONDA_PREFIX'], os.environ['CONDA_PREFIX']), shell=True).wait()
+            'mkdir -p %s/etc/conda/activate.d/; mkdir -p %s/etc/conda/deactivate.d/; echo "export %s=%s" >> %s/etc/conda/activate.d/aviary.sh; echo "unset %s" >> %s/etc/conda/deactivate.d/aviary.sh; ' %
+            (os.environ['CONDA_PREFIX'], os.environ['CONDA_PREFIX'], db_name, os.environ[db_name],
+             os.environ['CONDA_PREFIX'], db_name, os.environ['CONDA_PREFIX']), shell=True).wait()
     except KeyError:
         subprocess.Popen(
-            'echo "export CHECKM2DB=%s" >> ~/.bashrc' %
-            (os.environ['CHECKM2DB']), shell=True).wait()
+            'echo "export %s=%s" >> ~/.bashrc' %
+            (db_name, os.environ[db_name]), shell=True).wait()
