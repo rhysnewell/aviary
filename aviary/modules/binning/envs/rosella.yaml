@@ -6,7 +6,7 @@ channels:
 dependencies:
   - numba==0.55
   - rosella>=0.4.1
-  - flight-genome>=1.4.1
+  - flight-genome>=1.4.3
   - pebble
   - checkm-genome
   - biopython
