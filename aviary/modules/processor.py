@@ -181,11 +181,10 @@ class Processor:
             self.precluster_ani = 'none'
             self.precluster_method = 'none'
 
-        # try:
-        #     self.checkm2_db = args.checkm2_db_path
-        # except AttributeError:
+
         try:
-            self.checkm2_db = Config.get_software_db_path('CHECKM2DB', '--checkm2-db-path')
+            # self.checkm2_db = Config.get_software_db_path('CHECKM2DB', '--checkm2-db-path')
+            self.checkm2_db = os.environ['CHECKM2DB']
         except KeyError:
             self.checkm2_db = 'none'
 

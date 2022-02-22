@@ -18,7 +18,7 @@ elif snakemake.config['short_reads_2'] != 'none': # paired end
     else:
         threads = max(len(snakemake.config['short_reads_1'] + snakemake.config['short_reads_2']) // snakemake.threads, 1)
         reads = snakemake.config['short_reads_1'] + snakemake.config['short_reads_2']
-    mp_results = [pool.apply_async(spawn_fastqc, args=(reads, threads))
+    mp_results = [pool.apply_async(spawn_fastqc, args=(read, threads))
                   for read in
                   reads]
 

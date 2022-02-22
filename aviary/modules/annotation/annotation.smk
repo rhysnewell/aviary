@@ -93,25 +93,25 @@ rule busco_mag_directory:
         touch data/busco/done
         """
 
-rule enrichm_directory:
-    input:
-        mags = config['mag_directory']
-    output:
-        out_folder = "data/enrichm",
-        done = "data/enrichm/done"
-    params:
-        busco_folder = config["enrichm_folder"],
-        ext = config['mag_extension']
-    conda:
-        "envs/enrichm.yaml"
-    threads:
-        config["max_threads"]
-    shell:
-        """
-        enrichm annotate --output {output.out_folder} --genome_directory {input.mags} --suffix {params.ext} --ko_hmm --pfam --tigrfam --clusters --orthogroup --cazy --ec --parallel {threads} && 
-        enrichm classify --output {output.out_folder} --genome_and_annotation_matrix {output.out_folder}/ko_frequency_table.tsv; 
-        touch data/enrichm/done
-        """
+# rule enrichm_directory:
+#     input:
+#         mags = config['mag_directory']
+#     output:
+#         out_folder = "data/enrichm",
+#         done = "data/enrichm/done"
+#     params:
+#         busco_folder = config["enrichm_folder"],
+#         ext = config['mag_extension']
+#     conda:
+#         "envs/enrichm.yaml"
+#     threads:
+#         config["max_threads"]
+#     shell:
+#         """
+#         enrichm annotate --output {output.out_folder} --genome_directory {input.mags} --suffix {params.ext} --ko_hmm --pfam --tigrfam --clusters --orthogroup --cazy --ec --parallel {threads} &&
+#         enrichm classify --output {output.out_folder} --genome_and_annotation_matrix {output.out_folder}/ko_frequency_table.tsv;
+#         touch data/enrichm/done
+#         """
 
 rule gtdbtk:
     input:
