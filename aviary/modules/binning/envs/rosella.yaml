@@ -4,9 +4,10 @@ channels:
   - conda-forge
   - defaults
 dependencies:
+  - pip
+  - flight-genome>=1.4.3
   - numba==0.55
   - rosella>=0.4.1
-  - flight-genome>=1.4.3
   - pebble
   - checkm-genome
   - biopython

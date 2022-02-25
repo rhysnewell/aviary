@@ -19,10 +19,12 @@ rule link_reads:
         import subprocess
         import os
         import sys
-        if len(input.fastq) == 1: # Check if only one longread sample
+        if len(input.fastq) == 1 or isinstance(input.fastq, str): # Check if only one longread sample
             shell("ln -s {input.fastq} {output}")
-        elif len(input.fastq) > 1:
-            subprocess.Popen("ln -s %s %s" % (input.fastq[0], output))
+        elif len(input.fastq) > 1 and not isinstance(input.fastq, str):
+            for reads in input.fastq:
+                shell(f"zcat {reads} >> data/long_reads.fastq")
+            shell("pigz -p {threads} data/long_reads.fastq")
         else:
             shell("touch {output}")
 
@@ -201,7 +203,7 @@ rule assembly_quality:
     Final return point for assembly quality statistics
     """
     input:
-        "www/metaquast/report.txt",
+        # "www/metaquast/report.txt",
         "www/fraction_recovered/short_fraction_recovered" if config['short_reads_1'] != 'none' else "www/fraction_recovered/long_fraction_recovered",
         "www/assembly_stats.txt"
     log:

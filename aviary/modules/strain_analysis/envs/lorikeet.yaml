@@ -1,5 +1,4 @@
 channels:
   - bioconda
 dependencies:
-  - eggnog-mapper = 2.1.7
-  - parallel
+  - lorikeet-genome >= 0.6.4

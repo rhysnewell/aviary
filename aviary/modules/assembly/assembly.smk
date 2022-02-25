@@ -1,12 +1,12 @@
 ruleorder: filter_illumina_assembly > short_only
 # ruleorder: fastqc > fastqc_long
-ruleorder: combine_assemblies > combine_long_only
+ruleorder: combine_assemblies > skip_unicycler_with_qc > skip_unicycler > combine_long_only
 ruleorder: skip_long_assembly > get_high_cov_contigs > short_only
 ruleorder: skip_long_assembly > filter_illumina_assembly
 ruleorder: filter_illumina_ref > no_ref_filter
-ruleorder: combine_assemblies > combine_long_only > spades_assembly_short
-ruleorder: complete_assembly_with_qc > complete_assembly
-ruleorder: combine_assemblies > move_spades_assembly
+ruleorder: combine_assemblies > skip_unicycler_with_qc > skip_unicycler > combine_long_only > spades_assembly_short
+ruleorder: complete_assembly_with_qc > complete_assembly > skip_unicycler_with_qc > skip_unicycler
+ruleorder: combine_assemblies > skip_unicycler_with_qc > skip_unicycler > move_spades_assembly
 
 # onsuccess:
 #     print("Assembly finished, no error")
@@ -203,7 +203,7 @@ rule polish_meta_pilon:
     shell:
         """
         pilon -Xmx{params.pilon_memory}000m --genome {input.fasta} --frags data/pilon.sort.bam \
-        --threads {threads} --output data/assembly.pol.pil --fix bases
+        --threads {threads} --output data/assembly.pol.pil --fix bases >data/pilon.err
         """
 
 
@@ -215,7 +215,7 @@ rule polish_meta_racon_ill:
     group: 'assembly'
     output:
         fasta = "data/assembly.pol.fin.fasta",
-        paf = temp("data/racon_polishing/alignment.racon_ill.0.paf")
+        paf = "data/racon_polishing/alignment.racon_ill.0.paf"
     threads:
         config["max_threads"]
     conda:
@@ -245,7 +245,9 @@ rule get_high_cov_contigs:
         "benchmarks/get_high_cov_contigs.benchmark.txt"
     params:
         min_cov_long = 20.0,
-        min_cov_short = 10.0,
+        min_cov_short = 3.0,
+        exclude_contig_cov = 1000,
+        exclude_contig_size = 10000,
         short_contig_size = 200000,
         long_contig_size = 500000
     run:
@@ -265,17 +267,19 @@ rule get_high_cov_contigs:
             # Based on the flye assembly_info.txt, retrieve contigs > long_contig_size
             f.readline()
             for line in f:
-                if int(line.split()[1]) > params.long_contig_size:
-                    high_cov_set.add(line.split()[0])
-                elif int(line.split()[1]) < params.short_contig_size:
+                contig_name, contig_length, long_coverage, circular, repeat, multiplicity, alt_group, graph_path = line.split()
+                is_circular = circular == "Y"
+                if int(contig_length) >= params.long_contig_size or is_circular:
+                    high_cov_set.add(contig_name)
+                elif int(contig_length) < params.short_contig_size:
                     # Take first and last edge in info file for this contig
-                    se1 = line.split()[6].split(',')[0]
+                    se1 = graph_path.split(',')[0]
                     # Filter the '-' sign from edge name
                     if se1.startswith('-'):
                         se1 = ("edge_" + se1[1:], True)
                     else:
                         se1 = ("edge_" + se1, False)
-                    se2 = line.split()[6].split(',')[-1]
+                    se2 = graph_path.split(',')[-1]
                     # Filter the '-' sign from edge name
                     if se2.startswith('-'):
                         se2 = ("edge_" + se2[1:], False)
@@ -285,21 +289,23 @@ rule get_high_cov_contigs:
                     # Append contig to associated edges in short_edges dict
                     if not se1 in short_edges:
                         short_edges[se1] = []
-                    short_edges[se1].append(line.split()[0])
+                    short_edges[se1].append(contig_name)
                     if not se2 in short_edges:
                         short_edges[se2] = []
-                    short_edges[se2].append(line.split()[0])
-                # if a contig is covered by >= mon_cov_long long reads place in high cov set
+                    short_edges[se2].append(contig_name)
+                # if a contig is covered by >= min_cov_long long reads place in high cov set
                 # Also place in high coverage set if contig was not covered by illumina reads
                 # Also place in high coverage set if illumina coverage was <= min_cov_short
-                if float(line.split()[2]) >= params.min_cov_long or not line.split()[0] in ill_cov_dict \
-                        or ill_cov_dict[line.split()[0]] <= params.min_cov_short:
-                    high_cov_set.add(line.split()[0])
+                if ((float(long_coverage) >= params.min_cov_long) \
+                    and not (float(long_coverage) <= params.exclude_contig_cov
+                             and int(contig_length) <= params.exclude_contig_size)) or not contig_name in ill_cov_dict \
+                        or ill_cov_dict[contig_name] <= params.min_cov_short:
+                    high_cov_set.add(contig_name)
 
         filtered_contigs = set()
         # Populate filtered contigs with short contigs that were connected to two edges in short_edges dict in the correct
         # orientation: edge_1 + to edge_2 - and edge_1 != edge_2. So the start of a sequences complements links to
-        #               the end of a sequences reverse complement. If the length of the match is 0M, then do not filter.
+        #               the end of a sequences reverse complement.
         with open(input.graph) as f:
             for line in f:
                 if line.startswith("L"):
@@ -409,11 +415,11 @@ rule spades_assembly:
             if [ {params.long_read_type} = "ont" ] || [ {params.long_read_type} = "ont_hq" ]
             then
                 spades.py --memory {params.max_memory} --meta --nanopore {input.long_reads} --12 {input.fastq} \
-                -o data/spades_assembly -t {threads} -k 21,33,55,81,99,127 && \
+                -o data/spades_assembly -t {threads} 2>data/spades.err && \
                 ln data/spades_assembly/scaffolds.fasta data/spades_assembly.fasta
             else
                 spades.py --memory {params.max_memory} --meta --pacbio {input.long_reads} --12 {input.fastq} \
-                -o data/spades_assembly -t {threads} -k 21,33,55,81,99,127 && \
+                -o data/spades_assembly -t {threads} 2>data/spades.err && \
                 ln data/spades_assembly/scaffolds.fasta data/spades_assembly.fasta
             fi
         else
@@ -576,18 +582,18 @@ rule assemble_pools:
 # Long and short reads are mapped to this combined assembly.
 rule combine_assemblies:
     input:
-        unicyc_fasta = "data/unicycler_combined.fa",
+        short_fasta = "data/unicycler_combined.fa",
         flye_fasta = "data/flye_high_cov.fasta"
     group: 'assembly'
     output:
         fasta = "data/final_contigs.fasta",
-    conda:
-        "../../envs/minimap2.yaml"
     priority: 1
     threads:
         config["max_threads"]
     script:
         "scripts/combine_assemblies.py"
+
+
 
 rule combine_long_only:
     input:
@@ -605,25 +611,77 @@ rule combine_long_only:
     script:
         "scripts/combine_assemblies.py"
 
-rule complete_assembly:
+
+rule skip_unicycler:
     input:
-        'data/final_contigs.fasta'
+        short_fasta = "data/spades_assembly.fasta",
+        flye_fasta = "data/flye_high_cov.fasta"
     group: 'assembly'
     output:
-        'assembly/final_contigs.fasta'
+        fasta = "data/final_contigs.fasta",
+        final_link = 'assembly/final_contigs.fasta',
+        sizes = "www/assembly_stats.txt",
+        unicycler_skipped = temp("data/unicycler_skipped")
+    priority: 1
+    threads:
+        config["max_threads"]
     shell:
+        'cat {input.short_fasta} {input.flye_fasta} > {output.fasta}; '
+        'touch data/unicycler_skipped; '
+        'mkdir -p www/; '
+        'stats.sh {output.fasta} > {output.sizes}; '
+        'mkdir -p assembly; '
+        'cd assembly; '
+        'ln -s ../data/final_contigs.fasta ./; '
+
+rule skip_unicycler_with_qc:
+    input:
+        short_fasta = "data/spades_assembly.fasta",
+        flye_fasta = "data/flye_high_cov.fasta",
+        qc_done = 'data/qc_done'
+    group: 'assembly'
+    output:
+        fasta = "data/final_contigs.fasta",
+        final_link = 'assembly/final_contigs.fasta',
+        sizes = "www/assembly_stats.txt",
+        unicycler_skipped = temp("data/unicycler_skipped")
+    priority: 1
+    threads:
+        config["max_threads"]
+    shell:
+        'cat {input.short_fasta} {input.flye_fasta} > {output.fasta}; '
+        'touch data/unicycler_skipped; '
+        'mkdir -p www/; '
+        'stats.sh {output.fasta} > {output.sizes}; '
+        'mkdir -p assembly; '
+        'cd assembly; '
+        'ln -s ../data/final_contigs.fasta ./; '
+
+rule complete_assembly:
+    input:
+        fasta = 'data/final_contigs.fasta'
+    group: 'assembly'
+    output:
+        final_link = 'assembly/final_contigs.fasta',
+        sizes = "www/assembly_stats.txt"
+    shell:
+        'mkdir -p www/; '
+        'stats.sh {input.fasta} > {output.sizes}; '
         'mkdir -p assembly; '
         'cd assembly; '
         'ln -s ../data/final_contigs.fasta ./; '
 
 rule complete_assembly_with_qc:
     input:
-        'data/final_contigs.fasta',
-        'data/qc_done'
+        fasta = 'data/final_contigs.fasta',
+        qc_done = 'data/qc_done'
     group: 'assembly'
     output:
-        'assembly/final_contigs.fasta'
+        final_link = 'assembly/final_contigs.fasta',
+        sizes = "www/assembly_stats.txt"
     shell:
+        'mkdir -p www/; '
+        'stats.sh {input.fasta} > {output.sizes}; '
         'mkdir -p assembly; '
         'cd assembly; '
         'ln -s ../data/final_contigs.fasta ./; '

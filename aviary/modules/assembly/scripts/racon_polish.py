@@ -103,7 +103,7 @@ for rounds in range(snakemake.params.rounds):
                     excluded_reads.add(qname)
     with open(os.path.join(out, "reads.%s.%d.lst" % (snakemake.params.prefix, rounds)), "w") as o:
         for i in included_reads:
-            if reads == 'data/short_reads.fastq.gz' or snakemake.config['short_reads_2'] == 'none':
+            if (reads == 'data/short_reads.fastq.gz' or snakemake.config['short_reads_2'] == 'none') and snakemake.params.illumina:
                 o.write(i + '/1\n')
                 o.write(i + '/2\n')
             else:

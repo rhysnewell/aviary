@@ -36,87 +36,26 @@ if config['mag_directory'] == 'none':
 if config['mag_extension'] == 'none':
     config['mag_extension'] = 'fna'
 
-rule prodigal:
+rule eggnog:
     input:
-        fasta = config['fasta']
+        mag_folder = config['mag_directory'],
+        mag_extension = config['mag_extension'],
+        eggnog_db = config['eggnog_folder']
+    group: 'annotation'
     output:
-        "data/genes.gff"
-    conda:
-        "envs/prodigal.yaml"
-    shell:
-        "prodigal -i {input.fasta} -f gff -o {output} -p meta"
-
-
-rule busco_mag_directory:
-    input:
-        mags = config['mag_directory']
-    output:
-        done = 'data/busco/done'
-    params:
-        busco_folder = config["busco_folder"],
-        ext = config['mag_extension']
-    conda:
-        "envs/busco.yaml"
+        done = 'data/eggnog/done'
     threads:
-        config["max_threads"]
-    script:
-        """
-        mkdir -p data/busco && \
-        cd data/busco && \
-        minimumsize=500000 && \
-        for file in {input.mags}/*{params.ext};do 
-            actualsize=$(wc -c <\"$file\"); 
-            if [ $actualsize -ge $minimumsize ]; then 
-                if [ ! -d bacteria_odb10.${{file:39:-3}} ]; then
-                    busco -q -c {threads} -i $file -o bacteria_odb10.${{file:39:-3}} \
-                    -l {params.busco_folder}/bacteria_odb10 -m geno;
-                fi
-                if [ ! -d eukaryota_odb10.${{file:39:-3}} ]; then
-                busco -q -c {threads} -i $file -o eukaryota_odb10.${{file:39:-3}} \
-                -l {params.busco_folder}/eukaryota_odb10 -m geno; 
-                fi
-                if [ ! -d embryophyta_odb10.${{file:39:-3}} ]; then
-                busco -q -c {threads} -i $file -o embryophyta_odb10.${{file:39:-3}} \
-                -l {params.busco_folder}/embryophyta_odb10 -m geno; 
-                fi
-                if [ ! -d fungi_odb10.${{file:39:-3}} ]; then
-                busco -q -c {threads} -i $file -o fungi_odb10.${{file:39:-3}} \
-                -l {params.busco_folder}/fungi_odb10 -m geno; 
-                fi 
-                # busco -q -c {threads} -i $file -o metazoa_odb10.${{file:39:-3}} \
-                -l {params.busco_folder}/metazoa_odb10 -m geno; 
-                # busco -q -c {threads} -i $file -o protists_ensembl.${{file:39:-3}} \
-                -l {params.busco_folder}/protists_ensembl -m geno; 
-            fi
-        done && \
-        cd ../../ && \
-        touch data/busco/done
-        """
-
-# rule enrichm_directory:
-#     input:
-#         mags = config['mag_directory']
-#     output:
-#         out_folder = "data/enrichm",
-#         done = "data/enrichm/done"
-#     params:
-#         busco_folder = config["enrichm_folder"],
-#         ext = config['mag_extension']
-#     conda:
-#         "envs/enrichm.yaml"
-#     threads:
-#         config["max_threads"]
-#     shell:
-#         """
-#         enrichm annotate --output {output.out_folder} --genome_directory {input.mags} --suffix {params.ext} --ko_hmm --pfam --tigrfam --clusters --orthogroup --cazy --ec --parallel {threads} &&
-#         enrichm classify --output {output.out_folder} --genome_and_annotation_matrix {output.out_folder}/ko_frequency_table.tsv;
-#         touch data/enrichm/done
-#         """
+        config['max_threads']
+    shell:
+        'download_eggnog_data.py --data_dir {input.eggnog_db} -y; '
+        'mkdir -p data/eggnog/; '
+        'find {input.mag_folder}/*.{input.mag_extension} | parallel -j1 emapper.py -m diamond --itype genome --genepred prodigal -i {{}} --output_dir data/eggnog/ -o {{/.}}; '
+        'touch data/eggnog/done; '
 
 rule gtdbtk:
     input:
         mag_folder = config['mag_directory']
-    group: 'binning'
+    group: 'annotation'
     output:
         done = "data/gtdbtk/done"
     params:
@@ -135,12 +74,13 @@ rule gtdbtk:
 rule complete_annotation:
     input:
          'data/gtdbtk/done',
-         'data/enrichm/done',
+         'data/eggnog/done',
     output:
          'annotation/done',
     shell:
          """
          mkdir -p annotation;
-         ln -s data/enrichm annotation/enrichm
-         ln -s data/busco annotation/busco
+         ln -s data/gtdbtk taxonomy; 
+         ln -s data/eggnog annotation; 
+         touch annotation/done;
          """

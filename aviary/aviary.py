@@ -247,14 +247,14 @@ def main():
         '--min-read-size', '--min_read_size',
         help='Minimum long read size when filtering using Filtlong',
         dest="min_read_size",
-        default=1000
+        default=250
     )
 
     qc_group.add_argument(
         '--min-mean-q', '--min_mean_q',
         help='Minimum mean quality threshold',
         dest="min_mean_q",
-        default=80
+        default=50
     )
 
     qc_group.add_argument(
@@ -339,12 +339,12 @@ def main():
 
     annotation_group = argparse.ArgumentParser(add_help=False)
 
-    annotation_group.add_argument(
-        '--enrichm-db-path', '--enrichm_db_path',
-        help='Path to the local EnrichM Database files',
-        dest='enrichm_db_path',
-        default=Config.get_software_db_path('ENRICHM_DB', '--enrichm-db-path'),
-    )
+    # annotation_group.add_argument(
+    #     '--enrichm-db-path', '--enrichm_db_path',
+    #     help='Path to the local EnrichM Database files',
+    #     dest='enrichm_db_path',
+    #     default=Config.get_software_db_path('ENRICHM_DB', '--enrichm-db-path'),
+    # )
 
     annotation_group.add_argument(
         '--gtdb-path', '--gtdb_path',
@@ -535,6 +535,15 @@ def main():
 
         ''')
 
+    assemble_options.add_argument(
+        '--skip-unicycler', '--skip_unicycler',
+        help='Skip the Unicycler reassembly of bins procedure.',
+        type=str2bool,
+        nargs='?',
+        const=True,
+        dest='skip_unicycler',
+        default=False,
+    )
 
     assemble_options.add_argument(
         '-w', '--workflow',
@@ -589,7 +598,7 @@ def main():
                                             '''
                                                   ......:::::: ANNOTATE ::::::......
                                         
-                                            aviary annotate --genome-fasta-files *.fasta
+                                            aviary annotate --genome-fasta-directory input_bins/
                                         
                                             ''')
 
@@ -608,9 +617,9 @@ def main():
                                              parents=[mag_group, short_read_group, long_read_group, base_group],
                                              epilog=
                                              '''
-                                                     ......:::::: GENOTYPE ::::::......
+                                                                    ......:::::: GENOTYPE ::::::......
 
-                                             aviary genotype --genome-fasta-files *.fasta
+                                             aviary genotype -c R1.fastq.gz R2.fastq.gz --genome-fasta-directory input_bins/
 
                                              ''')
 
@@ -667,16 +676,16 @@ def main():
 
     ##########################   ~ COMPLETE ~  ###########################
 
-    complete_options = subparsers.add_parser('complete',
-                                            description='Cluster samples together based on OTU content. '
-                                                        'Samples that cluster together should be used for assembly and binning.',
+    complete_options = subparsers.add_parser('all',
+                                            description='Performs all steps in the Aviary pipeline. '
+                                                        'Assembly > Binning > Refinement > QC > Annotation > Strain Analysis',
                                             formatter_class=CustomHelpFormatter,
                                             parents=[short_read_group, long_read_group, binning_group, annotation_group, base_group],
                                             epilog=
                                             '''
                                                                ......:::::: COMPLETE ::::::......
 
-                                            aviary complete -1 *.1.fq.gz -2 *.2.fq.gz --longreads *.nanopore.fastq.gz 
+                                            aviary all -1 *.1.fq.gz -2 *.2.fq.gz --longreads *.nanopore.fastq.gz 
 
                                             ''')
 
@@ -823,6 +832,13 @@ def main():
                     args.cmds = args.cmds + '--conda-create-envs-only '
                 except TypeError:
                     args.cmds = '--conda-create-envs-only '
+
+            try:
+                if args.subparser_name == 'assemble':
+                    if args.skip_unicycler:
+                        args.workflow = "skip_unicycler_with_qc"
+            except AttributeError:
+                pass
 
             processor.run_workflow(workflow=args.workflow,
                                    cores=int(args.n_cores),
