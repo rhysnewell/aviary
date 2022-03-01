@@ -5,9 +5,12 @@ channels:
   - defaults
 dependencies:
   - pip
-  - flight-genome>=1.4.3
   - numba==0.55
   - rosella>=0.4.1
   - pebble
   - checkm-genome
   - biopython
+  - pip:
+      - flight-genome>=1.4.3
+      - threadpoolctl
+      - scikit-bio

@@ -698,3 +698,43 @@ rule complete_magpurify:
          checkm_out_2 = "data/magpurify_rosella/cleaned_bins/checkm.out"
     log:
        temp("data/magpurify_done")
+
+rule atlas_dastool:
+    input:
+         fasta = config["fasta"],
+         m2_done = "data/metabat_bins_2/done",
+         maxbin_done = "data/maxbin2_bins/done"
+    output:
+        das_tool_done = "data/atlas_dastool/done"
+    threads:
+        config["max_threads"]
+    conda:
+        "../binning/envs/das_tool.yaml"
+    benchmark:
+        "benchmarks/das_tool.benchmark.txt"
+    shell:
+        """
+        Fasta_to_Scaffolds2Bin.sh -i data/maxbin2_bins -e fasta > data/maxbin_bins.tsv; 
+        Fasta_to_Scaffolds2Bin.sh -i data/metabat_bins_2/ -e fa > data/metabat2_bins.tsv;
+        DAS_Tool --search_engine diamond --write_bin_evals 1 --write_bins 1 -t {threads} --score_threshold -42 \
+         -i data/maxbin_bins.tsv,data/metabat2_bins.tsv \
+         -c {input.fasta} \
+         -o data/atlas_dastool/das_tool && \
+        touch data/atlas_dastool/done
+        """
+
+rule simulate_atlas:
+    input:
+         dastool_done = "data/atlas_dastool/done"
+    params:
+        pplacer_threads = config["pplacer_threads"]
+    group: 'binning'
+    output:
+        "data/atlas_dastool/checkm.out"
+    conda:
+        "../../envs/checkm.yaml"
+    threads:
+        config["max_threads"]
+    shell:
+        'checkm lineage_wf -t {threads} --pplacer_threads {params.pplacer_threads} '
+        '-x fa data/atlas_dastool/das_tool_DASTool_bins data/atlas_dastool/checkm --tab_table -f data/atlas_dastool/checkm.out'

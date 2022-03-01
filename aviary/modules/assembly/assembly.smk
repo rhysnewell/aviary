@@ -246,8 +246,8 @@ rule get_high_cov_contigs:
     params:
         min_cov_long = 20.0,
         min_cov_short = 3.0,
-        exclude_contig_cov = 1000,
-        exclude_contig_size = 10000,
+        exclude_contig_cov = 100,
+        exclude_contig_size = 25000,
         short_contig_size = 200000,
         long_contig_size = 500000
     run:
@@ -296,11 +296,12 @@ rule get_high_cov_contigs:
                 # if a contig is covered by >= min_cov_long long reads place in high cov set
                 # Also place in high coverage set if contig was not covered by illumina reads
                 # Also place in high coverage set if illumina coverage was <= min_cov_short
-                if ((float(long_coverage) >= params.min_cov_long) \
-                    and not (float(long_coverage) <= params.exclude_contig_cov
-                             and int(contig_length) <= params.exclude_contig_size)) or not contig_name in ill_cov_dict \
-                        or ill_cov_dict[contig_name] <= params.min_cov_short:
-                    high_cov_set.add(contig_name)
+                if int(contig_length) >= params.exclude_contig_size:
+                    if ((float(long_coverage) >= params.min_cov_long)
+                        and not (float(long_coverage) <= params.exclude_contig_cov
+                                 and int(contig_length) <= params.exclude_contig_size)) or not contig_name in ill_cov_dict \
+                            or ill_cov_dict[contig_name] <= params.min_cov_short:
+                        high_cov_set.add(contig_name)
 
         filtered_contigs = set()
         # Populate filtered contigs with short contigs that were connected to two edges in short_edges dict in the correct
@@ -686,3 +687,19 @@ rule complete_assembly_with_qc:
         'cd assembly; '
         'ln -s ../data/final_contigs.fasta ./; '
 
+rule reset_to_spades_assembly:
+    output:
+         temp('data/reset_spades')
+    shell:
+         'rm -rf data/spades*; '
+         'rm -rf assembly/; '
+         'rm -rf data/final_contigs.fasta; '
+         'rm -rf data/flye_high_cov.fasta; '
+         'rm -rf data/list_of*; '
+         'rm -rf data/binned_reads; '
+         'rm -rf data/final_assemblies; '
+         'rm -rf data/sr_vs*; '
+         'rm -rf data/unicycler*; '
+         'rm -rf data/metabat_bins; '
+         'rm -rf data/cached_bams; '
+         'touch data/reset_spades'
