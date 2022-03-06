@@ -13,3 +13,4 @@ dependencies:
   - mamba>=0.8.2
   - pigz = 2.4
   - parallel
+  - bbmap

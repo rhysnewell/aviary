@@ -1,12 +1,12 @@
 ruleorder: filter_illumina_assembly > short_only
 # ruleorder: fastqc > fastqc_long
-ruleorder: combine_assemblies > skip_unicycler_with_qc > skip_unicycler > combine_long_only
+ruleorder: skip_unicycler_with_qc > skip_unicycler > combine_assemblies > combine_long_only
 ruleorder: skip_long_assembly > get_high_cov_contigs > short_only
 ruleorder: skip_long_assembly > filter_illumina_assembly
 ruleorder: filter_illumina_ref > no_ref_filter
-ruleorder: combine_assemblies > skip_unicycler_with_qc > skip_unicycler > combine_long_only > spades_assembly_short
-ruleorder: complete_assembly_with_qc > complete_assembly > skip_unicycler_with_qc > skip_unicycler
-ruleorder: combine_assemblies > skip_unicycler_with_qc > skip_unicycler > move_spades_assembly
+ruleorder: skip_unicycler_with_qc > skip_unicycler > combine_assemblies > combine_long_only > spades_assembly_short
+ruleorder: skip_unicycler_with_qc > skip_unicycler > complete_assembly_with_qc > complete_assembly
+ruleorder: skip_unicycler_with_qc > skip_unicycler > combine_assemblies > move_spades_assembly
 
 # onsuccess:
 #     print("Assembly finished, no error")
@@ -703,3 +703,11 @@ rule reset_to_spades_assembly:
          'rm -rf data/metabat_bins; '
          'rm -rf data/cached_bams; '
          'touch data/reset_spades'
+
+rule remove_final_contigs:
+    output:
+          temp('data/rewind_time')
+    shell:
+         'rm -rf assembly/; '
+         'rm -rf data/final_contigs.fasta; '
+         'touch data/rewind_time; '

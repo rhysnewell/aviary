@@ -97,7 +97,10 @@ class Processor:
         try:
 
             self.reference_filter = os.path.abspath(args.reference_filter) if args.reference_filter != 'none' else 'none'
-            self.gold_standard = os.path.abspath(args.gold_standard) if args.gold_standard != 'none' else 'none'
+            if args.gold_standard is not None:
+                self.gold_standard = [os.path.abspath(p) for p in args.gold_standard]
+            else:
+                self.gold_standard = 'none'
         except AttributeError:
             self.reference_filter = 'none'
             self.gold_standard = 'none'
@@ -140,7 +143,7 @@ class Processor:
             self.pe2 = 'none'
 
         try:
-            self.mag_directory = os.path.abspath(args.directory) if args.directory != 'none' else 'none'
+            self.mag_directory = os.path.abspath(args.directory) if args.directory is not None else 'none'
         except AttributeError:
             self.mag_directory = 'none'
 

@@ -738,3 +738,63 @@ rule simulate_atlas:
     shell:
         'checkm lineage_wf -t {threads} --pplacer_threads {params.pplacer_threads} '
         '-x fa data/atlas_dastool/das_tool_DASTool_bins data/atlas_dastool/checkm --tab_table -f data/atlas_dastool/checkm.out'
+
+
+rule dastool_no_refine:
+    """
+    Runs dasTool on the output of all binning algorithms. If a binner failed to produce bins then their output is ignored
+    Does not include refined results
+    """
+    input:
+        fasta = config["fasta"],
+        metabat2_done = "data/metabat_bins_2/done",
+        concoct_done = "data/concoct_bins/done",
+        maxbin_done = "data/maxbin2_bins/done",
+        metabat_sspec = "data/metabat_bins_sspec/done",
+        metabat_spec = "data/metabat_bins_spec/done",
+        metabat_ssens = "data/metabat_bins_ssens/done",
+        metabat_sense = "data/metabat_bins_sens/done",
+        rosella_done = "data/rosella_bins/done",
+        vamb_done = "data/vamb_bins/done",
+    group: 'binning'
+    output:
+        das_tool_done = "data/das_tool_bins_no_refine/done"
+    threads:
+        config["max_threads"]
+    conda:
+        "../binning/envs/das_tool.yaml"
+    benchmark:
+        "benchmarks/das_tool.benchmark.txt"
+    shell:
+        """
+        Fasta_to_Scaffolds2Bin.sh -i data/metabat_bins_sspec -e fa > data/metabat_bins_sspec.tsv; 
+        Fasta_to_Scaffolds2Bin.sh -i data/metabat_bins_ssens -e fa > data/metabat_bins_ssens.tsv; 
+        Fasta_to_Scaffolds2Bin.sh -i data/metabat_bins_sens -e fa > data/metabat_bins_sens.tsv; 
+        Fasta_to_Scaffolds2Bin.sh -i data/metabat_bins_spec -e fa > data/metabat_bins_spec.tsv; 
+        Fasta_to_Scaffolds2Bin.sh -i data/concoct_bins -e fa > data/concoct_bins.tsv; 
+        Fasta_to_Scaffolds2Bin.sh -i data/maxbin2_bins -e fasta > data/maxbin_bins.tsv; 
+        Fasta_to_Scaffolds2Bin.sh -i data/vamb_bins/bins -e fna > data/vamb_bins.tsv; 
+        Fasta_to_Scaffolds2Bin.sh -i data/rosella_bins/ -e fna > data/rosella_bins/rosella_bins.tsv; 
+        Fasta_to_Scaffolds2Bin.sh -i data/metabat_bins_2/ -e fa > data/metabat_bins_2/metabat2_bins.tsv; 
+        DAS_Tool --search_engine diamond --write_bin_evals 1 --write_bins 1 -t {threads} --score_threshold -42 \
+         -i data/metabat_bins_sspec.tsv,data/metabat_bins_spec.tsv,data/metabat_bins_ssens.tsv,data/metabat_bins_sens.tsv,data/concoct_bins.tsv,data/maxbin_bins.tsv,data/vamb_bins.tsv,data/rosella_bins/rosella_bins.tsv,data/metabat_bins_2/metabat2_bins.tsv \
+         -c {input.fasta} \
+         -o data/das_tool_bins_no_refine/das_tool && \
+        touch data/das_tool_bins_no_refine/done
+        """
+
+rule checkm_no_refine:
+    input:
+         dastool_done = "data/das_tool_bins_no_refine/done"
+    params:
+        pplacer_threads = config["pplacer_threads"]
+    group: 'binning'
+    output:
+        "data/das_tool_bins_no_refine/checkm.out"
+    conda:
+        "../../envs/checkm.yaml"
+    threads:
+        config["max_threads"]
+    shell:
+        'checkm lineage_wf -t {threads} --pplacer_threads {params.pplacer_threads} '
+        '-x fa data/das_tool_bins_no_refine/das_tool_DASTool_bins data/das_tool_bins_no_refine/checkm --tab_table -f data/das_tool_bins_no_refine/checkm.out'

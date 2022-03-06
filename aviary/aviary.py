@@ -232,7 +232,8 @@ def main():
         '-g', '--gold-standard-assembly', '--gold_standard_assembly',
         help='Gold standard assembly to compare either the Aviary assembly or a given input assembly against',
         dest="gold_standard",
-        default='none'
+        default='none',
+        nargs='*'
     )
 
     qc_group.add_argument(
@@ -536,12 +537,12 @@ def main():
         ''')
 
     assemble_options.add_argument(
-        '--skip-unicycler', '--skip_unicycler',
-        help='Skip the Unicycler reassembly of bins procedure.',
+        '--use-unicycler', '--use_unicycler',
+        help='Use Unicycler to re-assemble the metaSPAdes hybrid assembly. Not recommended for complex metagenomes.',
         type=str2bool,
         nargs='?',
         const=True,
-        dest='skip_unicycler',
+        dest='use_unicycler',
         default=False,
     )
 
@@ -549,7 +550,7 @@ def main():
         '-w', '--workflow',
         help='Main workflow to run',
         dest='workflow',
-        default='complete_assembly',
+        default='skip_unicycler_with_qc',
     )
 
     ##########################  ~ RECOVER ~   ###########################
@@ -591,9 +592,9 @@ def main():
     ##########################  ~ ANNOTATE ~   ###########################
 
     annotate_options = subparsers.add_parser('annotate',
-                                              description='The complete binning pipeline',
+                                              description='Annotate a given set of MAGs using EggNog',
                                               formatter_class=CustomHelpFormatter,
-                                              parents=[mag_group, annotation_group, base_group],
+                                              parents=[mag_group, annotation_group, base_group, qc_group],
                                               epilog=
                                             '''
                                                   ......:::::: ANNOTATE ::::::......
@@ -601,6 +602,14 @@ def main():
                                             aviary annotate --genome-fasta-directory input_bins/
                                         
                                             ''')
+
+    annotate_options.add_argument(
+        '-a', '--assembly',
+        help='FASTA file containing scaffolded contigs of one or more metagenome assemblies wishing to be passed to QUAST',
+        dest="assembly",
+        nargs="*",
+        required=False,
+    )
 
     annotate_options.add_argument(
         '-w', '--workflow',
@@ -835,8 +844,8 @@ def main():
 
             try:
                 if args.subparser_name == 'assemble':
-                    if args.skip_unicycler:
-                        args.workflow = "skip_unicycler_with_qc"
+                    if args.use_unicycler:
+                        args.workflow = "complete_assembly"
             except AttributeError:
                 pass
 

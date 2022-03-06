@@ -155,20 +155,20 @@ rule nanoplot:
 
 rule metaquast:
     """
-    MetaQuast on input assembly. Compare against GSA if one is provided
+    MetaQuast on input assembly (one or more). Compare against GSA if one is provided
     """
     input:
         assembly = config['fasta']
     params:
-        gsa = f" -r {config['gsa']} " if config['gsa'] != 'none' else ""
+        gsa = f" -r {','.join(config['gsa'])} " if config['gsa'] != 'none' else ""
     output:
-        "www/metaquast/report.txt"
+        "www/metaquast/report.html"
     threads:
         config["max_threads"]
     conda:
         "envs/quast.yaml"
     shell:
-        "metaquast.py {input.assembly} -t {threads} -o www/metaquast {params.gsa} --space-efficient"
+        "metaquast.py {input.assembly} -t {threads} -o www/metaquast {params.gsa} --min-identity 80 --extensive-mis-size 20000"
 
 rule read_fraction_recovered:
     """
