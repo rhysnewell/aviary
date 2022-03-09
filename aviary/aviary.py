@@ -519,7 +519,8 @@ def main():
         '-w', '--workflow',
         help='Main workflow to run',
         dest='workflow',
-        default='cluster_samples',
+        nargs="+",
+        default=['cluster_samples'],
     )
 
     ##########################  ~ ASSEMBLE ~  ###########################
@@ -550,7 +551,8 @@ def main():
         '-w', '--workflow',
         help='Main workflow to run',
         dest='workflow',
-        default='skip_unicycler_with_qc',
+        nargs="+",
+        default=['skip_unicycler_with_qc'],
     )
 
     ##########################  ~ RECOVER ~   ###########################
@@ -579,7 +581,8 @@ def main():
         '-w', '--workflow',
         help='Main workflow to run',
         dest='workflow',
-        default='recover_mags',
+        nargs="+",
+        default=['recover_mags'],
     )
 
     recover_options.add_argument(
@@ -615,7 +618,8 @@ def main():
         '-w', '--workflow',
         help='Main workflow to run',
         dest='workflow',
-        default='complete_annotation',
+        nargs="+",
+        default=['complete_annotation'],
     )
 
     ##########################  ~ GENOTYPE ~   ###########################
@@ -636,7 +640,8 @@ def main():
         '-w', '--workflow',
         help='Main workflow to run',
         dest='workflow',
-        default='create_webpage_genotype',
+        nargs="+",
+        default=['create_webpage_genotype'],
     )
 
     ##########################  ~ CLUSTER ~   ###########################
@@ -659,7 +664,8 @@ def main():
         '-w', '--workflow',
         help='Main workflow to run',
         dest='workflow',
-        default='complete_cluster',
+        nargs="+",
+        default=['complete_cluster'],
     )
 
     ##########################  ~ VIRAL ~   ###########################
@@ -680,7 +686,8 @@ def main():
         '-w', '--workflow',
         help='Main workflow to run',
         dest='workflow',
-        default='create_webpage_genotype',
+        nargs="+",
+        default=['create_webpage_genotype'],
     )
 
     ##########################   ~ COMPLETE ~  ###########################
@@ -702,7 +709,8 @@ def main():
         '-w', '--workflow',
         help='Main workflow to run',
         dest='workflow',
-        default='complete_workflow',
+        nargs="+",
+        default=['complete_workflow'],
     )
 
     ##########################  ~ ISOLATE ~  ###########################
@@ -721,9 +729,10 @@ def main():
 
     isolate_options.add_argument(
         '-w', '--workflow',
-        help='Main workflow to run',
+        help='Main workflows to run',
         dest='workflow',
-        default='create_webpage_assemble',
+        nargs="+",
+        default=['create_webpage_assemble'],
     )
 
     ##########################   ~ configure ~  ###########################
@@ -845,11 +854,11 @@ def main():
             try:
                 if args.subparser_name == 'assemble':
                     if args.use_unicycler:
-                        args.workflow = "complete_assembly"
+                        args.workflow = ["complete_assembly"]
             except AttributeError:
                 pass
 
-            processor.run_workflow(workflow=args.workflow,
+            processor.run_workflow(workflows=args.workflow,
                                    cores=int(args.n_cores),
                                    dryrun=args.dryrun,
                                    clean=args.clean,

@@ -257,7 +257,7 @@ class Processor:
     def _validate_config(self):
         load_configfile(self.config)
 
-    def run_workflow(self, workflow="recover_mags", cores=16, profile=None,
+    def run_workflow(self, workflows=["recover_mags"], cores=16, profile=None,
                      dryrun=False, clean=True, conda_frontend="mamba",
                      snakemake_args=""):
         """
@@ -275,30 +275,31 @@ class Processor:
 
         cores = max(int(self.threads), cores)
 
-        cmd = (
-            "snakemake --snakefile {snakefile} --directory {working_dir} "
-            "{jobs}--rerun-incomplete "
-            "--configfile '{config_file}' --nolock"
-            " {profile} {conda_frontend} --use-conda {conda_prefix}"
-            " {dryrun}{notemp}{args}"
-            " {target_rule}"
-        ).format(
-            snakefile=get_snakefile(),
-            working_dir=self.output,
-            jobs="--jobs {} ".format(cores) if cores is not None else "",
-            config_file=self.config,
-            profile="" if (profile is None) else "--profile {}".format(profile),
-            dryrun="--dryrun " if dryrun else "",
-            notemp="--notemp " if not clean else "",
-            args=snakemake_args,
-            target_rule=workflow if workflow != "None" else "",
-            conda_prefix="--conda-prefix " + self.conda_prefix,
-            conda_frontend="--conda-frontend " + conda_frontend
-        )
-        logging.info("Executing: %s" % cmd)
-        try:
-            subprocess.check_call(cmd, shell=True)
-        except subprocess.CalledProcessError as e:
-            # removes the traceback
-            logging.critical(e)
-            exit(1)
+        for workflow in workflows:
+            cmd = (
+                "snakemake --snakefile {snakefile} --directory {working_dir} "
+                "{jobs}--rerun-incomplete "
+                "--configfile '{config_file}' --nolock"
+                " {profile} {conda_frontend} --use-conda {conda_prefix}"
+                " {dryrun}{notemp}{args}"
+                " {target_rule}"
+            ).format(
+                snakefile=get_snakefile(),
+                working_dir=self.output,
+                jobs="--jobs {} ".format(cores) if cores is not None else "",
+                config_file=self.config,
+                profile="" if (profile is None) else "--profile {}".format(profile),
+                dryrun="--dryrun " if dryrun else "",
+                notemp="--notemp " if not clean else "",
+                args=snakemake_args,
+                target_rule=workflow if workflow != "None" else "",
+                conda_prefix="--conda-prefix " + self.conda_prefix,
+                conda_frontend="--conda-frontend " + conda_frontend
+            )
+            logging.info("Executing: %s" % cmd)
+            try:
+                subprocess.check_call(cmd, shell=True)
+            except subprocess.CalledProcessError as e:
+                # removes the traceback
+                logging.critical(e)
+                exit(1)

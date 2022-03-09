@@ -767,17 +767,19 @@ rule dastool_no_refine:
         "benchmarks/das_tool.benchmark.txt"
     shell:
         """
-        Fasta_to_Scaffolds2Bin.sh -i data/metabat_bins_sspec -e fa > data/metabat_bins_sspec.tsv; 
-        Fasta_to_Scaffolds2Bin.sh -i data/metabat_bins_ssens -e fa > data/metabat_bins_ssens.tsv; 
-        Fasta_to_Scaffolds2Bin.sh -i data/metabat_bins_sens -e fa > data/metabat_bins_sens.tsv; 
-        Fasta_to_Scaffolds2Bin.sh -i data/metabat_bins_spec -e fa > data/metabat_bins_spec.tsv; 
-        Fasta_to_Scaffolds2Bin.sh -i data/concoct_bins -e fa > data/concoct_bins.tsv; 
-        Fasta_to_Scaffolds2Bin.sh -i data/maxbin2_bins -e fasta > data/maxbin_bins.tsv; 
-        Fasta_to_Scaffolds2Bin.sh -i data/vamb_bins/bins -e fna > data/vamb_bins.tsv; 
-        Fasta_to_Scaffolds2Bin.sh -i data/rosella_bins/ -e fna > data/rosella_bins/rosella_bins.tsv; 
-        Fasta_to_Scaffolds2Bin.sh -i data/metabat_bins_2/ -e fa > data/metabat_bins_2/metabat2_bins.tsv; 
+        mkdir -p data/unrefined;
+        Fasta_to_Scaffolds2Bin.sh -i data/metabat_bins_sspec -e fa > data/unrefined/metabat_bins_sspec.tsv; 
+        Fasta_to_Scaffolds2Bin.sh -i data/metabat_bins_ssens -e fa > data/unrefined/metabat_bins_ssens.tsv; 
+        Fasta_to_Scaffolds2Bin.sh -i data/metabat_bins_sens -e fa > data/unrefined/metabat_bins_sens.tsv; 
+        Fasta_to_Scaffolds2Bin.sh -i data/metabat_bins_spec -e fa > data/unrefined/metabat_bins_spec.tsv; 
+        Fasta_to_Scaffolds2Bin.sh -i data/concoct_bins -e fa > data/unrefined/concoct_bins.tsv || touch data/unrefined/concoct_bins.tsv; 
+        Fasta_to_Scaffolds2Bin.sh -i data/maxbin2_bins -e fasta > data/unrefined/maxbin_bins.tsv; 
+        Fasta_to_Scaffolds2Bin.sh -i data/vamb_bins/bins -e fna > data/unrefined/vamb_bins.tsv || touch data/unrefined/vamb_bins.tsv; 
+        Fasta_to_Scaffolds2Bin.sh -i data/rosella_bins/ -e fna > data/unrefined/rosella_bins.tsv; 
+        Fasta_to_Scaffolds2Bin.sh -i data/metabat_bins_2/ -e fa > data/unrefined/metabat2_bins.tsv; 
+        scaffold2bin_files=$(find data/unrefined/*bins*.tsv -not -empty -exec ls {{}} \; | tr "\n" ',' | sed "s/,$//g");
         DAS_Tool --search_engine diamond --write_bin_evals 1 --write_bins 1 -t {threads} --score_threshold -42 \
-         -i data/metabat_bins_sspec.tsv,data/metabat_bins_spec.tsv,data/metabat_bins_ssens.tsv,data/metabat_bins_sens.tsv,data/concoct_bins.tsv,data/maxbin_bins.tsv,data/vamb_bins.tsv,data/rosella_bins/rosella_bins.tsv,data/metabat_bins_2/metabat2_bins.tsv \
+         -i $scaffold2bin_files \
          -c {input.fasta} \
          -o data/das_tool_bins_no_refine/das_tool && \
         touch data/das_tool_bins_no_refine/done
