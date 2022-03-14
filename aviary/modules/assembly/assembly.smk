@@ -411,15 +411,19 @@ rule spades_assembly:
         rm -rf data/spades_assembly/tmp; 
         minimumsize=500000;
         actualsize=$(stat -c%s data/short_reads.filt.fastq.gz);
-        if [ $actualsize -ge $minimumsize ]
+        if [ -d "data/spades_assembly/" ]
+        then
+            spades.py --restart-from last --memory {params.max_memory} -t {threads} -o data/spades_assembly && \
+            ln data/spades_assembly/scaffolds.fasta data/spades_assembly.fasta
+        elif [ $actualsize -ge $minimumsize ]
         then
             if [ {params.long_read_type} = "ont" ] || [ {params.long_read_type} = "ont_hq" ]
             then
-                spades.py --memory {params.max_memory} --meta --nanopore {input.long_reads} --12 {input.fastq} \
+                spades.py --checkpoints all --memory {params.max_memory} --meta --nanopore {input.long_reads} --12 {input.fastq} \
                 -o data/spades_assembly -t {threads} 2>data/spades.err && \
                 ln data/spades_assembly/scaffolds.fasta data/spades_assembly.fasta
             else
-                spades.py --memory {params.max_memory} --meta --pacbio {input.long_reads} --12 {input.fastq} \
+                spades.py --checkpoints all --memory {params.max_memory} --meta --pacbio {input.long_reads} --12 {input.fastq} \
                 -o data/spades_assembly -t {threads} 2>data/spades.err && \
                 ln data/spades_assembly/scaffolds.fasta data/spades_assembly.fasta
             fi
@@ -427,7 +431,6 @@ rule spades_assembly:
             touch {output.fasta}
         fi 
         """
-
 
 
 # Perform shrot read assembly only with no other steps
