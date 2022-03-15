@@ -548,7 +548,7 @@ rule recover_mags:
         "ln -s ../data/coverm_abundances.tsv ./; "
         "ln -s ../data/coverm.cov ./; "
         "cd ../; "
-        "ln -s data/singlem_out/ diversity/; "
+        "ln -sr data/singlem_out/ diversity; "
         "touch bins/done; "
         "touch diversity/done; "
 

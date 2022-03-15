@@ -11,6 +11,6 @@ dependencies:
   - checkm-genome
   - biopython
   - pip:
-      - flight-genome>=1.4.3
+      - "git+https://github.com/rhysnewell/flight.git#egg=flight-genome"
       - threadpoolctl
       - scikit-bio

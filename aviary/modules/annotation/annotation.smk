@@ -71,7 +71,7 @@ rule gtdbtk:
         "gtdbtk classify_wf --cpus {threads} --pplacer_cpus {params.pplacer_threads} --extension {params.extension} "
         "--genome_dir {input.mag_folder} --out_dir data/gtdbtk && touch data/gtdbtk/done"
 
-rule complete_annotation:
+rule annotate:
     input:
          'data/gtdbtk/done',
          'data/eggnog/done',
@@ -79,8 +79,7 @@ rule complete_annotation:
          'annotation/done',
     shell:
          """
-         mkdir -p annotation;
-         ln -s data/gtdbtk taxonomy; 
-         ln -s data/eggnog annotation; 
+         ln -sr data/gtdbtk taxonomy; 
+         ln -sr data/eggnog annotation; 
          touch annotation/done;
          """
