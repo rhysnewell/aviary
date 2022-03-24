@@ -3,9 +3,9 @@ import subprocess
 if snakemake.config['short_reads_2'] != 'none' and snakemake.config['short_reads_1'] != 'none':
     if len(snakemake.config['short_reads_2']) == 1:
         subprocess.Popen(
-            "spades.py --memory %s --meta -t %d -o data/spades_assembly -1 %s -2 %s" %
+            "spades.py --memory %s --meta -t %d -o data/spades_assembly -1 %s -2 %s -k %s" %
             (snakemake.config["max_memory"], snakemake.threads, snakemake.config["short_reads_1"][0],
-             snakemake.config["short_reads_2"][0]), shell=True).wait()
+             snakemake.config["short_reads_2"][0], " ".join(snakemake.params.kmer_sizes)), shell=True).wait()
     else: # co-assembly so use megahit
         subprocess.Popen(
             "megahit -1 %s -2 %s -t %d -m %d -o data/megahit_assembly" %
@@ -24,8 +24,8 @@ if snakemake.config['short_reads_2'] != 'none' and snakemake.config['short_reads
 elif snakemake.config['short_reads_1']  != 'none':
     if len(snakemake.config["short_reads_1"]) == 1:
         subprocess.Popen(
-            "spades.py --memory %s --meta -t %d -o data/spades_assembly --12 %s" %
-            (snakemake.config["max_memory"], snakemake.threads, snakemake.config["short_reads_1"][0]),
+            "spades.py --memory %s --meta -t %d -o data/spades_assembly --12 %s -k %s" %
+            (snakemake.config["max_memory"], snakemake.threads, snakemake.config["short_reads_1"][0], " ".join(snakemake.params.kmer_sizes)),
             shell=True).wait()
     else: # co-assembly so use megahit
         subprocess.Popen(

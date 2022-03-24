@@ -132,6 +132,9 @@ class Processor:
             if args.coupled != "none":
                 self.pe1 = args.coupled[::2]
                 self.pe2 = args.coupled[1::2]
+                if len(self.pe1) != len(self.pe2):
+                    logging.error(f"Number of forward reads != Number of reverse reads. Current forward: {len(self.pe1)} reverse: {len(self.pe2)}")
+                    sys.exit(-1)
             else:
                 self.pe2 = args.pe2
                 if args.interleaved == "none":
@@ -141,6 +144,11 @@ class Processor:
         except AttributeError:
             self.pe1 = 'none'
             self.pe2 = 'none'
+
+        try:
+            self.kmer_sizes = args.kmer_sizes
+        except AttributeError:
+            self.kmer_sizes = ['auto']
 
         try:
             self.mag_directory = os.path.abspath(args.directory) if args.directory is not None else 'none'
@@ -231,6 +239,7 @@ class Processor:
         conf["short_reads_2"] = self.pe2
         conf["long_reads"] = self.longreads
         conf["long_read_type"] = self.longread_type
+        conf["kmer_sizes"] = self.kmer_sizes
         conf["min_contig_size"] = int(self.min_contig_size)
         conf["min_bin_size"] = int(self.min_bin_size)
         conf["gtdbtk_folder"] = self.gtdbtk

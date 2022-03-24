@@ -401,7 +401,8 @@ rule spades_assembly:
         config["max_threads"]
     params:
         max_memory = config["max_memory"],
-        long_read_type = config["long_read_type"]
+        long_read_type = config["long_read_type"],
+        kmer_sizes = " ".join(config["kmer_sizes"])
     conda:
         "envs/spades.yaml"
     benchmark:
@@ -413,18 +414,18 @@ rule spades_assembly:
         actualsize=$(stat -c%s data/short_reads.filt.fastq.gz);
         if [ -d "data/spades_assembly/" ]
         then
-            spades.py --restart-from last --memory {params.max_memory} -t {threads} -o data/spades_assembly && \
+            spades.py --restart-from last --memory {params.max_memory} -t {threads} -o data/spades_assembly -k {params.kmer_sizes} && \
             ln data/spades_assembly/scaffolds.fasta data/spades_assembly.fasta
         elif [ $actualsize -ge $minimumsize ]
         then
             if [ {params.long_read_type} = "ont" ] || [ {params.long_read_type} = "ont_hq" ]
             then
                 spades.py --checkpoints all --memory {params.max_memory} --meta --nanopore {input.long_reads} --12 {input.fastq} \
-                -o data/spades_assembly -t {threads} 2>data/spades.err && \
+                -o data/spades_assembly -t {threads}  -k {params.kmer_sizes} 2>data/spades.err && \
                 ln data/spades_assembly/scaffolds.fasta data/spades_assembly.fasta
             else
                 spades.py --checkpoints all --memory {params.max_memory} --meta --pacbio {input.long_reads} --12 {input.fastq} \
-                -o data/spades_assembly -t {threads} 2>data/spades.err && \
+                -o data/spades_assembly -t {threads}  -k {params.kmer_sizes} 2>data/spades.err && \
                 ln data/spades_assembly/scaffolds.fasta data/spades_assembly.fasta
             fi
         else
@@ -444,6 +445,7 @@ rule spades_assembly_short:
          config["max_threads"]
     params:
          max_memory = config["max_memory"],
+         kmer_sizes = config["kmer_sizes"],
          final_assembly = True
     conda:
         "envs/spades.yaml"

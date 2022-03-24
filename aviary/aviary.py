@@ -274,9 +274,11 @@ def main():
 
     read_group_exclusive.add_argument(
         '-1', '--pe-1', '--paired-reads-1', '--paired_reads_1', '--pe1',
-        help='A space separated list of forwards read files to use for the binning process'
-             'NOTE: If performing assembly and multiple files are provided then only '
-             'the first file will be used for assembly.',
+        help='A space separated list of forwards read files'
+             'NOTE: If performing assembly and multiple files and longreads '
+             '      are provided then only the first file will be used for assembly.'
+             '      If no longreads are provided then all samples will be co-assembled '
+             '      with megahit',
         dest='pe1',
         nargs='*',
         default="none"
@@ -284,9 +286,11 @@ def main():
 
     short_read_group.add_argument(
         '-2', '--pe-2', '--paired-reads-2', '--paired_reads_2', '--pe2',
-        help='A space separated list of forwards read files to use for the binning process'
-             'NOTE: If performing assembly and multiple files are provided then only '
-             'the first file will be used for assembly.',
+        help='A space separated list of reverse read files'
+             'NOTE: If performing assembly and multiple files and longreads '
+             '      are provided then only the first file will be used for assembly.'
+             '      If no longreads are provided then all samples will be co-assembled '
+             '      with megahit',
         dest='pe2',
         nargs='*',
         default="none"
@@ -294,9 +298,11 @@ def main():
 
     read_group_exclusive.add_argument(
         '-i','--interleaved',
-        help='A space separated list of interleaved read files for the binning process '
-             'NOTE: If performing assembly and multiple files are provided then only '
-             'the first file will be used for assembly.',
+        help='A space separated list of interleaved read files '
+             'NOTE: If performing assembly and multiple files and longreads '
+             '      are provided then only the first file will be used for assembly.'
+             '      If no longreads are provided then all samples will be co-assembled '
+             '      with megahit',
         dest='interleaved',
         nargs='*',
         default="none"
@@ -305,8 +311,10 @@ def main():
     read_group_exclusive.add_argument(
         '-c', '--coupled',
         help='Forward and reverse read files in a coupled space separated list. '
-             'NOTE: If performing assembly and multiple files are provided then only '
-             'the first two files will be used for assembly.',
+             'NOTE: If performing assembly and multiple files and longreads '
+             '      are provided then only the first file will be used for assembly.'
+             '      If no longreads are provided then all samples will be co-assembled '
+             '      with megahit',
         dest='coupled',
         nargs='*',
         default="none"
@@ -318,8 +326,9 @@ def main():
                                               add_help=False)
     long_read_group.add_argument(
         '-l', '--longreads', '--long-reads', '--long_reads',
-        help='A space separated list of interleaved read files for the binning process. NOTE: If performing assembly and '
-             'multiple long read files are provided, then only the first file is used for assembly. ',
+        help='A space separated list of long-read read files. '
+             'NOTE: If performing assembly and multiple long read files are provided, then only the first file is used for assembly. '
+             '      This behaviour might change in future.',
         dest='longreads',
         nargs='*',
         default="none"
@@ -545,6 +554,15 @@ def main():
         const=True,
         dest='use_unicycler',
         default=False,
+    )
+
+    assemble_options.add_argument(
+        '--kmer-sizes', '--kmer_sizes', '-k',
+        help='Manually specify the kmer-sizes used by SPAdes during assembly. Space separated odd integer values '
+             'and less than 128 or "auto"',
+        dest='kmer_sizes',
+        default=['auto'],
+        nargs="+",
     )
 
     assemble_options.add_argument(
