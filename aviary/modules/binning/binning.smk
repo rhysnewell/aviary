@@ -148,11 +148,12 @@ rule vamb_binning:
     will be no bins produced by it but all other files will be there
     """
     input:
-        coverage = "data/coverm.cov",
+        coverage = "data/coverm.filt.cov",
         fasta = config["fasta"],
     params:
         min_bin_size = config["min_bin_size"],
-        min_contig_size = config["min_contig_size"]
+        min_contig_size = config["min_contig_size"],
+        vamb_threads = int(config[max_threads]) / 2 # vamb use double the threads you give it
     group: 'binning'
     output:
         "data/vamb_bins/done"
@@ -164,7 +165,7 @@ rule vamb_binning:
          config["max_threads"]
     shell:
         "rm -rf data/vamb_bins/; "
-        "bash -c 'vamb --outdir data/vamb_bins/ -p {threads} --jgi {input.coverage} --fasta {input.fasta} "
+        "bash -c 'vamb --outdir data/vamb_bins/ -p {params.vamb_threads} --jgi {input.coverage} --fasta {input.fasta} "
         "--minfasta {params.min_bin_size} -m {params.min_contig_size} && touch {output[0]}' || "
         "touch {output[0]} && mkdir -p data/vamb_bins/bins"
 
