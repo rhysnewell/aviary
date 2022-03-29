@@ -153,7 +153,7 @@ rule vamb_binning:
     params:
         min_bin_size = config["min_bin_size"],
         min_contig_size = config["min_contig_size"],
-        vamb_threads = int(config["max_threads"]) / 2 # vamb use double the threads you give it
+        vamb_threads = int(config["max_threads"]) // 2 # vamb use double the threads you give it
     group: 'binning'
     output:
         "data/vamb_bins/done"
