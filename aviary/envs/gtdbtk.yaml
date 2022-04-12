@@ -1,5 +1,5 @@
 channels:
   - bioconda
 dependencies:
-  - gtdbtk = 1.7.0
+  - gtdbtk = 2.0.0
   - fastani = 1.32
