@@ -160,7 +160,7 @@ rule metaquast:
     input:
         assembly = config['fasta']
     params:
-        gsa = f" -r {','.join(config['gsa'])} " if config['gsa'] != 'none' else ""
+        gsa = f" -r {','.join(config['gsa'])} " if config['gsa'][0] != 'none' else ""
     output:
         "www/metaquast/report.html"
     threads:

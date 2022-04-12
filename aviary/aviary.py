@@ -232,7 +232,7 @@ def main():
         '-g', '--gold-standard-assembly', '--gold_standard_assembly',
         help='Gold standard assembly to compare either the Aviary assembly or a given input assembly against',
         dest="gold_standard",
-        default='none',
+        default=['none'],
         nargs='*'
     )
 
@@ -570,7 +570,7 @@ def main():
         help='Main workflow to run',
         dest='workflow',
         nargs="+",
-        default=['skip_unicycler_with_qc'],
+        default=['complete_assembly'],
     )
 
     ##########################  ~ RECOVER ~   ###########################
@@ -872,7 +872,7 @@ def main():
             try:
                 if args.subparser_name == 'assemble':
                     if args.use_unicycler:
-                        args.workflow = ["complete_assembly"]
+                        args.workflow.insert(0, "combine_assemblies")
             except AttributeError:
                 pass
 

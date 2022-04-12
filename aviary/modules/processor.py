@@ -95,7 +95,6 @@ class Processor:
             self.assembly = 'none'
 
         try:
-
             self.reference_filter = os.path.abspath(args.reference_filter) if args.reference_filter != 'none' else 'none'
             if args.gold_standard is not None:
                 self.gold_standard = [os.path.abspath(p) for p in args.gold_standard]
