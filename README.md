@@ -90,6 +90,20 @@ Initial requirements for aviary can be downloaded using the `aviary.yml`:
 conda env create -n aviary -f aviary.yml
 ```
 
+## Databases
+
+Aviary uses programs which require access to locally stored databases. These databases can be quite large, as such we recommend setting up one instance of Aviary and these databases per machine or machine cluster.
+
+The **required** databases are as follows:
+* [GTDB](https://gtdb.ecogenomic.org/downloads) Required for taxonomic annotation
+
+The **optional** databases are as follows:
+* [EggNog](https://github.com/eggnogdb/eggnog-mapper/wiki/eggNOG-mapper-v2.1.5-to-v2.1.7#setup) Will become required soon.
+* [EnrichM](https://github.com/geronimp/enrichM)
+* Busco
+
+**If you do not have the optional databases installed, then when aviary asks you to specify these databse passes when configuring just press enter and specify no path.**
+
 # Module details
 |__method__ |__description__ |
 | --- | --- |
