@@ -69,7 +69,7 @@ rule gtdbtk:
     shell:
         "export GTDBTK_DATA_PATH={params.gtdbtk_folder} && "
         "gtdbtk classify_wf --cpus {threads} --pplacer_cpus {params.pplacer_threads} --extension {params.extension} "
-        "--genome_dir {input.mag_folder} --out_dir data/gtdbtk && touch data/gtdbtk/done"
+        "--genome_dir {input.mag_folder} --out_dir data/gtdbtk --full_tree && touch data/gtdbtk/done"
 
 rule annotate:
     input:
