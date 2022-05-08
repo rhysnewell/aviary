@@ -574,6 +574,35 @@ rule checkm_without_rosella:
         '--tab_table -f data/checkm_without_rosella.out; '
 
 
+# rule add_lengths:
+#     input:
+#         gsa_mappings = config["gsa_mappings"],
+#         gsa = config["fasta"]
+#     output:
+#         "data/gsa_mappings_lengths.binning"
+#     shell:
+#         "add_length_column.py -g {input.gsa_mappings} -f {input.gsa} > {output[0]}"
+#
+# rule setup_amber_independent:
+#     input:
+#         m1_sspec = "data/metabat_bins_sspec.tsv",
+#         m1_ssens = "data/metabat_bins_ssens.tsv",
+#         m1_sens = "data/metabat_bins_sens.tsv",
+#         m1_spec = "data/metabat_bins_spec.tsv",
+#         concoct = "data/concoct_bins.tsv",
+#         maxbin = "data/maxbin_bins.tsv",
+#         vamb = "data/vamb_bins.tsv",
+#         rosella = "data/rosella_bins.tsv",
+#         m2 = "data/metabat2_bins.tsv",
+#         gsa_mappings = "data/gsa_mapping_lengths.binning"
+#         # gsa_mappings = config["gsa_mappings"]
+#     output:
+#         amber_out = dir("data/amber_out")
+#     shell:
+#         'mkdir -p data/amber_input; '
+#         'convert_fasta_bins_to_biobox_format.py -o data/amber_out/rosella_amber.tsv rosella_bins/*.fna; '
+#         'convert_fasta_bins_to_biobox_format.py -o data/amber_out/rosella_amber.tsv rosella_bins/*.fna; '
+
 rule rosella_benchmark:
     input:
         "data/all_bins/checkm.out",

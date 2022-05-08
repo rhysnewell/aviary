@@ -237,6 +237,14 @@ def main():
     )
 
     qc_group.add_argument(
+        '--gsa-mappings', '--gsa_mappings',
+        help='CAMI I & II GSA mappings',
+        dest="gsa_mappings",
+        default='none',
+        nargs=1
+    )
+
+    qc_group.add_argument(
         '-r', '--reference-filter', '--reference_filter',
         help='Reference filter file to aid in the assembly',
         dest="reference_filter",

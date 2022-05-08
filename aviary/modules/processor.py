@@ -105,6 +105,11 @@ class Processor:
             self.gold_standard = 'none'
 
         try:
+            self.gsa_mappings = args.gsa_mappings
+        except AttributeError:
+            self.gsa_mappings = 'none'
+
+        try:
             self.longreads = args.longreads
         except AttributeError:
             self.longreads = 'none'
@@ -231,6 +236,7 @@ class Processor:
         conf["fasta"] = self.assembly
         conf["reference_filter"] = self.reference_filter
         conf["gsa"] = self.gold_standard
+        conf["gsa_mappings"] = self.gsa_mappings
         conf["max_threads"] = int(self.threads)
         conf["pplacer_threads"] = int(self.pplacer_threads)
         conf["max_memory"] = int(self.max_memory)

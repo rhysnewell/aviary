@@ -10,6 +10,8 @@ dependencies:
   - pebble
   - checkm-genome
   - biopython
+  - gcc
+  - cxx-compiler
   - pip:
       - "git+https://github.com/rhysnewell/flight.git#egg=flight-genome"
       - threadpoolctl
