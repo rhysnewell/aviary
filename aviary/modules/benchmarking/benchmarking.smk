@@ -583,7 +583,7 @@ rule checkm_without_rosella:
 #     shell:
 #         "add_length_column.py -g {input.gsa_mappings} -f {input.gsa} > {output[0]}"
 #
-# rule setup_amber_independent:
+# rule setup_amber:
 #     input:
 #         m1_sspec = "data/metabat_bins_sspec.tsv",
 #         m1_ssens = "data/metabat_bins_ssens.tsv",
@@ -594,14 +594,46 @@ rule checkm_without_rosella:
 #         vamb = "data/vamb_bins.tsv",
 #         rosella = "data/rosella_bins.tsv",
 #         m2 = "data/metabat2_bins.tsv",
+#         dt_wor = "data/das_tool_without_rosella/done",
+#         dt_wr = "data/das_tool_bins/done",
 #         gsa_mappings = "data/gsa_mapping_lengths.binning"
 #         # gsa_mappings = config["gsa_mappings"]
 #     output:
 #         amber_out = dir("data/amber_out")
 #     shell:
-#         'mkdir -p data/amber_input; '
-#         'convert_fasta_bins_to_biobox_format.py -o data/amber_out/rosella_amber.tsv rosella_bins/*.fna; '
-#         'convert_fasta_bins_to_biobox_format.py -o data/amber_out/rosella_amber.tsv rosella_bins/*.fna; '
+#         'mkdir -p data/amber_out; '
+#         'convert_fasta_bins_to_biobox_format.py -o data/amber_out/rosella_amber.tsv data/rosella_bins/*.fna; '
+#         'convert_fasta_bins_to_biobox_format.py -o data/amber_out/m1_sspec_amber.tsv data/metabat_bins_sspec/*.fa; '
+#         'convert_fasta_bins_to_biobox_format.py -o data/amber_out/m1_spec_amber.tsv data/metabat_bins_spec/*.fa; '
+#         'convert_fasta_bins_to_biobox_format.py -o data/amber_out/m1_ssens_amber.tsv data/metabat_bins_ssens/*.fa; '
+#         'convert_fasta_bins_to_biobox_format.py -o data/amber_out/m1_sens_amber.tsv data/metabat_bins_sens/*.fa; '
+#         'convert_fasta_bins_to_biobox_format.py -o data/amber_out/m2_amber.tsv data/metabat_bins_2/*.fa; '
+#         'convert_fasta_bins_to_biobox_format.py -o data/amber_out/concoct_amber.tsv data/concoct_bins/*.fa; '
+#         'convert_fasta_bins_to_biobox_format.py -o data/amber_out/maxbin2_amber.tsv data/maxbin2_bins/*.fasta; '
+#         'convert_fasta_bins_to_biobox_format.py -o data/amber_out/vamb_amber.tsv data/vamb_bins/bins/*.fna; '
+#         'convert_fasta_bins_to_biobox_format.py -o data/amber_out/dt_wor_amber.tsv data/das_tool_without_rosella/das_tool_DASTool_bins/*.fa; '
+#         'convert_fasta_bins_to_biobox_format.py -o data/amber_out/dt_wr_amber.tsv data/das_tool_bins/das_tool_DASTool_bins/*.fa; '
+#
+# rule run_amber:
+#     input:
+#         rosella_cami = "data/amber_out/rosella_amber.tsv",
+#         m2_cami = "data/amber_out/m2_amber.tsv",
+#         m1_sspec_cami = "data/amber_out/m1_sspec_amber.tsv",
+#         m1_spec_cami = "data/amber_out/m1_spec_amber.tsv",
+#         m1_ssens_cami = "data/amber_out/m1_ssens_amber.tsv",
+#         m1_sens_cami = "data/amber_out/m1_sens_amber.tsv",
+#         concoct_cami = "data/amber_out/concoct_amber.tsv",
+#         maxbin2_cami = "data/amber_out/maxbin2_amber.tsv",
+#         vamb_cami = "data/amber_out/vamb_amber.tsv",
+#         dt_wor_cami = "data/amber_out/dt_wor_amber.tsv",
+#         dt_wr_cami = "data/amber_out/dt_wr_amber.tsv",
+#         gsa_mappings = "data/gsa_mapping_lengths.binning"
+#     output:
+#         amber_out = dir("data/amber_out/benchmarks")
+#     shell:
+#         "amber.py -g {input.gsa_mappings} -o {output.amber_out} -x 90,80,70,60,50 -y 1000,10,5 "
+#         "-l 'Rosella', 'MetaBAT2', 'MetaBAT SuperSpec', 'MetaBAT Spec', 'MetaBAT SuperSens', 'MetaBAT Sens', 'CONCOCT', 'MaxBin2', 'VAMB', 'DASTool w/o Rosella', 'DASTool w/ Rosella' "
+#         ""
 
 rule rosella_benchmark:
     input:
