@@ -656,7 +656,7 @@ rule add_lengths:
         gsa_mappings = config["gsa_mappings"],
         gsa = config["fasta"]
     output:
-        "data/gsa_mappings_lengths.binning"
+        "data/gsa_mapping_lengths.binning"
     shell:
         "add_length_column.py -g {input.gsa_mappings} -f {input.gsa} > {output[0]}"
 
