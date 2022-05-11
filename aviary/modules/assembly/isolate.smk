@@ -141,6 +141,6 @@ rule circlator:
         "benchmarks/circlator.benchmark.txt"
     shell:
         """
-        circlator all {input.fasta} {input.reads} isolate/circlator && \
+        circlator all --threads {threads} {input.fasta} {input.reads} isolate/circlator && \
         cp isolate/circlator/06.fixstart.fasta {output.fasta}
         """
