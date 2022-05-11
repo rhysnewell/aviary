@@ -110,6 +110,11 @@ class Processor:
             self.gsa_mappings = 'none'
 
         try:
+            self.semibin_model = args.semibin_model
+        except AttributeError:
+            self.semibin_model = 'global'
+
+        try:
             self.longreads = args.longreads
         except AttributeError:
             self.longreads = 'none'
@@ -237,6 +242,7 @@ class Processor:
         conf["reference_filter"] = self.reference_filter
         conf["gsa"] = self.gold_standard
         conf["gsa_mappings"] = self.gsa_mappings
+        conf["semibin_model"] = self.semibin_model
         conf["max_threads"] = int(self.threads)
         conf["pplacer_threads"] = int(self.pplacer_threads)
         conf["max_memory"] = int(self.max_memory)

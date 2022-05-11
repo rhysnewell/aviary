@@ -80,6 +80,7 @@ rule binner_result:
         "ln -s ../metabat_bins_spec/*.fa ./ && ls *.fa | parallel 'mv {{}} {{.}}.metabat_spec.fna'; "
         "ln -s ../metabat_bins_ssens/*.fa ./ && ls *.fa | parallel 'mv {{}} {{.}}.metabat_ssens.fna'; "
         "ln -s ../metabat_bins_sspec/*.fa ./ && ls *.fa | parallel 'mv {{}} {{.}}.metabat_sspec.fna'; "
+        "ln -s ../semibin_bins/output_recluster_bins/*.fa ./ && ls *.fa | parallel 'mv {{}} {{.}}.semibin.fna'; "
         "ln -s ../concoct_bins/*.fa ./ && ls *.fa | parallel 'mv {{}} concoct_{{.}}.fna'; "
         "ln -s ../maxbin2_bins/*.fasta ./ && ls *.fasta | parallel 'mv {{}} maxbin2_{{.}}.fna'; "
         "ln -s ../rosella_bins/*.fna ./; "
@@ -126,10 +127,12 @@ rule checkm2_refined:
     input:
         m2_refined = "data/rosella_refine_metabat2/checkm.out",
         ro_refined = "data/rosella_refine_rosella/checkm.out",
+        sb_refined = "data/rosella_refine_semibin/checkm.out",
         dt_refined = "data/rosella_refine_das_tool/checkm.out"
     output:
         m2_report = "data/m2_refined_checkm2/quality_report.tsv",
         ro_report = "data/ro_refined_checkm2/quality_report.tsv",
+        sb_report = "data/sb_refined_checkm2/quality_report.tsv",
         dt_report = "data/dt_refined_checkm2/quality_report.tsv"
     threads:
         config["max_threads"]
@@ -139,9 +142,10 @@ rule checkm2_refined:
         "envs/checkm2.yaml"
     shell:
         "export CHECKM2DB={params.checkm2_db_path}; "
-        "checkm2 predict -i data/rosella_refine_metabat2/ -x fna -o data/m2_refined_checkm2/ -t {threads} --force || touch {output.m2_report}; "
-        "checkm2 predict -i data/rosella_refine_rosella/ -x fna -o data/ro_refined_checkm2/ -t {threads} --force || touch {output.ro_report}; "
-        "checkm2 predict -i data/rosella_refine_das_tool/ -x fna -o data/dt_refined_checkm2/ -t {threads} --force || touch {output.dt_report}; "
+        "checkm2 predict -i data/rosella_refine_metabat2/final_bins/ -x fna -o data/m2_refined_checkm2/ -t {threads} --force || touch {output.m2_report}; "
+        "checkm2 predict -i data/rosella_refine_rosella/final_bins/ -x fna -o data/ro_refined_checkm2/ -t {threads} --force || touch {output.ro_report}; "
+        "checkm2 predict -i data/rosella_refine_semibin/final_bins/ -x fna -o data/sb_refined_checkm2/ -t {threads} --force || touch {output.sb_report}; "
+        "checkm2 predict -i data/rosella_refine_das_tool/final_bins/ -x fna -o data/dt_refined_checkm2/ -t {threads} --force || touch {output.dt_report}; "
 
 # rule fraction_recovered:
 #     input:
@@ -169,61 +173,108 @@ rule checkm2_refined:
 #     shell:
 #         ""
 
+
 rule rosella_refine_benchmark_1:
     input:
-        checkm1_done = "data/all_bins/checkm.out",
-        coverages = "data/coverm.cov",
-        rosella_done = "data/rosella_bins/done",
-        assembly = config["fasta"]
+        checkm = 'data/rosella_bins/checkm.out',
+        rosella = 'data/rosella_bins/done',
+        coverage = "data/coverm.cov",
+        fasta = config["fasta"],
+        kmers = "data/rosella_bins/rosella_kmer_table.tsv"
     output:
-        refine1 = "data/rosella_refine_rosella/done",
-    conda:
-        "../binning/envs/rosella.yaml",
+        'data/rosella_refine_rosella/done'
+    params:
+        bin_folder = "data/rosella_bins/",
+        extension = "fna",
+        output_folder = "data/rosella_refine_rosella/",
+        min_bin_size = config["min_bin_size"],
+        max_iterations = 1,
+        pplacer_threads = config["pplacer_threads"],
+        max_contamination = 10,
+        final_refining = False
     threads:
         config["max_threads"]
-    benchmark:
-        "benchmarks/rosella_refine_rosella.txt"
-    shell:
-        "rosella refine -a {input.assembly} --coverage-values {input.coverages} -f data/all_bins/rosella*.fna "
-        "--checkm-file {input.checkm1_done} -o data/rosella_refine_rosella -t {threads} --contaminated-only && "
-        "touch {output.refine1} || touch {output.refine1} "
+    conda:
+        "../binning/envs/rosella.yaml"
+    script:
+        "../binning/scripts/rosella_refine.py"
 
 rule rosella_refine_benchmark_2:
     input:
-        checkm1_done = "data/all_bins/checkm.out",
-        coverages = "data/coverm.cov",
-        rosella_done = "data/metabat_bins_2/done",
-        assembly = config["fasta"]
+        checkm = 'data/metabat_bins_2/checkm.out',
+        rosella = 'data/metabat_bins_2/done',
+        coverage = "data/coverm.cov",
+        fasta = config["fasta"],
+        kmers = "data/rosella_bins/rosella_kmer_table.tsv"
     output:
-        refine2 = "data/rosella_refine_metabat2/done",
-    conda:
-        "../binning/envs/rosella.yaml",
+        'data/rosella_refine_metabat2/done'
+    params:
+        bin_folder = "data/metabat_bins_2/",
+        extension = "fa",
+        output_folder = "data/rosella_refine_metabat2/",
+        min_bin_size = config["min_bin_size"],
+        max_iterations = 1,
+        pplacer_threads = config["pplacer_threads"],
+        max_contamination = 10,
+        final_refining = False
     threads:
         config["max_threads"]
-    benchmark:
-        "benchmarks/rosella_refine_metabat2.txt"
-    shell:
-        "rosella refine -a {input.assembly} --coverage-values {input.coverages} -f data/all_bins/*metabat2*.fna "
-        "--checkm-file {input.checkm1_done} -o data/rosella_refine_metabat2 -t {threads} --contaminated-only && "
-        "touch {output.refine2} || touch {output.refine2} "
+    conda:
+        "../binning/envs/rosella.yaml"
+    script:
+        "scripts/rosella_refine.py"
 
 rule rosella_refine_benchmark_3:
     input:
-        checkm_done = "data/das_tool_bins/checkm.out",
-        coverages = "data/coverm.cov",
-        assembly = config["fasta"]
+        checkm = 'data/semibin_bins/checkm.out',
+        rosella = 'data/semibin_bins/done',
+        coverage = "data/coverm.cov",
+        fasta = config["fasta"],
+        kmers = "data/rosella_bins/rosella_kmer_table.tsv"
     output:
-        refine3 = "data/rosella_refine_das_tool/done"
-    conda:
-        "../binning/envs/rosella.yaml",
+        'data/rosella_refine_semibin/done'
+    params:
+        bin_folder = "data/semibin_bin/output_recluster_bins/",
+        extension = "fa",
+        output_folder = "data/rosella_refine_semibin/",
+        min_bin_size = config["min_bin_size"],
+        max_iterations = 1,
+        pplacer_threads = config["pplacer_threads"],
+        max_contamination = 10,
+        final_refining = False
     threads:
         config["max_threads"]
-    benchmark: 
-        "benchmarks/rosella_refine_dastool.txt"
-    shell:
-        "rosella refine -a {input.assembly} --coverage-values {input.coverages} -d data/das_tool_bins/das_tool_DASTool_bins/ -x fa "
-        "--checkm-file {input.checkm_done} -o data/rosella_refine_das_tool -t {threads} --contaminated-only && "
-        "touch {output.refine3} || touch {output.refine3} "
+    conda:
+        "../binning/envs/rosella.yaml"
+    script:
+        "scripts/rosella_refine.py"
+
+
+rule rosella_refine_benchmark_4:
+    input:
+        checkm = 'data/das_tool_bins_pre_refine/checkm.out',
+        das_tool = 'data/das_tool_bins_pre_refine/done',
+        coverage = "data/coverm.cov",
+        fasta = config["fasta"],
+        kmers = "data/rosella_bins/rosella_kmer_table.tsv"
+    output:
+        'data/rosella_refine_das_tool/done'
+    params:
+        bin_folder = "data/das_tool_bins_pre_refine/das_tool_DASTool_bins/",
+        extension = "fa",
+        output_folder = "data/rosella_refine_das_tool/",
+        min_bin_size = config["min_bin_size"],
+        max_iterations = 1,
+        pplacer_threads = config["pplacer_threads"],
+        max_contamination = 10,
+        final_refining = True
+    threads:
+        config["max_threads"]
+    conda:
+        "../binning/envs/rosella.yaml"
+    script:
+        "scripts/rosella_refine.py"
+
 
 rule checkm1_rosella_refine_1:
     input:
@@ -238,7 +289,7 @@ rule checkm1_rosella_refine_1:
         "../../envs/checkm.yaml"
     shell:
         "checkm lineage_wf -t {threads} --pplacer_threads {params.pplacer_threads} -x fna "
-        "--tab_table data/rosella_refine_rosella/ data/rosella_refine_rosella/checkm > {output.checkm1_done} || touch {output.checkm1_done}"
+        "--tab_table data/rosella_refine_rosella/final_bins/ data/rosella_refine_rosella/checkm > {output.checkm1_done} || touch {output.checkm1_done}"
 
 
 rule checkm1_rosella_refine_2:
@@ -254,10 +305,24 @@ rule checkm1_rosella_refine_2:
         "../../envs/checkm.yaml"
     shell:
         "checkm lineage_wf -t {threads} --pplacer_threads {params.pplacer_threads} -x fna "
-        "--tab_table data/rosella_refine_metabat2/ data/rosella_refine_metabat2/checkm > {output.checkm1_done} || touch {output.checkm1_done}"
-
+        "--tab_table data/rosella_refine_metabat2/final_bins/ data/rosella_refine_metabat2/checkm > {output.checkm1_done} || touch {output.checkm1_done}"
 
 rule checkm1_rosella_refine_3:
+    input:
+        refine1 = "data/rosella_refine_semibin/done",
+    output:
+        checkm1_done = "data/rosella_refine_semibin/checkm.out",
+    params:
+        pplacer_threads = config["pplacer_threads"]
+    threads:
+        config["max_threads"]
+    conda:
+        "../../envs/checkm.yaml"
+    shell:
+        "checkm lineage_wf -t {threads} --pplacer_threads {params.pplacer_threads} -x fna "
+        "--tab_table data/rosella_refine_semibin/final_bins/ data/rosella_refine_semibin/checkm > {output.checkm1_done} || touch {output.checkm1_done}"
+
+rule checkm1_rosella_refine_4:
     input:
         refine1 = "data/rosella_refine_das_tool/done",
     output:
@@ -343,6 +408,7 @@ rule bin_statistics:
         checkm1_done = "data/all_bins/checkm.out",
         m2_refined = "data/rosella_refine_metabat2/checkm.out",
         ro_refined = "data/rosella_refine_rosella/checkm.out",
+        sb_refined = "data/rosella_refine_semibin/checkm.out",
         dt_refined = "data/rosella_refine_das_tool/checkm.out",
         dastool_wr = "data/das_tool_bins/checkm.out",
         dastool_nr = "data/checkm_without_rosella.out",
@@ -351,6 +417,7 @@ rule bin_statistics:
         bin_stats = "data/bin_stats/all_bin_stats.tsv",
         m2_stats = "data/bin_stats/m2_refined_bin_stats.tsv",
         ro_stats = "data/bin_stats/ro_refined_bin_stats.tsv",
+        sb_stats = "data/bin_stats/sb_refined_bin_stats.tsv",
         dt_stats = "data/bin_stats/dt_refined_bin_stats.tsv",
         das_tool_wr_stats = "data/bin_stats/das_tool_wr_stats.tsv",
         das_tool_nr_stats = "data/bin_stats/das_tool_nr_stats.tsv",
@@ -434,6 +501,14 @@ rule bin_statistics:
             Path(output.m2_stats).touch()
 
         try:
+            sb_checkm = pd.read_csv(input.sb_refined, sep='\t', comment="[")
+            sb_stats = retrieve_stats("data/rosella_refine_semibin/", "fna", coverage_file, sb_checkm)
+            sb_stats = pd.DataFrame(data = sb_stats)
+            sb_stats.to_csv(output.sb_stats, sep='\t', index=False)
+        except FileNotFoundError:
+            Path(output.sb_stats).touch()
+
+        try:
             dt_checkm = pd.read_csv(input.dt_refined, sep='\t', comment="[")
             dt_stats = retrieve_stats("data/rosella_refine_das_tool/", "fna", coverage_file, dt_checkm)
             dt_stats = pd.DataFrame(data = dt_stats)
@@ -446,6 +521,7 @@ rule get_stats:
         bin_stats = "data/bin_stats/all_bin_stats.tsv",
         m2_refined_stats = "data/bin_stats/m2_refined_bin_stats.tsv",
         ro_refined_stats = "data/bin_stats/ro_refined_bin_stats.tsv",
+        sb_refined_stats = "data/bin_stats/sb_refined_bin_stats.tsv",
         dt_refined_stats = "data/bin_stats/dt_refined_bin_stats.tsv",
         das_tool_wr_stats = "data/bin_stats/das_tool_wr_stats.tsv",
         das_tool_nr_stats = "data/bin_stats/das_tool_nr_stats.tsv",
@@ -454,6 +530,7 @@ rule get_stats:
         checkm2_report_nr = "data/checkm2_das_tool_nr/quality_report.tsv",
         m2_report = "data/m2_refined_checkm2/quality_report.tsv",
         ro_report = "data/ro_refined_checkm2/quality_report.tsv",
+        sb_report = "data/sb_refined_checkm2/quality_report.tsv",
         dt_report = "data/dt_refined_checkm2/quality_report.tsv"
     output:
         done = "data/stats_done"
@@ -574,66 +651,94 @@ rule checkm_without_rosella:
         '--tab_table -f data/checkm_without_rosella.out; '
 
 
-# rule add_lengths:
-#     input:
-#         gsa_mappings = config["gsa_mappings"],
-#         gsa = config["fasta"]
-#     output:
-#         "data/gsa_mappings_lengths.binning"
-#     shell:
-#         "add_length_column.py -g {input.gsa_mappings} -f {input.gsa} > {output[0]}"
-#
-# rule setup_amber:
-#     input:
-#         m1_sspec = "data/metabat_bins_sspec.tsv",
-#         m1_ssens = "data/metabat_bins_ssens.tsv",
-#         m1_sens = "data/metabat_bins_sens.tsv",
-#         m1_spec = "data/metabat_bins_spec.tsv",
-#         concoct = "data/concoct_bins.tsv",
-#         maxbin = "data/maxbin_bins.tsv",
-#         vamb = "data/vamb_bins.tsv",
-#         rosella = "data/rosella_bins.tsv",
-#         m2 = "data/metabat2_bins.tsv",
-#         dt_wor = "data/das_tool_without_rosella/done",
-#         dt_wr = "data/das_tool_bins/done",
-#         gsa_mappings = "data/gsa_mapping_lengths.binning"
-#         # gsa_mappings = config["gsa_mappings"]
-#     output:
-#         amber_out = dir("data/amber_out")
-#     shell:
-#         'mkdir -p data/amber_out; '
-#         'convert_fasta_bins_to_biobox_format.py -o data/amber_out/rosella_amber.tsv data/rosella_bins/*.fna; '
-#         'convert_fasta_bins_to_biobox_format.py -o data/amber_out/m1_sspec_amber.tsv data/metabat_bins_sspec/*.fa; '
-#         'convert_fasta_bins_to_biobox_format.py -o data/amber_out/m1_spec_amber.tsv data/metabat_bins_spec/*.fa; '
-#         'convert_fasta_bins_to_biobox_format.py -o data/amber_out/m1_ssens_amber.tsv data/metabat_bins_ssens/*.fa; '
-#         'convert_fasta_bins_to_biobox_format.py -o data/amber_out/m1_sens_amber.tsv data/metabat_bins_sens/*.fa; '
-#         'convert_fasta_bins_to_biobox_format.py -o data/amber_out/m2_amber.tsv data/metabat_bins_2/*.fa; '
-#         'convert_fasta_bins_to_biobox_format.py -o data/amber_out/concoct_amber.tsv data/concoct_bins/*.fa; '
-#         'convert_fasta_bins_to_biobox_format.py -o data/amber_out/maxbin2_amber.tsv data/maxbin2_bins/*.fasta; '
-#         'convert_fasta_bins_to_biobox_format.py -o data/amber_out/vamb_amber.tsv data/vamb_bins/bins/*.fna; '
-#         'convert_fasta_bins_to_biobox_format.py -o data/amber_out/dt_wor_amber.tsv data/das_tool_without_rosella/das_tool_DASTool_bins/*.fa; '
-#         'convert_fasta_bins_to_biobox_format.py -o data/amber_out/dt_wr_amber.tsv data/das_tool_bins/das_tool_DASTool_bins/*.fa; '
-#
-# rule run_amber:
-#     input:
-#         rosella_cami = "data/amber_out/rosella_amber.tsv",
-#         m2_cami = "data/amber_out/m2_amber.tsv",
-#         m1_sspec_cami = "data/amber_out/m1_sspec_amber.tsv",
-#         m1_spec_cami = "data/amber_out/m1_spec_amber.tsv",
-#         m1_ssens_cami = "data/amber_out/m1_ssens_amber.tsv",
-#         m1_sens_cami = "data/amber_out/m1_sens_amber.tsv",
-#         concoct_cami = "data/amber_out/concoct_amber.tsv",
-#         maxbin2_cami = "data/amber_out/maxbin2_amber.tsv",
-#         vamb_cami = "data/amber_out/vamb_amber.tsv",
-#         dt_wor_cami = "data/amber_out/dt_wor_amber.tsv",
-#         dt_wr_cami = "data/amber_out/dt_wr_amber.tsv",
-#         gsa_mappings = "data/gsa_mapping_lengths.binning"
-#     output:
-#         amber_out = dir("data/amber_out/benchmarks")
-#     shell:
-#         "amber.py -g {input.gsa_mappings} -o {output.amber_out} -x 90,80,70,60,50 -y 1000,10,5 "
-#         "-l 'Rosella', 'MetaBAT2', 'MetaBAT SuperSpec', 'MetaBAT Spec', 'MetaBAT SuperSens', 'MetaBAT Sens', 'CONCOCT', 'MaxBin2', 'VAMB', 'DASTool w/o Rosella', 'DASTool w/ Rosella' "
-#         ""
+rule add_lengths:
+    input:
+        gsa_mappings = config["gsa_mappings"],
+        gsa = config["fasta"]
+    output:
+        "data/gsa_mappings_lengths.binning"
+    shell:
+        "add_length_column.py -g {input.gsa_mappings} -f {input.gsa} > {output[0]}"
+
+rule setup_amber:
+    input:
+        m1_sspec = "data/metabat_bins_sspec/done",
+        m1_ssens = "data/metabat_bins_ssens/done",
+        m1_sens = "data/metabat_bins_sens/done",
+        m1_spec = "data/metabat_bins_spec/done",
+        concoct = "data/concoct_bins/done",
+        maxbin = "data/maxbin2_bins/done",
+        vamb = "data/vamb_bins/done",
+        semibin = "data/semibin_bins/done",
+        rosella = "data/rosella_bins/done",
+        m2 = "data/metabat_bins_2/done",
+        semibin_refined = "data/rosella_refine_semibin/done",
+        rosella_refined = "data/rosella_refine_rosella/done",
+        m2_refined = "data/rosella_refine_metabat2/done",
+        dt_wor = "data/das_tool_without_rosella/done",
+        dt_wr = "data/das_tool_bins/done",
+        gsa_mappings = "data/gsa_mapping_lengths.binning"
+        # gsa_mappings = config["gsa_mappings"]
+    output:
+        rosella_cami = "data/amber_out/rosella_amber.tsv",
+        m2_cami = "data/amber_out/m2_amber.tsv",
+        m1_sspec_cami = "data/amber_out/m1_sspec_amber.tsv",
+        m1_spec_cami = "data/amber_out/m1_spec_amber.tsv",
+        m1_ssens_cami = "data/amber_out/m1_ssens_amber.tsv",
+        m1_sens_cami = "data/amber_out/m1_sens_amber.tsv",
+        concoct_cami = "data/amber_out/concoct_amber.tsv",
+        maxbin2_cami = "data/amber_out/maxbin2_amber.tsv",
+        vamb_cami = "data/amber_out/vamb_amber.tsv",
+        semibin_cami = "data/amber_out/semibin_amber.tsv",
+        semibin_refined_cami = "data/amber_out/semibin_refined_amber.tsv",
+        rosella_refined_cami = "data/amber_out/rosella_refined_amber.tsv",
+        metabat2_refined_cami = "data/amber_out/metabat2_refined_amber.tsv",
+        dt_wor_cami = "data/amber_out/dt_wor_amber.tsv",
+        dt_wr_cami = "data/amber_out/dt_wr_amber.tsv",
+    shell:
+        'mkdir -p data/amber_out; '
+        'convert_fasta_bins_to_biobox_format.py -o data/amber_out/rosella_amber.tsv data/rosella_bins/*.fna; '
+        'convert_fasta_bins_to_biobox_format.py -o data/amber_out/m1_sspec_amber.tsv data/metabat_bins_sspec/*.fa; '
+        'convert_fasta_bins_to_biobox_format.py -o data/amber_out/m1_spec_amber.tsv data/metabat_bins_spec/*.fa; '
+        'convert_fasta_bins_to_biobox_format.py -o data/amber_out/m1_ssens_amber.tsv data/metabat_bins_ssens/*.fa; '
+        'convert_fasta_bins_to_biobox_format.py -o data/amber_out/m1_sens_amber.tsv data/metabat_bins_sens/*.fa; '
+        'convert_fasta_bins_to_biobox_format.py -o data/amber_out/m2_amber.tsv data/metabat_bins_2/*.fa; '
+        'convert_fasta_bins_to_biobox_format.py -o data/amber_out/concoct_amber.tsv data/concoct_bins/*.fa; '
+        'convert_fasta_bins_to_biobox_format.py -o data/amber_out/maxbin2_amber.tsv data/maxbin2_bins/*.fasta; '
+        'convert_fasta_bins_to_biobox_format.py -o data/amber_out/vamb_amber.tsv data/vamb_bins/bins/*.fna; '
+        'convert_fasta_bins_to_biobox_format.py -o data/amber_out/semibin_amber.tsv data/semibin_bins/output_recluster_bins/*.fa; '
+        'convert_fasta_bins_to_biobox_format.py -o data/amber_out/semibin_refined_amber.tsv data/rosella_refine_semibin/final_bins/*.fna; '
+        'convert_fasta_bins_to_biobox_format.py -o data/amber_out/rosella_refined_amber.tsv data/rosella_refine_rosella/final_bins/*.fna; '
+        'convert_fasta_bins_to_biobox_format.py -o data/amber_out/metabat2_refined_amber.tsv data/rosella_refine_metabat2/final_bins/*.fna; '
+        'convert_fasta_bins_to_biobox_format.py -o data/amber_out/dt_wor_amber.tsv data/das_tool_without_rosella/das_tool_DASTool_bins/*.fa; '
+        'convert_fasta_bins_to_biobox_format.py -o data/amber_out/dt_wr_amber.tsv data/das_tool_bins/das_tool_DASTool_bins/*.fa; '
+
+rule run_amber:
+    input:
+        rosella_cami = "data/amber_out/rosella_amber.tsv",
+        m2_cami = "data/amber_out/m2_amber.tsv",
+        m1_sspec_cami = "data/amber_out/m1_sspec_amber.tsv",
+        m1_spec_cami = "data/amber_out/m1_spec_amber.tsv",
+        m1_ssens_cami = "data/amber_out/m1_ssens_amber.tsv",
+        m1_sens_cami = "data/amber_out/m1_sens_amber.tsv",
+        concoct_cami = "data/amber_out/concoct_amber.tsv",
+        maxbin2_cami = "data/amber_out/maxbin2_amber.tsv",
+        vamb_cami = "data/amber_out/vamb_amber.tsv",
+        semibin_cami = "data/amber_out/semibin_amber.tsv",
+        semibin_refined_cami = "data/amber_out/semibin_refined_amber.tsv",
+        rosella_refined_cami = "data/amber_out/rosella_refined_amber.tsv",
+        metabat2_refined_cami = "data/amber_out/metabat2_refined_amber.tsv",
+        dt_wor_cami = "data/amber_out/dt_wor_amber.tsv",
+        dt_wr_cami = "data/amber_out/dt_wr_amber.tsv",
+        gsa_mappings = "data/gsa_mapping_lengths.binning"
+    output:
+        amber_out = dir("data/amber_out/benchmarks")
+    shell:
+        "amber.py -g {input.gsa_mappings} -o {output.amber_out} -x 90,80,70,60,50 -y 10,5 "
+        "-l 'Rosella', 'MetaBAT2', 'MetaBAT SuperSpec', 'MetaBAT Spec', 'MetaBAT SuperSens', 'MetaBAT Sens', 'CONCOCT', "
+        "'MaxBin2', 'VAMB', 'SemiBin', 'DASTool w/o Rosella', 'DASTool w/ Rosella', 'Rosella Refined', 'MetaBAT2 Refined', 'SemiBin Refined' "
+        "{input.rosella_cami} {input.m2_cami} {input.m1_sspec_cami} {input.m1_spec_cami} {input.m1_ssens_cami} {input.m1_sens_cami} {input.concoct_cami} "
+        "{input.maxbin2_cami} {input.vamb_cami} {input.semibin_cami} {input.dt_wor_cami} {input.dt_wr_cami} {input.rosella_refined_cami} {input.metabat2_refined_cami} {input.semibin_refined_cami}"
 
 rule rosella_benchmark:
     input:

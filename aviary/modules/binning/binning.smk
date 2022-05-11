@@ -47,7 +47,7 @@ rule prepare_binning_files:
     group: 'binning'
     output:
         maxbin_coverage = "data/maxbin.cov.list",
-        metabat_coverage = "data/coverm.cov",
+        metabat_coverage = "data/coverm.cov"
     conda:
         "../../envs/coverm.yaml"
     threads:
@@ -115,7 +115,6 @@ rule concoct_binning:
         "merge_cutup_clustering.py data/concoct_working/clustering_gt{params.min_contig_size}.csv > data/concoct_working/clustering_merged.csv && "
         "mkdir -p data/concoct_bins && "
         "extract_fasta_bins.py {input.fasta} data/concoct_working/clustering_merged.csv --output_path data/concoct_bins/ && "
-        "rm -rf data/binning_bams/ && "
         "touch {output[0]} || touch {output[0]}"
 
 
@@ -310,6 +309,24 @@ rule rosella:
         "--min-contig-size {params.min_contig_size} --min-bin-size {params.min_bin_size} --n-neighbors 200 && "
         "touch {output.done} || touch {output.done}"
 
+
+rule semibin:
+    input:
+        fasta = config["fasta"],
+        bams_indexed = "data/binning_bams/done"
+    group: 'binning'
+    params:
+        semibin_model = config["semibin_model"]
+    output:
+        done = "data/semibin_bins/done"
+    threads:
+        config["max_threads"]
+    conda:
+        "envs/semibin.yaml"
+    shell:
+        "SemiBin single_easy_bin -i {input.fasta} -b data/binning_bams/*.bam -o semibin_bins --environment {params.semibin_model} -p {threads} && "
+        "touch {output.done} || touch {output.done}"
+
 rule checkm_rosella:
     input:
         done = "data/rosella_bins/done"
@@ -326,7 +343,8 @@ rule checkm_rosella:
         config["max_threads"]
     shell:
         'checkm lineage_wf -t {threads} --pplacer_threads {params.pplacer_threads} '
-        '-x {params.extension} {params.bin_folder} {params.bin_folder}/checkm --tab_table -f {output.output_file}'
+        '-x {params.extension} {params.bin_folder} {params.bin_folder}/checkm --tab_table -f {output.output_file} '
+        '|| touch {output.output_file}'
 
 rule checkm_metabat2:
     input:
@@ -344,7 +362,27 @@ rule checkm_metabat2:
         config["max_threads"]
     shell:
         'checkm lineage_wf -t {threads} --pplacer_threads {params.pplacer_threads} '
-        '-x {params.extension} {params.bin_folder} {params.bin_folder}/checkm --tab_table -f {output.output_file}'
+        '-x {params.extension} {params.bin_folder} {params.bin_folder}/checkm --tab_table -f {output.output_file} '
+        '|| touch {output.output_file}'
+
+rule checkm_semibin:
+    input:
+        done = "data/semibin_bins/done"
+    params:
+        pplacer_threads = config["pplacer_threads"],
+        bin_folder = "data/semibin_bins/output_recluster_bins/",
+        extension = "fa"
+    group: 'binning'
+    output:
+        output_file = "data/semibin_bins/checkm.out"
+    conda:
+        "../../envs/checkm.yaml"
+    threads:
+        config["max_threads"]
+    shell:
+        'checkm lineage_wf -t {threads} --pplacer_threads {params.pplacer_threads} '
+        '-x {params.extension} {params.bin_folder} {params.bin_folder}/checkm --tab_table -f {output.output_file} '
+        '|| touch {output.output_file}'
 
 rule refine_rosella:
     input:

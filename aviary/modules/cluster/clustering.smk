@@ -77,7 +77,7 @@ rule run_galah:
         "galah cluster -t {threads} --checkm-tab-table {input.checkm} " 
         "--genome-fasta-list {input.genome_list} --output-cluster-definition {output.dereplicated_set} "
         "--ani {params.derep_ani} --precluster-ani {params.precluster_ani} --precluster-method {params.precluster_method} "
-        "--min-completeness {params.min_completeness} --max-contamination {params.min_contamination} "
+        "--min-completeness {params.min_completeness} --max-contamination {params.max_contamination} "
         "--output-representative-fasta-directory representative_genomes/ "
 
 rule representative_checkm:

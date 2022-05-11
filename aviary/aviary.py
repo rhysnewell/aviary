@@ -397,6 +397,14 @@ def main():
         default=200000
     )
 
+    binning_group.add_argument(
+        '--semibin-model', '--semibin_model',
+        help='The environment model to passed to SemiBin. Can be one of: '
+             'human_gut, dog_gut, ocean, soil, cat_gut, human_oral, mouse_gut, pig_gut, built_environment, wastewater, global',
+        dest='semibin_model',
+        default='global'
+    )
+
     ####################################################################
     mag_group = argparse.ArgumentParser(formatter_class=CustomHelpFormatter,
                                         add_help=False)
