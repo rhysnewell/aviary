@@ -110,7 +110,7 @@ def move_finished_bins(
 
     new_bin_ids = []
     for bin_id in bins:
-
+        # print(f"{input_folder}/{bin_id}")
         if current_iteration is not None:
             new_bin_id = f"{bin_id}_{current_iteration}"
         else:

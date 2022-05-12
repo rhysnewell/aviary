@@ -190,7 +190,7 @@ rule rosella_refine_benchmark_1:
         min_bin_size = config["min_bin_size"],
         max_iterations = 1,
         pplacer_threads = config["pplacer_threads"],
-        max_contamination = 10,
+        max_contamination = 20,
         final_refining = False
     threads:
         config["max_threads"]
@@ -215,14 +215,14 @@ rule rosella_refine_benchmark_2:
         min_bin_size = config["min_bin_size"],
         max_iterations = 1,
         pplacer_threads = config["pplacer_threads"],
-        max_contamination = 10,
+        max_contamination = 20,
         final_refining = False
     threads:
         config["max_threads"]
     conda:
         "../binning/envs/rosella.yaml"
     script:
-        "scripts/rosella_refine.py"
+        "../binning/scripts/rosella_refine.py"
 
 rule rosella_refine_benchmark_3:
     input:
@@ -234,20 +234,20 @@ rule rosella_refine_benchmark_3:
     output:
         'data/rosella_refine_semibin/done'
     params:
-        bin_folder = "data/semibin_bin/output_recluster_bins/",
+        bin_folder = "data/semibin_bins/output_recluster_bins/",
         extension = "fa",
         output_folder = "data/rosella_refine_semibin/",
         min_bin_size = config["min_bin_size"],
         max_iterations = 1,
         pplacer_threads = config["pplacer_threads"],
-        max_contamination = 10,
+        max_contamination = 20,
         final_refining = False
     threads:
         config["max_threads"]
     conda:
         "../binning/envs/rosella.yaml"
     script:
-        "scripts/rosella_refine.py"
+        "../binning/scripts/rosella_refine.py"
 
 
 rule rosella_refine_benchmark_4:
@@ -266,14 +266,14 @@ rule rosella_refine_benchmark_4:
         min_bin_size = config["min_bin_size"],
         max_iterations = 1,
         pplacer_threads = config["pplacer_threads"],
-        max_contamination = 10,
+        max_contamination = 20,
         final_refining = True
     threads:
         config["max_threads"]
     conda:
         "../binning/envs/rosella.yaml"
     script:
-        "scripts/rosella_refine.py"
+        "../binning/scripts/rosella_refine.py"
 
 
 rule checkm1_rosella_refine_1:
@@ -732,13 +732,15 @@ rule run_amber:
         dt_wr_cami = "data/amber_out/dt_wr_amber.tsv",
         gsa_mappings = "data/gsa_mapping_lengths.binning"
     output:
-        amber_out = dir("data/amber_out/benchmarks")
+        amber_out = "data/amber_out/benchmarks/index.html"
     shell:
-        "amber.py -g {input.gsa_mappings} -o {output.amber_out} -x 90,80,70,60,50 -y 10,5 "
-        "-l 'Rosella', 'MetaBAT2', 'MetaBAT SuperSpec', 'MetaBAT Spec', 'MetaBAT SuperSens', 'MetaBAT Sens', 'CONCOCT', "
-        "'MaxBin2', 'VAMB', 'SemiBin', 'DASTool w/o Rosella', 'DASTool w/ Rosella', 'Rosella Refined', 'MetaBAT2 Refined', 'SemiBin Refined' "
+        "sed -i 's/_SAMPLEID_/gsa/' data/amber_out/*.tsv; "
+        "amber.py -g {input.gsa_mappings} -o data/amber_out/benchmarks -x 90,80,70,60,50 -y 10,5 "
+        "-l 'Rosella','MetaBAT2','MetaBAT SuperSpec','MetaBAT Spec','MetaBAT SuperSens','MetaBAT Sens','CONCOCT',"
+        "'MaxBin2','VAMB','SemiBin','DASTool w/o Rosella','DASTool w/ Rosella','Rosella Refined','MetaBAT2 Refined','SemiBin Refined' "
         "{input.rosella_cami} {input.m2_cami} {input.m1_sspec_cami} {input.m1_spec_cami} {input.m1_ssens_cami} {input.m1_sens_cami} {input.concoct_cami} "
-        "{input.maxbin2_cami} {input.vamb_cami} {input.semibin_cami} {input.dt_wor_cami} {input.dt_wr_cami} {input.rosella_refined_cami} {input.metabat2_refined_cami} {input.semibin_refined_cami}"
+        "{input.maxbin2_cami} {input.vamb_cami} {input.semibin_cami} {input.dt_wor_cami} {input.dt_wr_cami} {input.rosella_refined_cami} "
+        "{input.metabat2_refined_cami} {input.semibin_refined_cami}"
 
 rule rosella_benchmark:
     input:

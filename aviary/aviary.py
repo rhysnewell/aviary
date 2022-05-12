@@ -240,8 +240,7 @@ def main():
         '--gsa-mappings', '--gsa_mappings',
         help='CAMI I & II GSA mappings',
         dest="gsa_mappings",
-        default='none',
-        nargs=1
+        default='none'
     )
 
     qc_group.add_argument(

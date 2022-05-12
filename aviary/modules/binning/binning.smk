@@ -324,7 +324,7 @@ rule semibin:
     conda:
         "envs/semibin.yaml"
     shell:
-        "SemiBin single_easy_bin -i {input.fasta} -b data/binning_bams/*.bam -o semibin_bins --environment {params.semibin_model} -p {threads} && "
+        "SemiBin single_easy_bin -i {input.fasta} -b data/binning_bams/*.bam -o data/semibin_bins -p {threads} && "
         "touch {output.done} || touch {output.done}"
 
 rule checkm_rosella:
@@ -400,7 +400,7 @@ rule refine_rosella:
         min_bin_size = config["min_bin_size"],
         max_iterations = 5,
         pplacer_threads = config["pplacer_threads"],
-        max_contamination = 10,
+        max_contamination = 20,
         final_refining = False
     threads:
         config["max_threads"]
@@ -425,7 +425,7 @@ rule refine_metabat2:
         min_bin_size = config["min_bin_size"],
         max_iterations = 5,
         pplacer_threads = config["pplacer_threads"],
-        max_contamination = 10,
+        max_contamination = 20,
         final_refining = False
     threads:
         config["max_threads"]

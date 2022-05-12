@@ -237,6 +237,8 @@ class Processor:
             self.pe2 = [os.path.abspath(p) for p in self.pe2]
         if self.longreads != "none":
             self.longreads = [os.path.abspath(p) for p in self.longreads]
+        if self.gsa_mappings != "none":
+            self.gsa_mappings = os.path.abspath(self.gsa_mappings)
 
         conf["fasta"] = self.assembly
         conf["reference_filter"] = self.reference_filter
