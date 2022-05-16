@@ -190,7 +190,7 @@ rule rosella_refine_benchmark_1:
         min_bin_size = config["min_bin_size"],
         max_iterations = 1,
         pplacer_threads = config["pplacer_threads"],
-        max_contamination = 20,
+        max_contamination = 25,
         final_refining = False
     threads:
         config["max_threads"]
@@ -215,7 +215,7 @@ rule rosella_refine_benchmark_2:
         min_bin_size = config["min_bin_size"],
         max_iterations = 1,
         pplacer_threads = config["pplacer_threads"],
-        max_contamination = 20,
+        max_contamination = 25,
         final_refining = False
     threads:
         config["max_threads"]
@@ -240,7 +240,7 @@ rule rosella_refine_benchmark_3:
         min_bin_size = config["min_bin_size"],
         max_iterations = 1,
         pplacer_threads = config["pplacer_threads"],
-        max_contamination = 20,
+        max_contamination = 25,
         final_refining = False
     threads:
         config["max_threads"]
@@ -266,7 +266,7 @@ rule rosella_refine_benchmark_4:
         min_bin_size = config["min_bin_size"],
         max_iterations = 1,
         pplacer_threads = config["pplacer_threads"],
-        max_contamination = 20,
+        max_contamination = 25,
         final_refining = True
     threads:
         config["max_threads"]
@@ -680,67 +680,37 @@ rule setup_amber:
         gsa_mappings = "data/gsa_mapping_lengths.binning"
         # gsa_mappings = config["gsa_mappings"]
     output:
-        rosella_cami = "data/amber_out/rosella_amber.tsv",
-        m2_cami = "data/amber_out/m2_amber.tsv",
-        m1_sspec_cami = "data/amber_out/m1_sspec_amber.tsv",
-        m1_spec_cami = "data/amber_out/m1_spec_amber.tsv",
-        m1_ssens_cami = "data/amber_out/m1_ssens_amber.tsv",
-        m1_sens_cami = "data/amber_out/m1_sens_amber.tsv",
-        concoct_cami = "data/amber_out/concoct_amber.tsv",
-        maxbin2_cami = "data/amber_out/maxbin2_amber.tsv",
-        vamb_cami = "data/amber_out/vamb_amber.tsv",
-        semibin_cami = "data/amber_out/semibin_amber.tsv",
-        semibin_refined_cami = "data/amber_out/semibin_refined_amber.tsv",
-        rosella_refined_cami = "data/amber_out/rosella_refined_amber.tsv",
-        metabat2_refined_cami = "data/amber_out/metabat2_refined_amber.tsv",
-        dt_wor_cami = "data/amber_out/dt_wor_amber.tsv",
-        dt_wr_cami = "data/amber_out/dt_wr_amber.tsv",
+        amber_ready = "data/amber_out/done"
     shell:
         'mkdir -p data/amber_out; '
-        'convert_fasta_bins_to_biobox_format.py -o data/amber_out/rosella_amber.tsv data/rosella_bins/*.fna; '
-        'convert_fasta_bins_to_biobox_format.py -o data/amber_out/m1_sspec_amber.tsv data/metabat_bins_sspec/*.fa; '
-        'convert_fasta_bins_to_biobox_format.py -o data/amber_out/m1_spec_amber.tsv data/metabat_bins_spec/*.fa; '
-        'convert_fasta_bins_to_biobox_format.py -o data/amber_out/m1_ssens_amber.tsv data/metabat_bins_ssens/*.fa; '
-        'convert_fasta_bins_to_biobox_format.py -o data/amber_out/m1_sens_amber.tsv data/metabat_bins_sens/*.fa; '
-        'convert_fasta_bins_to_biobox_format.py -o data/amber_out/m2_amber.tsv data/metabat_bins_2/*.fa; '
-        'convert_fasta_bins_to_biobox_format.py -o data/amber_out/concoct_amber.tsv data/concoct_bins/*.fa; '
-        'convert_fasta_bins_to_biobox_format.py -o data/amber_out/maxbin2_amber.tsv data/maxbin2_bins/*.fasta; '
-        'convert_fasta_bins_to_biobox_format.py -o data/amber_out/vamb_amber.tsv data/vamb_bins/bins/*.fna; '
-        'convert_fasta_bins_to_biobox_format.py -o data/amber_out/semibin_amber.tsv data/semibin_bins/output_recluster_bins/*.fa; '
-        'convert_fasta_bins_to_biobox_format.py -o data/amber_out/semibin_refined_amber.tsv data/rosella_refine_semibin/final_bins/*.fna; '
-        'convert_fasta_bins_to_biobox_format.py -o data/amber_out/rosella_refined_amber.tsv data/rosella_refine_rosella/final_bins/*.fna; '
-        'convert_fasta_bins_to_biobox_format.py -o data/amber_out/metabat2_refined_amber.tsv data/rosella_refine_metabat2/final_bins/*.fna; '
-        'convert_fasta_bins_to_biobox_format.py -o data/amber_out/dt_wor_amber.tsv data/das_tool_without_rosella/das_tool_DASTool_bins/*.fa; '
-        'convert_fasta_bins_to_biobox_format.py -o data/amber_out/dt_wr_amber.tsv data/das_tool_bins/das_tool_DASTool_bins/*.fa; '
+        'convert_fasta_bins_to_biobox_format.py -o data/amber_out/rosella_amber.tsv data/rosella_bins/*.fna || rm data/amber_out/rosella_amber.tsv; '
+        'convert_fasta_bins_to_biobox_format.py -o data/amber_out/m1_sspec_amber.tsv data/metabat_bins_sspec/*.fa || rm data/amber_out/m1_sspec_amber.tsv; '
+        'convert_fasta_bins_to_biobox_format.py -o data/amber_out/m1_spec_amber.tsv data/metabat_bins_spec/*.fa || rm data/amber_out/m1_spec_amber.tsv; '
+        'convert_fasta_bins_to_biobox_format.py -o data/amber_out/m1_ssens_amber.tsv data/metabat_bins_ssens/*.fa || rm data/amber_out/m1_ssens_amber.tsv; '
+        'convert_fasta_bins_to_biobox_format.py -o data/amber_out/m1_sens_amber.tsv data/metabat_bins_sens/*.fa || rm data/amber_out/m1_sens_amber.tsv; '
+        'convert_fasta_bins_to_biobox_format.py -o data/amber_out/m2_amber.tsv data/metabat_bins_2/*.fa || rm data/amber_out/m2_amber.tsv; '
+        'convert_fasta_bins_to_biobox_format.py -o data/amber_out/concoct_amber.tsv data/concoct_bins/*.fa || rm data/amber_out/concoct_amber.tsv; '
+        'convert_fasta_bins_to_biobox_format.py -o data/amber_out/maxbin2_amber.tsv data/maxbin2_bins/*.fasta || rm data/amber_out/maxbin2_amber.tsv; '
+        'convert_fasta_bins_to_biobox_format.py -o data/amber_out/vamb_amber.tsv data/vamb_bins/bins/*.fna || rm data/amber_out/vamb_amber.tsv; '
+        'convert_fasta_bins_to_biobox_format.py -o data/amber_out/semibin_amber.tsv data/semibin_bins/output_recluster_bins/*.fa || rm data/amber_out/semibin_amber.tsv; '
+        'convert_fasta_bins_to_biobox_format.py -o data/amber_out/semibin_refined_amber.tsv data/rosella_refine_semibin/final_bins/*.fna || rm data/amber_out/semibin_refined_amber.tsv; '
+        'convert_fasta_bins_to_biobox_format.py -o data/amber_out/rosella_refined_amber.tsv data/rosella_refine_rosella/final_bins/*.fna || rm data/amber_out/rosella_refined_amber.tsv; '
+        'convert_fasta_bins_to_biobox_format.py -o data/amber_out/metabat2_refined_amber.tsv data/rosella_refine_metabat2/final_bins/*.fna || rm data/amber_out/metabat2_refined_amber.tsv; '
+        'convert_fasta_bins_to_biobox_format.py -o data/amber_out/dt_wor_amber.tsv data/das_tool_without_rosella/das_tool_DASTool_bins/*.fa || rm data/amber_out/dt_wor_amber.tsv; '
+        'convert_fasta_bins_to_biobox_format.py -o data/amber_out/dt_wr_amber.tsv data/das_tool_bins/das_tool_DASTool_bins/*.fa || rm data/amber_out/dt_wr_amber.tsv; '
+        'touch data/amber_out/done; '
 
 rule run_amber:
     input:
-        rosella_cami = "data/amber_out/rosella_amber.tsv",
-        m2_cami = "data/amber_out/m2_amber.tsv",
-        m1_sspec_cami = "data/amber_out/m1_sspec_amber.tsv",
-        m1_spec_cami = "data/amber_out/m1_spec_amber.tsv",
-        m1_ssens_cami = "data/amber_out/m1_ssens_amber.tsv",
-        m1_sens_cami = "data/amber_out/m1_sens_amber.tsv",
-        concoct_cami = "data/amber_out/concoct_amber.tsv",
-        maxbin2_cami = "data/amber_out/maxbin2_amber.tsv",
-        vamb_cami = "data/amber_out/vamb_amber.tsv",
-        semibin_cami = "data/amber_out/semibin_amber.tsv",
-        semibin_refined_cami = "data/amber_out/semibin_refined_amber.tsv",
-        rosella_refined_cami = "data/amber_out/rosella_refined_amber.tsv",
-        metabat2_refined_cami = "data/amber_out/metabat2_refined_amber.tsv",
-        dt_wor_cami = "data/amber_out/dt_wor_amber.tsv",
-        dt_wr_cami = "data/amber_out/dt_wr_amber.tsv",
+        amber_ready = "data/amber_out/done",
         gsa_mappings = "data/gsa_mapping_lengths.binning"
     output:
         amber_out = "data/amber_out/benchmarks/index.html"
+    # "scaffold2bin_files=$(find data/amber_out/*.tsv -not -empty -exec ls {{}} \; | tr '\n' ',' | sed 's/,$//g'); "
     shell:
         "sed -i 's/_SAMPLEID_/gsa/' data/amber_out/*.tsv; "
         "amber.py -g {input.gsa_mappings} -o data/amber_out/benchmarks -x 90,80,70,60,50 -y 10,5 "
-        "-l 'Rosella','MetaBAT2','MetaBAT SuperSpec','MetaBAT Spec','MetaBAT SuperSens','MetaBAT Sens','CONCOCT',"
-        "'MaxBin2','VAMB','SemiBin','DASTool w/o Rosella','DASTool w/ Rosella','Rosella Refined','MetaBAT2 Refined','SemiBin Refined' "
-        "{input.rosella_cami} {input.m2_cami} {input.m1_sspec_cami} {input.m1_spec_cami} {input.m1_ssens_cami} {input.m1_sens_cami} {input.concoct_cami} "
-        "{input.maxbin2_cami} {input.vamb_cami} {input.semibin_cami} {input.dt_wor_cami} {input.dt_wr_cami} {input.rosella_refined_cami} "
-        "{input.metabat2_refined_cami} {input.semibin_refined_cami}"
+        "data/amber_out/*.tsv"
 
 rule rosella_benchmark:
     input:

@@ -1,10 +1,6 @@
 ruleorder: dereplicate_and_get_abundances_paired > dereplicate_and_get_abundances_interleaved
 
 onstart:
-    import os
-    import sys
-
-
     from snakemake.utils import min_version
 
     sys.path.append(os.path.join(os.path.dirname(os.path.abspath(workflow.snakefile)),"../../scripts"))
@@ -40,6 +36,9 @@ onstart:
 if config['fasta'] == 'none':
     config['fasta'] = 'assembly/final_contigs.fasta'
 
+import os
+import sys
+import glob
 
 rule prepare_binning_files:
     input:
@@ -316,7 +315,8 @@ rule semibin:
         bams_indexed = "data/binning_bams/done"
     group: 'binning'
     params:
-        semibin_model = config["semibin_model"]
+        # Can't use premade model with multiple samples, so disregard if provided
+        semibin_model = config['semibin_model']
     output:
         done = "data/semibin_bins/done"
     threads:
@@ -324,8 +324,10 @@ rule semibin:
     conda:
         "envs/semibin.yaml"
     shell:
-        "SemiBin single_easy_bin -i {input.fasta} -b data/binning_bams/*.bam -o data/semibin_bins -p {threads} && "
-        "touch {output.done} || touch {output.done}"
+        "mkdir -p data/semibin_bins/output_recluster_bins/; "
+        "SemiBin single_easy_bin -i {input.fasta} -b data/binning_bams/*.bam -o data/semibin_bins --environment {params.semibin_model} -p {threads} && "
+        "touch {output.done} || SemiBin single_easy_bin -i {input.fasta} -b data/binning_bams/*.bam -o data/semibin_bins -p {threads} "
+        "&& touch {output.done} || touch {output.done}"
 
 rule checkm_rosella:
     input:
@@ -342,9 +344,9 @@ rule checkm_rosella:
     threads:
         config["max_threads"]
     shell:
+        'touch {output.output_file}; '
         'checkm lineage_wf -t {threads} --pplacer_threads {params.pplacer_threads} '
         '-x {params.extension} {params.bin_folder} {params.bin_folder}/checkm --tab_table -f {output.output_file} '
-        '|| touch {output.output_file}'
 
 rule checkm_metabat2:
     input:
@@ -361,9 +363,9 @@ rule checkm_metabat2:
     threads:
         config["max_threads"]
     shell:
+        'touch {output.output_file}; '
         'checkm lineage_wf -t {threads} --pplacer_threads {params.pplacer_threads} '
         '-x {params.extension} {params.bin_folder} {params.bin_folder}/checkm --tab_table -f {output.output_file} '
-        '|| touch {output.output_file}'
 
 rule checkm_semibin:
     input:
@@ -380,9 +382,9 @@ rule checkm_semibin:
     threads:
         config["max_threads"]
     shell:
+        'touch {output.output_file}; '
         'checkm lineage_wf -t {threads} --pplacer_threads {params.pplacer_threads} '
         '-x {params.extension} {params.bin_folder} {params.bin_folder}/checkm --tab_table -f {output.output_file} '
-        '|| touch {output.output_file}'
 
 rule refine_rosella:
     input:
@@ -400,7 +402,7 @@ rule refine_rosella:
         min_bin_size = config["min_bin_size"],
         max_iterations = 5,
         pplacer_threads = config["pplacer_threads"],
-        max_contamination = 20,
+        max_contamination = 25,
         final_refining = False
     threads:
         config["max_threads"]
@@ -425,7 +427,7 @@ rule refine_metabat2:
         min_bin_size = config["min_bin_size"],
         max_iterations = 5,
         pplacer_threads = config["pplacer_threads"],
-        max_contamination = 20,
+        max_contamination = 25,
         final_refining = False
     threads:
         config["max_threads"]
