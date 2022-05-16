@@ -650,10 +650,37 @@ rule checkm_without_rosella:
         '-x fa data/das_tool_without_rosella/das_tool_DASTool_bins data/checkm_without_rosella '
         '--tab_table -f data/checkm_without_rosella.out; '
 
+rule verify_gsa_mapping_file:
+    input:
+        gsa_mapping = config["gsa_mappings"]
+    output:
+        gsa_output = "data/gsa_mapping.binning"
+    run:
+        good_input = False
+        with open(output.gsa_output, 'w') as verified_output:
+            with open(input.gsa_mapping, 'r') as gsa_mapping:
+                for idx, line_original in enumerate(gsa_mapping):
+                    line_original = line_original.strip()
+                    if idx == 0 and line_original.startswith("@Version"):
+                        # input is already good to go
+                        good_input = True
+                    if good_input:
+                        print(line_original, file=verified_output)
+                    else:
+                        if idx == 0:
+                            # print gsa header
+                            print("@Version:0.9.1", file=verified_output)
+                            print("@SampleID:gsa", file=verified_output)
+                            print("", file=verified_output)
+                            print("@@SEQUENCEID\tBINID\tTAXID", file=verified_output)
+                        else:
+                            line_original = line_original.split('\t')
+                            print("\t".join(line_original[0:3]), file=verified_output)
 
 rule add_lengths:
     input:
-        gsa_mappings = config["gsa_mappings"],
+        # gsa_mappings = config["gsa_mappings"],
+        gsa_mappings = "data/gsa_mapping.binning",
         gsa = config["fasta"]
     output:
         "data/gsa_mapping_lengths.binning"
