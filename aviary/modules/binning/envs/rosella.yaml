@@ -7,12 +7,13 @@ dependencies:
   - pip
   - gcc
   - cxx-compiler
-  - rosella>=0.4.1
+  - rosella==0.4.1=h40e92b3_2
   - checkm-genome==1.1.3
   - pip:
       - numpy
       - numba
       - pebble
+      - scikit-learn==1.0.2
       - "git+https://github.com/rhysnewell/flight.git#egg=flight-genome"
       - "git+https://github.com/scikit-learn-contrib/hdbscan.git#egg=hdbscan"
       - threadpoolctl

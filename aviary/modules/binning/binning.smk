@@ -573,7 +573,7 @@ rule singlem_appraise:
 rule recover_mags:
     input:
         final_bins = "bins/checkm.out",
-        # gtdbtk = "data/gtdbtk/done",
+        gtdbtk = "data/gtdbtk/done",
         coverm = "data/coverm_abundances.tsv",
         singlem = "data/singlem_out/singlem_appraise.svg"
     conda:
@@ -590,6 +590,7 @@ rule recover_mags:
         "ln -s ../data/coverm.cov ./; "
         "cd ../; "
         "ln -sr data/singlem_out/ diversity; "
+        "ln -sr data/gtdbtk taxonomy; "
         "touch bins/done; "
         "touch diversity/done; "
 
