@@ -1,4 +1,7 @@
 ruleorder: dereplicate_and_get_abundances_paired > dereplicate_and_get_abundances_interleaved
+ruleorder: checkm_rosella > amber_checkm_output
+ruleorder: checkm_metabat2 > amber_checkm_output
+ruleorder: checkm_semibin > amber_checkm_output
 
 onstart:
     from snakemake.utils import min_version
@@ -402,7 +405,7 @@ rule refine_rosella:
         min_bin_size = config["min_bin_size"],
         max_iterations = 5,
         pplacer_threads = config["pplacer_threads"],
-        max_contamination = 25,
+        max_contamination = 15,
         final_refining = False
     threads:
         config["max_threads"]
@@ -427,7 +430,7 @@ rule refine_metabat2:
         min_bin_size = config["min_bin_size"],
         max_iterations = 5,
         pplacer_threads = config["pplacer_threads"],
-        max_contamination = 25,
+        max_contamination = 15,
         final_refining = False
     threads:
         config["max_threads"]
@@ -435,6 +438,44 @@ rule refine_metabat2:
         "envs/rosella.yaml"
     script:
         "scripts/rosella_refine.py"
+
+
+rule amber_checkm_output:
+    input:
+        amber_done = "data/amber_refine/for_refine/index.html"
+    output:
+        metabat_checkm = 'data/metabat_bins_2/checkm.out',
+        rosella_checkm = 'data/rosella_bins/checkm.out',
+        semibin_checkm = 'data/semibin_bins/checkm.out'
+    run:
+        import pandas as pd
+
+        def amber_to_checkm_like(amber_table, prefix="data/rosella_bins/", output="data/rosella_bins/checkm.out", extension="fna"):
+            amber_table["Bin Id"] = amber_table["Bin ID"].replace(prefix, "", regex=True)
+            amber_table["Bin Id"] = amber_table["Bin Id"].replace(f".{extension}", "", regex=True)
+            amber_table["Completeness"] = amber_table["Completeness (bp)"] * 100
+            amber_table["Contamination"] = round((1 - amber_table["Purity (bp)"]) * 100, 2)
+            amber_table.to_csv(output, sep='\t')
+
+        try:
+            rosella_amber = pd.read_csv("data/amber_refine/for_refine/genome/rosella_amber.tsv/metrics_per_bin.tsv", sep='\t')
+            amber_to_checkm_like(rosella_amber, "data/rosella_bins/", "data/rosella_bins/checkm.out", "fna")
+        except FileNotFoundError:
+            pass
+
+        try:
+            metabat_amber = pd.read_csv("data/amber_refine/for_refine/genome/m2_amber.tsv/metrics_per_bin.tsv", sep='\t')
+            amber_to_checkm_like(metabat_amber, "data/metabat_bins_2/", "data/metabat_bins_2/checkm.out", "fa")
+        except FileNotFoundError:
+            pass
+
+        try:
+            semibin_amber = pd.read_csv("data/amber_refine/for_refine/genome/semibin_amber.tsv/metrics_per_bin.tsv", sep='\t')
+            amber_to_checkm_like(semibin_amber, "data/semibin_bins/output_recluster_bins/", "data/semibin_bins/checkm.out", "fa")
+        except FileNotFoundError:
+            pass
+
+
 
 
 rule das_tool:

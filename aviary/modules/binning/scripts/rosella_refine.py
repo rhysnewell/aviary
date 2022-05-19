@@ -33,7 +33,7 @@ def refinery():
     os.makedirs(contaminated_bin_folder, exist_ok=True)
     os.makedirs(final_bins, exist_ok=True)
 
-    final_checkm = current_checkm.copy().loc[current_checkm["Contamination"] <= 10].copy()
+    final_checkm = current_checkm.copy().loc[current_checkm["Contamination"] <= snakemake.params.max_contamination].copy()
     final_checkm = move_finished_bins(final_checkm, bin_folder, extension, final_bins)
 
 
