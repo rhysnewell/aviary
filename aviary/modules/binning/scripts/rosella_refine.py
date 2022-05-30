@@ -3,7 +3,7 @@ import subprocess
 import shutil
 import glob
 import os
-
+import pandas.errors as e
 
 def refinery():
     """
@@ -14,9 +14,6 @@ def refinery():
     # These will change
     current_iteration = 0
     checkm_path = snakemake.input.checkm
-    current_checkm = pd.read_csv(checkm_path, sep='\t', comment="[")
-    bin_folder = snakemake.params.bin_folder
-    extension = snakemake.params.extension
 
     # These will not change
     coverage = snakemake.input.coverage
@@ -29,6 +26,18 @@ def refinery():
     max_contamination = int(snakemake.params.max_contamination)
     contaminated_bin_folder = snakemake.params.output_folder + "/contaminated_bins"
     final_bins = snakemake.params.output_folder + "/final_bins"
+
+    try:
+        current_checkm = pd.read_csv(checkm_path, sep='\t', comment="[")
+    except e.EmptyDataError:
+        open(f"{snakemake.params.output_folder}/done", "a").close()
+        return
+
+
+    bin_folder = snakemake.params.bin_folder
+    extension = snakemake.params.extension
+
+
 
     os.makedirs(contaminated_bin_folder, exist_ok=True)
     os.makedirs(final_bins, exist_ok=True)
