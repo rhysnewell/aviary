@@ -1,4 +1,0 @@
-channels:
-  - bioconda
-dependencies:
-  - instrain = 1.2.2

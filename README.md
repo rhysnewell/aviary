@@ -78,11 +78,22 @@ These environment variables can be reset using `aviary configure`
 
 ## Requirements
 
-Your conda channels should be configured ideally in this order:
+Your conda channels should be configured ideally in this order with strict channel priority order
+turned on:
 ```
 conda config --add channels defaults
 conda config --add channels conda-forge
 conda config --add channels bioconda
+conda config --set channel_priority strict
+```
+
+Your resulting `.condarc` file should look something like:
+```
+channels:
+  - conda-forge
+  - bioconda
+  - defaults
+channel_priority: strict
 ```
 
 Initial requirements for aviary can be downloaded using the `aviary.yml`:
@@ -99,8 +110,6 @@ The **required** databases are as follows:
 
 The **optional** databases are as follows:
 * [EggNog](https://github.com/eggnogdb/eggnog-mapper/wiki/eggNOG-mapper-v2.1.5-to-v2.1.7#setup) Will become required soon.
-* [EnrichM](https://github.com/geronimp/enrichM)
-* Busco
 
 **If you do not have the optional databases installed, then when aviary asks you to specify these databse passes when configuring just press enter and specify no path.**
 

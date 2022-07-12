@@ -18,7 +18,13 @@ def refinery():
     # These will not change
     coverage = snakemake.input.coverage
     assembly = snakemake.input.fasta
-    kmers = snakemake.input.kmers
+    final_refining = snakemake.params.final_refining
+
+    # kmers = snakemake.input.kmers
+    if os.path.isfile("data/rosella_bins/rosella_kmer_table.tsv"):
+        kmers = "data/rosella_bins/rosella_kmer_table.tsv"
+    else:
+        kmers = None
     min_bin_size = snakemake.params.min_bin_size
     max_iterations = int(snakemake.params.max_iterations)
     pplacer_threads = int(snakemake.params.pplacer_threads)
@@ -36,7 +42,6 @@ def refinery():
 
     bin_folder = snakemake.params.bin_folder
     extension = snakemake.params.extension
-
 
 
     os.makedirs(contaminated_bin_folder, exist_ok=True)
@@ -65,16 +70,16 @@ def refinery():
             current_iteration += 1
             continue
         # Refine the contaminated bins
-        refine(assembly, coverage, kmers, checkm_path,
-               contaminated_bin_folder, extension, min_bin_size,
-               threads, output_folder, max_contamination)
+        kmers = refine(assembly, coverage, kmers, checkm_path,
+                   contaminated_bin_folder, extension, min_bin_size,
+                   threads, output_folder, max_contamination)
 
         # update the bin folder variable to the current refined folder
         bin_folder = output_folder
 
         # retrieve the checkm results for the refined bins
         try:
-            get_checkm_results(bin_folder, threads, pplacer_threads)
+            get_checkm_results(bin_folder, threads, pplacer_threads, final_refining)
             # update the checkm results and counter
             checkm_path = f"{bin_folder}/checkm.out"
             current_checkm = pd.read_csv(checkm_path, sep='\t', comment='[')
@@ -87,7 +92,7 @@ def refinery():
             # No bins to refine, break out and move on
             break
 
-    if snakemake.params.final_refining:
+    if final_refining:
         final_checkm.to_csv("data/checkm.out", sep='\t', index=False)
         final_output_folder = "bins/final_bins/"
         os.makedirs("bins/", exist_ok=True)
@@ -171,18 +176,35 @@ def refine(
         bin_folder, extension, min_bin_size,
         threads, output_folder, max_contamination,
 ):
+    if kmers is None:
+        subprocess.Popen(f"rosella refine -a {assembly} --coverage-values {coverage} "
+                         f"-d {bin_folder} -x {extension} --checkm-file {checkm} --max-contamination {max_contamination} "
+                         f"--min-bin-size {min_bin_size} -t {threads} -o {output_folder}", shell=True).wait()
+        shutil.copy(f"{output_folder}/rosella_kmer_table.tsv", f"data/rosella_bins/rosella_kmer_table.tsv")
+        kmers = "data/rosella_bins/rosella_kmer_table.tsv"
+    else:
+        subprocess.Popen(f"rosella refine -a {assembly} --coverage-values {coverage} --kmer-frequencies {kmers} "
+                         f"-d {bin_folder} -x {extension} --checkm-file {checkm} --max-contamination {max_contamination} "
+                         f"--min-bin-size {min_bin_size} -t {threads} -o {output_folder}", shell=True).wait()
 
-    subprocess.Popen(f"rosella refine -a {assembly} --coverage-values {coverage} --kmer-frequencies {kmers} "
-                     f"-d {bin_folder} -x {extension} --checkm-file {checkm} --max-contamination {max_contamination} "
-                     f"--min-bin-size {min_bin_size} -t {threads} -o {output_folder}", shell=True).wait()
+    return kmers
 
 def get_checkm_results(
         refined_folder,
         threads,
         pplacer_threads,
+        final_refining=False
 ):
+
     subprocess.Popen(f"checkm lineage_wf -t {threads} --pplacer_threads {pplacer_threads} -x fna "
-                     f"--tab_table -f {refined_folder}/checkm.out {refined_folder} {refined_folder}/checkm", shell=True).wait()
+                     f"--tab_table -f {refined_folder}/checkm.out {refined_folder} {refined_folder}/checkm",
+                     shell=True).wait()
+
+    if final_refining:
+        subprocess.Popen(f"checkm qa -o 2 --tab_table -f {refined_folder}/checkm.out "
+                         f"{refined_folder}/checkm/lineage.ms {refined_folder}/checkm/",
+                         shell=True).wait()
+
 
 if __name__ == '__main__':
     refinery()

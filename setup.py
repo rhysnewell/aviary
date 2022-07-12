@@ -27,7 +27,7 @@ setup(
     url='https://github.com/rhysnewell/aviary',
     license='GPL-3.0',
     author='Rhys Newell',
-    author_email='rhys.newell@hdr.qut.edu.au',
+    author_email='rhys.newell94@gmail.com',
     description='aviary - metagenomics pipeline using long and short reads',
     long_description=long_description,
     long_description_content_type='text/markdown',

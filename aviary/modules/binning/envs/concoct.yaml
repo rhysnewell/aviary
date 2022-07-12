@@ -1,10 +1,19 @@
 channels:
-  - bioconda
   - conda-forge
+#  - anaconda
+#  - numba
+  - bioconda
   - defaults
 dependencies:
-  - concoct = 1.1.0
-  - samtools = 1.11
+  - pip
+  - python
+  - setuptools
   - mkl
-  - pandas=0.25.1
-  - numpy=1.17.2
+#  - numpy=1.17.2
+#  - pandas=0.25.1
+#  - samtools = 1.11
+  - blas=*=mkl
+  - openblas
+  - concoct
+#  - pip:
+#    - "https://github.com/BinPro/CONCOCT/archive/refs/tags/1.1.0.zip"

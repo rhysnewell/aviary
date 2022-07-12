@@ -1,10 +1,9 @@
 channels:
   - conda-forge
   - bioconda
-  - defaults
   - anaconda
 dependencies:
-  - python>=3.7
+  - python>=3.8
   - snakemake>=6.0.5
   - ruamel.yaml>=0.15.99 # needs to be explicit
   - numpy

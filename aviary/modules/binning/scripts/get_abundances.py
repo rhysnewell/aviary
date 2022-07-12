@@ -33,7 +33,8 @@ if snakemake.config["long_reads"] != "none" and (snakemake.config["short_reads_1
         with open('data/short_abundances.tsv', 'r') as file1:
             with open('data/long_abundances.tsv', 'r') as file2:
                 for line1, line2 in zip(file1, file2):
-                    print(line1.strip(), "\t".join(line2.strip().split()[1::]), file=file3)
+                    long_cov_line = "\t".join([l.strip() for l in line2.strip().split('\t')[1::]])
+                    print(line1.strip(), "\t", long_cov_line, file=file3)
 elif snakemake.config["long_reads"] != "none":  # rename long reads cov if only it exists
     os.rename("data/long_abundances.tsv", "data/coverm_abundances.tsv")
 elif snakemake.config["short_reads_1"] != "none":  # rename shrot reads cov if only they exist

@@ -1,10 +1,10 @@
 channels:
-  - bioconda
   - conda-forge
+  - bioconda
   - anaconda
 dependencies:
   - racon >= 1.4.3
   - samtools = 1.9
   - minimap2 >= 2.15
   - seqkit = 2.1
-  - pigz = 2.4
+  - pigz

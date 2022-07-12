@@ -1,6 +1,9 @@
 channels:
-  - bioconda
   - conda-forge
+  - bioconda
   - defaults
 dependencies:
-  - singlem==0.13.2
+  - pip
+  - singlem
+  - pip:
+      - bird-tool-utils

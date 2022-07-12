@@ -1,4 +1,5 @@
 channels:
+  - conda-forge
   - bioconda
 dependencies:
   - circlator = 1.5.5

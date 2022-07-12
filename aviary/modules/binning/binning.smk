@@ -72,10 +72,10 @@ rule get_bam_indices:
         "touch data/binning_bams/done"
 
 
-rule maxbin_binning:
+rule maxbin2:
     input:
         fasta = config["fasta"],
-        maxbin_cov = "data/maxbin.cov.list"
+        maxbin_cov = ancient("data/maxbin.cov.list")
     params:
         min_contig_size = config["min_contig_size"]
     group: 'binning'
@@ -94,10 +94,10 @@ rule maxbin_binning:
         "touch {output[0]} || touch {output[0]}"
 
 
-rule concoct_binning:
+rule concoct:
     input:
         fasta = config["fasta"],
-        bam_done = "data/binning_bams/done"
+        bam_done = ancient("data/binning_bams/done")
     params:
         min_contig_size = config["min_contig_size"]
     group: 'binning'
@@ -113,7 +113,7 @@ rule concoct_binning:
         "mkdir -p data/concoct_working && "
         "cut_up_fasta.py {input.fasta} -c 10000 -o 0 --merge_last -b data/concoct_working/contigs_10K.bed > data/concoct_working/contigs_10K.fa && "
         "concoct_coverage_table.py data/concoct_working/contigs_10K.bed data/binning_bams/*.bam > data/concoct_working/coverage_table.tsv && "
-        "concoct --threads {threads} -l {params.min_contig_size} --composition_file data/concoct_working/contigs_10K.fa --coverage_file data/concoct_working/coverage_table.tsv -b data/concoct_working/ && "
+        "concoct --threads {threads} -l {params.min_contig_size} --composition_file data/concoct_working/contigs_10K.fa --coverage_file data/concoct_working/coverage_table.tsv -b data/concoct_working/ 2>/dev/null && "
         "merge_cutup_clustering.py data/concoct_working/clustering_gt{params.min_contig_size}.csv > data/concoct_working/clustering_merged.csv && "
         "mkdir -p data/concoct_bins && "
         "extract_fasta_bins.py {input.fasta} data/concoct_working/clustering_merged.csv --output_path data/concoct_bins/ && "
@@ -127,7 +127,7 @@ rule vamb_jgi_filter:
     """
     input:
         fasta = config["fasta"],
-        done = "data/coverm.cov"
+        done = ancient("data/coverm.cov")
     group: 'binning'
     output:
         vamb_bams_done = "data/coverm.filt.cov"
@@ -142,14 +142,14 @@ rule vamb_jgi_filter:
         coverm_out.to_csv("data/coverm.filt.cov", sep='\t', index=False)
 
 
-rule vamb_binning:
+rule vamb:
     """
     Perform binning via vamb. Vamb frequently breaks and won't produce any bins or errors out. As such, whenenver 
     vamb throws an error this rule will catch it and create the output regardless. You'll know if vamb failed as there
     will be no bins produced by it but all other files will be there
     """
     input:
-        coverage = "data/coverm.filt.cov",
+        coverage = ancient("data/coverm.filt.cov"),
         fasta = config["fasta"],
     params:
         min_bin_size = config["min_bin_size"],
@@ -182,7 +182,7 @@ rule vamb_skip:
 
 rule metabat2:
     input:
-        coverage = "data/coverm.cov",
+        coverage = ancient("data/coverm.cov"),
         fasta = config["fasta"]
     params:
         min_contig_size = max(int(config["min_contig_size"]), 1500),
@@ -204,7 +204,7 @@ rule metabat2:
 
 rule metabat_spec:
     input:
-        coverage = "data/coverm.cov",
+        coverage = ancient("data/coverm.cov"),
         fasta = config["fasta"]
     group: 'binning'
     output:
@@ -225,7 +225,7 @@ rule metabat_spec:
 
 rule metabat_sspec:
     input:
-        coverage = "data/coverm.cov",
+        coverage = ancient("data/coverm.cov"),
         fasta = config["fasta"]
     group: 'binning'
     output:
@@ -246,7 +246,7 @@ rule metabat_sspec:
 
 rule metabat_sens:
     input:
-        coverage = "data/coverm.cov",
+        coverage = ancient("data/coverm.cov"),
         fasta = config["fasta"]
     group: 'binning'
     output:
@@ -267,7 +267,7 @@ rule metabat_sens:
 
 rule metabat_ssens:
     input:
-        coverage = "data/coverm.cov",
+        coverage = ancient("data/coverm.cov"),
         fasta = config["fasta"]
     group: 'binning'
     output:
@@ -291,14 +291,14 @@ rule rosella:
     Runs Rosella.
     """
     input:
-        coverage = "data/coverm.cov",
+        coverage = ancient("data/coverm.cov"),
         fasta = config["fasta"]
     params:
         min_contig_size = config["min_contig_size"],
         min_bin_size = config["min_bin_size"]
     group: 'binning'
     output:
-        kmers = "data/rosella_bins/rosella_kmer_table.tsv",
+        # kmers = "data/rosella_bins/rosella_kmer_table.tsv",
         done = "data/rosella_bins/done"
     conda:
         "envs/rosella.yaml"
@@ -315,7 +315,7 @@ rule rosella:
 rule semibin:
     input:
         fasta = config["fasta"],
-        bams_indexed = "data/binning_bams/done"
+        bams_indexed = ancient("data/binning_bams/done")
     group: 'binning'
     params:
         # Can't use premade model with multiple samples, so disregard if provided
@@ -326,6 +326,8 @@ rule semibin:
         config["max_threads"]
     conda:
         "envs/semibin.yaml"
+    benchmark:
+        "benchmarks/semibin.benchmark.txt"
     shell:
         "mkdir -p data/semibin_bins/output_recluster_bins/; "
         "SemiBin single_easy_bin -i {input.fasta} -b data/binning_bams/*.bam -o data/semibin_bins --environment {params.semibin_model} -p {threads} && "
@@ -393,9 +395,9 @@ rule refine_rosella:
     input:
         checkm = 'data/rosella_bins/checkm.out',
         rosella = 'data/rosella_bins/done',
-        coverage = "data/coverm.cov",
+        coverage = ancient("data/coverm.cov"),
         fasta = config["fasta"],
-        kmers = "data/rosella_bins/rosella_kmer_table.tsv"
+        # kmers = "data/rosella_bins/rosella_kmer_table.tsv"
     output:
         'data/rosella_refined/done'
     params:
@@ -418,9 +420,9 @@ rule refine_metabat2:
     input:
         checkm = 'data/metabat_bins_2/checkm.out',
         rosella = 'data/metabat_bins_2/done',
-        coverage = "data/coverm.cov",
+        coverage = ancient("data/coverm.cov"),
         fasta = config["fasta"],
-        kmers = "data/rosella_bins/rosella_kmer_table.tsv"
+        # kmers = "data/rosella_bins/rosella_kmer_table.tsv"
     output:
         'data/metabat2_refined/done'
     params:
@@ -439,6 +441,30 @@ rule refine_metabat2:
     script:
         "scripts/rosella_refine.py"
 
+rule refine_semibin:
+    input:
+        checkm = 'data/semibin_bins/checkm.out',
+        rosella = 'data/semibin_bins/done',
+        coverage = ancient("data/coverm.cov"),
+        fasta = config["fasta"],
+        # kmers = "data/rosella_bins/rosella_kmer_table.tsv"
+    output:
+        'data/semibin_refined/done'
+    params:
+        bin_folder = "data/semibin_bins/output_recluster_bins/",
+        extension = "fa",
+        output_folder = "data/semibin_refined/",
+        min_bin_size = config["min_bin_size"],
+        max_iterations = 5,
+        pplacer_threads = config["pplacer_threads"],
+        max_contamination = 15,
+        final_refining = False
+    threads:
+        config["max_threads"]
+    conda:
+        "envs/rosella.yaml"
+    script:
+        "scripts/rosella_refine.py"
 
 rule amber_checkm_output:
     input:
@@ -476,8 +502,6 @@ rule amber_checkm_output:
             pass
 
 
-
-
 rule das_tool:
     """
     Runs dasTool on the output of all binning algorithms. If a binner failed to produce bins then their output is ignored
@@ -492,6 +516,7 @@ rule das_tool:
         metabat_ssens = "data/metabat_bins_ssens/done",
         metabat_sense = "data/metabat_bins_sens/done",
         rosella_done = "data/rosella_refined/done",
+        semibin_done = "data/semibin_refined/done",
         vamb_done = "data/vamb_bins/done",
     group: 'binning'
     output:
@@ -513,6 +538,7 @@ rule das_tool:
         Fasta_to_Scaffolds2Bin.sh -i data/vamb_bins/bins -e fna > data/vamb_bins.tsv; 
         Fasta_to_Scaffolds2Bin.sh -i data/rosella_refined/final_bins/ -e fna > data/rosella_refined_bins.tsv; 
         Fasta_to_Scaffolds2Bin.sh -i data/metabat2_refined/final_bins/ -e fna > data/metabat2_refined_bins.tsv; 
+        Fasta_to_Scaffolds2Bin.sh -i data/semibin_refined/final_bins/ -e fna > data/semibin_refined_bins.tsv; 
         scaffold2bin_files=$(find data/*bins*.tsv -not -empty -exec ls {{}} \; | tr "\n" ',' | sed "s/,$//g"); 
         DAS_Tool --search_engine diamond --write_bin_evals 1 --write_bins 1 -t {threads} --score_threshold -42 \
          -i $scaffold2bin_files \
@@ -527,7 +553,7 @@ rule refine_dastool:
         das_tool = 'data/das_tool_bins_pre_refine/done',
         coverage = "data/coverm.cov",
         fasta = config["fasta"],
-        kmers = "data/rosella_bins/rosella_kmer_table.tsv"
+        # kmers = "data/rosella_bins/rosella_kmer_table.tsv"
     output:
         'bins/checkm.out',
         directory('bins/final_bins')
@@ -561,6 +587,77 @@ rule get_abundances:
     script:
         "scripts/get_abundances.py"
 
+rule finalize_stats:
+    input:
+        checkm1_done = "bins/checkm.out",
+        coverage_file = "data/coverm_abundances.tsv"
+    output:
+        bin_stats = "bins/bin_info.tsv",
+        checkm_minimal = "bins/checkm_minimal.tsv"
+    run:
+        import pandas as pd
+        from Bio import SeqIO
+        import os
+
+        def find_circular(checkm_output, checkm1=True):
+            if checkm1:
+                bin_column = "Bin Id"
+            else:
+                bin_column = "Name"
+
+            circular_contigs = []
+            circular_bps = []
+            circular_fractions = []
+
+            assembly_info = pd.read_csv("data/flye/assembly_info.txt", sep="\t")
+
+            for bin_name in checkm_output[bin_column]:
+
+                fasta_path = f"bins/final_bins/{bin_name}.fna"
+                circular = 0
+                circular_bases = 0
+                total_size = 0
+                for sequence in SeqIO.parse(open(fasta_path), "fasta"):
+                    total_size += len(sequence.seq)
+                    seq_name = sequence.id.strip("_pilon")
+
+                    if seq_name not in assembly_info["#seq_name"].values:
+                        continue
+
+                    found = assembly_info[assembly_info["#seq_name"] == seq_name]
+
+                    if found["circ."].values[0] == "N":
+                        continue
+                    circular += 1
+                    circular_bases += found["length"].values[0]
+
+                circular_bps.append(circular_bases)
+                circular_contigs.append(circular)
+                circular_fractions.append(circular_bases / total_size)
+
+            checkm_output["Circular contigs"], checkm_output["Circular bp"], checkm_output["Circular fraction"] = [circular_contigs, circular_bps, circular_fractions]
+            return checkm_output
+
+        coverage_file = pd.read_csv(input.coverage_file, sep='\t')
+
+        # checkm file for all bins
+        checkm_output = pd.read_csv(input.checkm1_done, sep='\t', comment="[")
+
+        is_checkm1 = "Bin Id" in checkm_output.columns
+        coverage_file.rename({"Genome" : checkm_output.columns[0]}, inplace=True, axis=1)
+
+
+        if os.path.isfile("data/flye/assembly_info.txt"):
+            checkm_output = find_circular(checkm_output, is_checkm1)
+
+        merged_out = pd.merge(checkm_output, coverage_file, on=[checkm_output.columns[0]])
+        merged_out.to_csv(output.bin_stats, sep='\t', index=False)
+
+        checkm_minimal = checkm_output[["Bin Id",  "Marker lineage",  "# genomes", "# markers", "# marker sets", "0", "1", "2", "3", "4", "5+", "Completeness", "Contamination", "Strain heterogeneity"]]
+        checkm_minimal.to_csv(output.checkm_minimal, sep="\t", index=False)
+
+
+
 rule checkm_das_tool:
     input:
         done = "data/das_tool_bins_pre_refine/done"
@@ -575,7 +672,10 @@ rule checkm_das_tool:
         config["max_threads"]
     shell:
         'checkm lineage_wf -t {threads} --pplacer_threads {params.pplacer_threads} '
-        '-x fa data/das_tool_bins_pre_refine/das_tool_DASTool_bins data/das_tool_bins_pre_refine/checkm --tab_table -f data/das_tool_bins_pre_refine/checkm.out'
+        '-x fa data/das_tool_bins_pre_refine/das_tool_DASTool_bins data/das_tool_bins_pre_refine/checkm --tab_table '
+        '-f data/das_tool_bins_pre_refine/checkm.out; '
+        'checkm qa -o 2 --tab_table -f data/das_tool_bins_pre_refine/checkm.out '
+        'data/das_tool_bins_pre_refine/checkm/lineage.ms data/das_tool_bins_pre_refine/checkm/; '
 
 
 rule singlem_pipe_reads:
@@ -608,12 +708,12 @@ rule singlem_appraise:
         "singlem appraise --metagenome_otu_tables {input.metagenome} --genome_otu_tables data/singlem_out/genomes.otu_table.csv "
         "--assembly_otu_table data/singlem_out/assembly.otu_table.csv "
         "--plot data/singlem_out/singlem_appraise.svg --output_binned_otu_table data/singlem_out/binned.otu_table.csv "
-        "--output_unbinned_otu_table data/singlem_out/unbinned.otu_table.csv"
+        "--output_unbinned_otu_table data/singlem_out/unbinned.otu_table.csv > data/singlem_out/singlem_appraisal.tsv"
 
 
 rule recover_mags:
     input:
-        final_bins = "bins/checkm.out",
+        final_bins = "bins/bin_info.tsv",
         gtdbtk = "data/gtdbtk/done",
         coverm = "data/coverm_abundances.tsv",
         singlem = "data/singlem_out/singlem_appraise.svg"
@@ -637,7 +737,7 @@ rule recover_mags:
 
 rule recover_mags_no_singlem:
     input:
-        final_bins = "bins/checkm.out",
+        final_bins = "bins/bin_info.tsv",
         coverm = "data/coverm_abundances.tsv",
     conda:
         "../../envs/coverm.yaml"

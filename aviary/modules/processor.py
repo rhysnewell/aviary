@@ -35,6 +35,7 @@ import sys
 import logging
 import os
 import subprocess
+from pathlib import Path
 
 # Local imports
 from snakemake import utils
@@ -88,6 +89,26 @@ class Processor:
 
 
         self.conda_prefix = conda_prefix
+        self.output = args.output
+        self.threads = args.max_threads
+        self.max_memory = args.max_memory
+        self.pplacer_threads = min(int(self.threads), 48)
+        self.workflows = args.workflow
+
+        # binning group items
+        try:
+            self.min_contig_size = args.min_contig_size
+            self.min_bin_size = args.min_bin_size
+            self.semibin_model = args.semibin_model
+            self.skip_binners = [binner.lower() for binner in args.skip_binners]
+            self.check_binners_to_skip()
+            if "get_bam_indices" not in self.workflows:
+                self.workflows.insert(0, 'get_bam_indices')
+        except AttributeError:
+            self.min_contig_size = 1500
+            self.min_bin_size = 200000
+            self.semibin_model = 'global'
+            self.skip_binners = []
 
         try:
             self.assembly = args.assembly
@@ -110,34 +131,19 @@ class Processor:
             self.gsa_mappings = 'none'
 
         try:
-            self.semibin_model = args.semibin_model
-        except AttributeError:
-            self.semibin_model = 'global'
-
-        try:
             self.longreads = args.longreads
+            self.long_percent_identity = args.long_percent_identity
         except AttributeError:
             self.longreads = 'none'
+            self.long_percent_identity = 'none'
+
         try:
             self.longread_type = args.longread_type
         except AttributeError:
             self.longread_type = 'none'
-        self.threads = args.max_threads
-        self.max_memory = args.max_memory
-        self.pplacer_threads = min(int(self.threads), 48)
 
         try:
-            self.min_contig_size = args.min_contig_size
-        except AttributeError:
-            self.min_contig_size = 1500
-
-        try:
-            self.min_bin_size = args.min_bin_size
-        except AttributeError:
-            self.min_bin_size = 200000
-        self.output = args.output
-
-        try:
+            self.short_percent_identity = args.short_percent_identity
             if args.coupled != "none":
                 self.pe1 = args.coupled[::2]
                 self.pe2 = args.coupled[1::2]
@@ -153,6 +159,7 @@ class Processor:
         except AttributeError:
             self.pe1 = 'none'
             self.pe2 = 'none'
+            self.short_percent_identity = 'none'
 
         try:
             self.kmer_sizes = args.kmer_sizes
@@ -164,7 +171,6 @@ class Processor:
         except AttributeError:
             self.mag_directory = 'none'
 
-
         try:
             self.gtdbtk = args.gtdb_path
             self.eggnog = args.eggnog_db_path
@@ -173,10 +179,6 @@ class Processor:
             self.gtdbtk = Config.get_software_db_path('GTDBTK_DATA_PATH', '--gtdb-path')
             self.eggnog = Config.get_software_db_path('EGGNOG_DATA_DIR', '--eggnog-db-path')
             # self.enrichm = Config.get_software_db_path('ENRICHM_DB', '--enrichm-db-path')
-        # try:
-        #     self.mags = args.mags
-        # except AttributeError:
-        #     self.mags = 'none'
 
         try:
             self.mag_extension = args.ext
@@ -187,7 +189,7 @@ class Processor:
             self.previous_runs = [os.path.abspath(run) for run in args.previous_runs]
         except AttributeError:
             self.previous_runs = 'none'
-        
+
         try:
             self.min_completeness = args.min_completeness
             self.max_contamination = args.max_contamination
@@ -279,7 +281,77 @@ class Processor:
     def _validate_config(self):
         load_configfile(self.config)
 
-    def run_workflow(self, workflows=["recover_mags"], cores=16, profile=None,
+    def check_binners_to_skip(self):
+
+        to_skip = []
+        skipped = 0
+
+        if "rosella" in self.skip_binners:
+            rosella_path = self.output + "/data/rosella_bins/"
+            rosella_ref_path = self.output + "/data/rosella_refined/"
+            os.makedirs(rosella_path, exist_ok=True)
+            os.makedirs(rosella_ref_path, exist_ok=True)
+            to_skip.append(rosella_path + "done")
+            to_skip.append(rosella_ref_path + "done")
+            skipped += 1
+
+        if "semibin" in self.skip_binners:
+            sb_path = self.output + "/data/semibin_bins/"
+            sb_ref_path = self.output + "/data/semibin_refined/"
+            os.makedirs(sb_path, exist_ok=True)
+            os.makedirs(sb_ref_path, exist_ok=True)
+            to_skip.append(sb_path + "done")
+            to_skip.append(sb_ref_path + "done")
+            skipped += 1
+
+        if "vamb" in self.skip_binners:
+            vamb_path = self.output + "/data/vamb_bins/"
+            os.makedirs(vamb_path, exist_ok=True)
+            to_skip.append(vamb_path + "done")
+            skipped += 1
+
+        if "concoct" in self.skip_binners:
+            concoct_path = self.output + "/data/concoct_bins/"
+            os.makedirs(concoct_path, exist_ok=True)
+            to_skip.append(concoct_path + "done")
+            skipped += 1
+
+        if any(m in self.skip_binners for m in ["maxbin", "maxbin2"]):
+            maxbin2_path = self.output + "/data/maxbin2_bins/"
+            os.makedirs(maxbin2_path, exist_ok=True)
+            to_skip.append(maxbin2_path + "done")
+            skipped += 1
+
+        if any(m in self.skip_binners for m in ["metabat", "metabat1"]):
+            to_skip.extend(self.skip_metabat1())
+            skipped += 1
+
+        if any(m in self.skip_binners for m in ["metabat", "metabat2"]):
+            m_path = self.output + "/data/metabat_bins_2/"
+            m_ref_path = self.output + "/data/metabat2_refined/"
+            os.makedirs(m_path, exist_ok=True)
+            os.makedirs(m_ref_path, exist_ok=True)
+            to_skip.append(m_path + "done")
+            to_skip.append(m_ref_path + "done")
+            skipped += 1
+
+        if skipped < 7:
+            [Path(skip).touch(exist_ok=True) for skip in to_skip]
+        else:
+            logging.error("Check --skip-binners. All binners are being skipped. At least one binning algorithm must be used.")
+            sys.exit(1)
+
+
+    def skip_metabat1(self):
+        return_paths = []
+        for m in ["metabat_bins_sens/", "metabat_bins_ssens/", "metabat_bins_spec/", "metabat_bins_sspec/"]:
+            m_path = self.output + "/data/" + m
+            os.makedirs(m_path, exist_ok=True)
+            return_paths.append(m_path + "done")
+
+        return return_paths
+
+    def run_workflow(self, cores=16, profile=None,
                      dryrun=False, clean=True, conda_frontend="mamba",
                      snakemake_args=""):
         """
@@ -297,7 +369,7 @@ class Processor:
 
         cores = max(int(self.threads), cores)
 
-        for workflow in workflows:
+        for workflow in self.workflows:
             cmd = (
                 "snakemake --snakefile {snakefile} --directory {working_dir} "
                 "{jobs}--rerun-incomplete "

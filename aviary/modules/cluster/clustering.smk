@@ -29,20 +29,26 @@ import os
 
 rule generate_combined_checkm_output:
     output:
-        combined_checkm_file = "data/combined_checkm.tsv"
+        combined_checkm_file = temp("data/combined_checkm.tsv"),
+        combined_checkm_stats = temp("data/combined_checkm_full.tsv"),
     params:
         previous_runs = list(config["previous_runs"])
     run:
         import pandas as pd
 
         previous_runs = params.previous_runs
-        runs = [pd.read_csv(os.path.abspath(run) + "/bins/checkm.out", sep="\t") for run in previous_runs]
+        runs = [pd.read_csv(os.path.abspath(run) + "/bins/checkm_minimal.tsv", sep="\t") for run in previous_runs]
+        infos = [pd.read_csv(os.path.abspath(run) + "/bins/bin_info.tsv", sep="\t") for run in previous_runs]
 
-        for (df, run) in zip(runs, previous_runs):
+        for (df, run, info_df) in zip(runs, previous_runs, infos):
             df['Bin Id'] = df['Bin Id'].apply(lambda bin: os.path.abspath(run) + "/bins/final_bins/" + str(bin))
+            info_df['Bin Id'] = info_df['Bin Id'].apply(lambda bin: os.path.abspath(run) + "/bins/final_bins/" + str(bin))
 
         concat = pd.concat(runs)
         concat.to_csv("data/combined_checkm.tsv", sep="\t", index=False)
+
+        concat_infos = pd.concat(infos)
+        concat_infos.to_csv("data/combined_checkm_full.tsv", sep="\t", index=False)
 
 
 rule generate_genome_list:
@@ -68,7 +74,7 @@ rule run_galah:
         precluster_ani = config["precluster_ani"],
         precluster_method = config["precluster_method"],
         min_completeness = config["min_completeness"],
-        min_contamination = config["max_contamination"],
+        max_contamination = config["max_contamination"],
     threads:
         config['max_threads']
     conda:
@@ -83,52 +89,60 @@ rule run_galah:
 rule representative_checkm:
     input:
         dereplicated_clusters = "data/dereplicated_clusters.txt",
-        combined_checkm = "data/combined_checkm.tsv"
+        combined_checkm = "data/combined_checkm.tsv",
+        combined_checkm_full = "data/combined_checkm_full.tsv",
     output:
         representative_checkm = "data/representative_checkm.tsv",
+        representative_checkm_full = "data/representative_checkm_full.tsv",
     shell:
         "grep \'Bin Id\' {input.combined_checkm} >> {output.representative_checkm}; "
-        "cut -f1 {input.dereplicated_clusters} | uniq | parallel -j 1 \"grep {{.}} {input.combined_checkm} >> {output.representative_checkm}\""
+        "grep \'Bin Id\' {input.combined_checkm_full} >> {output.representative_checkm_full}; "
+        "cut -f1 {input.dereplicated_clusters} | uniq | parallel -j 1 \"grep {{.}} {input.combined_checkm} >> {output.representative_checkm}\"; "
+        "cut -f1 {input.dereplicated_clusters} | uniq | parallel -j 1 \"grep {{.}} {input.combined_checkm_full} >> {output.representative_checkm_full}\"; "
 
 rule complete_cluster:
     input:
         dereplicated_clusters = "data/dereplicated_clusters.txt",
-        representative_checkm = "data/representative_checkm.tsv"
+        representative_checkm = "data/representative_checkm.tsv",
+        representative_checkm_full = "data/representative_checkm_full.tsv"
     output:
         representative_paths = "data/representative_paths.txt",
-        representative_taxa_bac = "data/representatives.bac120.summary.tsv",
-        representative_taxa_arc = "data/representatives.ar122.summary.tsv",
+        # representative_taxa_bac = "data/representatives.bac120.summary.tsv",
+        # representative_taxa_arc = "data/representatives.ar55.summary.tsv",
     params:
         previous_runs = config["previous_runs"]
     run:
         import pandas as pd
+        import glob
 
         clusters = pd.read_csv(input.dereplicated_clusters, sep="\t", header=None)
-        representatives = clusters[0].apply(lambda bin: bin.replace(".fa", "")).unique()
+        representatives = clusters[0].apply(lambda bin: bin.replace(".fna", "")).unique()
         previous_runs = params.previous_runs
-
+        # print(previous_runs)
         runs_bac = []
         runs_arc = []
 
         for run in previous_runs:
+            print(f"Gathering: {run}")
             try:
-                df_bac = pd.read_csv(os.path.abspath(run) + "/data/gtdbtk/gtdbtk.bac120.summary.tsv", sep="\t")
-                df_bac['user_genome'] = df_bac['user_genome'].apply(lambda bin: os.path.abspath(run) + "/bins/final_bins/" + str(bin))
+                df_bac = pd.read_csv(glob.glob(os.path.abspath(run) + "/taxonomy/gtdbtk.bac*.summary.tsv")[0], sep="\t")
+                df_bac['user_genome'] = df_bac['user_genome'].apply(lambda mag: os.path.abspath(run) + "/bins/final_bins/" + str(mag))
                 runs_bac.append(df_bac)
-            except FileNotFoundError:
+            except (FileNotFoundError, IndexError):
                 pass
 
             try:
-                df_arc = pd.read_csv(os.path.abspath(run) + "/data/gtdbtk/gtdbtk.ar122.summary.tsv", sep="\t")
-                df_arc['user_genome'] = df_arc['user_genome'].apply(lambda bin: os.path.abspath(run) + "/bins/final_bins/" + str(bin))
+                df_arc = pd.read_csv(glob.glob(os.path.abspath(run) + "/taxonomy/gtdbtk.ar*.summary.tsv")[0], sep="\t")
+                df_arc['user_genome'] = df_arc['user_genome'].apply(lambda mag: os.path.abspath(run) + "/bins/final_bins/" + str(mag))
                 runs_arc.append(df_arc)
-            except FileNotFoundError:
+            except (FileNotFoundError, IndexError) as e:
                 pass
+
 
         try:
             concat_bac = pd.concat(runs_bac)
             concat_bac = concat_bac[concat_bac['user_genome'].isin(representatives)]
-            concat_bac.to_csv("data/representatives.bac120.summary.tsv", index=False)
+            concat_bac.to_csv("data/representatives.bac120.summary.tsv", index=False, sep="\t")
         except ValueError:
             # No values to concat
             pass
@@ -136,10 +150,10 @@ rule complete_cluster:
         try:
             concat_arc = pd.concat(runs_arc)
             concat_arc = concat_arc[concat_arc['user_genome'].isin(representatives)]
-            concat_arc.to_csv("data/representatives.ar122.summary.tsv", index=False)
+            concat_arc.to_csv("data/representatives.ar55.summary.tsv", index=False, sep="\t")
         except ValueError:
             # No values to concate
             pass
 
-        pd.DataFrame(representatives).to_csv("data/representative_paths.txt", index=False, header=False)
+        pd.DataFrame(representatives).to_csv("data/representative_paths.txt", index=False, header=False, sep="\t")
 

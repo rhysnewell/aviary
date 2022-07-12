@@ -1,5 +1,6 @@
 channels:
+  - conda-forge
   - bioconda
 dependencies:
-  - gtdbtk > 2.0.0
+  - gtdbtk >= 2.1.0
   - fastani

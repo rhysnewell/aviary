@@ -1,4 +1,5 @@
 channels:
+  - conda-forge
   - bioconda
 dependencies:
   - metabat2 = 2.15

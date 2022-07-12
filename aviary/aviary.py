@@ -193,9 +193,9 @@ def main():
     base_group.add_argument(
         '--clean',
         help='Clean up all temporary files. This will remove most BAM files and any FASTQ files '
-             'generated from read filtering. Setting this to False is the equivalent of the --notemp'
-             'option in snakemake. Useful for when running only part of a workflow as it avoids'
-             'deleting files that would likely be needed in later parts of the workflow.'
+             'generated from read filtering. Setting this to False is the equivalent of the --notemp '
+             'option in snakemake. Useful for when running only part of a workflow as it avoids '
+             'deleting files that would likely be needed in later parts of the workflow. '
              'NOTE: Not cleaning makes reruns faster but will incur the wrath of your sysadmin',
         type=str2bool,
         nargs='?',
@@ -327,6 +327,14 @@ def main():
         default="none"
     )
 
+    read_group_exclusive.add_argument(
+        '--min-percent-read-identity-short', '--min_percent_read_identity_short',
+        help='Minimum percent read identity used by CoverM for short-reads'
+             'when calculating genome abundances.',
+        dest='short_percent_identity',
+        default='95'
+    )
+
     ####################################################################
 
     long_read_group = argparse.ArgumentParser(formatter_class=CustomHelpFormatter,
@@ -350,6 +358,14 @@ def main():
         nargs=1,
         default="ont",
         choices=["ont","ont_hq", "rs", "sq", "ccs"],
+    )
+
+    long_read_group.add_argument(
+        '--min-percent-read-identity-long', '--min_percent_read_identity_long',
+        help='Minimum percent read identity used by CoverM for long-reads'
+             'when calculating genome abundances.',
+        dest='long_percent_identity',
+        default='85'
     )
 
     ####################################################################
@@ -402,6 +418,17 @@ def main():
              'human_gut, dog_gut, ocean, soil, cat_gut, human_oral, mouse_gut, pig_gut, built_environment, wastewater, global',
         dest='semibin_model',
         default='global'
+    )
+
+    binning_group.add_argument(
+        '--skip-binners', '--skip_binners',
+        help='Optional list of binning algorithms to skip. Can be any combination of: '
+             'rosella, semibin, metabat1, metabat2, metabat, vamb, concoct, maxbin2, maxbin '
+             'Capitals will be auto-corrected. N.B. specifying "metabat" will skip both'
+             'MetaBAT1 and MetaBAT2.',
+        dest='skip_binners',
+        nargs='*',
+        default=["semibin"]
     )
 
     ####################################################################
@@ -458,7 +485,7 @@ def main():
     cluster_group = argparse.ArgumentParser(formatter_class=CustomHelpFormatter, add_help=False)
 
     cluster_group.add_argument(
-        '--previous-runs', '--previous_runs',
+        '-i', '--input-runs', '--input_runs',
         help='The paths to the previous finished runs of Aviary. Must contain the bins/checkm.out and bins/final_bins'
              'outputs',
         dest='previous_runs',
@@ -823,6 +850,15 @@ def main():
         required=False,
     )
 
+    # configure_options.add_argument(
+    #     '--build',
+    #     help='Build conda environments and then exits. Equivalent to \"--snakemake-cmds \'--conda-create-envs-only True \' \"',
+    #     type=str2bool,
+    #     nargs='?',
+    #     const=True,
+    #     dest='build',
+    # )
+
     ###########################################################################
     # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ #
     # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~ Parsing input ~~~~~~~~~~~~~~~~~~~~~~~~~~~~ #
@@ -891,8 +927,7 @@ def main():
             except AttributeError:
                 pass
 
-            processor.run_workflow(workflows=args.workflow,
-                                   cores=int(args.n_cores),
+            processor.run_workflow(cores=int(args.n_cores),
                                    dryrun=args.dryrun,
                                    clean=args.clean,
                                    conda_frontend=args.conda_frontend,

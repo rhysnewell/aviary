@@ -63,6 +63,7 @@ rule binner_result:
         metabat_sense = "data/metabat_bins_sens/done",
         rosella_done = "data/rosella_bins/done",
         vamb_done = "data/vamb_bins/done",
+        semibin_done = "data/semibin_bins/done",
     group: 'binning'
     output:
          "data/all_bins/checkm.out"
@@ -106,7 +107,7 @@ rule checkm2_all_bins:
 
 rule checkm2_das_tool:
     input:
-        das_tool_wr = "data/das_tool_bins/checkm.out",
+        das_tool_wr = "data/das_tool_bins_no_refine/checkm.out",
         das_tool_nr = "data/das_tool_without_rosella/done"
     output:
         checkm2_report_wr = "data/checkm2_das_tool_wr/quality_report.tsv",
@@ -119,7 +120,7 @@ rule checkm2_das_tool:
         "envs/checkm2.yaml"
     shell:
         "export CHECKM2DB={params.checkm2_db_path}; "
-        "checkm2 predict -i data/das_tool_bins/das_tool_DASTool_bins/ -x fa -o data/checkm2_das_tool_wr/ -t {threads} --force; "
+        "checkm2 predict -i data/das_tool_bins_no_refine/das_tool_DASTool_bins/ -x fa -o data/checkm2_das_tool_wr/ -t {threads} --force; "
         "checkm2 predict -i data/das_tool_without_rosella/das_tool_DASTool_bins/ -x fa -o data/checkm2_das_tool_nr/ -t {threads} --force"
 
 
@@ -343,20 +344,21 @@ rule das_tool_with_refine:
     """
     input:
         fasta = config["fasta"],
-        rosella_refine = "data/rosella_refine_rosella/checkm.out",
-        metabat_refine = "data/rosella_refine_metabat2/checkm.out",
-        metabat2_done = "data/metabat2_refined/done",
+        rosella_refine = "data/rosella_refine_rosella/done",
+        metabat_refine = "data/rosella_refine_metabat2/done",
+        semibin_refine = "data/rosella_refine_semibin/done",
+        # metabat2_done = "data/metabat2_refined/done",
         concoct_done = "data/concoct_bins/done",
         maxbin_done = "data/maxbin2_bins/done",
         metabat_sspec = "data/metabat_bins_sspec/done",
         metabat_spec = "data/metabat_bins_spec/done",
         metabat_ssens = "data/metabat_bins_ssens/done",
         metabat_sense = "data/metabat_bins_sens/done",
-        rosella_done = "data/rosella_refined/done",
+        # rosella_done = "data/rosella_refined/done",
         vamb_done = "data/vamb_bins/done"
     group: 'binning'
     output:
-        das_tool_done = "data/das_tool_with_refine/done"
+        das_tool_done = "data/das_tool_bins_with_refine/done"
     threads:
         config["max_threads"]
     conda:
@@ -366,32 +368,39 @@ rule das_tool_with_refine:
     shell:
         """
         mkdir -p data/refine_input; 
-        cd data/refine_input; ln -s ../*bins*.tsv; cd ../../;
-        Fasta_to_Scaffolds2Bin.sh -i data/rosella_refine_rosella -e fna > data/refine_input/rosella_refine_bins.tsv; 
-        Fasta_to_Scaffolds2Bin.sh -i data/rosella_refine_metabat2 -e fna > data/refine_input/metabat_refine_bins.tsv; 
+        Fasta_to_Scaffolds2Bin.sh -i data/rosella_refine_rosella/final_bins/ -e fna > data/refine_input/rosella_refine_bins.tsv; 
+        Fasta_to_Scaffolds2Bin.sh -i data/rosella_refine_metabat2/final_bins/ -e fna > data/refine_input/metabat_refine_bins.tsv; 
+        Fasta_to_Scaffolds2Bin.sh -i data/rosella_refine_semibin/final_bins/ -e fna > data/refine_input/semibin_refine_bins.tsv; 
+        Fasta_to_Scaffolds2Bin.sh -i data/metabat_bins_sspec -e fa > data/no_refine_input/metabat_bins_sspec.tsv; 
+        Fasta_to_Scaffolds2Bin.sh -i data/metabat_bins_ssens -e fa > data/no_refine_input/metabat_bins_ssens.tsv; 
+        Fasta_to_Scaffolds2Bin.sh -i data/metabat_bins_sens -e fa > data/no_refine_input/metabat_bins_sens.tsv; 
+        Fasta_to_Scaffolds2Bin.sh -i data/metabat_bins_spec -e fa > data/no_refine_input/metabat_bins_spec.tsv; 
+        Fasta_to_Scaffolds2Bin.sh -i data/concoct_bins -e fa > data/no_refine_input/concoct_bins.tsv; 
+        Fasta_to_Scaffolds2Bin.sh -i data/maxbin2_bins -e fasta > data/no_refine_input/maxbin_bins.tsv; 
+        Fasta_to_Scaffolds2Bin.sh -i data/vamb_bins/bins -e fna > data/no_refine_input/vamb_bins.tsv; 
         scaffold2bin_files=$(find data/refine_input/*bins*.tsv -not -empty -exec ls {{}} \; | tr "\n" ',' | sed "s/,$//g"); 
         DAS_Tool --search_engine diamond --write_bin_evals 1 --write_bins 1 -t {threads} --score_threshold -42 \
          -i $scaffold2bin_files \
          -c {input.fasta} \
-         -o data/das_tool_with_refine/das_tool && \
-        touch data/das_tool_with_refine/done
+         -o data/das_tool_bins_with_refine/das_tool && \
+        touch data/das_tool_bins_with_refine/done
         """
 
 rule checkm_das_tool_refine:
     input:
-        done = "data/das_tool_with_refine/done"
+        done = "data/das_tool_bins_with_refine/done"
     params:
         pplacer_threads = config["pplacer_threads"]
     group: 'binning'
     output:
-        "data/das_tool_with_refine/checkm.out"
+        "data/das_tool_bins_with_refine/checkm.out"
     conda:
         "../../envs/checkm.yaml"
     threads:
         config["max_threads"]
     shell:
         'checkm lineage_wf -t {threads} --pplacer_threads {params.pplacer_threads} '
-        '-x fa data/das_tool_with_refine/das_tool_DASTool_bins data/das_tool_with_refine/checkm --tab_table -f data/das_tool_with_refine/checkm.out'
+        '-x fa data/das_tool_bins_with_refine/das_tool_DASTool_bins data/das_tool_bins_with_refine/checkm --tab_table -f data/das_tool_bins_with_refine/checkm.out'
 
 rule benchmark_refine:
     input:
@@ -411,8 +420,9 @@ rule bin_statistics:
         ro_refined = "data/rosella_refine_rosella/checkm.out",
         sb_refined = "data/rosella_refine_semibin/checkm.out",
         dt_refined = "data/rosella_refine_das_tool/checkm.out",
-        dastool_wr = "data/das_tool_bins/checkm.out",
-        dastool_nr = "data/checkm_without_rosella.out",
+        dastool_nr = "data/das_tool_bins_no_refine/checkm.out",
+        dastool_wr = "data/das_tool_bins_with_refine/checkm.out",
+        dastool_wo = "data/checkm_without_rosella.out",
         coverage_file = "data/coverm.cov"
     output:
         bin_stats = "data/bin_stats/all_bin_stats.tsv",
@@ -422,6 +432,7 @@ rule bin_statistics:
         dt_stats = "data/bin_stats/dt_refined_bin_stats.tsv",
         das_tool_wr_stats = "data/bin_stats/das_tool_wr_stats.tsv",
         das_tool_nr_stats = "data/bin_stats/das_tool_nr_stats.tsv",
+        das_tool_wo_stats = "data/bin_stats/das_tool_wo_stats.tsv",
     run:
         import glob
         import pandas as pd
@@ -475,14 +486,19 @@ rule bin_statistics:
         # repeat for both das_tool runs
         das_tool_wr_checkm = pd.read_csv(input.dastool_wr, sep='\t', comment="[")
         das_tool_nr_checkm = pd.read_csv(input.dastool_nr, sep='\t', comment="[")
+        das_tool_wo_checkm = pd.read_csv(input.dastool_wo, sep='\t', comment="[")
 
-        das_tool_wr_stats = retrieve_stats("data/das_tool_bins/das_tool_DASTool_bins/", "fa", coverage_file, das_tool_wr_checkm)
+        das_tool_wr_stats = retrieve_stats("data/das_tool_bins_with_refine/das_tool_DASTool_bins/", "fa", coverage_file, das_tool_wr_checkm)
         das_tool_wr_stats = pd.DataFrame(data = das_tool_wr_stats)
         das_tool_wr_stats.to_csv(output.das_tool_wr_stats, sep='\t', index=False)
 
-        das_tool_nr_stats = retrieve_stats("data/das_tool_without_rosella/das_tool_DASTool_bins/", "fa", coverage_file, das_tool_nr_checkm)
+        das_tool_nr_stats = retrieve_stats("data/das_tool_bins_no_refine/das_tool_DASTool_bins/", "fa", coverage_file, das_tool_nr_checkm)
         das_tool_nr_stats = pd.DataFrame(data = das_tool_nr_stats)
         das_tool_nr_stats.to_csv(output.das_tool_nr_stats, sep='\t', index=False)
+
+        das_tool_wo_stats = retrieve_stats("data/das_tool_without_rosella/das_tool_DASTool_bins/", "fa", coverage_file, das_tool_wo_checkm)
+        das_tool_wo_stats = pd.DataFrame(data = das_tool_wo_stats)
+        das_tool_wo_stats.to_csv(output.das_tool_wo_stats, sep='\t', index=False)
 
         # repeat for both refine runs
         try:
@@ -525,6 +541,7 @@ rule get_stats:
         sb_refined_stats = "data/bin_stats/sb_refined_bin_stats.tsv",
         dt_refined_stats = "data/bin_stats/dt_refined_bin_stats.tsv",
         das_tool_wr_stats = "data/bin_stats/das_tool_wr_stats.tsv",
+        das_tool_wo_stats = "data/bin_stats/das_tool_wo_stats.tsv",
         das_tool_nr_stats = "data/bin_stats/das_tool_nr_stats.tsv",
         checkm2_report = "data/checkm2_all_bins/quality_report.tsv",
         checkm2_report_wr = "data/checkm2_das_tool_wr/quality_report.tsv",
@@ -542,6 +559,7 @@ rule das_tool_without_rosella:
     input:
         fasta = config["fasta"],
         metabat2_done = "data/metabat_bins_2/done",
+        semibin_done = "data/semibin_bins/done",
         concoct_done = "data/concoct_bins/done",
         maxbin_done = "data/maxbin2_bins/done",
         metabat_sspec = "data/metabat_bins_sspec/done",
@@ -560,6 +578,7 @@ rule das_tool_without_rosella:
         """
         mkdir -p data/no_rosella/
         Fasta_to_Scaffolds2Bin.sh -i data/metabat_bins_2 -e fa > data/no_rosella/metabat_bins_2.tsv; 
+        Fasta_to_Scaffolds2Bin.sh -i data/semibin_bins/output_recluster_bins/ -e fa > data/no_rosella/semibin_bins.tsv; 
         Fasta_to_Scaffolds2Bin.sh -i data/metabat_bins_sspec -e fa > data/no_rosella/metabat_bins_sspec.tsv; 
         Fasta_to_Scaffolds2Bin.sh -i data/metabat_bins_ssens -e fa > data/no_rosella/metabat_bins_ssens.tsv; 
         Fasta_to_Scaffolds2Bin.sh -i data/metabat_bins_sens -e fa > data/no_rosella/metabat_bins_sens.tsv; 
@@ -588,11 +607,12 @@ rule das_tool_no_refine:
         metabat_spec = "data/metabat_bins_spec/done",
         metabat_ssens = "data/metabat_bins_ssens/done",
         metabat_sense = "data/metabat_bins_sens/done",
-        # rosella_done = "data/rosella_refined/done",
+        rosella_done = "data/rosella_bins/done",
+        semibin_done = "data/semibin_bins/done",
         vamb_done = "data/vamb_bins/done",
     group: 'binning'
     output:
-        das_tool_done = "data/das_tool_bins/done"
+        das_tool_done = "data/das_tool_bins_no_refine/done"
     threads:
         config["max_threads"]
     conda:
@@ -601,21 +621,23 @@ rule das_tool_no_refine:
         "benchmarks/das_tool.benchmark.txt"
     shell:
         """
-        Fasta_to_Scaffolds2Bin.sh -i data/metabat_bins_sspec -e fa > data/metabat_bins_sspec.tsv; 
-        Fasta_to_Scaffolds2Bin.sh -i data/metabat_bins_ssens -e fa > data/metabat_bins_ssens.tsv; 
-        Fasta_to_Scaffolds2Bin.sh -i data/metabat_bins_sens -e fa > data/metabat_bins_sens.tsv; 
-        Fasta_to_Scaffolds2Bin.sh -i data/metabat_bins_spec -e fa > data/metabat_bins_spec.tsv; 
-        Fasta_to_Scaffolds2Bin.sh -i data/concoct_bins -e fa > data/concoct_bins.tsv; 
-        Fasta_to_Scaffolds2Bin.sh -i data/maxbin2_bins -e fasta > data/maxbin_bins.tsv; 
-        Fasta_to_Scaffolds2Bin.sh -i data/vamb_bins/bins -e fna > data/vamb_bins.tsv; 
-        Fasta_to_Scaffolds2Bin.sh -i data/rosella_bins/ -e fna > data/rosella_bins.tsv; 
-        Fasta_to_Scaffolds2Bin.sh -i data/metabat_bins_2/ -e fa > data/metabat2_bins.tsv; 
-        scaffold2bin_files=$(find data/*bins*.tsv -not -empty -exec ls {{}} \; | tr "\n" ',' | sed "s/,$//g"); 
+        mkdir -p data/no_refine_input/; 
+        Fasta_to_Scaffolds2Bin.sh -i data/metabat_bins_sspec -e fa > data/no_refine_input/metabat_bins_sspec.tsv; 
+        Fasta_to_Scaffolds2Bin.sh -i data/metabat_bins_ssens -e fa > data/no_refine_input/metabat_bins_ssens.tsv; 
+        Fasta_to_Scaffolds2Bin.sh -i data/metabat_bins_sens -e fa > data/no_refine_input/metabat_bins_sens.tsv; 
+        Fasta_to_Scaffolds2Bin.sh -i data/metabat_bins_spec -e fa > data/no_refine_input/metabat_bins_spec.tsv; 
+        Fasta_to_Scaffolds2Bin.sh -i data/concoct_bins -e fa > data/no_refine_input/concoct_bins.tsv; 
+        Fasta_to_Scaffolds2Bin.sh -i data/maxbin2_bins -e fasta > data/no_refine_input/maxbin_bins.tsv; 
+        Fasta_to_Scaffolds2Bin.sh -i data/vamb_bins/bins -e fna > data/no_refine_input/vamb_bins.tsv; 
+        Fasta_to_Scaffolds2Bin.sh -i data/rosella_bins/ -e fna > data/no_refine_input/rosella_bins.tsv; 
+        Fasta_to_Scaffolds2Bin.sh -i data/semibin_bins/output_recluster_bins/ -e fa > data/no_refine_input/semibin_bins.tsv; 
+        Fasta_to_Scaffolds2Bin.sh -i data/metabat_bins_2/ -e fa > data/no_refine_input/metabat2_bins.tsv; 
+        scaffold2bin_files=$(find data/no_refine_input/*bins*.tsv -not -empty -exec ls {{}} \; | tr "\n" ',' | sed "s/,$//g"); 
         DAS_Tool --search_engine diamond --write_bin_evals 1 --write_bins 1 -t {threads} --score_threshold -42 \
          -i $scaffold2bin_files \
          -c {input.fasta} \
-         -o data/das_tool_bins/das_tool && \
-        touch data/das_tool_bins/done
+         -o data/das_tool_bins_no_refine/das_tool && \
+        touch data/das_tool_bins_no_refine/done
         """
 
 rule das_tool_no_refine_with_semibin:
@@ -666,19 +688,19 @@ rule das_tool_no_refine_with_semibin:
 
 rule checkm_das_tool_no_refine:
     input:
-        done = "data/das_tool_bins/done"
+        done = "data/das_tool_bins_no_refine/done"
     params:
         pplacer_threads = config["pplacer_threads"]
     group: 'binning'
     output:
-        "data/das_tool_bins/checkm.out"
+        "data/das_tool_bins_no_refine/checkm.out"
     conda:
         "../../envs/checkm.yaml"
     threads:
         config["max_threads"]
     shell:
         'checkm lineage_wf -t {threads} --pplacer_threads {params.pplacer_threads} '
-        '-x fa data/das_tool_bins/das_tool_DASTool_bins data/das_tool_bins/checkm --tab_table -f data/das_tool_bins/checkm.out'
+        '-x fa data/das_tool_bins_no_refine/das_tool_DASTool_bins data/das_tool_bins_no_refine/checkm --tab_table -f data/das_tool_bins_no_refine/checkm.out'
 
 rule checkm_without_rosella:
     input:
@@ -769,7 +791,8 @@ rule setup_amber:
         rosella_refined = "data/rosella_refine_rosella/done",
         m2_refined = "data/rosella_refine_metabat2/done",
         dt_wor = "data/das_tool_without_rosella/done",
-        dt_wr = "data/das_tool_bins/done",
+        dt_nr = "data/das_tool_bins_no_refine/done",
+        dt_wr = "data/das_tool_bins_with_refine/done",
         gsa_mappings = "data/gsa_mapping_lengths.binning"
         # gsa_mappings = config["gsa_mappings"]
     output:
@@ -790,7 +813,8 @@ rule setup_amber:
         'convert_fasta_bins_to_biobox_format.py -o data/amber_out/rosella_refined_amber.tsv data/rosella_refine_rosella/final_bins/*.fna || rm data/amber_out/rosella_refined_amber.tsv; '
         'convert_fasta_bins_to_biobox_format.py -o data/amber_out/metabat2_refined_amber.tsv data/rosella_refine_metabat2/final_bins/*.fna || rm data/amber_out/metabat2_refined_amber.tsv; '
         'convert_fasta_bins_to_biobox_format.py -o data/amber_out/dt_wor_amber.tsv data/das_tool_without_rosella/das_tool_DASTool_bins/*.fa || rm data/amber_out/dt_wor_amber.tsv; '
-        'convert_fasta_bins_to_biobox_format.py -o data/amber_out/dt_wr_amber.tsv data/das_tool_bins/das_tool_DASTool_bins/*.fa || rm data/amber_out/dt_wr_amber.tsv; '
+        'convert_fasta_bins_to_biobox_format.py -o data/amber_out/dt_nr_amber.tsv data/das_tool_bins_no_refine/das_tool_DASTool_bins/*.fa || rm data/amber_out/dt_nr_amber.tsv; '
+        'convert_fasta_bins_to_biobox_format.py -o data/amber_out/dt_wr_amber.tsv data/das_tool_bins_with_refine/das_tool_DASTool_bins/*.fa || rm data/amber_out/dt_wr_amber.tsv; '
         'touch data/amber_out/done; '
 
 rule run_amber:
@@ -808,7 +832,7 @@ rule run_amber:
 rule rosella_benchmark:
     input:
         "data/all_bins/checkm.out",
-        "data/das_tool_bins/checkm.out",
+        "data/das_tool_bins_no_refine/checkm.out",
         "data/checkm_without_rosella.out",
         # "data/coverm_abundances.tsv",
     group: 'binning'
@@ -838,7 +862,8 @@ rule reset_rosella:
         temp('data/reset_rosella')
     shell:
         'rm -rf data/rosella_bins/; '
-        'rm -rf data/das_tool_bins/; '
+        'rm -rf data/das_tool_bins_with_refine/; '
+        'rm -rf data/das_tool_bins_no_refine/; '
         'rm -rf data/checkm; '
         'rm -rf data/checkm.out; '
         'rm -rf data/gtdbtk; '
