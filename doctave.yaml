@@ -7,5 +7,4 @@ navigation:
     children: "*"
   - path: docs/concepts.md
   - path: docs/examples.md
-  - path: docs/comparisons.md
   - path: docs/faqs.md

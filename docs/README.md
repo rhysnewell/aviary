@@ -1,31 +1,30 @@
-![](/images/lorikeet_logo.png)
+![](docs/_include/images/aviary_logo.png)
 
-![](https://travis-ci.com/rhysnewell/Lorikeet.svg?branch=master)
-![](https://anaconda.org/bioconda/lorikeet-genome/badges/license.svg)
-![](https://anaconda.org/bioconda/lorikeet-genome/badges/version.svg)
-![](https://anaconda.org/bioconda/lorikeet-genome/badges/latest_release_relative_date.svg)
-![](https://anaconda.org/bioconda/lorikeet-genome/badges/platforms.svg)
+# Aviary
+An easy to use for wrapper for a robust snakemake pipeline for metagenomic hybrid assembly, binning, and annotation. 
+The pipeline currently includes a step-down iterative 
+hybrid assembler, an isolate hybrid assembler, a quality control module and a 
+comprehensive binning pipeline. Each module can be run independently or as a single pipeline depending on provided input.
+
+# Module details
+|__method__ |__description__ |
+| --- | --- |
+|`cluster`|Dereplicate/choose representative genomes from multiple aviary runs|
+|`assemble`|Perform quality control and assembly of provided reads. Will provide hybrid assembly if given long and short reads|
+|`recover`|Recover MAGs from provided assembly using a variety of binning algorithms. Also perform quality checks on recovered MAGs and taxonomic classification.|
+|`annotate`|Module under development|
+|`genotype`|Module under development|
+|`complete`|Performs the complete workflow up to last possible rule given the provided inputs|
+|`isolate` |Performs hybrid isolate assembly. For use with isolated pure sequencing results.  |
+|`configure` |Set or reset environment variables used by aviary  |
 
 
-Lorikeet is a within-species variant analysis pipeline for metagenomic communities that utilizes both long and short reads.
-Lorikeet utilizes a re-implementaion of the GATK HaplotypeCaller algorithm, performing local re-assembly of potentially active
-regions within candidate genomes. Called variants can be clustered into likely strains using a combination of UMAP and HDBSCAN.
-Additional statistics, like consensus ANI, population ANI, and subpopulation ANI will also be calculated for each input
-geome providing values for each sample compared to the reference and also compared to all other samples.
+Future modules will include:
+- Annotation - Annotate your MAGs with metabolic pathways
+- Genotype - Recover strain level variation in your MAGs using a suite of tools
 
-Lorikeet has a variety of subcommands with the main being `call` and `genotype`. The `call` pipeline will take any number
-of input genomes and samples and perform robust variant calling and ANI calculations. The `genotype` algorithm takes this
-a step further and attempts to reconstruct strain haplotypes from the called variants and return complete strain genomes.
-
-## Additional resources
-
-The variant calling algorithm is basically a one-to-one re-implementation of the algorithm used in GATK HaplotypeCaller.
-As such, many of the FAQs and documentation for HaplotypeCaller can be useful in understanding how Lorikeet actually
-finds variants. An overview of the HaplotypeCaller pipeline can be found here: [HaplotypeCaller Docs](https://gatk.broadinstitute.org/hc/en-us/articles/360037225632-HaplotypeCaller).
-
-Lorikeet makes use of a couple new and daunting algorithms. UMAP in particular is an amazing algorithm but might be cause 
-for concern since it is difficult to understand how it works and what it is doing. So please look over this amazing article 
-by Andy Coenen and Adam Pearce: [Understanding UMAP](https://pair-code.github.io/understanding-umap/)
+## Overview
+![](docs/_include/figures/aviary_workflow.png)
 
 ## Citation
 

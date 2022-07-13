@@ -5,75 +5,88 @@ title: Installation
 Installation
 ========
 
-## Option 1: Install static binary 
-#### Recommended
-You can make use of the precompiled static binaries that come with this repository. You will have to install the lorikeet
-conda environment using the lorikeet.yml. This will also install the latest `dev` branch of the `flight` submodule which 
-is necessary to perform strain genome recovery.
+## Requirements
+
+Your conda channels should be configured ideally in this order with strict channel priority order
+turned on:
 ```
-GIT_LFS_SKIP_SMUDGE=1 git clone --recursive https://github.com/rhysnewell/Lorikeet.git;
-cd Lorikeet;
-conda env create -n lorikeet -f lorikeet.yml;
-conda activate lorikeet;
-cd flight;
-git checkout dev;
-pip install .
+conda config --add channels defaults
+conda config --add channels conda-forge
+conda config --add channels bioconda
+conda config --set channel_priority strict
 ```
 
-Once you have created the conda environment download and install the latest release file from github. Please make sure
-you are installing the latest release by checking what is available in the release tab of GitHub, as I'm often slow to update
-this README when changes occur.
+Your resulting `.condarc` file should look something like:
 ```
-wget https://github.com/rhysnewell/Lorikeet/releases/download/latest/lorikeet-x86_64-unknown-linux-musl-v0.6.1.tar.gz;
-tar -xvzf lorikeet-x86_64-unknown-linux-musl-v*.tar.gz;
-cp release/lorikeet $CONDA_PREFIX/bin;
-cp release/remove_minimap2_duplicated_headers $CONDA_PREFIX/bin;
-```
-
-## Option 2: Build manually
-You may need to manually set the paths for `C_INCLUDE_PATH`, `LIBRARY_PATH`, `LIBCLANG_PATH`, and `OPENSSL_DIR` to their corresponding
-paths in the your conda environment if they can't properly be found on your system. This method also assumes you have 
-previously installed rust via rustup on your system. The conda version of rust currently seems to be broken, so system 
-versions need to be used for installation.
-```
-GIT_LFS_SKIP_SMUDGE=1 git clone --recursive https://github.com/rhysnewell/Lorikeet.git;
-cd Lorikeet;
-conda env create -n lorikeet -f lorikeet.yml; 
-conda activate lorikeet;
-pip install --upgrade cmake;
-bash install.sh # or run without installing e.g. `cargo run --release -- genotype -h`;
-lorikeet genotype -h
+channels:
+  - conda-forge
+  - bioconda
+  - defaults
+channel_priority: strict
 ```
 
-Depending on your local network configuration, you may have problems obtaining Lorikeet via git.
-If you see something like this you may be behind a proxy that blocks access to standard git:// port (9418).
+Initial requirements for aviary can be downloaded using the `aviary.yml`:
 
 ```
-$ GIT_LFS_SKIP_SMUDGE=1 git clone --recursive git://github.com/rhysnewell/Lorikeet.git
-Cloning into 'Lorikeet'...
-fatal: Unable to look up github.com (port 9418) (Name or service not known)
+git clone https://github.com/rhysnewell/aviary.git
+cd aviary
+conda env create -n aviary -f aviary.yml
+conda activate aviary
+pip install -e .
+aviary --help
 ```
 
-Luckily, thanks to this handy tip from the developer of [Freebayes](https://github.com/ekg/freebayes) we can work around it.
-If you have access to https:// on port 443, then you can use this 'magic' command as a workaround to enable download of the submodules:
-
-```
-git config --global url.https://github.com/.insteadOf git://github.com/
+The resulting output should contain a list of the available aviary modules:
 ```
 
-## Option 3: Conda 
-#### *Only for version <= 0.5.0* (Not yet recommended)
+                    ......:::::: AVIARY ::::::......
 
-*NOTE:* The conda version is often a few commits and/or versions behind the development version. If you want the most
-up to date version, follow the instruction in option 2. 
+A comprehensive metagenomics bioinformatics pipeline
 
-Install into current conda environment:
-```
-conda install lorikeet-genome
+Metagenome assembly, binning, and annotation:
+        cluster   - Clusters and dereplicates bins across multiple aviary runs
+        assemble  - Perform hybrid assembly using short and long reads,
+                    or assembly using only short reads
+        recover   - Recover MAGs from provided assembly using a variety
+                    of binning algorithms
+        annotate  - Annotate MAGs **TBC**
+        genotype  - Perform strain level analysis of MAGs **TBC**
+        complete  - Runs each stage of the pipeline: assemble, recover,
+                    annotate, genotype in that order.
+
+Isolate assembly, binning, and annotation:
+        isolate   - Perform isolate assembly **PARTIALLY COMPLETED**
+
+Utility modules:
+        configure - Set or overwrite the environment variables for future runs.
+
+
 ```
 
-Create fresh conda environment and install lorikeet there:
+Upon first running aviary you will be prompted to input the location for where you would like
+your conda environments to be stored, the GTDB release installed on your system, the location of your
+EnrichM database, and the location of your BUSCO database. These locations will be stored as environment
+variables, but for aviary to be able to use those environment variables you will have to either source your .bashrc
+or reactivate your conda environment depending on whether you installed aviary within a conda environment or not:
+
 ```
-conda create -n lorikeet -c bioconda lorikeet-genome && \
-conda activate lorikeet
+conda deactivate; conda activate aviary
+
+OR
+
+source ~/.bashrc
 ```
+
+These environment variables can be reset using `aviary configure`
+
+## Databases
+
+Aviary uses programs which require access to locally stored databases. These databases can be quite large, as such we recommend setting up one instance of Aviary and these databases per machine or machine cluster.
+
+The **required** databases are as follows:
+* [GTDB](https://gtdb.ecogenomic.org/downloads) Required for taxonomic annotation
+
+The **optional** databases are as follows:
+* [EggNog](https://github.com/eggnogdb/eggnog-mapper/wiki/eggNOG-mapper-v2.1.5-to-v2.1.7#setup) Will become required soon.
+
+**If you do not have the optional databases installed, then when aviary asks you to specify these databse passes when configuring just press enter and specify no path.**
