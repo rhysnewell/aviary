@@ -1,7 +1,9 @@
+![](docs/_include/images/aviary_logo.png)
+
 # Aviary
 An easy to use for wrapper for a robust snakemake pipeline for metagenomic hybrid assembly, binning, and annotation. 
 The pipeline currently includes a step-down iterative 
-hybrid assembler (Previously SlamM), an isolate hybrid assembler, a quality control module and a 
+hybrid assembler, an isolate hybrid assembler, a quality control module and a 
 comprehensive binning pipeline. Each module can be run independently or as a single pipeline depending on provided input.
 
 Future modules will include:
