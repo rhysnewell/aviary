@@ -31,6 +31,7 @@ setup(
     description='aviary - metagenomics pipeline using long and short reads',
     long_description=long_description,
     long_description_content_type='text/markdown',
+    zip_safe=False,
     packages=['aviary'],
     package_data={'': [
             "aviary/*",

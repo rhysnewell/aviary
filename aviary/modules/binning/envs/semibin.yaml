@@ -3,4 +3,11 @@ channels:
   - bioconda
   - defaults
 dependencies:
-  - semibin >= 1.0.2
+  - mmseqs2
+  - bedtools
+  - hmmer
+  - prodigal
+  - fraggenescan
+  - pip
+  - pip:
+    - "git+https://github.com/BigDataBiology/SemiBin.git#egg=SemiBin"
