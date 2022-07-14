@@ -1,4 +1,4 @@
-![](docs/_include/images/aviary_logo.png)
+![](/images/aviary_logo.png)
 
 # Aviary
 An easy to use for wrapper for a robust snakemake pipeline for metagenomic hybrid assembly, binning, and annotation. 
@@ -24,7 +24,7 @@ Future modules will include:
 - Genotype - Recover strain level variation in your MAGs using a suite of tools
 
 ## Overview
-![](docs/_include/figures/aviary_workflow.png)
+![](/figures/aviary_workflow.png)
 
 ## Citation
 
@@ -32,4 +32,4 @@ On its way :P
 
 ## License
 
-Code is [GPL-3.0](LICENSE)
+Code is GPL-3.0 

@@ -1,6 +1,9 @@
 ---
 title: "Aviary"
 base_path: /aviary
+logo: images/mini_logo.png
+colors:
+  main: "#8CD58C"
 navigation:
   - path: docs/installation.md
   - path: docs/usage
