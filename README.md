@@ -234,7 +234,7 @@ You should cite all of these tools as well, or whichever tools you know that you
 we have provided the following list of citations for you to use in alphabetical order. This list will be updated as new
 modules are added to aviary.
 
-A constantly updating list of citations can be found in the [Citations document](CITATIONS.md).
+A constantly updating list of citations can be found in the [Citations document](docs/citations.md).
 
 # License
 

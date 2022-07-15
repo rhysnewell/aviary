@@ -9,5 +9,6 @@ navigation:
   - path: docs/usage
     children: "*"
   - path: docs/concepts.md
+  - path: docs/citations.md
   - path: docs/examples.md
   - path: docs/faqs.md
