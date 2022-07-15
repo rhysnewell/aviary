@@ -7,7 +7,6 @@ hybrid assembler, an isolate hybrid assembler, a quality control module and a
 comprehensive binning pipeline. Each module can be run independently or as a single pipeline depending on provided input.
 
 Future modules will include:
-- Annotation - Annotate your MAGs with metabolic pathways
 - Strain analysis - Recover strain level variation in your MAGs using a suite of tools
 
 # Index
@@ -48,7 +47,7 @@ Metagenome assembly, binning, and annotation:
                     or assembly using only short reads
         recover   - Recover MAGs from provided assembly using a variety
                     of binning algorithms
-        annotate  - Annotate MAGs **TBC**
+        annotate  - Annotate MAGs
         genotype  - Perform strain level analysis of MAGs **TBC**
         complete  - Runs each stage of the pipeline: assemble, recover,
                     annotate, genotype in that order.
@@ -121,7 +120,7 @@ The **optional** databases are as follows:
 |`cluster`|Dereplicate/choose representative genomes from multiple aviary runs|
 |`assemble`|Perform quality control and assembly of provided reads. Will provide hybrid assembly if given long and short reads|
 |`recover`|Recover MAGs from provided assembly using a variety of binning algorithms. Also perform quality checks on recovered MAGs and taxonomic classification.|
-|`annotate`|Module under development|
+|`annotate`|Provide taxonomic and functional annotations for a given set of MAGs|
 |`genotype`|Module under development|
 |`complete`|Performs the complete workflow up to last possible rule given the provided inputs|
 |`isolate` |Performs hybrid isolate assembly. For use with isolated pure sequencing results.  |

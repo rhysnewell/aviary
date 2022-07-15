@@ -84,11 +84,11 @@ def get_snakefile(file="Snakefile"):
 class Processor:
     def __init__(self,
                  args,
-                 conda_prefix=Config.get_software_db_path('CONDA_ENV_PATH', '--conda-prefix'),
+                 # conda_prefix=Config.get_software_db_path('CONDA_ENV_PATH', '--conda-prefix'),
                  ):
 
 
-        self.conda_prefix = conda_prefix
+        self.conda_prefix = args.conda_prefix
         self.output = args.output
         self.threads = args.max_threads
         self.max_memory = args.max_memory

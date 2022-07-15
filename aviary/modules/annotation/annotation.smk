@@ -39,17 +39,21 @@ if config['mag_extension'] == 'none':
 rule eggnog:
     input:
         mag_folder = config['mag_directory'],
-        mag_extension = config['mag_extension'],
+        # mag_extension = config['mag_extension'],
         eggnog_db = config['eggnog_folder']
+    params:
+        mag_extension = config['mag_extension']
     group: 'annotation'
     output:
         done = 'data/eggnog/done'
     threads:
         config['max_threads']
+    conda:
+        'envs/eggnog.yaml'
     shell:
-        'download_eggnog_data.py --data_dir {input.eggnog_db} -y; '
+        # 'download_eggnog_data.py --data_dir {input.eggnog_db} -y; '
         'mkdir -p data/eggnog/; '
-        'find {input.mag_folder}/*.{input.mag_extension} | parallel -j1 emapper.py -m diamond --itype genome --genepred prodigal -i {{}} --output_dir data/eggnog/ -o {{/.}}; '
+        'find {input.mag_folder}/*.{params.mag_extension} | parallel -j1 emapper.py --data_dir {input.eggnog_db} --dmnd_db {input.eggnog_db}/*dmnd -m diamond --itype genome --genepred prodigal -i {{}} --output_dir data/eggnog/ -o {{/.}}; '
         'touch data/eggnog/done; '
 
 rule gtdbtk:

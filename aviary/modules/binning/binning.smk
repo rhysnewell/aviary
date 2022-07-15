@@ -551,7 +551,7 @@ rule refine_dastool:
     input:
         checkm = 'data/das_tool_bins_pre_refine/checkm.out',
         das_tool = 'data/das_tool_bins_pre_refine/done',
-        coverage = "data/coverm.cov",
+        coverage = ancient("data/coverm.cov"),
         fasta = config["fasta"],
         # kmers = "data/rosella_bins/rosella_kmer_table.tsv"
     output:

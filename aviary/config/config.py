@@ -23,6 +23,8 @@ def source_conda_env():
                 # key, value = line.replace('export ', '', 1).strip().split('=', 1)
                 try:
                     key, value = line.strip().split('=', 1)
+                    key = key.strip('export ')
+                    # print(key, value)
                     os.environ[key] = value  # Load to local environ
                 except ValueError:
                     continue
@@ -43,6 +45,7 @@ def source_bashrc():
                 # key, value = line.replace('export ', '', 1).strip().split('=', 1)
                 try:
                     key, value = line.strip().split('=', 1)
+                    key = key.strip('export ')
                     os.environ[key] = value  # Load to local environ
                 except ValueError:
                     continue

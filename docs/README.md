@@ -12,7 +12,7 @@ comprehensive binning pipeline. Each module can be run independently or as a sin
 |`cluster`|Dereplicate/choose representative genomes from multiple aviary runs|
 |`assemble`|Perform quality control and assembly of provided reads. Will provide hybrid assembly if given long and short reads|
 |`recover`|Recover MAGs from provided assembly using a variety of binning algorithms. Also perform quality checks on recovered MAGs and taxonomic classification.|
-|`annotate`|Module under development|
+|`annotate`|Provide taxonomic and functional annotations for a given set of MAGs|
 |`genotype`|Module under development|
 |`complete`|Performs the complete workflow up to last possible rule given the provided inputs|
 |`isolate` |Performs hybrid isolate assembly. For use with isolated pure sequencing results.  |
@@ -20,7 +20,6 @@ comprehensive binning pipeline. Each module can be run independently or as a sin
 
 
 Future modules will include:
-- Annotation - Annotate your MAGs with metabolic pathways
 - Genotype - Recover strain level variation in your MAGs using a suite of tools
 
 ## Overview

@@ -98,6 +98,10 @@ def str2bool(v):
         raise argparse.ArgumentTypeError('Boolean value expected.')
 
 def main():
+    if len(sys.argv) == 1 or sys.argv[1] == '-h' or sys.argv[1] == '--help':
+        phelp()
+        return
+
     # Source the conda environment variables in case users have previously set
     # the variables using config but have not restarted the environment.
     try:
@@ -168,7 +172,7 @@ def main():
         '--conda-prefix', '--conda_prefix',
         help='Path to the location of installed conda environments, or where to install new environments',
         dest='conda_prefix',
-        default=Config.get_software_db_path('CONDA_ENV_PATH', '--conda-prefix'),
+        default=None,
     )
 
     base_group.add_argument(
@@ -383,14 +387,14 @@ def main():
         '--gtdb-path', '--gtdb_path',
         help='Path to the local gtdb database files',
         dest='gtdb_path',
-        default=Config.get_software_db_path('GTDBTK_DATA_PATH', '--gtdb-path'),
+        default=None,
     )
 
     annotation_group.add_argument(
         '--eggnog-db-path', '--eggnog_db_path',
         help='Path to the local eggnog database files',
         dest='eggnog_db_path',
-        default=Config.get_software_db_path('EGGNOG_DATA_DIR', '--eggnog-db-path'),
+        default=None,
     )
 
     ####################################################################
@@ -428,7 +432,7 @@ def main():
              'MetaBAT1 and MetaBAT2.',
         dest='skip_binners',
         nargs='*',
-        default=["semibin"]
+        default=["none"]
     )
 
     ####################################################################
@@ -679,7 +683,7 @@ def main():
         help='Main workflow to run',
         dest='workflow',
         nargs="+",
-        default=['complete_annotation'],
+        default=['annotate'],
     )
 
     ##########################  ~ GENOTYPE ~   ###########################
@@ -733,7 +737,7 @@ def main():
     viral_options = subparsers.add_parser('viral',
                                               description='The complete binning pipeline',
                                               formatter_class=CustomHelpFormatter,
-                                              parents=[mag_group, short_read_group, long_read_group, base_group],
+                                              parents=[mag_group, short_read_group, long_read_group, annotation_group, base_group],
                                               epilog=
                                               '''
                                                       ......:::::: VIRAL ::::::...... 
@@ -778,7 +782,7 @@ def main():
     isolate_options = subparsers.add_parser('isolate',
                                              description='Step-down hybrid assembly using long and short reads, or assembly using only short or long reads.',
                                              formatter_class=CustomHelpFormatter,
-                                             parents=[qc_group, short_read_group, long_read_group, isolate_group, binning_group, base_group],
+                                             parents=[qc_group, short_read_group, long_read_group, isolate_group, binning_group, annotation_group, base_group],
                                              epilog=
                                              '''
                                                                              ......:::::: ISOLATE ::::::......
@@ -863,76 +867,86 @@ def main():
     # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ #
     # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~ Parsing input ~~~~~~~~~~~~~~~~~~~~~~~~~~~~ #
     # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ #
-    if (len(sys.argv) == 1 or sys.argv[1] == '-h' or sys.argv[1] == '--help'):
-        phelp()
+    args = main_parser.parse_args()
+    time = datetime.now().strftime('%H:%M:%S %d-%m-%Y')
+
+    if args.log:
+        if os.path.isfile(args.log):
+            raise Exception("File %s exists" % args.log)
+        logging.basicConfig(filename=args.log,
+                            level=debug[args.verbosity],
+                            format='%(asctime)s %(levelname)s: %(message)s',
+                            datefmt='%m/%d/%Y %I:%M:%S %p')
     else:
-        args = main_parser.parse_args()
-        time = datetime.now().strftime('%H:%M:%S %d-%m-%Y')
+        logging.basicConfig(level=debug[args.verbosity],
+                            format='%(asctime)s %(levelname)s: %(message)s',
+                            datefmt='%m/%d/%Y %I:%M:%S %p')
+    logging.info("Time - %s" % (time))
+    logging.info("Command - %s" % ' '.join(sys.argv))
+    logging.info("Version - %s" % __version__)
 
-        if args.log:
-            if os.path.isfile(args.log):
-                raise Exception("File %s exists" % args.log)
-            logging.basicConfig(filename=args.log,
-                                level=debug[args.verbosity],
-                                format='%(asctime)s %(levelname)s: %(message)s',
-                                datefmt='%m/%d/%Y %I:%M:%S %p')
-        else:
-            logging.basicConfig(level=debug[args.verbosity],
-                                format='%(asctime)s %(levelname)s: %(message)s',
-                                datefmt='%m/%d/%Y %I:%M:%S %p')
-        logging.info("Time - %s" % (time))
-        logging.info("Command - %s" % ' '.join(sys.argv))
-        logging.info("Version - %s" % __version__)
 
-        if args.subparser_name == 'configure':
-            # Set the environment variables if manually configuring
-            if args.conda_prefix is not None:
-                Config.set_db_path(args.conda_prefix, db_name='CONDA_ENV_PATH')
+    if args.subparser_name == 'configure':
+        # Set the environment variables if manually configuring
+        if args.conda_prefix is not None:
+            Config.set_db_path(args.conda_prefix, db_name='CONDA_ENV_PATH')
 
-            if args.gtdb_path is not None:
-                Config.set_db_path(args.gtdb_path, db_name='GTDBTK_DATA_PATH')
+        if args.gtdb_path is not None:
+            Config.set_db_path(args.gtdb_path, db_name='GTDBTK_DATA_PATH')
 
-            if args.busco_db_path is not None:
-                Config.set_db_path(args.busco_db_path, db_name='BUSCO_DB')
+        if args.busco_db_path is not None:
+            Config.set_db_path(args.busco_db_path, db_name='BUSCO_DB')
 
-            if args.enrichm_db_path is not None:
-                Config.set_db_path(args.enrichm_db_path, db_name='ENRICHM_DB')
+        if args.enrichm_db_path is not None:
+            Config.set_db_path(args.enrichm_db_path, db_name='ENRICHM_DB')
 
-            if args.checkm2_db_path is not None:
-                Config.set_db_path(args.checkm2_db_path, db_name='CHECKM2DB')
+        if args.checkm2_db_path is not None:
+            Config.set_db_path(args.checkm2_db_path, db_name='CHECKM2DB')
 
-            if args.eggnog_db_path is not None:
-                Config.set_db_path(args.eggnog_db_path, db_name='EGGNOG_DATA_DIR')
+        if args.eggnog_db_path is not None:
+            Config.set_db_path(args.eggnog_db_path, db_name='EGGNOG_DATA_DIR')
 
-        else:
-            prefix = args.output
-            if not os.path.exists(prefix):
-                os.makedirs(prefix)
+    else:
+        args = manage_env_vars(args)
+        prefix = args.output
+        if not os.path.exists(prefix):
+            os.makedirs(prefix)
 
-            processor = Processor(args,
-                               args.conda_prefix)
+        processor = Processor(args)
 
-            processor.make_config()
+        processor.make_config()
 
-            if args.build:
-                try:
-                    args.cmds = args.cmds + '--conda-create-envs-only '
-                except TypeError:
-                    args.cmds = '--conda-create-envs-only '
-
+        if args.build:
             try:
-                if args.subparser_name == 'assemble':
-                    if args.use_unicycler:
-                        args.workflow.insert(0, "combine_assemblies")
-            except AttributeError:
-                pass
+                args.cmds = args.cmds + '--conda-create-envs-only '
+            except TypeError:
+                args.cmds = '--conda-create-envs-only '
 
-            processor.run_workflow(cores=int(args.n_cores),
-                                   dryrun=args.dryrun,
-                                   clean=args.clean,
-                                   conda_frontend=args.conda_frontend,
-                                   snakemake_args=args.cmds)
+        try:
+            if args.subparser_name == 'assemble':
+                if args.use_unicycler:
+                    args.workflow.insert(0, "combine_assemblies")
+        except AttributeError:
+            pass
 
+        processor.run_workflow(cores=int(args.n_cores),
+                               dryrun=args.dryrun,
+                               clean=args.clean,
+                               conda_frontend=args.conda_frontend,
+                               snakemake_args=args.cmds)
+
+def manage_env_vars(args):
+    if args.conda_prefix is None:
+        args.conda_prefix = Config.get_software_db_path('CONDA_ENV_PATH', '--conda-prefix')
+    try:
+        if args.gtdb_path is None:
+            args.gtdb_path = Config.get_software_db_path('GTDBTK_DATA_PATH', '--gtdb-path')
+        if args.eggnog_db_path is None:
+            args.eggnog_db_path = Config.get_software_db_path('EGGNOG_DATA_DIR', '--eggnog-db-path')
+    except AttributeError:
+        pass
+
+    return args
 
 ###############################################################################
 ################################ - Classes - ##################################

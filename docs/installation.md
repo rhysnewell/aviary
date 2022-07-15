@@ -65,17 +65,8 @@ Utility modules:
 
 Upon first running aviary you will be prompted to input the location for where you would like
 your conda environments to be stored, the GTDB release installed on your system, the location of your
-EnrichM database, and the location of your BUSCO database. These locations will be stored as environment
-variables, but for aviary to be able to use those environment variables you will have to either source your .bashrc
-or reactivate your conda environment depending on whether you installed aviary within a conda environment or not:
-
-```
-conda deactivate; conda activate aviary
-
-OR
-
-source ~/.bashrc
-```
+EggNog database, and the location of your BUSCO database. These locations will be stored as environment
+variables, and automatically sourced by Aviary at runtime.
 
 These environment variables can be reset using `aviary configure`
 
