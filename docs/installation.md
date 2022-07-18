@@ -11,8 +11,8 @@ Your conda channels should be configured ideally in this order with strict chann
 turned on:
 ```
 conda config --add channels defaults
-conda config --add channels conda-forge
 conda config --add channels bioconda
+conda config --add channels conda-forge
 conda config --set channel_priority strict
 ```
 
