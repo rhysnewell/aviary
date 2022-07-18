@@ -131,8 +131,6 @@ export CONDA_ENV_PATH=/path/to/conda/envs/
 ```
 
 # Workflow
-The current complete workflow for aviary. This is constantly being updated and will eventually include and assembly stage and
-post binning analysis of MAGs
 ![Aviary workflow](figures/aviary_workflow.png)
 
 
