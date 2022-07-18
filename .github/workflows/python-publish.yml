@@ -6,34 +6,52 @@
 # separate terms of service, privacy policy, and support
 # documentation.
 
-name: Upload Python Package
+name: Publish Python 🐍 distributions 📦 to PyPI and uploads to GitHub
 
 on:
-  release:
-    types: [published]
-
-permissions:
-  contents: read
+  push:
+    tags:
+      - v*
 
 jobs:
   deploy:
-
     runs-on: ubuntu-latest
 
     steps:
-    - uses: actions/checkout@v3
-    - name: Set up Python
+    - uses: actions/checkout@master
+    - name: Set env
+      run: echo "RELEASE_VERSION=${GITHUB_REF#refs/*/}" >> $GITHUB_ENV
+    - name: Set up Python 3.10
       uses: actions/setup-python@v3
       with:
-        python-version: '3.x'
-    - name: Install dependencies
-      run: |
-        python -m pip install --upgrade pip
-        pip install build
-    - name: Build package
-      run: python -m build
-    - name: Publish package
-      uses: pypa/gh-action-pypi-publish@27b31702a0e7fc50959f5ad993c78deac1bdfc29
+        python-version: "3.10"
+    - name: Install pypa/build
+      run: >-
+        python -m
+        pip install
+        build
+        --user
+    - name: Build a binary wheel and a source tarball
+      run: >-
+        python -m
+        build
+        --sdist
+        --wheel
+        --outdir dist/
+        .
+    - name: Publish distribution 📦 to PyPI
+      if: startsWith(github.ref, 'refs/tags')
+      uses: pypa/gh-action-pypi-publish@master
       with:
-        user: __token__
         password: ${{ secrets.PYPI_API_TOKEN }}
+        
+    - name: Create a Release
+      if: github.actor != 'dependabot[bot]'
+      uses: "marvinpinto/action-automatic-releases@latest"
+      with:
+        repo_token: "${{ secrets.GITHUB_TOKEN }}"
+        prerelease: false
+        automatic_release_tag: "latest"
+        title: "${{ env.RELEASE_VERSION }}"
+        files: |
+          dist/aviary-genome-${{ env.RELEASE_VERSION }}.tar.gz
