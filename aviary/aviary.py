@@ -17,11 +17,11 @@
 # along with this program. If not, see <http://www.gnu.org/licenses/>.        #
 #                                                                             #
 ###############################################################################
-from aviary.__init__ import __version__
+from .__init__ import __version__
 import aviary.config.config as Config
 from aviary.modules.processor import Processor
 __author__ = "Rhys Newell"
-__copyright__ = "Copyright 2020"
+__copyright__ = "Copyright 2022"
 __credits__ = ["Rhys Newell"]
 __license__ = "GPL3"
 __maintainer__ = "Rhys Newell"

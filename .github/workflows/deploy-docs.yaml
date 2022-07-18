@@ -1,0 +1,30 @@
+name: Deploy documentation site
+
+on:
+  push:
+    paths:
+    - 'docs/**'
+    - 'doctave.yml'
+  workflow_dispatch:
+
+jobs:
+  build:
+    name: Deploys
+    runs-on: ubuntu-latest
+    steps:
+    - name: 'Checkout GitHub Action'
+      uses: actions/checkout@master
+
+    - name: 'Build and deploy'
+      shell: bash
+      run: |
+        brew install doctave/doctave/doctave
+        doctave build --release --allow-failed-checks
+
+    - name: GitHub Pages
+      if: github.ref == 'refs/heads/master'
+      uses: crazy-max/ghaction-github-pages@v3.0.0
+      with:
+        build_dir: site/
+      env:
+        GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}

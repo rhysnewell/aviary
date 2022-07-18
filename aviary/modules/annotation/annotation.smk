@@ -53,7 +53,7 @@ rule eggnog:
     shell:
         # 'download_eggnog_data.py --data_dir {input.eggnog_db} -y; '
         'mkdir -p data/eggnog/; '
-        'find {input.mag_folder}/*.{params.mag_extension} | parallel -j1 emapper.py --data_dir {input.eggnog_db} --dmnd_db {input.eggnog_db}/*dmnd -m diamond --itype genome --genepred prodigal -i {{}} --output_dir data/eggnog/ -o {{/.}}; '
+        'find {input.mag_folder}/*.{params.mag_extension} | parallel -j1 \'emapper.py --data_dir {input.eggnog_db} --dmnd_db {input.eggnog_db}/*dmnd --cpu {threads} -m diamond --itype genome --genepred prodigal -i {{}} --output_dir data/eggnog/ -o {{/.}} || echo "Genome already annotated"\'; '
         'touch data/eggnog/done; '
 
 rule gtdbtk:

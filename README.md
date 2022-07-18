@@ -6,6 +6,8 @@ The pipeline currently includes a step-down iterative
 hybrid assembler, an isolate hybrid assembler, a quality control module and a 
 comprehensive binning pipeline. Each module can be run independently or as a single pipeline depending on provided input.
 
+[Please refer to the full docs here](https://rhysnewell.github.io/aviary)
+
 Future modules will include:
 - Strain analysis - Recover strain level variation in your MAGs using a suite of tools
 
@@ -83,8 +85,8 @@ Your conda channels should be configured ideally in this order with strict chann
 turned on:
 ```
 conda config --add channels defaults
-conda config --add channels conda-forge
 conda config --add channels bioconda
+conda config --add channels conda-forge
 conda config --set channel_priority strict
 ```
 
