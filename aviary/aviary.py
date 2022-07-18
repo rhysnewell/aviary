@@ -17,9 +17,9 @@
 # along with this program. If not, see <http://www.gnu.org/licenses/>.        #
 #                                                                             #
 ###############################################################################
-from .__init__ import __version__
 import aviary.config.config as Config
 from aviary.modules.processor import Processor
+from .__init__ import __version__
 __author__ = "Rhys Newell"
 __copyright__ = "Copyright 2022"
 __credits__ = ["Rhys Newell"]
@@ -977,5 +977,4 @@ class CustomHelpFormatter(argparse.HelpFormatter):
         return ''.join([indent + line for line in text.splitlines(True)])
 
 if __name__ == '__main__':
-
     sys.exit(main())

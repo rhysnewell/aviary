@@ -45,7 +45,6 @@ setup(
         "pandas",
         "biopython",
     ],
-    # install via conda: click, pandas, pyyaml, snakemake
     entry_points={
           'console_scripts': [
               'aviary = aviary.aviary:main'
