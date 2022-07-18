@@ -433,7 +433,7 @@ def main():
              'MetaBAT1 and MetaBAT2.',
         dest='skip_binners',
         nargs='*',
-        default=["none"]
+        default=["maxbin2"]
     )
 
     ####################################################################

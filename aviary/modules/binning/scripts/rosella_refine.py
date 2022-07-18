@@ -180,6 +180,7 @@ def refine(
         subprocess.Popen(f"rosella refine -a {assembly} --coverage-values {coverage} "
                          f"-d {bin_folder} -x {extension} --checkm-file {checkm} --max-contamination {max_contamination} "
                          f"--min-bin-size {min_bin_size} -t {threads} -o {output_folder}", shell=True).wait()
+        os.makedirs("data/rosella_bins/", exist_ok=True)
         shutil.copy(f"{output_folder}/rosella_kmer_table.tsv", f"data/rosella_bins/rosella_kmer_table.tsv")
         kmers = "data/rosella_bins/rosella_kmer_table.tsv"
     else:
