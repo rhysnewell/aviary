@@ -22,7 +22,7 @@ def get_version(relpath):
 
 
 setup(
-    name='aviary',
+    name='aviary-genome',
     version=get_version("aviary/__init__.py"),
     url='https://github.com/rhysnewell/aviary',
     license='GPL-3.0',
