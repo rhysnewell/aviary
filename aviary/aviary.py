@@ -67,15 +67,16 @@ def phelp():
            A comprehensive metagenomics bioinformatics pipeline
 
 Metagenome assembly, binning, and annotation:
-        cluster   - Clusters samples based on OTU content using SingleM **TBC**
         assemble  - Perform hybrid assembly using short and long reads, 
                     or assembly using only short reads
         recover   - Recover MAGs from provided assembly using a variety 
                     of binning algorithms 
-        annotate  - Annotate MAGs **TBC**
-        genotype  - Perform strain level analysis of MAGs **TBC**
+        annotate  - Annotate MAGs using EggNOG and GTBD-tk
+        genotype  - Perform strain diversity analysis of MAGs using Lorikeet
         complete  - Runs each stage of the pipeline: assemble, recover, 
                     annotate, genotype in that order.
+        cluster   - Combines and dereplicates the MAGs from multiple Aviary runs
+                    using Galah
 
 Isolate assembly, binning, and annotation:
         isolate   - Perform isolate assembly **PARTIALLY COMPLETED**
@@ -555,29 +556,6 @@ def main():
     # )
 
     #~#~#~#~#~#~#~#~#~#~#~#~#~   sub-parsers   ~#~#~#~#~#~#~#~#~#~#~#~#~#
-    ##########################   ~ CLUSTER ~  ###########################
-
-    cluster_options = subparsers.add_parser('cluster',
-                                             description='Cluster samples together based on OTU content. '
-                                                         'Samples that cluster together should be used for assembly and binning.',
-                                             formatter_class=CustomHelpFormatter,
-                                             parents=[short_read_group, long_read_group, base_group],
-                                             epilog=
-                                             '''
-                                                                ......:::::: CLUSTER ::::::......
-                                 
-                                             aviary cluster -1 *.1.fq.gz -2 *.2.fq.gz --longreads *.nanopore.fastq.gz 
-                                 
-                                             ''')
-
-    cluster_options.add_argument(
-        '-w', '--workflow',
-        help='Main workflow to run',
-        dest='workflow',
-        nargs="+",
-        default=['cluster_samples'],
-    )
-
     ##########################  ~ ASSEMBLE ~  ###########################
 
     assemble_options = subparsers.add_parser('assemble',
@@ -776,7 +754,7 @@ def main():
 
     ##########################   ~ COMPLETE ~  ###########################
 
-    complete_options = subparsers.add_parser('all',
+    complete_options = subparsers.add_parser('complete',
                                             description='Performs all steps in the Aviary pipeline. '
                                                         'Assembly > Binning > Refinement > Annotation > Diversity',
                                             formatter_class=CustomHelpFormatter,

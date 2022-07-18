@@ -32,7 +32,7 @@ git clone https://github.com/rhysnewell/aviary.git
 cd aviary
 conda env create -n aviary -f aviary.yml
 conda activate aviary
-pip install -e .
+pip install .
 aviary --help
 ```
 
@@ -41,25 +41,25 @@ The resulting output should contain a list of the available aviary modules:
 
                     ......:::::: AVIARY ::::::......
 
-A comprehensive metagenomics bioinformatics pipeline
+           A comprehensive metagenomics bioinformatics pipeline
 
 Metagenome assembly, binning, and annotation:
-        cluster   - Clusters and dereplicates bins across multiple aviary runs
-        assemble  - Perform hybrid assembly using short and long reads,
+        assemble  - Perform hybrid assembly using short and long reads, 
                     or assembly using only short reads
-        recover   - Recover MAGs from provided assembly using a variety
-                    of binning algorithms
-        annotate  - Annotate MAGs **TBC**
-        genotype  - Perform strain level analysis of MAGs **TBC**
-        complete  - Runs each stage of the pipeline: assemble, recover,
+        recover   - Recover MAGs from provided assembly using a variety 
+                    of binning algorithms 
+        annotate  - Annotate MAGs using EggNOG and GTBD-tk
+        genotype  - Perform strain diversity analysis of MAGs using Lorikeet
+        complete  - Runs each stage of the pipeline: assemble, recover, 
                     annotate, genotype in that order.
+        cluster   - Combines and dereplicates the MAGs from multiple Aviary runs
+                    using Galah
 
 Isolate assembly, binning, and annotation:
         isolate   - Perform isolate assembly **PARTIALLY COMPLETED**
-
+        
 Utility modules:
         configure - Set or overwrite the environment variables for future runs.
-
 
 ```
 
