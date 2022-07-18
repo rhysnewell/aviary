@@ -2,6 +2,8 @@ name: Deploy documentation site
 
 on:
   push:
+    branches:
+      - master
     paths:
     - 'docs/**'
     - 'doctave.yml'

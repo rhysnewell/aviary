@@ -78,6 +78,19 @@ The **required** databases are as follows:
 * [GTDB](https://gtdb.ecogenomic.org/downloads) Required for taxonomic annotation
 
 The **optional** databases are as follows:
-* [EggNog](https://github.com/eggnogdb/eggnog-mapper/wiki/eggNOG-mapper-v2.1.5-to-v2.1.7#setup) Will become required soon.
+* [EggNog](https://github.com/eggnogdb/eggnog-mapper/wiki/eggNOG-mapper-v2.1.5-to-v2.1.7#setup).
 
-**If you do not have the optional databases installed, then when aviary asks you to specify these databse passes when configuring just press enter and specify no path.**
+**If you do not have the optional databases installed, then when aviary asks you to specify these database when configuring just press enter and specify no path.**
+
+### Environment variables
+
+Upon first running Aviary, you will be prompted to input the location for several database folders if
+they haven't already been provided. If at any point the location of these folders change you can
+use the the `aviary configure` module to update the environment variables used by aviary.
+
+These environment variables can also be configured manually, just set the following variables in your `.bashrc` file:
+```
+export GTDBTK_DATA_PATH=/path/to/gtdb/gtdb_release207/db/ # https://gtdb.ecogenomic.org/downloads
+export EGGNOG_DATA_DIR=/path/to/eggnog-mapper/2.1.7/ # https://github.com/eggnogdb/eggnog-mapper/wiki/eggNOG-mapper-v2.1.5-to-v2.1.7#setup
+export CONDA_ENV_PATH=/path/to/conda/envs/
+```

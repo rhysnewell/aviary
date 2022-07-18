@@ -55,8 +55,17 @@ if config['mag_extension'] == 'none':
 #         'coverm genome '
 
 
-# rule lorikeet:
-#     input:
-#          finished_binning = 'data/galah_bins/done',
-#          bins_directory = 'data/galah_bins/',
-#          short_reads = config[]
+rule lorikeet:
+    input:
+         mag_directory = config['mag_directory'],
+    output:
+         output_directory = directory("strain_diversity/")
+    conda:
+        "envs/lorikeet.yaml"
+    params:
+        mag_extension = config['mag_extension'],
+        parallel_genomes = 8
+    threads:
+        config["max_threads"]
+    script:
+        "scripts/run_lorikeet.py"

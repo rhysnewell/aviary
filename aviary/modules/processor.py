@@ -95,6 +95,11 @@ class Processor:
         self.pplacer_threads = min(int(self.threads), 48)
         self.workflows = args.workflow
 
+        try:
+            self.strain_analysis = args.strain_analysis
+        except AttributeError:
+            self.strain_analysis = False
+
         # binning group items
         try:
             self.min_contig_size = args.min_contig_size
@@ -259,7 +264,7 @@ class Processor:
         conf["min_bin_size"] = int(self.min_bin_size)
         conf["gtdbtk_folder"] = self.gtdbtk
         conf["eggnog_folder"] = self.eggnog
-        # conf["enrichm_folder"] = self.enrichm
+        conf["strain_analysis"] = self.strain_analysis
 
         conf["checkm2_db_path"] = self.checkm2_db
         conf["mag_directory"] = self.mag_directory

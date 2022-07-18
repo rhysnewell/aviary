@@ -656,6 +656,16 @@ def main():
         required=False,
     )
 
+    recover_options.add_argument(
+        '--perform-strain-analysis', '--perform_strain_analysis',
+        help='Specify whether to use Lorikeet on recovered MAGs get strain diversity metrics',
+        type=str2bool,
+        nargs='?',
+        const=True,
+        dest='strain_analysis',
+        default=False
+    )
+
     ##########################  ~ ANNOTATE ~   ###########################
 
     annotate_options = subparsers.add_parser('annotate',
@@ -686,26 +696,36 @@ def main():
         default=['annotate'],
     )
 
-    ##########################  ~ GENOTYPE ~   ###########################
+    ##########################  ~ diversity ~   ###########################
 
-    genotype_options = subparsers.add_parser('genotype',
-                                             description='The complete binning pipeline',
+    diversity_options = subparsers.add_parser('diversity',
+                                             description='Perform strain diversity analysis',
                                              formatter_class=CustomHelpFormatter,
-                                             parents=[mag_group, short_read_group, long_read_group, base_group],
+                                             parents=[qc_group, short_read_group, long_read_group, binning_group, base_group],
                                              epilog=
                                              '''
-                                                                    ......:::::: GENOTYPE ::::::......
+                                                                    ......:::::: DIVERSITY ::::::......
 
-                                             aviary genotype -c R1.fastq.gz R2.fastq.gz --genome-fasta-directory input_bins/
+                                             aviary diversity -c R1.fastq.gz R2.fastq.gz --genome-fasta-directory input_bins/
 
                                              ''')
 
-    genotype_options.add_argument(
+    diversity_options.add_argument(
         '-w', '--workflow',
         help='Main workflow to run',
         dest='workflow',
         nargs="+",
-        default=['create_webpage_genotype'],
+        default=['lorikeet'],
+    )
+
+    diversity_options.add_argument(
+        '--perform-strain-analysis', '--perform_strain_analysis',
+        help=argparse.SUPPRESS,
+        type=str2bool,
+        nargs='?',
+        const=True,
+        dest='strain_analysis',
+        default=True
     )
 
     ##########################  ~ CLUSTER ~   ###########################
@@ -735,16 +755,16 @@ def main():
     ##########################  ~ VIRAL ~   ###########################
 
     viral_options = subparsers.add_parser('viral',
-                                              description='The complete binning pipeline',
-                                              formatter_class=CustomHelpFormatter,
-                                              parents=[mag_group, short_read_group, long_read_group, annotation_group, base_group],
-                                              epilog=
-                                              '''
-                                                      ......:::::: VIRAL ::::::...... 
-     
-                                              aviary viral --genome-fasta-files *.fasta
-     
-                                              ''')
+                                          description='The complete binning pipeline',
+                                          formatter_class=CustomHelpFormatter,
+                                          parents=[mag_group, short_read_group, long_read_group, annotation_group, base_group],
+                                          epilog=
+                                          '''
+                                                  ......:::::: VIRAL ::::::...... 
+ 
+                                          aviary viral --genome-fasta-files *.fasta
+ 
+                                          ''')
 
     viral_options.add_argument(
         '-w', '--workflow',
@@ -758,7 +778,7 @@ def main():
 
     complete_options = subparsers.add_parser('all',
                                             description='Performs all steps in the Aviary pipeline. '
-                                                        'Assembly > Binning > Refinement > QC > Annotation > Strain Analysis',
+                                                        'Assembly > Binning > Refinement > Annotation > Diversity',
                                             formatter_class=CustomHelpFormatter,
                                             parents=[short_read_group, long_read_group, binning_group, annotation_group, base_group],
                                             epilog=
@@ -774,7 +794,7 @@ def main():
         help='Main workflow to run',
         dest='workflow',
         nargs="+",
-        default=['complete_workflow'],
+        default=['annotate', 'lorikeet'],
     )
 
     ##########################  ~ ISOLATE ~  ###########################
@@ -796,7 +816,7 @@ def main():
         help='Main workflows to run',
         dest='workflow',
         nargs="+",
-        default=['create_webpage_assemble'],
+        default=['circlator'],
     )
 
     ##########################   ~ configure ~  ###########################
@@ -884,7 +904,6 @@ def main():
     logging.info("Time - %s" % (time))
     logging.info("Command - %s" % ' '.join(sys.argv))
     logging.info("Version - %s" % __version__)
-
 
     if args.subparser_name == 'configure':
         # Set the environment variables if manually configuring
