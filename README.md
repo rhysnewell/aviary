@@ -28,6 +28,30 @@ channels:
 channel_priority: strict
 ```
 
+#### Option 1) Install from Bioconda
+
+Conda can handle the creation of the environment for you directly:
+
+```
+conda create -n aviary -c bioconda aviary
+```
+
+Or install into existing environment:
+```
+conda install -c bioconda aviary
+```
+
+#### Option 2) Install from pip
+
+Create the environment using the `aviary.yml` file then install from pip:
+```
+conda env create -n aviary -f aviary.yml
+conda activate aviary
+pip install aviary-genome
+```
+
+#### Option 3) Install from source
+
 Initial requirements for aviary can be downloaded using the `aviary.yml`:
 ```
 git clone https://github.com/rhysnewell/aviary.git
@@ -35,10 +59,11 @@ cd aviary
 conda env create -n aviary -f aviary.yml
 conda activate aviary
 pip install .
-aviary --help
 ```
 
-The resulting output should contain a list of the available aviary modules:
+Whatever option you choose, running `aviary --help` should return the following
+output:
+
 ```
                     ......:::::: AVIARY ::::::......
 
