@@ -219,6 +219,15 @@ def main():
     )
 
     base_group.add_argument(
+        '--download', '--download',
+        help='Downloads the required GTDB, EggNOG, & CheckM2 databases if required',
+        type=str2bool,
+        nargs='?',
+        const=True,
+        dest='download',
+    )
+
+    base_group.add_argument(
         '--snakemake-cmds',
         help='Additional commands to supplied to snakemake in the form of a single string'
              'e.g. "--print-compilation True". '
@@ -396,6 +405,13 @@ def main():
         help='Path to the local eggnog database files',
         dest='eggnog_db_path',
         default=None,
+    )
+
+    annotation_group.add_argument(
+        '--checkm2-db-path', '--checkm2_db_path',
+        help='Path to Checkm2 Database',
+        dest='checkm2_db_path',
+        required=False,
     )
 
     ####################################################################
@@ -629,7 +645,7 @@ def main():
 
     recover_options.add_argument(
         '--checkm2-db-path', '--checkm2_db_path',
-        help=argparse.SUPPRESS,
+        help='Path to Checkm2 Database',
         dest='checkm2_db_path',
         required=False,
     )
@@ -647,7 +663,7 @@ def main():
     ##########################  ~ ANNOTATE ~   ###########################
 
     annotate_options = subparsers.add_parser('annotate',
-                                              description='Annotate a given set of MAGs using EggNog',
+                                              description='Annotate a given set of MAGs using EggNOG, GTDB-tk, and Checkm2',
                                               formatter_class=CustomHelpFormatter,
                                               parents=[mag_group, annotation_group, base_group, qc_group],
                                               epilog=
@@ -806,7 +822,7 @@ def main():
                                             '''
                                                                ......:::::: CONFIGURE ::::::......
 
-                                            aviary configure --conda-prefix ~/.conda --gtdb-path ~/gtdbtk/release202/ 
+                                            aviary configure --conda-prefix ~/.conda --gtdb-path ~/gtdbtk/release207/ 
 
                                             ''')
 
@@ -840,7 +856,7 @@ def main():
 
     configure_options.add_argument(
         '--checkm2-db-path', '--checkm2_db_path',
-        help=argparse.SUPPRESS,
+        help='Path to Checkm2 Database',
         dest='checkm2_db_path',
         required=False,
     )
@@ -940,6 +956,8 @@ def manage_env_vars(args):
             args.gtdb_path = Config.get_software_db_path('GTDBTK_DATA_PATH', '--gtdb-path')
         if args.eggnog_db_path is None:
             args.eggnog_db_path = Config.get_software_db_path('EGGNOG_DATA_DIR', '--eggnog-db-path')
+        if args.checkm2_db_path is None:
+            args.checkm2_db_path = Config.get_software_db_path('CHECKM2DB', '--checkm2-db-path')
     except AttributeError:
         pass
 

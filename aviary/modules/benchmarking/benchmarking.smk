@@ -379,13 +379,13 @@ rule das_tool_with_refine:
         Fasta_to_Scaffolds2Bin.sh -i data/rosella_refine_rosella/final_bins/ -e fna > data/refine_input/rosella_refine_bins.tsv; 
         Fasta_to_Scaffolds2Bin.sh -i data/rosella_refine_metabat2/final_bins/ -e fna > data/refine_input/metabat_refine_bins.tsv; 
         Fasta_to_Scaffolds2Bin.sh -i data/rosella_refine_semibin/final_bins/ -e fna > data/refine_input/semibin_refine_bins.tsv; 
-        Fasta_to_Scaffolds2Bin.sh -i data/metabat_bins_sspec -e fa > data/no_refine_input/metabat_bins_sspec.tsv; 
-        Fasta_to_Scaffolds2Bin.sh -i data/metabat_bins_ssens -e fa > data/no_refine_input/metabat_bins_ssens.tsv; 
-        Fasta_to_Scaffolds2Bin.sh -i data/metabat_bins_sens -e fa > data/no_refine_input/metabat_bins_sens.tsv; 
-        Fasta_to_Scaffolds2Bin.sh -i data/metabat_bins_spec -e fa > data/no_refine_input/metabat_bins_spec.tsv; 
-        Fasta_to_Scaffolds2Bin.sh -i data/concoct_bins -e fa > data/no_refine_input/concoct_bins.tsv; 
-        Fasta_to_Scaffolds2Bin.sh -i data/maxbin2_bins -e fasta > data/no_refine_input/maxbin_bins.tsv; 
-        Fasta_to_Scaffolds2Bin.sh -i data/vamb_bins/bins -e fna > data/no_refine_input/vamb_bins.tsv; 
+        Fasta_to_Scaffolds2Bin.sh -i data/metabat_bins_sspec -e fa > data/refine_input/metabat_bins_sspec.tsv; 
+        Fasta_to_Scaffolds2Bin.sh -i data/metabat_bins_ssens -e fa > data/refine_input/metabat_bins_ssens.tsv; 
+        Fasta_to_Scaffolds2Bin.sh -i data/metabat_bins_sens -e fa > data/refine_input/metabat_bins_sens.tsv; 
+        Fasta_to_Scaffolds2Bin.sh -i data/metabat_bins_spec -e fa > data/refine_input/metabat_bins_spec.tsv; 
+        Fasta_to_Scaffolds2Bin.sh -i data/concoct_bins -e fa > data/refine_input/concoct_bins.tsv; 
+        Fasta_to_Scaffolds2Bin.sh -i data/maxbin2_bins -e fasta > data/refine_input/maxbin_bins.tsv; 
+        Fasta_to_Scaffolds2Bin.sh -i data/vamb_bins/bins -e fna > data/refine_input/vamb_bins.tsv; 
         scaffold2bin_files=$(find data/refine_input/*bins*.tsv -not -empty -exec ls {{}} \; | tr "\n" ',' | sed "s/,$//g"); 
         DAS_Tool --search_engine diamond --write_bin_evals 1 --write_bins 1 -t {threads} --score_threshold -42 \
          -i $scaffold2bin_files \

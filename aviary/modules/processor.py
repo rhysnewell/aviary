@@ -210,10 +210,14 @@ class Processor:
 
 
         try:
-            # self.checkm2_db = Config.get_software_db_path('CHECKM2DB', '--checkm2-db-path')
-            self.checkm2_db = os.environ['CHECKM2DB']
+            self.checkm2_db = args.checkm2_db_path
         except KeyError:
-            self.checkm2_db = 'none'
+            self.checkm2_db = Config.get_software_db_path('CHECKM2DB', '--checkm2-db-path')
+            # self.checkm2_db = 'none'
+
+        if args.download:
+            self.workflows.insert(0, 'download_databases')
+
 
     def make_config(self):
         """
@@ -377,15 +381,15 @@ class Processor:
         for workflow in self.workflows:
             cmd = (
                 "snakemake --snakefile {snakefile} --directory {working_dir} "
-                "{jobs}--rerun-incomplete "
-                "--configfile '{config_file}' --nolock"
-                " {profile} {conda_frontend} --use-conda {conda_prefix}"
-                " {dryrun}{notemp}{args}"
+                "{jobs} --rerun-incomplete "
+                "--configfile '{config_file}' --nolock "
+                "{profile} {conda_frontend} --use-conda {conda_prefix} "
+                "{dryrun}{notemp}{args}"
                 " {target_rule}"
             ).format(
                 snakefile=get_snakefile(),
                 working_dir=self.output,
-                jobs="--jobs {} ".format(cores) if cores is not None else "",
+                jobs="--jobs {}".format(cores) if cores is not None else "",
                 config_file=self.config,
                 profile="" if (profile is None) else "--profile {}".format(profile),
                 dryrun="--dryrun " if dryrun else "",

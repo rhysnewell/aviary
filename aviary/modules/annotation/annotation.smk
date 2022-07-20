@@ -36,13 +36,54 @@ if config['mag_directory'] == 'none':
 if config['mag_extension'] == 'none':
     config['mag_extension'] = 'fna'
 
+rule download_databases:
+    input:
+        'logs/download_gtdb.log',
+        'logs/download_eggnog.log',
+        'logs/download_checkm2.log'
+    log:
+        temp("logs/download.log")
+    shell:
+        "touch logs/download.log"
+
+rule download_eggnog_db:
+    params:
+        eggnog_db = config['eggnog_folder'],
+    conda:
+        'envs/eggnog.yaml'
+    log:
+        'logs/download_eggnog.log'
+    shell:
+        'download_eggnog_data.py --data_dir {params.eggnog_db} -y 2> {log} '
+
+rule download_gtdb:
+    params:
+        gtdbtk_folder = config['gtdbtk_folder'],
+        gtdbtk_version = '207.0'
+    conda:
+        '../../envs/gtdbtk.yaml'
+    log:
+        'logs/download_gtdb.log'
+    shell:
+        'download-db.sh 2> {log}'
+
+rule download_checkm2:
+    params:
+        checkm2_folder = config['checkm2_db_path']
+    conda:
+        '../../envs/checkm2.yaml'
+    log:
+        'logs/download_checkm2.log'
+    shell:
+        'checkm2 --database --download --path {params.checkm2_folder} 2> {log}'
+
 rule eggnog:
     input:
         mag_folder = config['mag_directory'],
         # mag_extension = config['mag_extension'],
-        eggnog_db = config['eggnog_folder']
     params:
-        mag_extension = config['mag_extension']
+        mag_extension = config['mag_extension'],
+        eggnog_db = config['eggnog_folder']
     group: 'annotation'
     output:
         done = 'data/eggnog/done'
@@ -53,7 +94,9 @@ rule eggnog:
     shell:
         # 'download_eggnog_data.py --data_dir {input.eggnog_db} -y; '
         'mkdir -p data/eggnog/; '
-        'find {input.mag_folder}/*.{params.mag_extension} | parallel -j1 \'emapper.py --data_dir {input.eggnog_db} --dmnd_db {input.eggnog_db}/*dmnd --cpu {threads} -m diamond --itype genome --genepred prodigal -i {{}} --output_dir data/eggnog/ -o {{/.}} || echo "Genome already annotated"\'; '
+        'find {input.mag_folder}/*.{params.mag_extension} | parallel -j1 \'emapper.py --data_dir {params.eggnog_db} '
+        '--dmnd_db {params.eggnog_db}/*dmnd --cpu {threads} -m diamond --itype genome --genepred prodigal -i {{}} '
+        '--output_dir data/eggnog/ -o {{/.}} || echo "Genome already annotated"\'; '
         'touch data/eggnog/done; '
 
 rule gtdbtk:
