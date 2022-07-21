@@ -22,4 +22,4 @@ else:
 
 
 subprocess.Popen(f"lorikeet evolve -t {snakemake.threads} -d {snakemake.config['mag_directory']} -x {snakemake.params.mag_extension} "
-                 f"-p {snakemake.params.parallel_genome} {short_reads} {long_reads} -o {snakemake.output.output_directory}", shell=True).wait()
+                 f"-p {snakemake.params.parallel_genomes} {short_reads} {long_reads} -o {snakemake.output.output_directory}", shell=True).wait()
