@@ -573,7 +573,6 @@ rule refine_dastool:
     script:
         "scripts/rosella_refine.py"
 
-
 rule get_abundances:
     input:
         "bins/checkm.out"
@@ -590,6 +589,7 @@ rule get_abundances:
 rule finalize_stats:
     input:
         checkm1_done = "bins/checkm.out",
+        checkm2_done = "bins/checkm2_output/quality_report.tsv",
         coverage_file = "data/coverm_abundances.tsv"
     output:
         bin_stats = "bins/bin_info.tsv",
@@ -641,8 +641,14 @@ rule finalize_stats:
         coverage_file = pd.read_csv(input.coverage_file, sep='\t')
 
         # checkm file for all bins
-        checkm_output = pd.read_csv(input.checkm1_done, sep='\t', comment="[")
+        checkm1_output = pd.read_csv(input.checkm1_done, sep='\t', comment="[")
 
+        checkm2_output = pd.read_csv(input.checkm2_done, sep='\t')
+
+        checkm1_output.rename({'Completeness' : 'Completeness (CheckM1)', 'Contamination' : 'Contamination (CheckM1)'}, inplace=True, axis=1)
+        checkm2_output.rename({'Name' : checkm1_output.columns[0], 'Completeness' : 'Completeness (CheckM2)', 'Contamination' : 'Contamination (CheckM2)'}, inplace=True, axis=1)
+
+        checkm_output = pd.merge(checkm1_output, checkm2_output, on=[checkm1_output.columns[0]])
         is_checkm1 = "Bin Id" in checkm_output.columns
         coverage_file.rename({"Genome" : checkm_output.columns[0]}, inplace=True, axis=1)
 
@@ -653,7 +659,10 @@ rule finalize_stats:
         merged_out = pd.merge(checkm_output, coverage_file, on=[checkm_output.columns[0]])
         merged_out.to_csv(output.bin_stats, sep='\t', index=False)
 
-        checkm_minimal = checkm_output[["Bin Id",  "Marker lineage",  "# genomes", "# markers", "# marker sets", "0", "1", "2", "3", "4", "5+", "Completeness", "Contamination", "Strain heterogeneity"]]
+        checkm_minimal = checkm_output[["Bin Id",  "Marker lineage",  "# genomes", "# markers", "# marker sets",
+                                        "0", "1", "2", "3", "4", "5+", "Completeness (CheckM1)", "Contamination (CheckM1)",
+                                        "Completeness (CheckM2)", "Contamination (CheckM2)", "Strain heterogeneity"]]
+
         checkm_minimal.to_csv(output.checkm_minimal, sep="\t", index=False)
 
 

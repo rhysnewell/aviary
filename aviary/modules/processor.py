@@ -177,9 +177,14 @@ class Processor:
             self.mag_directory = 'none'
 
         try:
-            self.gtdbtk = args.gtdb_path
-            self.eggnog = args.eggnog_db_path
-            # self.enrichm = args.enrichm_db_path
+            if args.gtdb_path is not None:
+                self.gtdbtk = args.gtdb_path
+            else:
+                self.gtdbtk = Config.get_software_db_path('GTDBTK_DATA_PATH', '--gtdb-path')
+            if args.eggnog_db_path is not None:
+                self.eggnog = args.eggnog_db_path
+            else:
+                self.eggnog = Config.get_software_db_path('EGGNOG_DATA_DIR', '--eggnog-db-path')
         except AttributeError:
             self.gtdbtk = Config.get_software_db_path('GTDBTK_DATA_PATH', '--gtdb-path')
             self.eggnog = Config.get_software_db_path('EGGNOG_DATA_DIR', '--eggnog-db-path')
@@ -208,9 +213,11 @@ class Processor:
             self.precluster_ani = 'none'
             self.precluster_method = 'none'
 
-
         try:
-            self.checkm2_db = args.checkm2_db_path
+            if args.checkm2_db_path is not None:
+                self.checkm2_db = args.checkm2_db_path
+            else:
+                self.checkm2_db = Config.get_software_db_path('CHECKM2DB', '--checkm2-db-path')
         except KeyError:
             self.checkm2_db = Config.get_software_db_path('CHECKM2DB', '--checkm2-db-path')
             # self.checkm2_db = 'none'
@@ -270,7 +277,7 @@ class Processor:
         conf["eggnog_folder"] = self.eggnog
         conf["strain_analysis"] = self.strain_analysis
 
-        conf["checkm2_db_path"] = self.checkm2_db
+        conf["checkm2_db_folder"] = self.checkm2_db
         conf["mag_directory"] = self.mag_directory
         conf["mag_extension"] = self.mag_extension
         # conf["mags"] = self.mags

@@ -1,10 +1,10 @@
 ![](docs/_include/images/aviary_logo.png)
 
 # Aviary
-An easy to use for wrapper for a robust snakemake pipeline for metagenomic hybrid assembly, binning, and annotation. 
-The pipeline currently includes a step-down iterative 
-hybrid assembler, an isolate hybrid assembler, a quality control module and a 
-comprehensive binning pipeline. Each module can be run independently or as a single pipeline depending on provided input.
+An easy to use for wrapper for a robust snakemake pipeline for metagenomic short-read, long-read, and hybrid assembly. 
+Aviary also performs binning, annotation, strain diversity analyses,a nd provides users with an easy way to combine and 
+dereplicate many aviary results with rapidity. The pipeline currently includes a series of distinct, yet flexible, modules
+that can seamlessly communicate with each other. Each module can be run independently or as a single pipeline depending on provided input.
 
 [Please refer to the full docs here](https://rhysnewell.github.io/aviary)
 
@@ -132,15 +132,31 @@ conda env create -n aviary -f aviary.yml
 
 ## Databases
 
-Aviary uses programs which require access to locally stored databases. These databases can be quite large, as such we recommend setting up one instance of Aviary and these databases per machine or machine cluster.
+Aviary uses programs which require access to locally stored databases. 
+These databases can be quite large, as such we recommend setting up one instance of Aviary and these databases per machine or machine cluster.
 
 The **required** databases are as follows:
-* [GTDB](https://gtdb.ecogenomic.org/downloads) Required for taxonomic annotation
+* [GTDB](https://gtdb.ecogenomic.org/downloads)
+* [EggNog](https://github.com/eggnogdb/eggnog-mapper/wiki/eggNOG-mapper-v2.1.5-to-v2.1.8#setup)
+* [CheckM2](https://github.com/chklovski/CheckM2)
 
-The **optional** databases are as follows:
-* [EggNog](https://github.com/eggnogdb/eggnog-mapper/wiki/eggNOG-mapper-v2.1.5-to-v2.1.7#setup).
+### Installing databases
 
-**If you do not have the optional databases installed, then when aviary asks you to specify these database when configuring just press enter and specify no path.**
+Aviary can handle the download and installation of these databases via use of the `--download` flag. Using `--download`
+will download and install the databases into the folders corresponding to their associated environment variables. Aviary will
+ask you to set these environment variables upon first running and if they are not already available. Otherwise, users can use
+the `aviary configure` subcommand to reset the environment variables:
+
+```commandline
+aviary configure -o logs/ --eggnog-db-path /shared/db/eggnog/ --gtdb-path /shared/db/gtdb/ --checkm2-db-path /shared/db/checkm2db/ --download
+```
+
+This command will check if the databases exist at those given locations, if they don't then aviary will download and change
+the conda environment variables to match those paths. 
+
+**N.B.** Again, these databases are VERY large. Please talk to your sysadmin/bioinformatics specialist about setting a shared
+location to install these databases to prevent unnecessary storage use. Additionally, the `--download` flag can be used within
+any aviary module to check that databases are configured properly.
 
 ### Environment variables
 
@@ -151,7 +167,8 @@ use the the `aviary configure` module to update the environment variables used b
 These environment variables can also be configured manually, just set the following variables in your `.bashrc` file:
 ```
 export GTDBTK_DATA_PATH=/path/to/gtdb/gtdb_release207/db/ # https://gtdb.ecogenomic.org/downloads
-export EGGNOG_DATA_DIR=/path/to/eggnog-mapper/2.1.7/ # https://github.com/eggnogdb/eggnog-mapper/wiki/eggNOG-mapper-v2.1.5-to-v2.1.7#setup
+export EGGNOG_DATA_DIR=/path/to/eggnog-mapper/2.1.8/ # https://github.com/eggnogdb/eggnog-mapper/wiki/eggNOG-mapper-v2.1.5-to-v2.1.8#setup
+export CHECKM2DB=/path/to/checkm2db/
 export CONDA_ENV_PATH=/path/to/conda/envs/
 ```
 

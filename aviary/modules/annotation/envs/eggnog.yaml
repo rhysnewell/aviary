@@ -2,5 +2,5 @@ channels:
   - conda-forge
   - bioconda
 dependencies:
-  - eggnog-mapper >= 2.1.7
+  - eggnog-mapper >= 2.1.8
   - parallel

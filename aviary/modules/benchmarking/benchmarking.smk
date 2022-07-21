@@ -99,11 +99,11 @@ rule checkm2_all_bins:
     threads:
         config["max_threads"]
     params:
-        checkm2_db_path = config["checkm2_db_path"]
+        checkm2_db_folder = config["checkm2_db_folder"]
     conda:
-        "envs/checkm2.yaml"
+        "../../envs/checkm2.yaml"
     shell:
-        "export CHECKM2DB={params.checkm2_db_path}; "
+        "export CHECKM2DB={params.checkm2_db_folder}; "
         "checkm2 predict -i data/all_bins/ -x fna -o data/checkm2_all_bins/ -t {threads} --force"
 
 rule checkm2_das_tool:
@@ -116,11 +116,11 @@ rule checkm2_das_tool:
     threads:
         config["max_threads"]
     params:
-        checkm2_db_path = config["checkm2_db_path"]
+        checkm2_db_folder = config["checkm2_db_folder"]
     conda:
-        "envs/checkm2.yaml"
+        "../../envs/checkm2.yaml"
     shell:
-        "export CHECKM2DB={params.checkm2_db_path}; "
+        "export CHECKM2DB={params.checkm2_db_folder}; "
         "checkm2 predict -i data/das_tool_bins_no_refine/das_tool_DASTool_bins/ -x fa -o data/checkm2_das_tool_wr/ -t {threads} --force; "
         "checkm2 predict -i data/das_tool_without_rosella/das_tool_DASTool_bins/ -x fa -o data/checkm2_das_tool_nr/ -t {threads} --force"
 
@@ -139,11 +139,11 @@ rule checkm2_refined:
     threads:
         config["max_threads"]
     params:
-        checkm2_db_path = config["checkm2_db_path"]
+        checkm2_db_folder = config["checkm2_db_folder"]
     conda:
-        "envs/checkm2.yaml"
+        "../../envs/checkm2.yaml"
     shell:
-        "export CHECKM2DB={params.checkm2_db_path}; "
+        "export CHECKM2DB={params.checkm2_db_folder}; "
         "checkm2 predict -i data/rosella_refine_metabat2/final_bins/ -x fna -o data/m2_refined_checkm2/ -t {threads} --force || touch {output.m2_report}; "
         "checkm2 predict -i data/rosella_refine_rosella/final_bins/ -x fna -o data/ro_refined_checkm2/ -t {threads} --force || touch {output.ro_report}; "
         "checkm2 predict -i data/rosella_refine_semibin/final_bins/ -x fna -o data/sb_refined_checkm2/ -t {threads} --force || touch {output.sb_report}; "

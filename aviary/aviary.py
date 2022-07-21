@@ -816,8 +816,9 @@ def main():
     ##########################   ~ configure ~  ###########################
 
     configure_options = subparsers.add_parser('configure',
-                                            description='Sets the conda environment variables for future runs. ',
+                                            description='Sets the conda environment variables for future runs and downloads databases. ',
                                             formatter_class=CustomHelpFormatter,
+                                            parents=[base_group],
                                             epilog=
                                             '''
                                                                ......:::::: CONFIGURE ::::::......
@@ -825,13 +826,6 @@ def main():
                                             aviary configure --conda-prefix ~/.conda --gtdb-path ~/gtdbtk/release207/ 
 
                                             ''')
-
-    configure_options.add_argument(
-        '--conda-prefix', '--conda_prefix',
-        help='Path to the location of installed conda environments, or where to install new environments',
-        dest='conda_prefix',
-        required=False,
-    )
 
     configure_options.add_argument(
         '--gtdb-path', '--gtdb_path',
@@ -847,13 +841,6 @@ def main():
         required=False,
     )
 
-    # configure_options.add_argument(
-    #     '--enrichm-db-path', '--enrichm_db_path',
-    #     help='Path to the local EnrichM database files',
-    #     dest='enrichm_db_path',
-    #     required=False,
-    # )
-
     configure_options.add_argument(
         '--checkm2-db-path', '--checkm2_db_path',
         help='Path to Checkm2 Database',
@@ -868,14 +855,13 @@ def main():
         required=False,
     )
 
-    # configure_options.add_argument(
-    #     '--build',
-    #     help='Build conda environments and then exits. Equivalent to \"--snakemake-cmds \'--conda-create-envs-only True \' \"',
-    #     type=str2bool,
-    #     nargs='?',
-    #     const=True,
-    #     dest='build',
-    # )
+    configure_options.add_argument(
+        '-w', '--workflow',
+        help=argparse.SUPPRESS,
+        dest='workflow',
+        nargs="+",
+        default=['download_databases'],
+    )
 
     ###########################################################################
     # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ #
@@ -910,43 +896,40 @@ def main():
         if args.busco_db_path is not None:
             Config.set_db_path(args.busco_db_path, db_name='BUSCO_DB')
 
-        if args.enrichm_db_path is not None:
-            Config.set_db_path(args.enrichm_db_path, db_name='ENRICHM_DB')
-
         if args.checkm2_db_path is not None:
             Config.set_db_path(args.checkm2_db_path, db_name='CHECKM2DB')
 
         if args.eggnog_db_path is not None:
             Config.set_db_path(args.eggnog_db_path, db_name='EGGNOG_DATA_DIR')
 
-    else:
-        args = manage_env_vars(args)
-        prefix = args.output
-        if not os.path.exists(prefix):
-            os.makedirs(prefix)
+    # else:
+    args = manage_env_vars(args)
+    prefix = args.output
+    if not os.path.exists(prefix):
+        os.makedirs(prefix)
 
-        processor = Processor(args)
+    processor = Processor(args)
 
-        processor.make_config()
+    processor.make_config()
 
-        if args.build:
-            try:
-                args.cmds = args.cmds + '--conda-create-envs-only '
-            except TypeError:
-                args.cmds = '--conda-create-envs-only '
-
+    if args.build:
         try:
-            if args.subparser_name == 'assemble':
-                if args.use_unicycler:
-                    args.workflow.insert(0, "combine_assemblies")
-        except AttributeError:
-            pass
+            args.cmds = args.cmds + '--conda-create-envs-only '
+        except TypeError:
+            args.cmds = '--conda-create-envs-only '
 
-        processor.run_workflow(cores=int(args.n_cores),
-                               dryrun=args.dryrun,
-                               clean=args.clean,
-                               conda_frontend=args.conda_frontend,
-                               snakemake_args=args.cmds)
+    try:
+        if args.subparser_name == 'assemble':
+            if args.use_unicycler:
+                args.workflow.insert(0, "combine_assemblies")
+    except AttributeError:
+        pass
+
+    processor.run_workflow(cores=int(args.n_cores),
+                           dryrun=args.dryrun,
+                           clean=args.clean,
+                           conda_frontend=args.conda_frontend,
+                           snakemake_args=args.cmds)
 
 def manage_env_vars(args):
     if args.conda_prefix is None:

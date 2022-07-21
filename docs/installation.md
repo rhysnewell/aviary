@@ -95,15 +95,31 @@ These environment variables can be reset using `aviary configure`
 
 ## Databases
 
-Aviary uses programs which require access to locally stored databases. These databases can be quite large, as such we recommend setting up one instance of Aviary and these databases per machine or machine cluster.
+Aviary uses programs which require access to locally stored databases. 
+These databases can be quite large, as such we recommend setting up one instance of Aviary and these databases per machine or machine cluster.
 
 The **required** databases are as follows:
-* [GTDB](https://gtdb.ecogenomic.org/downloads) Required for taxonomic annotation
+* [GTDB](https://gtdb.ecogenomic.org/downloads)
+* [EggNog](https://github.com/eggnogdb/eggnog-mapper/wiki/eggNOG-mapper-v2.1.5-to-v2.1.8#setup)
+* [CheckM2](https://github.com/chklovski/CheckM2)
 
-The **optional** databases are as follows:
-* [EggNog](https://github.com/eggnogdb/eggnog-mapper/wiki/eggNOG-mapper-v2.1.5-to-v2.1.7#setup).
+### Installing databases
 
-**If you do not have the optional databases installed, then when aviary asks you to specify these database when configuring just press enter and specify no path.**
+Aviary can handle the download and installation of these databases via use of the `--download` flag. Using `--download`
+will download and install the databases into the folders corresponding to their associated environment variables. Aviary will
+ask you to set these environment variables upon first running and if they are not already available. Otherwise, users can use
+the `aviary configure` subcommand to reset the environment variables:
+
+```commandline
+aviary configure -o logs/ --eggnog-db-path /shared/db/eggnog/ --gtdb-path /shared/db/gtdb/ --checkm2-db-path /shared/db/checkm2db/ --download
+```
+
+This command will check if the databases exist at those given locations, if they don't then aviary will download and change
+the conda environment variables to match those paths. 
+
+**N.B.** Again, these databases are VERY large. Please talk to your sysadmin/bioinformatics specialist about setting a shared
+location to install these databases to prevent unnecessary storage use. Additionally, the `--download` flag can be used within
+any aviary module to check that databases are configured properly.
 
 ### Environment variables
 

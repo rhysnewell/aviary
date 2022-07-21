@@ -27,6 +27,7 @@ onstart:
     if busco_folder != "none" and not os.path.exists(busco_folder):
         sys.stderr.write("busco_folder does not point to a folder\n")
 
+import os
 
 if config['fasta'] == 'none':
     config['fasta'] = 'assembly/final_contigs.fasta'
@@ -41,6 +42,7 @@ rule download_databases:
         'logs/download_gtdb.log',
         'logs/download_eggnog.log',
         'logs/download_checkm2.log'
+    threads: 1
     log:
         temp("logs/download.log")
     shell:
@@ -48,34 +50,99 @@ rule download_databases:
 
 rule download_eggnog_db:
     params:
-        eggnog_db = config['eggnog_folder'],
+        eggnog_db = os.path.expanduser(config['eggnog_folder']),
     conda:
         'envs/eggnog.yaml'
+    threads: 1
     log:
         'logs/download_eggnog.log'
     shell:
+        'mkdir -p {params.eggnog_db}; '
         'download_eggnog_data.py --data_dir {params.eggnog_db} -y 2> {log} '
 
 rule download_gtdb:
     params:
-        gtdbtk_folder = config['gtdbtk_folder'],
+        gtdbtk_folder = os.path.expanduser(config['gtdbtk_folder']),
         gtdbtk_version = '207.0'
     conda:
         '../../envs/gtdbtk.yaml'
+    threads: 1
     log:
         'logs/download_gtdb.log'
     shell:
-        'download-db.sh 2> {log}'
+        'GTDBTK_DATA_PATH={params.gtdbtk_folder}; '
+        'mkdir -p {params.gtdbtk_folder}; '
+        # Configuration
+        'N_FILES_IN_TAR=139919; '
+        'DB_URL="https://data.gtdb.ecogenomic.org/releases/release207/207.0/auxillary_files/gtdbtk_r207_v2_data.tar.gz"; '
+        'TARGET_TAR_NAME="gtdbtk_r207_v2_data.tar.gz"; '
+
+        # Script variables (no need to configure)
+        'TARGET_DIR=${{1:-$GTDBTK_DATA_PATH}}; '
+        'TARGET_TAR="${{TARGET_DIR}}/${{TARGET_TAR_NAME}}"; '
+
+        # Check if this is overriding an existing version
+        'mkdir -p "$TARGET_DIR"; '
+        'n_folders=$(find "$TARGET_DIR" -maxdepth 1 -type d | wc -l); '
+        'if [ "$n_folders" -gt 1 ]; then'
+        '  echo "[ERROR] - The GTDB-Tk database directory must be empty, please empty it: $TARGET_DIR"; '
+        '  exit 1; '
+        'fi; '
+
+        # Ensure that the GTDB-Tk data directory exists
+        'mkdir -p "$TARGET_DIR"; '
+
+        # Start the download process
+        # Note: When this URL is updated, ensure that the "--total" flag of TQDM below is also updated
+        'echo "[INFO] - Downloading the GTDB-Tk database to: ${{TARGET_DIR}}"; '
+        'wget $DB_URL -O "$TARGET_TAR"; '
+
+        # Uncompress and pipe output to TQDM
+        'echo "[INFO] - Extracting archive..."; '
+        'tar xvzf "$TARGET_TAR" -C "${{TARGET_DIR}}" --strip 1 | tqdm --unit=file --total=$N_FILES_IN_TAR --smoothing=0.1 >/dev/null; '
+
+        # Remove the file after successful extraction
+        'rm "$TARGET_TAR"; '
+        'echo "[INFO] - The GTDB-Tk database has been successfully downloaded and extracted."; '
+
+        # Set the environment variable
+        'if conda env config vars set TARGET_DIR="$TARGET_DIR"; then '
+        '  echo "[INFO] - Added TARGET_DIR ($TARGET_DIR) to the GTDB-Tk conda environment."; '
+        'else '
+        '  echo "[INFO] - Conda not found in PATH, please be sure to set the TARGET_DIR envrionment variable"; '
+        'fi; '
 
 rule download_checkm2:
     params:
-        checkm2_folder = config['checkm2_db_path']
+        checkm2_folder = os.path.expanduser(config['checkm2_db_folder'])
     conda:
         '../../envs/checkm2.yaml'
+    threads: 1
     log:
         'logs/download_checkm2.log'
     shell:
-        'checkm2 --database --download --path {params.checkm2_folder} 2> {log}'
+        'checkm2 database --download --path {params.checkm2_folder} 2> {log}; '
+        'mv {params.checkm2_folder}/CheckM2_database/*.dmnd {params.checkm2_folder}/; '
+
+rule checkm2:
+    input:
+        mag_folder = config['mag_directory'],
+        checkm1_out = 'bins/checkm.out'
+    output:
+        checkm2_output = directory("bins/checkm2_output/")
+    params:
+        mag_extension = config['mag_extension'],
+        checkm2_db_path = config["checkm2_db_folder"]
+    threads:
+        config["max_threads"]
+    benchmark:
+        'benchmarks/checkm2.benchmark.xt'
+    conda:
+        "../../envs/checkm2.yaml"
+    shell:
+        "export CHECKM2DB={params.checkm2_db_path}/uniref100.KO.1.dmnd; "
+        "echo 'Using CheckM2 database $CHECKM2DB'; "
+        "checkm2 predict -i {input.mag_folder}/*.{params.mag_extension} -x fa -o {output.checkm2_output} -t {threads} --force"
 
 rule eggnog:
     input:

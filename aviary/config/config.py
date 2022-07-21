@@ -76,11 +76,12 @@ def get_software_db_path(db_name='CONDA_ENV_PATH', software_flag='--conda-prefix
                 print(' ERROR '.center(100))
                 print('_' * 100 + '\n')
                 print(f"The '{db_name}' environment variable is not defined.".center(100) + '\n')
-                print('Please set this variable to your default server/home directory conda environment path.'.center(100))
+                print(f'Please set this variable to your default server/home directory containing {db_name}.'.center(100))
                 print(f'Alternatively, use {software_flag} flag.'.center(100))
+                print(f'Note: This variable must point to the DIRECTORY containing the files, not the files themselves'.center(100))
                 print('=' * 100)
                 signal.alarm(120)
-                os.environ[db_name] = input(f'Input {db_name} now:')
+                os.environ[db_name] = input(f'Input path to directory for {db_name} now:')
                 try:
                     subprocess.Popen(
                         'mkdir -p %s/etc/conda/activate.d/; mkdir -p %s/etc/conda/deactivate.d/; echo "export %s=%s" >> %s/etc/conda/activate.d/aviary.sh; echo "unset %s" >> %s/etc/conda/deactivate.d/aviary.sh; ' %

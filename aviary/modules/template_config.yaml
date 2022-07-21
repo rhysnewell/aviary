@@ -48,8 +48,8 @@ gtdbtk_folder:
     none
 busco_folder:
     none
-#enrichm_folder:
-#    none
+checkm2_db_folder:
+    none
 eggnog_folder:
     none
 virsorter_data:
