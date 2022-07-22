@@ -54,4 +54,4 @@ jobs:
         automatic_release_tag: "latest"
         title: "${{ env.RELEASE_VERSION }}"
         files: |
-          dist/aviary-genome-${{ env.RELEASE_VERSION }}.tar.gz
+          dist/aviary-genome-*.tar.gz
