@@ -100,11 +100,10 @@ def refinery():
             os.symlink(os.path.abspath(final_bins), os.path.abspath(final_output_folder), target_is_directory=True)
         elif not os.path.islink(final_output_folder):
             os.rmdir(final_output_folder)
-            os.symlink(os.path.abspath(final_bins), os.path.abspath(final_output_folder), target_s_directory=True)
+            os.symlink(os.path.abspath(final_bins), os.path.abspath(final_output_folder), target_is_directory=True)
         final_checkm.to_csv("bins/checkm.out", sep='\t', index=False)
     else:
         open(f"{snakemake.params.output_folder}/done", "a").close()
-
 
 
 def move_finished_bins(

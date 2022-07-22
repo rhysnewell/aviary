@@ -129,7 +129,8 @@ rule checkm2:
         mag_folder = config['mag_directory'],
         checkm1_out = 'bins/checkm.out'
     output:
-        checkm2_output = directory("bins/checkm2_output/")
+        checkm2_folder = directory("bins/checkm2_output"),
+        checkm2_output = "bins/checkm2_output/quality_report.tsv"
     params:
         mag_extension = config['mag_extension'],
         checkm2_db_path = config["checkm2_db_folder"]
@@ -140,9 +141,9 @@ rule checkm2:
     conda:
         "../../envs/checkm2.yaml"
     shell:
-        "export CHECKM2DB={params.checkm2_db_path}/uniref100.KO.1.dmnd; "
-        "echo 'Using CheckM2 database $CHECKM2DB'; "
-        "checkm2 predict -i {input.mag_folder}/*.{params.mag_extension} -x fa -o {output.checkm2_output} -t {threads} --force"
+        'export CHECKM2DB={params.checkm2_db_path}/uniref100.KO.1.dmnd; '
+        'echo "Using CheckM2 database $CHECKM2DB"; '
+        'checkm2 predict -i {input.mag_folder}/ -x {params.mag_extension} -o {output.checkm2_folder} -t {threads} --force'
 
 rule eggnog:
     input:
@@ -156,6 +157,8 @@ rule eggnog:
         done = 'data/eggnog/done'
     threads:
         config['max_threads']
+    benchmark:
+        'benchmarks/eggnog.benchmark.txt'
     conda:
         'envs/eggnog.yaml'
     shell:
@@ -180,6 +183,8 @@ rule gtdbtk:
         "../../envs/gtdbtk.yaml"
     threads:
         config["max_threads"]
+    benchmark:
+        'benchmarks/gtdbtk.benchmark.txt'
     shell:
         "export GTDBTK_DATA_PATH={params.gtdbtk_folder} && "
         "gtdbtk classify_wf --cpus {threads} --pplacer_cpus {params.pplacer_threads} --extension {params.extension} "

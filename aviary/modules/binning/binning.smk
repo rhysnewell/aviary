@@ -339,57 +339,69 @@ rule checkm_rosella:
         done = "data/rosella_bins/done"
     params:
         pplacer_threads = config["pplacer_threads"],
+        checkm2_db_path = config["checkm2_db_folder"],
         bin_folder = "data/rosella_bins/",
         extension = "fna"
     group: 'binning'
     output:
+        output_folder = directory("data/rosella_bins/checkm2_out/"),
         output_file = "data/rosella_bins/checkm.out"
     conda:
-        "../../envs/checkm.yaml"
+        "../../envs/checkm2.yaml"
     threads:
         config["max_threads"]
     shell:
         'touch {output.output_file}; '
-        'checkm lineage_wf -t {threads} --pplacer_threads {params.pplacer_threads} '
-        '-x {params.extension} {params.bin_folder} {params.bin_folder}/checkm --tab_table -f {output.output_file} '
+        'export CHECKM2DB={params.checkm2_db_path}/uniref100.KO.1.dmnd; '
+        'echo "Using CheckM2 database $CHECKM2DB"; '
+        'checkm2 predict -i {params.bin_folder}/ -x {params.extension} -o {output.output_folder} -t {threads} --force; '
+        'cp {output.output_folder}/quality_report.tsv {output.output_file}'
 
 rule checkm_metabat2:
     input:
         done = "data/metabat_bins_2/done"
     params:
         pplacer_threads = config["pplacer_threads"],
+        checkm2_db_path = config["checkm2_db_folder"],
         bin_folder = "data/metabat_bins_2/",
         extension = "fa"
     group: 'binning'
     output:
+        output_folder = directory("data/metabat_bins_2/checkm2_out/"),
         output_file = "data/metabat_bins_2/checkm.out"
     conda:
-        "../../envs/checkm.yaml"
+        "../../envs/checkm2.yaml"
     threads:
         config["max_threads"]
     shell:
         'touch {output.output_file}; '
-        'checkm lineage_wf -t {threads} --pplacer_threads {params.pplacer_threads} '
-        '-x {params.extension} {params.bin_folder} {params.bin_folder}/checkm --tab_table -f {output.output_file} '
+        'export CHECKM2DB={params.checkm2_db_path}/uniref100.KO.1.dmnd; '
+        'echo "Using CheckM2 database $CHECKM2DB"; '
+        'checkm2 predict -i {params.bin_folder}/ -x {params.extension} -o {output.output_folder} -t {threads} --force; '
+        'cp {output.output_folder}/quality_report.tsv {output.output_file}'
 
 rule checkm_semibin:
     input:
         done = "data/semibin_bins/done"
     params:
         pplacer_threads = config["pplacer_threads"],
+        checkm2_db_path = config["checkm2_db_folder"],
         bin_folder = "data/semibin_bins/output_recluster_bins/",
         extension = "fa"
     group: 'binning'
     output:
+        output_folder = directory("data/semibin_bins/checkm2_out/"),
         output_file = "data/semibin_bins/checkm.out"
     conda:
-        "../../envs/checkm.yaml"
+        "../../envs/checkm2.yaml"
     threads:
         config["max_threads"]
     shell:
         'touch {output.output_file}; '
-        'checkm lineage_wf -t {threads} --pplacer_threads {params.pplacer_threads} '
-        '-x {params.extension} {params.bin_folder} {params.bin_folder}/checkm --tab_table -f {output.output_file} '
+        'export CHECKM2DB={params.checkm2_db_path}/uniref100.KO.1.dmnd; '
+        'echo "Using CheckM2 database $CHECKM2DB"; '
+        'checkm2 predict -i {params.bin_folder}/ -x {params.extension} -o {output.output_folder} -t {threads} --force; '
+        'cp {output.output_folder}/quality_report.tsv {output.output_file}'
 
 rule refine_rosella:
     input:
@@ -555,7 +567,7 @@ rule refine_dastool:
         fasta = config["fasta"],
         # kmers = "data/rosella_bins/rosella_kmer_table.tsv"
     output:
-        'bins/checkm.out',
+        temporary('bins/checkm.out'),
         directory('bins/final_bins')
     params:
         bin_folder = "data/das_tool_bins_pre_refine/das_tool_DASTool_bins/",

@@ -618,7 +618,7 @@ def main():
     recover_options = subparsers.add_parser('recover',
                                             description='The complete binning pipeline',
                                             formatter_class=CustomHelpFormatter,
-                                            parents=[qc_group, short_read_group, long_read_group, binning_group, base_group],
+                                            parents=[qc_group, short_read_group, long_read_group, binning_group, annotation_group, base_group],
                                             epilog=
     '''
                                            ......:::::: RECOVER ::::::......
@@ -641,13 +641,6 @@ def main():
         dest='workflow',
         nargs="+",
         default=['recover_mags'],
-    )
-
-    recover_options.add_argument(
-        '--checkm2-db-path', '--checkm2_db_path',
-        help='Path to Checkm2 Database',
-        dest='checkm2_db_path',
-        required=False,
     )
 
     recover_options.add_argument(
@@ -695,7 +688,8 @@ def main():
     diversity_options = subparsers.add_parser('diversity',
                                              description='Perform strain diversity analysis',
                                              formatter_class=CustomHelpFormatter,
-                                             parents=[qc_group, short_read_group, long_read_group, binning_group, base_group],
+                                             parents=[mag_group, qc_group, short_read_group, long_read_group,
+                                                      binning_group, annotation_group, base_group],
                                              epilog=
                                              '''
                                                                     ......:::::: DIVERSITY ::::::......
@@ -703,6 +697,14 @@ def main():
                                              aviary diversity -c R1.fastq.gz R2.fastq.gz --genome-fasta-directory input_bins/
 
                                              ''')
+
+    diversity_options.add_argument(
+        '-a', '--assembly',
+        help='FASTA file containing scaffolded contigs of one or more metagenome assemblies wishing to be passed to QUAST',
+        dest="assembly",
+        nargs="*",
+        required=False,
+    )
 
     diversity_options.add_argument(
         '-w', '--workflow',

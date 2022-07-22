@@ -3,7 +3,7 @@ import subprocess
 if snakemake.config['short_reads_2'] != 'none' and snakemake.config['short_reads_1'] != 'none':
     if len(snakemake.config['short_reads_2']) == 1:
         subprocess.Popen(
-            "spades.py --memory %s --meta -t %d -o data/spades_assembly -1 %s -2 %s -k %s" %
+            "spades.py --memory %s --meta -t %d -o data/short_read_assembly -1 %s -2 %s -k %s" %
             (snakemake.config["max_memory"], snakemake.threads, snakemake.config["short_reads_1"][0],
              snakemake.config["short_reads_2"][0], " ".join(snakemake.params.kmer_sizes)), shell=True).wait()
     else: # co-assembly so use megahit
@@ -18,13 +18,13 @@ if snakemake.config['short_reads_2'] != 'none' and snakemake.config['short_reads
             shell=True
         ).wait()
         subprocess.Popen(
-            "mkdir -p data/spades_assembly; cp data/megahit_assembly/final.contigs.fa data/spades_assembly/scaffolds.fasta", shell=True
+            "mkdir -p data/short_read_assembly; cp data/megahit_assembly/final.contigs.fa data/short_read_assembly/scaffolds.fasta", shell=True
         ).wait()
 
 elif snakemake.config['short_reads_1']  != 'none':
     if len(snakemake.config["short_reads_1"]) == 1:
         subprocess.Popen(
-            "spades.py --memory %s --meta -t %d -o data/spades_assembly --12 %s -k %s" %
+            "spades.py --memory %s --meta -t %d -o data/short_read_assembly --12 %s -k %s" %
             (snakemake.config["max_memory"], snakemake.threads, snakemake.config["short_reads_1"][0], " ".join(snakemake.params.kmer_sizes)),
             shell=True).wait()
     else: # co-assembly so use megahit
@@ -38,7 +38,7 @@ elif snakemake.config['short_reads_1']  != 'none':
             shell=True
         ).wait()
         subprocess.Popen(
-            "mkdir -p data/spades_assembly; cp data/megahit_assembly/final.contigs.fa data/spades_assembly/scaffolds.fasta", shell=True
+            "mkdir -p data/short_read_assembly; cp data/megahit_assembly/final.contigs.fa data/short_read_assembly/scaffolds.fasta", shell=True
         ).wait()
 
 

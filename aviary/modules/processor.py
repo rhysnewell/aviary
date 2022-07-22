@@ -218,7 +218,7 @@ class Processor:
                 self.checkm2_db = args.checkm2_db_path
             else:
                 self.checkm2_db = Config.get_software_db_path('CHECKM2DB', '--checkm2-db-path')
-        except KeyError:
+        except AttributeError:
             self.checkm2_db = Config.get_software_db_path('CHECKM2DB', '--checkm2-db-path')
             # self.checkm2_db = 'none'
 

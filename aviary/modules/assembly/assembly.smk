@@ -384,9 +384,9 @@ rule short_only:
         # long_reads = temp("data/long_reads.fastq.gz")
     shell:
         """
-        touch {output.fasta} && \
-        touch {output.long_reads}
+        touch {output.fasta}
         """
+        # touch {output.long_reads}
 
 # Short reads that did not map to the long read assembly are hybrid assembled with metaspades
 # If no long reads were provided, long_reads.fastq.gz will be empty
@@ -440,7 +440,7 @@ rule spades_assembly_short:
         fastq = config["short_reads_1"]
     group: 'assembly'
     output:
-        fasta = "data/spades_assembly/scaffolds.fasta"
+        fasta = "data/short_read_assembly/scaffolds.fasta"
     threads:
          config["max_threads"]
     params:
@@ -450,14 +450,14 @@ rule spades_assembly_short:
     conda:
         "envs/spades.yaml"
     benchmark:
-        "benchmarks/spades_assembly_short.benchmark.txt"
+        "benchmarks/short_read_assembly_short.benchmark.txt"
     script:
         "scripts/spades_assembly_short.py"
 
 
 rule move_spades_assembly:
     input:
-        assembly = "data/spades_assembly/scaffolds.fasta"
+        assembly = "data/short_read_assembly/scaffolds.fasta"
     group: 'assembly'
     output:
         out = "data/final_contigs.fasta"
