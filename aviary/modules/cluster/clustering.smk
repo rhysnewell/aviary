@@ -32,7 +32,8 @@ rule generate_combined_checkm_output:
         combined_checkm_file = temp("data/combined_checkm.tsv"),
         combined_checkm_stats = temp("data/combined_checkm_full.tsv"),
     params:
-        previous_runs = list(config["previous_runs"])
+        previous_runs = list(config["previous_runs"]),
+        use_checkm2_scores = config["use_checkm2_scores"]
     run:
         import pandas as pd
 
@@ -45,6 +46,12 @@ rule generate_combined_checkm_output:
             info_df['Bin Id'] = info_df['Bin Id'].apply(lambda bin: os.path.abspath(run) + "/bins/final_bins/" + str(bin))
 
         concat = pd.concat(runs)
+        score_cols = ["Completeness (CheckM1)", "Contamination (CheckM1)"]
+        if params.use_checkm2_scores:
+            score_cols = ["Completeness (CheckM2)", "Contamination (CheckM2)"]
+
+        concat = concat.loc[:, score_cols]
+        concat.rename({score_cols[0]: "Completeness", score_cols[1]: "Contamination"}, inplace=True, axis=1)
         concat.to_csv("data/combined_checkm.tsv", sep="\t", index=False)
 
         concat_infos = pd.concat(infos)

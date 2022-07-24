@@ -222,6 +222,12 @@ class Processor:
             self.checkm2_db = Config.get_software_db_path('CHECKM2DB', '--checkm2-db-path')
             # self.checkm2_db = 'none'
 
+        try:
+            self.use_checkm2_scores = args.use_checkm2_scores
+        except AttributeError:
+            self.use_checkm2_scores = False
+
+        # Must be always be first workflow
         if args.download:
             self.workflows.insert(0, 'download_databases')
 
@@ -278,6 +284,7 @@ class Processor:
         conf["strain_analysis"] = self.strain_analysis
 
         conf["checkm2_db_folder"] = self.checkm2_db
+        conf["use_checkm2_scores"] = self.use_checkm2_scores
         conf["mag_directory"] = self.mag_directory
         conf["mag_extension"] = self.mag_extension
         # conf["mags"] = self.mags
