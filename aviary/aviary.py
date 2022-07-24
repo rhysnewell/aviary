@@ -549,6 +549,16 @@ def main():
         default='10'
     )
 
+    cluster_group.add_argument(
+        '--use-checkm2-scores', '--use_checkm2_scores',
+        help="Use CheckM2 completeness and contamination scores (if available) to perform Galah dereplication",
+        type=str2bool,
+        nargs='?',
+        const=True,
+        dest='use_checkm2_scores',
+        default=False
+    )
+
     #####################################################################
     # viral_group = argparse.ArgumentParser(formatter_class=CustomHelpFormatter,
     #                                         add_help=False)
@@ -739,15 +749,6 @@ def main():
 
                                              ''')
 
-    diversity_options.add_argument(
-        '--use-checkm2-scores', '--use_checkm2_scores',
-        help="Use CheckM2 completeness and contamination scores (if available) to perform Galah dereplication",
-        type=str2bool,
-        nargs='?',
-        const=True,
-        dest='use_checkm2_scores',
-        default=False
-    )
 
     cluster_options.add_argument(
         '-w', '--workflow',
