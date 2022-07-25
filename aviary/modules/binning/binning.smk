@@ -74,7 +74,7 @@ rule get_bam_indices:
 
 rule maxbin2:
     input:
-        fasta = config["fasta"],
+        fasta = ancient(config["fasta"]),
         maxbin_cov = ancient("data/maxbin.cov.list")
     params:
         min_contig_size = config["min_contig_size"]
@@ -96,7 +96,7 @@ rule maxbin2:
 
 rule concoct:
     input:
-        fasta = config["fasta"],
+        fasta = ancient(config["fasta"]),
         bam_done = ancient("data/binning_bams/done")
     params:
         min_contig_size = config["min_contig_size"]
@@ -126,7 +126,7 @@ rule vamb_jgi_filter:
     Outputs a coverage file containing no contigs smaller than minimum contig size
     """
     input:
-        fasta = config["fasta"],
+        fasta = ancient(config["fasta"]),
         done = ancient("data/coverm.cov")
     group: 'binning'
     output:
@@ -150,7 +150,7 @@ rule vamb:
     """
     input:
         coverage = ancient("data/coverm.filt.cov"),
-        fasta = config["fasta"],
+        fasta = ancient(config["fasta"]),
     params:
         min_bin_size = config["min_bin_size"],
         min_contig_size = config["min_contig_size"],
@@ -183,7 +183,7 @@ rule vamb_skip:
 rule metabat2:
     input:
         coverage = ancient("data/coverm.cov"),
-        fasta = config["fasta"]
+        fasta = ancient(config["fasta"])
     params:
         min_contig_size = max(int(config["min_contig_size"]), 1500),
         min_bin_size = config["min_bin_size"]
@@ -205,7 +205,7 @@ rule metabat2:
 rule metabat_spec:
     input:
         coverage = ancient("data/coverm.cov"),
-        fasta = config["fasta"]
+        fasta = ancient(config["fasta"])
     group: 'binning'
     output:
         'data/metabat_bins_spec/done'
@@ -226,7 +226,7 @@ rule metabat_spec:
 rule metabat_sspec:
     input:
         coverage = ancient("data/coverm.cov"),
-        fasta = config["fasta"]
+        fasta = ancient(config["fasta"])
     group: 'binning'
     output:
         'data/metabat_bins_sspec/done'
@@ -247,7 +247,7 @@ rule metabat_sspec:
 rule metabat_sens:
     input:
         coverage = ancient("data/coverm.cov"),
-        fasta = config["fasta"]
+        fasta = ancient(config["fasta"])
     group: 'binning'
     output:
         'data/metabat_bins_sens/done'
@@ -268,7 +268,7 @@ rule metabat_sens:
 rule metabat_ssens:
     input:
         coverage = ancient("data/coverm.cov"),
-        fasta = config["fasta"]
+        fasta = ancient(config["fasta"])
     group: 'binning'
     output:
         'data/metabat_bins_ssens/done'
@@ -292,7 +292,7 @@ rule rosella:
     """
     input:
         coverage = ancient("data/coverm.cov"),
-        fasta = config["fasta"]
+        fasta = ancient(config["fasta"])
     params:
         min_contig_size = config["min_contig_size"],
         min_bin_size = config["min_bin_size"]
@@ -314,7 +314,7 @@ rule rosella:
 
 rule semibin:
     input:
-        fasta = config["fasta"],
+        fasta = ancient(config["fasta"]),
         bams_indexed = ancient("data/binning_bams/done")
     group: 'binning'
     params:
@@ -408,7 +408,7 @@ rule refine_rosella:
         checkm = 'data/rosella_bins/checkm.out',
         rosella = 'data/rosella_bins/done',
         coverage = ancient("data/coverm.cov"),
-        fasta = config["fasta"],
+        fasta = ancient(config["fasta"]),
         # kmers = "data/rosella_bins/rosella_kmer_table.tsv"
     output:
         'data/rosella_refined/done'
@@ -433,7 +433,7 @@ rule refine_metabat2:
         checkm = 'data/metabat_bins_2/checkm.out',
         rosella = 'data/metabat_bins_2/done',
         coverage = ancient("data/coverm.cov"),
-        fasta = config["fasta"],
+        fasta = ancient(config["fasta"]),
         # kmers = "data/rosella_bins/rosella_kmer_table.tsv"
     output:
         'data/metabat2_refined/done'
@@ -458,7 +458,7 @@ rule refine_semibin:
         checkm = 'data/semibin_bins/checkm.out',
         rosella = 'data/semibin_bins/done',
         coverage = ancient("data/coverm.cov"),
-        fasta = config["fasta"],
+        fasta = ancient(config["fasta"]),
         # kmers = "data/rosella_bins/rosella_kmer_table.tsv"
     output:
         'data/semibin_refined/done'
@@ -519,7 +519,7 @@ rule das_tool:
     Runs dasTool on the output of all binning algorithms. If a binner failed to produce bins then their output is ignored
     """
     input:
-        fasta = config["fasta"],
+        fasta = ancient(config["fasta"]),
         metabat2_done = "data/metabat2_refined/done",
         concoct_done = "data/concoct_bins/done",
         maxbin_done = "data/maxbin2_bins/done",
@@ -564,7 +564,7 @@ rule refine_dastool:
         checkm = 'data/das_tool_bins_pre_refine/checkm.out',
         das_tool = 'data/das_tool_bins_pre_refine/done',
         coverage = ancient("data/coverm.cov"),
-        fasta = config["fasta"],
+        fasta = ancient(config["fasta"]),
         # kmers = "data/rosella_bins/rosella_kmer_table.tsv"
     output:
         temporary('bins/checkm.out'),

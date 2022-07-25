@@ -800,7 +800,7 @@ def main():
         help='Main workflow to run',
         dest='workflow',
         nargs="+",
-        default=['annotate', 'lorikeet'],
+        default=['recover_mags', 'annotate', 'lorikeet'],
     )
 
     ##########################  ~ ISOLATE ~  ###########################
