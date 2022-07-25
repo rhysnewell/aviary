@@ -108,8 +108,7 @@ rule fastqc:
     input:
         config['short_reads_1']
     output:
-        directory("www/fastqc/"),
-        temp('www/fastqc/done')
+        directory("www/fastqc/")
     conda:
         "envs/fastqc.yaml"
     benchmark:
@@ -124,8 +123,7 @@ rule fastqc_long:
     input:
         'data/long_reads.fastq.gz'
     output:
-        directory("www/fastqc_long/"),
-        temp('www/fastqc_long/done')
+        directory("www/fastqc_long/")
     conda:
         "envs/fastqc.yaml"
     benchmark:
@@ -141,8 +139,7 @@ rule nanoplot:
         long = config['long_reads']
          # "data/long_reads.fastq.gz"
     output:
-        directory("www/nanoplot/"),
-        temp('www/nanoplot/done')
+        directory("www/nanoplot/")
     conda:
         "envs/nanoplot.yaml"
     benchmark:

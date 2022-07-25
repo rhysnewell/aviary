@@ -336,7 +336,7 @@ rule semibin:
 
 rule checkm_rosella:
     input:
-        done = "data/rosella_bins/done"
+        done = ancient("data/rosella_bins/done")
     params:
         pplacer_threads = config["pplacer_threads"],
         checkm2_db_path = config["checkm2_db_folder"],
@@ -359,7 +359,7 @@ rule checkm_rosella:
 
 rule checkm_metabat2:
     input:
-        done = "data/metabat_bins_2/done"
+        done = ancient("data/metabat_bins_2/done")
     params:
         pplacer_threads = config["pplacer_threads"],
         checkm2_db_path = config["checkm2_db_folder"],
@@ -382,7 +382,7 @@ rule checkm_metabat2:
 
 rule checkm_semibin:
     input:
-        done = "data/semibin_bins/done"
+        done = ancient("data/semibin_bins/done")
     params:
         pplacer_threads = config["pplacer_threads"],
         checkm2_db_path = config["checkm2_db_folder"],
@@ -405,8 +405,8 @@ rule checkm_semibin:
 
 rule refine_rosella:
     input:
-        checkm = 'data/rosella_bins/checkm.out',
-        rosella = 'data/rosella_bins/done',
+        checkm = ancient('data/rosella_bins/checkm.out'),
+        rosella = ancient('data/rosella_bins/done'),
         coverage = ancient("data/coverm.cov"),
         fasta = ancient(config["fasta"]),
         # kmers = "data/rosella_bins/rosella_kmer_table.tsv"
@@ -430,8 +430,8 @@ rule refine_rosella:
 
 rule refine_metabat2:
     input:
-        checkm = 'data/metabat_bins_2/checkm.out',
-        rosella = 'data/metabat_bins_2/done',
+        checkm = ancient('data/metabat_bins_2/checkm.out'),
+        rosella = ancient('data/metabat_bins_2/done'),
         coverage = ancient("data/coverm.cov"),
         fasta = ancient(config["fasta"]),
         # kmers = "data/rosella_bins/rosella_kmer_table.tsv"
@@ -455,8 +455,8 @@ rule refine_metabat2:
 
 rule refine_semibin:
     input:
-        checkm = 'data/semibin_bins/checkm.out',
-        rosella = 'data/semibin_bins/done',
+        checkm = ancient('data/semibin_bins/checkm.out'),
+        rosella = ancient('data/semibin_bins/done'),
         coverage = ancient("data/coverm.cov"),
         fasta = ancient(config["fasta"]),
         # kmers = "data/rosella_bins/rosella_kmer_table.tsv"
