@@ -200,18 +200,29 @@ class Processor:
         except AttributeError:
             self.previous_runs = 'none'
 
+        # Aviary cluster arguments
         try:
-            self.min_completeness = args.min_completeness
-            self.max_contamination = args.max_contamination
-            self.ani = args.ani
+            if args.min_completeness == 'none':
+                self.min_completeness = ' '
+            else:
+                self.min_completeness = f'--min-completeness {args.min_completeness}'
+
+            if args.max_contamination == 'none':
+                self.max_contamination = ' '
+            else:
+                self.max_contamination = f'--max-contamination {args.max_contamination}'
+
             self.precluster_ani = args.precluster_ani
+            self.ani = args.ani
             self.precluster_method = args.precluster_method
+            self.use_checkm2_scores = args.use_checkm2_scores
         except AttributeError:
             self.min_completeness = 'none'
             self.max_contamination = 'none'
             self.ani = 'none'
             self.precluster_ani = 'none'
             self.precluster_method = 'none'
+            self.use_checkm2_scores = False
 
         try:
             if args.checkm2_db_path is not None:
@@ -221,11 +232,6 @@ class Processor:
         except AttributeError:
             self.checkm2_db = Config.get_software_db_path('CHECKM2DB', '--checkm2-db-path')
             # self.checkm2_db = 'none'
-
-        try:
-            self.use_checkm2_scores = args.use_checkm2_scores
-        except AttributeError:
-            self.use_checkm2_scores = False
 
         # Must be always be first workflow
         if args.download:

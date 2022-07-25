@@ -46,12 +46,15 @@ rule generate_combined_checkm_output:
             info_df['Bin Id'] = info_df['Bin Id'].apply(lambda bin: os.path.abspath(run) + "/bins/final_bins/" + str(bin))
 
         concat = pd.concat(runs)
-        score_cols = ["Completeness (CheckM1)", "Contamination (CheckM1)"]
+        # need opposite column names to the ones we actually use here
+        score_cols = ["Completeness (CheckM2)", "Contamination (CheckM2)"]
+        rename_cols = ["Completeness (CheckM1)", "Contamination (CheckM1)"]
         if params.use_checkm2_scores:
-            score_cols = ["Completeness (CheckM2)", "Contamination (CheckM2)"]
+            score_cols = ["Completeness (CheckM1)", "Contamination (CheckM1)"]
+            rename_cols = ["Completeness (CheckM2)", "Contamination (CheckM2)"]
 
-        concat = concat.loc[:, score_cols]
-        concat.rename({score_cols[0]: "Completeness", score_cols[1]: "Contamination"}, inplace=True, axis=1)
+        concat = concat.loc[:, [col not in score_cols for col in concat.columns]]
+        concat.rename({rename_cols[0]: "Completeness", rename_cols[1]: "Contamination"}, inplace=True, axis=1)
         concat.to_csv("data/combined_checkm.tsv", sep="\t", index=False)
 
         concat_infos = pd.concat(infos)
@@ -90,7 +93,7 @@ rule run_galah:
         "galah cluster -t {threads} --checkm-tab-table {input.checkm} " 
         "--genome-fasta-list {input.genome_list} --output-cluster-definition {output.dereplicated_set} "
         "--ani {params.derep_ani} --precluster-ani {params.precluster_ani} --precluster-method {params.precluster_method} "
-        "--min-completeness {params.min_completeness} --max-contamination {params.max_contamination} "
+        "{params.min_completeness} {params.max_contamination} "
         "--output-representative-fasta-directory representative_genomes/ "
 
 rule representative_checkm:

@@ -516,9 +516,9 @@ def main():
 
     cluster_group.add_argument(
         '--ani',
-        help='Overall ANI level to dereplicate at with Galah.',
+        help='Overall ANI level to dereplicate at with FastANI.',
         dest='ani',
-        default='0.97'
+        default='0.99'
     )
 
     cluster_group.add_argument(
@@ -539,14 +539,14 @@ def main():
         '--min-completeness', '--min_completeness',
         help="Ignore genomes with less completeness than this percentage.",
         dest='min_completeness',
-        default='70'
+        default='none'
     )
 
     cluster_group.add_argument(
         '--max-contamination', '--max_contamination',
         help="Ignore genomes with more contamination than this percentage.",
         dest='max_contamination',
-        default='10'
+        default='none'
     )
 
     cluster_group.add_argument(
@@ -745,7 +745,7 @@ def main():
                                              '''
                                                                    ......:::::: CLUSTER ::::::......
 
-                                             aviary cluster --previous-runs aviary_output_folder_1/ aviary_output_folder_2/
+                                             aviary cluster --input-runs aviary_output_folder_1/ aviary_output_folder_2/
 
                                              ''')
 
