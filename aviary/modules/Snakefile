@@ -106,17 +106,16 @@ if config["fasta"] == "none":
 # Create summary webpage
 rule create_webpage:
     input:
-        checkm_file = "bins/checkm.out",
-        final_bins = "bins/done",
-        busco_done = "annotation/busco/done",
-        enrichm_done = "annotation/enrichm/done",
+        checkm_file = "bins/checkm_minimal.tsv",
+        final_bins = "bins/bin_info.tsv",
+        # busco_done = "annotation/busco/done",
+        # enrichm_done = "annotation/enrichm/done",
         fasta = config['fasta'],
         long_reads_qc_html = "www/nanoplot/longReadsNanoPlot-report.html",
         short_reads_fastqc_html = "www/fastqc/done",
         long_reads_fastqc_html = "www/fastqc_long/done",
-        genes_gff = "annotation/genes.gff",
-        gtdbtk_done = "taxonomy/gtdbtk/done",
-        singlem_done = "diversity/singlem_out/singlem_appraise.svg",
+        annotation_done = 'annotation/done',
+        singlem_done = "diversity/singlem_out/singlem_appraisal.tsv",
         # strain_profile = "data/instrain/output/instrain_scaffold_info.tsv"
     output:
         "www/index.html"

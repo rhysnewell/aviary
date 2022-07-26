@@ -715,7 +715,7 @@ rule singlem_appraise:
         bins_complete = "bins/checkm.out"
     group: 'binning'
     output:
-        "data/singlem_out/singlem_appraise.svg"
+        "data/singlem_out/singlem_appraisal.tsv"
     params:
         pplacer_threads = config['pplacer_threads'],
         fasta = config['fasta']
@@ -723,13 +723,16 @@ rule singlem_appraise:
         config["pplacer_threads"]
     conda:
         "../../envs/singlem.yaml"
+    log:
+        "data/singlem_out/singlem_log.txt"
     shell:
         "singlem pipe --threads {threads} --sequences bins/final_bins/*.fna --otu_table data/singlem_out/genomes.otu_table.csv; "
         "singlem pipe --threads {threads} --sequences {params.fasta} --otu_table data/singlem_out/assembly.otu_table.csv; "
         "singlem appraise --metagenome_otu_tables {input.metagenome} --genome_otu_tables data/singlem_out/genomes.otu_table.csv "
         "--assembly_otu_table data/singlem_out/assembly.otu_table.csv "
         "--plot data/singlem_out/singlem_appraise.svg --output_binned_otu_table data/singlem_out/binned.otu_table.csv "
-        "--output_unbinned_otu_table data/singlem_out/unbinned.otu_table.csv > data/singlem_out/singlem_appraisal.tsv"
+        "--output_unbinned_otu_table data/singlem_out/unbinned.otu_table.csv 1> data/singlem_out/singlem_appraisal.tsv 2> {log} || "
+        "touch data/singlem_out/singlem_appraisal.tsv && echo 'SingleM Errored, please check data/singlem_out/singlem_log.txt'"
 
 
 rule recover_mags:
@@ -737,7 +740,7 @@ rule recover_mags:
         final_bins = "bins/bin_info.tsv",
         gtdbtk = "data/gtdbtk/done",
         coverm = "data/coverm_abundances.tsv",
-        singlem = "data/singlem_out/singlem_appraise.svg"
+        singlem = "data/singlem_out/singlem_appraisal.tsv"
     conda:
         "../../envs/coverm.yaml"
     group: 'binning'
