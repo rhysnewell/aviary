@@ -602,7 +602,8 @@ rule finalize_stats:
     input:
         checkm1_done = "bins/checkm.out",
         checkm2_done = "bins/checkm2_output/quality_report.tsv",
-        coverage_file = "data/coverm_abundances.tsv"
+        coverage_file = "data/coverm_abundances.tsv",
+        gtdbtk_done = "data/gtdbtk/done"
     output:
         bin_stats = "bins/bin_info.tsv",
         checkm_minimal = "bins/checkm_minimal.tsv"
@@ -650,6 +651,24 @@ rule finalize_stats:
             checkm_output["Circular contigs"], checkm_output["Circular bp"], checkm_output["Circular fraction"] = [circular_contigs, circular_bps, circular_fractions]
             return checkm_output
 
+        def get_taxonomy(rename_columns="Bin Id"):
+            taxa = []
+            try:
+                df_bac = pd.read_csv(glob.glob("data/gtdbtk/gtdbtk.bac*.summary.tsv")[0], sep="\t")
+                taxa.append(df_bac)
+            except (FileNotFoundError, IndexError):
+                pass
+
+            try:
+                df_arc = pd.read_csv(glob.glob("data/gtdbtk/gtdbtk.ar*.summary.tsv")[0], sep="\t")
+                taxa.append(df_arc)
+            except (FileNotFoundError, IndexError) as e:
+                pass
+
+            taxa = pd.concat(taxa)
+            taxa.rename({'user_genome' : rename_columns}, inplace=True, axis=1)
+            return taxa
+
         coverage_file = pd.read_csv(input.coverage_file, sep='\t')
 
         # checkm file for all bins
@@ -668,7 +687,10 @@ rule finalize_stats:
         if os.path.isfile("data/flye/assembly_info.txt"):
             checkm_output = find_circular(checkm_output, is_checkm1)
 
+        taxa = get_taxonomy(checkm_output.columns[0])
+
         merged_out = pd.merge(checkm_output, coverage_file, on=[checkm_output.columns[0]])
+        merged_out = pd.merge(merged_out, taxa, on=[checkm_output.columns[0]])
         merged_out.to_csv(output.bin_stats, sep='\t', index=False)
 
         checkm_minimal = checkm_output[["Bin Id",  "Marker lineage",  "# genomes", "# markers", "# marker sets",

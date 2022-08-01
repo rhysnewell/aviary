@@ -8,16 +8,17 @@ dependencies:
   - hmmer
   - prodigal
   - fraggenescan
+  - numpy
+  - python-dateutil
+  - tqdm
+  - pyyaml
+  - atomicwrites
+  - pytorch
+  - python-igraph
+  - pandas
+  - scikit-learn
+  - requests
+  - numexpr
   - pip
   - pip:
-    - numpy
-    - tqdm
-    - pyyaml
-    - atomicwrites
-    - torch
-    - python-igraph
-    - pandas
-    - scikit-learn
-    - requests
-    - numexpr
     - "git+https://github.com/BigDataBiology/SemiBin.git#egg=SemiBin"
