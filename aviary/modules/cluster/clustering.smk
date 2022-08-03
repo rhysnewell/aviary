@@ -29,8 +29,8 @@ import os
 
 rule generate_combined_checkm_output:
     output:
-        combined_checkm_file = temp("data/combined_checkm.tsv"),
-        combined_checkm_stats = temp("data/combined_checkm_full.tsv"),
+        combined_checkm_file = "data/combined_checkm.tsv",
+        combined_checkm_stats = "data/combined_checkm_full.tsv",
     params:
         previous_runs = list(config["previous_runs"]),
         use_checkm2_scores = config["use_checkm2_scores"]
@@ -110,59 +110,108 @@ rule representative_checkm:
         "cut -f1 {input.dereplicated_clusters} | uniq | parallel -j 1 \"grep {{.}} {input.combined_checkm} >> {output.representative_checkm}\"; "
         "cut -f1 {input.dereplicated_clusters} | uniq | parallel -j 1 \"grep {{.}} {input.combined_checkm_full} >> {output.representative_checkm_full}\"; "
 
+
+rule generate_pggb_input:
+    input:
+        dereplicated_clusters = "data/dereplicated_clusters.txt",
+        # representative_info = "data/representative_info.txt"
+    output:
+        combined_mags_directory = directory("data/combined_mags/"),
+        pggb_metadata = temp('data/pggb_metadata.tsv')
+    run:
+        from Bio import SeqIO
+        import pandas as pd
+        dereplicated_clusters = pd.read_csv(input.dereplicated_clusters, sep='\t', header=None)
+
+        os.makedirs(output.combined_mags_directory, exist_ok=True)
+        prev_cluster = ""
+        taxonomy = ""
+        sequences = []
+        n_haplotypes = 0
+        metadata_table = []
+        for i in range(dereplicated_clusters.shape[0]):
+
+            if prev_cluster != dereplicated_clusters.iloc[i, 0]:
+                if len(sequences) != 0 and n_haplotypes > 1:
+                    # print the fasta file
+                    representative_sample_name = prev_cluster.split("/")[-4]
+                    representative_name = prev_cluster.split("/")[-1].strip(".fna")
+                    representative_name = f"{representative_sample_name}_{representative_name}"
+                    output_filename = f"data/combined_mags/sequences_{representative_name}.fna"
+                    SeqIO.write(sequences, output_filename, "fasta")
+                    metadata_table.append([output_filename, n_haplotypes, representative_name])
+                elif n_haplotypes == 1:
+                    print(f"Cannot generate pangenome for single genome cluster: {dereplicated_clusters.iloc[i, 1]}")
+                    print("Skipping...")
+                # taxonomy = bin_info[bin_info['Bin Id'] == prev_cluster]['classification']
+                prev_cluster = dereplicated_clusters.iloc[i, 0]
+                sequences = []
+                n_haplotypes = 0
+
+            sample_name = prev_cluster.split("/")[-4]
+            name = prev_cluster.split("/")[-1].strip(".fna")
+            n_haplotypes += 1
+            for record in SeqIO.parse(dereplicated_clusters.iloc[i, 1], "fasta"):
+                record.id = f"{sample_name}_{name}_{record.id}"
+                sequences.append(record)
+
+        pd.DataFrame(metadata_table, columns=None).to_csv(output.pggb_metadata, sep='\t', index=False, header=None)
+
+rule generate_pangenomes:
+    input:
+        pggb_metadata = 'data/pggb_metadata.tsv'
+    output:
+        pangenomes_output = directory("pangenomes/")
+    params:
+        derep_ani = config["ani"],
+        pggb_params = config["pggb_params"]
+    conda:
+        'envs/pggb.yaml'
+    threads:
+        config['max_threads']
+    benchmark:
+        'benchmarks/pggb.benchmark.txt'
+    shell:
+        'mkdir -p {output.pangenomes_output}; '
+        'cat {input.pggb_metadata} | parallel -j1 --colsep \'\t\' '
+        '"samtools faidx {{1}}; pggb -i {{1}} -n {{2}} -o {output.pangenomes_output}/{{3}} -t {threads} -p {params.derep_ani} -m {params.pggb_params}"'
+
 rule complete_cluster:
     input:
         dereplicated_clusters = "data/dereplicated_clusters.txt",
         representative_checkm = "data/representative_checkm.tsv",
-        representative_checkm_full = "data/representative_checkm_full.tsv"
+        representative_checkm_full = "data/representative_checkm_full.tsv",
+        pggb_done = "benchmarks/pggb.benchmark.txt"
     output:
         representative_paths = "data/representative_paths.txt",
-        # representative_taxa_bac = "data/representatives.bac120.summary.tsv",
-        # representative_taxa_arc = "data/representatives.ar55.summary.tsv",
+        representative_info = "data/representative_info.txt"
     params:
         previous_runs = config["previous_runs"]
     run:
         import pandas as pd
-        import glob
 
         clusters = pd.read_csv(input.dereplicated_clusters, sep="\t", header=None)
         representatives = clusters[0].apply(lambda bin: bin.replace(".fna", "")).unique()
         previous_runs = params.previous_runs
         # print(previous_runs)
-        runs_bac = []
-        runs_arc = []
+        runs_info = []
 
         for run in previous_runs:
             print(f"Gathering: {run}")
             try:
-                df_bac = pd.read_csv(glob.glob(os.path.abspath(run) + "/taxonomy/gtdbtk.bac*.summary.tsv")[0], sep="\t")
-                df_bac['user_genome'] = df_bac['user_genome'].apply(lambda mag: os.path.abspath(run) + "/bins/final_bins/" + str(mag))
-                runs_bac.append(df_bac)
+                df_info = pd.read_csv(os.path.abspath(run) + "/bins/bin_info.tsv", sep="\t")
+                df_info['Bin Id'] = df_info['Bin Id'].apply(lambda mag: os.path.abspath(run) + "/bins/final_bins/" + str(mag))
+                runs_info.append(df_info)
             except (FileNotFoundError, IndexError):
                 pass
 
-            try:
-                df_arc = pd.read_csv(glob.glob(os.path.abspath(run) + "/taxonomy/gtdbtk.ar*.summary.tsv")[0], sep="\t")
-                df_arc['user_genome'] = df_arc['user_genome'].apply(lambda mag: os.path.abspath(run) + "/bins/final_bins/" + str(mag))
-                runs_arc.append(df_arc)
-            except (FileNotFoundError, IndexError) as e:
-                pass
-
 
         try:
-            concat_bac = pd.concat(runs_bac)
-            concat_bac = concat_bac[concat_bac['user_genome'].isin(representatives)]
-            concat_bac.to_csv("data/representatives.bac120.summary.tsv", index=False, sep="\t")
+            concat_bac = pd.concat(runs_info)
+            concat_bac = concat_bac[concat_bac['Bin Id'].isin(representatives)]
+            concat_bac.to_csv(output.representative_info, index=False, sep="\t")
         except ValueError:
             # No values to concat
-            pass
-
-        try:
-            concat_arc = pd.concat(runs_arc)
-            concat_arc = concat_arc[concat_arc['user_genome'].isin(representatives)]
-            concat_arc.to_csv("data/representatives.ar55.summary.tsv", index=False, sep="\t")
-        except ValueError:
-            # No values to concate
             pass
 
         pd.DataFrame(representatives).to_csv("data/representative_paths.txt", index=False, header=False, sep="\t")

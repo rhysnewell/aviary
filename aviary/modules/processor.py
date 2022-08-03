@@ -107,7 +107,7 @@ class Processor:
             self.semibin_model = args.semibin_model
             self.skip_binners = [binner.lower() for binner in args.skip_binners]
             self.check_binners_to_skip()
-            if "get_bam_indices" not in self.workflows:
+            if "get_bam_indices" not in self.workflows and "complete_assembly" not in self.workflows:
                 self.workflows.insert(0, 'get_bam_indices')
         except AttributeError:
             self.min_contig_size = 1500
@@ -212,10 +212,11 @@ class Processor:
             else:
                 self.max_contamination = f'--max-contamination {args.max_contamination}'
 
-            self.precluster_ani = args.precluster_ani
-            self.ani = args.ani
+            self.precluster_ani = fraction_to_percent(args.precluster_ani)
+            self.ani = fraction_to_percent(args.ani)
             self.precluster_method = args.precluster_method
             self.use_checkm2_scores = args.use_checkm2_scores
+            self.pggb_params = args.pggb_params
         except AttributeError:
             self.min_completeness = 'none'
             self.max_contamination = 'none'
@@ -223,6 +224,7 @@ class Processor:
             self.precluster_ani = 'none'
             self.precluster_method = 'none'
             self.use_checkm2_scores = False
+            self.pggb_params = 'none'
 
         try:
             if args.checkm2_db_path is not None:
@@ -300,6 +302,7 @@ class Processor:
         conf["ani"] = self.ani
         conf["precluster_ani"] = self.precluster_ani
         conf["precluster_method"] = self.precluster_method
+        conf["pggb_params"] = self.pggb_params
 
         with open(self.config, "w") as f:
             yaml.dump(conf, f)
@@ -426,3 +429,8 @@ class Processor:
                 # removes the traceback
                 logging.critical(e)
                 exit(1)
+
+def fraction_to_percent(val):
+    if val <= 1:
+        return val * 100
+    return val

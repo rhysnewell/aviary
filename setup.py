@@ -1,6 +1,6 @@
 import io
 from os.path import dirname, join
-from setuptools import setup
+from setuptools import setup, find_packages
 
 
 # read the contents of your README file
@@ -32,7 +32,7 @@ setup(
     long_description=long_description,
     long_description_content_type='text/markdown',
     zip_safe=False,
-    packages=['aviary'],
+    packages=find_packages(),
     package_data={'': [
             "aviary/*",
                        ]},

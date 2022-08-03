@@ -58,7 +58,7 @@ git clone https://github.com/rhysnewell/aviary.git
 cd aviary
 conda env create -n aviary -f aviary.yml
 conda activate aviary
-pip install .
+pip install -e .
 ```
 
 Whatever option you choose, running `aviary --help` should return the following

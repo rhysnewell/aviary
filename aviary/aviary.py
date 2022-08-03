@@ -188,7 +188,7 @@ def main():
 
     base_group.add_argument(
         '--conda-frontend', '--conda_frontend',
-        help='Which conda frontend to use, mamba is faster but harder to debug. Switch this to conda '
+        help='Which conda frontend to use, mamba is faster but harder to debug. Switch this to conda \n'
              'If experiencing problems installing environments',
         dest='conda_frontend',
         default="mamba",
@@ -197,10 +197,10 @@ def main():
 
     base_group.add_argument(
         '--clean',
-        help='Clean up all temporary files. This will remove most BAM files and any FASTQ files '
-             'generated from read filtering. Setting this to False is the equivalent of the --notemp '
-             'option in snakemake. Useful for when running only part of a workflow as it avoids '
-             'deleting files that would likely be needed in later parts of the workflow. '
+        help='Clean up all temporary files. This will remove most BAM files and any FASTQ files \n'
+             'generated from read filtering. Setting this to False is the equivalent of the --notemp \n'
+             'option in snakemake. Useful for when running only part of a workflow as it avoids \n'
+             'deleting files that would likely be needed in later parts of the workflow. \n'
              'NOTE: Not cleaning makes reruns faster but will incur the wrath of your sysadmin',
         type=str2bool,
         nargs='?',
@@ -230,10 +230,9 @@ def main():
     base_group.add_argument(
         '--snakemake-cmds',
         help='Additional commands to supplied to snakemake in the form of a single string'
-             'e.g. "--print-compilation True". '
-             'NOTE: Most commands in snakemake -h are valid but some commands may clash with commands '
-             'aviary directly supplies to snakemake. Please make'
-             "sure your additional commands don't clash.",
+             'e.g. "--print-compilation True". \n '
+             'NOTE: Most commands in snakemake -h are valid but some commands may clash with commands \n '
+             'aviary directly supplies to snakemake. Please make sure your additional commands don\'t clash.',
         dest='cmds',
         default='',
     )
@@ -295,11 +294,11 @@ def main():
 
     read_group_exclusive.add_argument(
         '-1', '--pe-1', '--paired-reads-1', '--paired_reads_1', '--pe1',
-        help='A space separated list of forwards read files'
-             'NOTE: If performing assembly and multiple files and longreads '
-             '      are provided then only the first file will be used for assembly.'
-             '      If no longreads are provided then all samples will be co-assembled '
-             '      with megahit',
+        help='A space separated list of forwards read files \n'
+             'NOTE: If performing assembly and multiple files and longreads \n'
+             '      are provided then only the first file will be used for assembly. \n'
+             '      If no longreads are provided then all samples will be co-assembled \n'
+             '      with megahit\n',
         dest='pe1',
         nargs='*',
         default="none"
@@ -307,10 +306,10 @@ def main():
 
     short_read_group.add_argument(
         '-2', '--pe-2', '--paired-reads-2', '--paired_reads_2', '--pe2',
-        help='A space separated list of reverse read files'
-             'NOTE: If performing assembly and multiple files and longreads '
-             '      are provided then only the first file will be used for assembly.'
-             '      If no longreads are provided then all samples will be co-assembled '
+        help='A space separated list of reverse read files \n'
+             'NOTE: If performing assembly and multiple files and longreads \n'
+             '      are provided then only the first file will be used for assembly. \n'
+             '      If no longreads are provided then all samples will be co-assembled \n'
              '      with megahit',
         dest='pe2',
         nargs='*',
@@ -319,10 +318,10 @@ def main():
 
     read_group_exclusive.add_argument(
         '-i','--interleaved',
-        help='A space separated list of interleaved read files '
-             'NOTE: If performing assembly and multiple files and longreads '
-             '      are provided then only the first file will be used for assembly.'
-             '      If no longreads are provided then all samples will be co-assembled '
+        help='A space separated list of interleaved read files \n'
+             'NOTE: If performing assembly and multiple files and longreads \n'
+             '      are provided then only the first file will be used for assembly. \n'
+             '      If no longreads are provided then all samples will be co-assembled \n'
              '      with megahit',
         dest='interleaved',
         nargs='*',
@@ -331,10 +330,10 @@ def main():
 
     read_group_exclusive.add_argument(
         '-c', '--coupled',
-        help='Forward and reverse read files in a coupled space separated list. '
-             'NOTE: If performing assembly and multiple files and longreads '
-             '      are provided then only the first file will be used for assembly.'
-             '      If no longreads are provided then all samples will be co-assembled '
+        help='Forward and reverse read files in a coupled space separated list. \n'
+             'NOTE: If performing assembly and multiple files and longreads \n'
+             '      are provided then only the first file will be used for assembly. \n'
+             '      If no longreads are provided then all samples will be co-assembled \n'
              '      with megahit',
         dest='coupled',
         nargs='*',
@@ -343,7 +342,7 @@ def main():
 
     read_group_exclusive.add_argument(
         '--min-percent-read-identity-short', '--min_percent_read_identity_short',
-        help='Minimum percent read identity used by CoverM for short-reads'
+        help='Minimum percent read identity used by CoverM for short-reads \n'
              'when calculating genome abundances.',
         dest='short_percent_identity',
         default='95'
@@ -356,8 +355,8 @@ def main():
     long_read_group.add_argument(
         '-l', '--longreads', '--long-reads', '--long_reads',
         help='A space separated list of long-read read files. '
-             'NOTE: If performing assembly and multiple long read files are provided, then only the first file is used for assembly. '
-             '      This behaviour might change in future.',
+             'NOTE: If performing assembly and multiple long read files are provided, \n'
+             '      then only the first file is used for assembly. This behaviour might change in future.',
         dest='longreads',
         nargs='*',
         default="none"
@@ -365,9 +364,9 @@ def main():
 
     long_read_group.add_argument(
         '-z', '--longread-type', '--longread_type', '--long_read_type', '--long-read-type',
-        help='Whether the sequencing platform and technology for the longreads. '
-             '"rs" for PacBio RSII, "sq" for PacBio Sequel, "ccs" for PacBio CCS '
-             'reads, "ont" for Oxford Nanopore and "ont_hq" for Oxford Nanopore high quality reads (Guppy5+ or Q20)',
+        help='Whether the sequencing platform and technology for the longreads. \n'
+             '"rs" for PacBio RSII, "sq" for PacBio Sequel, "ccs" for PacBio CCS \n'
+             'reads, "ont" for Oxford Nanopore and "ont_hq" for Oxford Nanopore high quality reads (Guppy5+ or Q20) \n',
         dest='longread_type',
         nargs=1,
         default="ont",
@@ -435,7 +434,7 @@ def main():
 
     binning_group.add_argument(
         '--semibin-model', '--semibin_model',
-        help='The environment model to passed to SemiBin. Can be one of: '
+        help='The environment model to passed to SemiBin. Can be one of: \n'
              'human_gut, dog_gut, ocean, soil, cat_gut, human_oral, mouse_gut, pig_gut, built_environment, wastewater, global',
         dest='semibin_model',
         default='global'
@@ -443,9 +442,9 @@ def main():
 
     binning_group.add_argument(
         '--skip-binners', '--skip_binners',
-        help='Optional list of binning algorithms to skip. Can be any combination of: '
-             'rosella, semibin, metabat1, metabat2, metabat, vamb, concoct, maxbin2, maxbin '
-             'Capitals will be auto-corrected. N.B. specifying "metabat" will skip both'
+        help='Optional list of binning algorithms to skip. Can be any combination of: \n'
+             'rosella, semibin, metabat1, metabat2, metabat, vamb, concoct, maxbin2, maxbin \n'
+             'Capitals will be auto-corrected. N.B. specifying "metabat" will skip both \n'
              'MetaBAT1 and MetaBAT2.',
         dest='skip_binners',
         nargs='*',
@@ -518,14 +517,14 @@ def main():
         '--ani',
         help='Overall ANI level to dereplicate at with FastANI.',
         dest='ani',
-        default='0.99'
+        default=99
     )
 
     cluster_group.add_argument(
         '--precluster-ani', '--precluster_ani',
         help='Require at least this dashing-derived ANI for preclustering and to avoid FastANI on distant lineages within preclusters.',
         dest='precluster_ani',
-        default='0.95'
+        default=95
     )
 
     cluster_group.add_argument(
@@ -557,6 +556,13 @@ def main():
         const=True,
         dest='use_checkm2_scores',
         default=False
+    )
+
+    cluster_group.add_argument(
+        '--pggb-params', '--pggb_params',
+        help="Parameters to be used with pggb, must be surrounded by quotation marks e.g. \'\'",
+        dest='pggb_params',
+        default='-k 79 -G 7919,8069'
     )
 
     #####################################################################
@@ -626,7 +632,7 @@ def main():
     ##########################  ~ RECOVER ~   ###########################
 
     recover_options = subparsers.add_parser('recover',
-                                            description='The complete binning pipeline',
+                                            description='The aviary binning pipeline',
                                             formatter_class=CustomHelpFormatter,
                                             parents=[qc_group, short_read_group, long_read_group, binning_group, annotation_group, base_group],
                                             epilog=
@@ -639,7 +645,7 @@ def main():
 
     recover_options.add_argument(
         '-a', '--assembly',
-        help='FASTA file containing scaffolded contigs of the metagenome assembly',
+        help='Optional FASTA file containing scaffolded contigs of the metagenome assembly',
         dest="assembly",
         nargs=1,
         required=False,
@@ -761,7 +767,7 @@ def main():
     ##########################  ~ VIRAL ~   ###########################
 
     viral_options = subparsers.add_parser('viral',
-                                          description='The complete binning pipeline',
+                                          description='The incomplete binning pipeline',
                                           formatter_class=CustomHelpFormatter,
                                           parents=[mag_group, short_read_group, long_read_group, annotation_group, base_group],
                                           epilog=
@@ -796,11 +802,19 @@ def main():
                                             ''')
 
     complete_options.add_argument(
+        '-a', '--assembly',
+        help='Optional FASTA file containing scaffolded contigs of the metagenome assembly',
+        dest="assembly",
+        nargs=1,
+        required=False,
+    )
+
+    complete_options.add_argument(
         '-w', '--workflow',
         help='Main workflow to run',
         dest='workflow',
         nargs="+",
-        default=['recover_mags', 'annotate', 'lorikeet'],
+        default=['get_bam_indices', 'recover_mags', 'annotate', 'lorikeet'],
     )
 
     ##########################  ~ ISOLATE ~  ###########################

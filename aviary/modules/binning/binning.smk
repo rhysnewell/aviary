@@ -57,6 +57,7 @@ rule prepare_binning_files:
     script:
         "scripts/get_coverage.py"
 
+
 rule get_bam_indices:
     input:
         coverage = "data/coverm.cov"
