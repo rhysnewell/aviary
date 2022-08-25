@@ -298,7 +298,7 @@ def main():
              'NOTE: If performing assembly and multiple files and longreads \n'
              '      are provided then only the first file will be used for assembly. \n'
              '      If no longreads are provided then all samples will be co-assembled \n'
-             '      with megahit\n',
+             '      with megahit or metaspades depending on the --coassemble parameter\n',
         dest='pe1',
         nargs='*',
         default="none"
@@ -310,7 +310,7 @@ def main():
              'NOTE: If performing assembly and multiple files and longreads \n'
              '      are provided then only the first file will be used for assembly. \n'
              '      If no longreads are provided then all samples will be co-assembled \n'
-             '      with megahit',
+             '      with megahit or metaspades depending on the --coassemble parameter',
         dest='pe2',
         nargs='*',
         default="none"
@@ -322,7 +322,7 @@ def main():
              'NOTE: If performing assembly and multiple files and longreads \n'
              '      are provided then only the first file will be used for assembly. \n'
              '      If no longreads are provided then all samples will be co-assembled \n'
-             '      with megahit',
+             '      with megahit or metaspades depending on the --coassemble parameter',
         dest='interleaved',
         nargs='*',
         default="none"
@@ -334,7 +334,7 @@ def main():
              'NOTE: If performing assembly and multiple files and longreads \n'
              '      are provided then only the first file will be used for assembly. \n'
              '      If no longreads are provided then all samples will be co-assembled \n'
-             '      with megahit',
+             '      with megahit or metaspades depending on the --coassemble parameter',
         dest='coupled',
         nargs='*',
         default="none"
@@ -609,6 +609,16 @@ def main():
         nargs='?',
         const=True,
         dest='use_unicycler',
+        default=False,
+    )
+
+    assemble_options.add_argument(
+        '--coassemble', '--co-assemble', '--co_assemble',
+        help='Specifies whether or not to co-assemble using megahit if multiple short read samples are provided',
+        type=str2bool,
+        nargs='?',
+        const=True,
+        dest='coassemble',
         default=False,
     )
 

@@ -446,6 +446,7 @@ rule spades_assembly_short:
     params:
          max_memory = config["max_memory"],
          kmer_sizes = config["kmer_sizes"],
+         coassemble = config["coassemble"],
          final_assembly = True
     conda:
         "envs/spades.yaml"

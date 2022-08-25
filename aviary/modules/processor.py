@@ -149,6 +149,7 @@ class Processor:
 
         try:
             self.short_percent_identity = args.short_percent_identity
+            self.coassemble = args.coassemble
             if args.coupled != "none":
                 self.pe1 = args.coupled[::2]
                 self.pe2 = args.coupled[1::2]
@@ -165,6 +166,7 @@ class Processor:
             self.pe1 = 'none'
             self.pe2 = 'none'
             self.short_percent_identity = 'none'
+            self.coassemble = False
 
         try:
             self.kmer_sizes = args.kmer_sizes
@@ -285,6 +287,7 @@ class Processor:
         conf["long_reads"] = self.longreads
         conf["long_read_type"] = self.longread_type
         conf["kmer_sizes"] = self.kmer_sizes
+        conf["coassemble"] = self.coassemble
         conf["min_contig_size"] = int(self.min_contig_size)
         conf["min_bin_size"] = int(self.min_bin_size)
         conf["gtdbtk_folder"] = self.gtdbtk
