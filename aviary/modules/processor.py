@@ -89,6 +89,8 @@ class Processor:
 
 
         self.conda_prefix = args.conda_prefix
+        self.tmpdir = args.tmpdir
+        self.resources = args.resources
         self.output = args.output
         self.threads = args.max_threads
         self.max_memory = args.max_memory
@@ -149,7 +151,7 @@ class Processor:
 
         try:
             self.short_percent_identity = args.short_percent_identity
-            self.coassemble = args.coassemble
+            self.use_megahit = args.use_megahit
             if args.coupled != "none":
                 self.pe1 = args.coupled[::2]
                 self.pe2 = args.coupled[1::2]
@@ -163,10 +165,11 @@ class Processor:
                 elif args.pe2 == "none" and args.interleaved != "none":
                     self.pe1 = args.interleaved
         except AttributeError:
+            logging.info(f"Exception {args.pe1} {args.pe2}")
             self.pe1 = 'none'
             self.pe2 = 'none'
             self.short_percent_identity = 'none'
-            self.coassemble = False
+            self.use_megahit = False
 
         try:
             self.kmer_sizes = args.kmer_sizes
@@ -287,13 +290,12 @@ class Processor:
         conf["long_reads"] = self.longreads
         conf["long_read_type"] = self.longread_type
         conf["kmer_sizes"] = self.kmer_sizes
-        conf["coassemble"] = self.coassemble
+        conf["use_megahit"] = self.use_megahit
         conf["min_contig_size"] = int(self.min_contig_size)
         conf["min_bin_size"] = int(self.min_bin_size)
         conf["gtdbtk_folder"] = self.gtdbtk
         conf["eggnog_folder"] = self.eggnog
         conf["strain_analysis"] = self.strain_analysis
-
         conf["checkm2_db_folder"] = self.checkm2_db
         conf["use_checkm2_scores"] = self.use_checkm2_scores
         conf["mag_directory"] = self.mag_directory
@@ -306,6 +308,7 @@ class Processor:
         conf["precluster_ani"] = self.precluster_ani
         conf["precluster_method"] = self.precluster_method
         conf["pggb_params"] = self.pggb_params
+        conf["tmpdir"] = self.tmpdir
 
         with open(self.config, "w") as f:
             yaml.dump(conf, f)
@@ -409,7 +412,7 @@ class Processor:
                 "snakemake --snakefile {snakefile} --directory {working_dir} "
                 "{jobs} --rerun-incomplete "
                 "--configfile '{config_file}' --nolock "
-                "{profile} {conda_frontend} --use-conda {conda_prefix} "
+                "{profile} {conda_frontend} {resources} --use-conda {conda_prefix} "
                 "{dryrun}{notemp}{args}"
                 " {target_rule}"
             ).format(
@@ -423,7 +426,8 @@ class Processor:
                 args=snakemake_args,
                 target_rule=workflow if workflow != "None" else "",
                 conda_prefix="--conda-prefix " + self.conda_prefix,
-                conda_frontend="--conda-frontend " + conda_frontend
+                conda_frontend="--conda-frontend " + conda_frontend,
+                resources=f"--default-resources \"tmpdir='{self.tmpdir}'\" {self.resources}"
             )
             logging.info("Executing: %s" % cmd)
             try:
@@ -432,6 +436,107 @@ class Processor:
                 # removes the traceback
                 logging.critical(e)
                 exit(1)
+
+
+def process_batch(args, prefix):
+    '''
+    Function for handling and processing aviary commands in batches
+    The user supplies a tab separated batch file with six defined columns. Aviary is run on each line
+    of the batch file using the specified workflow.
+
+    If the user wishes, the results are then clustered.
+    '''
+    import pandas as pd
+
+    logging.info(f"Reading batch file: {args.batch_file}")
+    batch = pd.read_csv(args.batch_file, sep=None, engine='python')
+    if len(batch.columns) != 6:
+        logging.critical(f"Batch file contains incorrect number of columns ({len(batch.columns)}). Should contain 6.")
+        logging.critical(f"Current columns: {batch.columns}")
+        sys.exit()
+
+    if args.build:
+        try:
+            args.cmds = args.cmds + '--conda-create-envs-only '
+        except TypeError:
+            args.cmds = '--conda-create-envs-only '
+
+    if args.use_unicycler:
+        args.workflow.insert(0, "combine_assemblies")
+
+    runs = []
+    args.interleaved = "none" # hacky solution to skip attribute error
+    args.coupled = "none"
+    for i in range(batch.shape[0]):
+        logging.info(f"Processing {batch.iloc[i, 0]}")
+
+        # process the batch line
+        sample = batch.iloc[i, 0]
+        if isinstance(sample, str):
+            sample = sample.strip()
+        else:
+            sample = None
+
+        s1 = batch.iloc[i, 1]
+        if isinstance(s1, str):
+            s1 = s1.strip().split(',')
+        else:
+            s1 = None
+
+        s2 = batch.iloc[i, 2]
+        if isinstance(s2, str):
+            s2 = s2.strip().split(',')
+        else:
+            s2 = None
+
+        l = batch.iloc[i, 3]
+        if isinstance(l, str):
+            l = l.strip().split(',')
+        else:
+            l = None
+
+        l_type = batch.iloc[i, 4].strip()
+        assembly = batch.iloc[i, 5]
+
+        if isinstance(assembly, str):
+            assembly = assembly.strip()
+        else:
+            assembly = None
+
+        # update the value of args
+        args.output = f"{prefix}/{sample}"
+        runs.append(args.output)
+        args.pe1 = s1
+        args.pe2 = s2
+
+        args.longreads = l
+        args.longread_type = l_type
+        args.assembly = assembly
+
+        # setup processor for this line
+        processor = Processor(args)
+        processor.make_config()
+
+        processor.run_workflow(cores=int(args.n_cores),
+                               dryrun=args.dryrun,
+                               clean=args.clean,
+                               conda_frontend=args.conda_frontend,
+                               snakemake_args=args.cmds)
+
+    if args.cluster:
+        logging.info(f"Beginning clustering of {len(runs)} previous Aviary runs...")
+        args.previous_runs = runs
+        args.workflow = ['complete_cluster']
+        args.output = f"{prefix}/aviary_cluster"
+        processor = Processor(args)
+        processor.make_config()
+
+        processor.run_workflow(cores=int(args.n_cores),
+                               dryrun=args.dryrun,
+                               clean=args.clean,
+                               conda_frontend=args.conda_frontend,
+                               snakemake_args=args.cmds)
+
 
 def fraction_to_percent(val):
     if val <= 1:

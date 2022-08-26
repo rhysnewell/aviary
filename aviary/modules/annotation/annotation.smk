@@ -151,7 +151,8 @@ rule eggnog:
         # mag_extension = config['mag_extension'],
     params:
         mag_extension = config['mag_extension'],
-        eggnog_db = config['eggnog_folder']
+        eggnog_db = config['eggnog_folder'],
+        tmpdir = config["tmpdir"]
     group: 'annotation'
     output:
         done = 'data/eggnog/done'
@@ -166,7 +167,7 @@ rule eggnog:
         'mkdir -p data/eggnog/; '
         'find {input.mag_folder}/*.{params.mag_extension} | parallel -j1 \'emapper.py --data_dir {params.eggnog_db} '
         '--dmnd_db {params.eggnog_db}/*dmnd --cpu {threads} -m diamond --itype genome --genepred prodigal -i {{}} '
-        '--output_dir data/eggnog/ -o {{/.}} || echo "Genome already annotated"\'; '
+        '--output_dir data/eggnog/ --temp_dir {params.tmpdir} -o {{/.}} || echo "Genome already annotated"\'; '
         'touch data/eggnog/done; '
 
 rule gtdbtk:

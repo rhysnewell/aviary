@@ -45,8 +45,12 @@ rule filtlong_no_reference:
     conda:
         'envs/filtlong.yaml'
     shell:
-        'filtlong --min_length {params.min_length} --min_mean_q {params.min_mean_q} {input.long} '
-        '| pigz -p {threads} > {output.long}'
+        '''
+        for long_reads in {input.long}
+        do
+            filtlong --min_length {params.min_length} --min_mean_q {params.min_mean_q} $long_reads | pigz -p {threads} >> {output.long}
+        done
+        '''
 
 # rule filtlong_reference:
 #     input:

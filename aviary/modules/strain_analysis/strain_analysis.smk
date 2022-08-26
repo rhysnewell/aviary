@@ -64,7 +64,8 @@ rule lorikeet:
         "envs/lorikeet.yaml"
     params:
         mag_extension = config['mag_extension'],
-        parallel_genomes = 8
+        parallel_genomes = 8,
+        tmpdir = config['tmpdir']
     threads:
         config["max_threads"]
     script:

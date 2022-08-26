@@ -50,6 +50,8 @@ rule prepare_binning_files:
     output:
         maxbin_coverage = "data/maxbin.cov.list",
         metabat_coverage = "data/coverm.cov"
+    params:
+        tmpdir = config['tmpdir']
     conda:
         "../../envs/coverm.yaml"
     threads:

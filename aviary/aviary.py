@@ -18,7 +18,7 @@
 #                                                                             #
 ###############################################################################
 import aviary.config.config as Config
-from aviary.modules.processor import Processor
+from aviary.modules.processor import Processor, process_batch
 from .__init__ import __version__
 __author__ = "Rhys Newell"
 __copyright__ = "Copyright 2022"
@@ -35,7 +35,7 @@ import argparse
 import logging
 import os
 from datetime import datetime
-
+import tempfile
 
 # Debug
 debug={1:logging.CRITICAL,
@@ -72,11 +72,13 @@ Metagenome assembly, binning, and annotation:
         recover   - Recover MAGs from provided assembly using a variety 
                     of binning algorithms 
         annotate  - Annotate MAGs using EggNOG and GTBD-tk
-        genotype  - Perform strain diversity analysis of MAGs using Lorikeet
+        diversity - Perform strain diversity analysis of MAGs using Lorikeet
         complete  - Runs each stage of the pipeline: assemble, recover, 
                     annotate, genotype in that order.
         cluster   - Combines and dereplicates the MAGs from multiple Aviary runs
                     using Galah
+        batch     - Run Aviary using a given workflow on a supplied batch of samples
+                    and cluster the end result.
 
 Isolate assembly, binning, and annotation:
         isolate   - Perform isolate assembly **PARTIALLY COMPLETED**
@@ -171,9 +173,26 @@ def main():
 
     base_group.add_argument(
         '--conda-prefix', '--conda_prefix',
-        help='Path to the location of installed conda environments, or where to install new environments',
+        help='Path to the location of installed conda environments, or where to install new environments. \n'
+             'Can be configured within the `configure` subcommand',
         dest='conda_prefix',
         default=None,
+    )
+
+    base_group.add_argument(
+        '--tmpdir', '--tempdir', '--tmp-dir', '--tmp_dir', '--tmp', '--temp', '--temp-dir', '--temp_dir',
+        help='Path to the location that will be treated used for temporary files. If none is specified, the TMPDIR \n'
+             'environment variable will be used. Can be configured within the `configure` subcommand',
+        dest='tmpdir',
+        default=tempfile.gettempdir(),
+    )
+
+    base_group.add_argument(
+        '--default-resources',
+        help='Snakemake resources used as is found at: https://snakemake.readthedocs.io/en/stable/snakefiles/rules.html?highlight=resources#standard-resources \n'
+             'NOTE: tmpdir is handled by the `tmpdir` command line parameter. ',
+        dest='resources',
+        default=" "
     )
 
     base_group.add_argument(
@@ -505,15 +524,6 @@ def main():
     cluster_group = argparse.ArgumentParser(formatter_class=CustomHelpFormatter, add_help=False)
 
     cluster_group.add_argument(
-        '-i', '--input-runs', '--input_runs',
-        help='The paths to the previous finished runs of Aviary. Must contain the bins/checkm.out and bins/final_bins'
-             'outputs',
-        dest='previous_runs',
-        nargs='*',
-        required=True,
-    )
-
-    cluster_group.add_argument(
         '--ani',
         help='Overall ANI level to dereplicate at with FastANI.',
         dest='ani',
@@ -587,22 +597,8 @@ def main():
     #     default=5000000
     # )
 
-    #~#~#~#~#~#~#~#~#~#~#~#~#~   sub-parsers   ~#~#~#~#~#~#~#~#~#~#~#~#~#
-    ##########################  ~ ASSEMBLE ~  ###########################
-
-    assemble_options = subparsers.add_parser('assemble',
-                                              description='Step-down hybrid assembly using long and short reads, or assembly using only short or long reads.',
-                                              formatter_class=CustomHelpFormatter,
-                                              parents=[qc_group, short_read_group, long_read_group, binning_group, base_group],
-                                              epilog=
-        '''
-                                        ......:::::: ASSEMBLE ::::::......
-
-        aviary assemble -1 *.1.fq.gz -2 *.2.fq.gz --longreads *.nanopore.fastq.gz --long_read_type ont
-
-        ''')
-
-    assemble_options.add_argument(
+    assemble_group = argparse.ArgumentParser(formatter_class=CustomHelpFormatter, add_help=False)
+    assemble_group.add_argument(
         '--use-unicycler', '--use_unicycler',
         help='Use Unicycler to re-assemble the metaSPAdes hybrid assembly. Not recommended for complex metagenomes.',
         type=str2bool,
@@ -612,17 +608,17 @@ def main():
         default=False,
     )
 
-    assemble_options.add_argument(
-        '--coassemble', '--co-assemble', '--co_assemble',
-        help='Specifies whether or not to co-assemble using megahit if multiple short read samples are provided',
+    assemble_group.add_argument(
+        '--use-megahit', '--use_megahit',
+        help='Specifies whether or not to use megahit if multiple for short-read only assembly',
         type=str2bool,
         nargs='?',
         const=True,
-        dest='coassemble',
+        dest='use_megahit',
         default=False,
     )
 
-    assemble_options.add_argument(
+    assemble_group.add_argument(
         '--kmer-sizes', '--kmer_sizes', '-k',
         help='Manually specify the kmer-sizes used by SPAdes during assembly. Space separated odd integer values '
              'and less than 128 or "auto"',
@@ -630,6 +626,23 @@ def main():
         default=['auto'],
         nargs="+",
     )
+
+    #~#~#~#~#~#~#~#~#~#~#~#~#~   sub-parsers   ~#~#~#~#~#~#~#~#~#~#~#~#~#
+    ##########################  ~ ASSEMBLE ~  ###########################
+
+    assemble_options = subparsers.add_parser('assemble',
+                                              description='Step-down hybrid assembly using long and short reads, or assembly using only short or long reads.',
+                                              formatter_class=CustomHelpFormatter,
+                                              parents=[qc_group, assemble_group, short_read_group, long_read_group, binning_group, base_group],
+                                              epilog=
+        '''
+                                        ......:::::: ASSEMBLE ::::::......
+
+        aviary assemble -1 *.1.fq.gz -2 *.2.fq.gz --longreads *.nanopore.fastq.gz --long_read_type ont
+
+        ''')
+
+
 
     assemble_options.add_argument(
         '-w', '--workflow',
@@ -644,7 +657,7 @@ def main():
     recover_options = subparsers.add_parser('recover',
                                             description='The aviary binning pipeline',
                                             formatter_class=CustomHelpFormatter,
-                                            parents=[qc_group, short_read_group, long_read_group, binning_group, annotation_group, base_group],
+                                            parents=[qc_group, assemble_group, short_read_group, long_read_group, binning_group, annotation_group, base_group],
                                             epilog=
     '''
                                            ......:::::: RECOVER ::::::......
@@ -714,7 +727,7 @@ def main():
     diversity_options = subparsers.add_parser('diversity',
                                              description='Perform strain diversity analysis',
                                              formatter_class=CustomHelpFormatter,
-                                             parents=[mag_group, qc_group, short_read_group, long_read_group,
+                                             parents=[mag_group, qc_group, assemble_group, short_read_group, long_read_group,
                                                       binning_group, annotation_group, base_group],
                                              epilog=
                                              '''
@@ -765,6 +778,14 @@ def main():
 
                                              ''')
 
+    cluster_options.add_argument(
+        '-i', '--input-runs', '--input_runs',
+        help='The paths to the previous finished runs of Aviary. Must contain the bins/checkm.out and bins/final_bins'
+             'outputs',
+        dest='previous_runs',
+        nargs='*',
+        required=True,
+    )
 
     cluster_options.add_argument(
         '-w', '--workflow',
@@ -802,12 +823,12 @@ def main():
                                             description='Performs all steps in the Aviary pipeline. '
                                                         'Assembly > Binning > Refinement > Annotation > Diversity',
                                             formatter_class=CustomHelpFormatter,
-                                            parents=[short_read_group, long_read_group, binning_group, annotation_group, base_group],
+                                            parents=[qc_group, assemble_group, short_read_group, long_read_group, binning_group, annotation_group, base_group],
                                             epilog=
                                             '''
                                                                ......:::::: COMPLETE ::::::......
 
-                                            aviary all -1 *.1.fq.gz -2 *.2.fq.gz --longreads *.nanopore.fastq.gz 
+                                            aviary complete -1 *.1.fq.gz -2 *.2.fq.gz --longreads *.nanopore.fastq.gz 
 
                                             ''')
 
@@ -849,6 +870,71 @@ def main():
         default=['circlator'],
     )
 
+    ##########################   ~ BATCH ~  ###########################
+
+    batch_options = subparsers.add_parser('batch',
+                                             description='Performs all steps in the Aviary pipeline on a batch file. \n'
+                                                         'Each line in the batch file is processed separately and then \n'
+                                                         'clustered using aviary. \n'
+                                                         '(Assembly > Binning > Refinement > Annotation > Diversity) * n_samples --> Cluster',
+                                             formatter_class=CustomHelpFormatter,
+                                             parents=[qc_group, assemble_group, binning_group, annotation_group, cluster_group, base_group],
+                                             epilog=
+                                             '''
+                                                      ......:::::: BATCH ::::::......
+
+                                             aviary batch -f batch_file.tsv -t 32 -o batch_test
+                                             
+                                             An example batch file can be found at: 
+
+                                             ''')
+
+    batch_options.add_argument(
+        '-f', '--batch_file', '--batch-file',
+        help='The tab or comma separated batch file containing the input samples to assemble and/or recover MAGs from. \n'
+             'An example batch file can be found at XXX. The heading line is required. \n'
+             'The number of reads provided to each sample is flexible as is the type of assembly being performed (if any). \n'
+             'Multiple reads can be supplied by providing a comma-separated list (surrounded by double quotes \"\" if using a \n'
+             'comma separated batch file) within the specific read column.',
+        dest="batch_file",
+        # nargs=1,
+        required=True,
+    )
+
+    batch_options.add_argument(
+        '--cluster',
+        help='Cluster final output of all samples using aviary cluster if possible.',
+        dest='cluster',
+        type=str2bool,
+        nargs='?',
+        const=True,
+        default=True
+    )
+
+    batch_options.add_argument(
+        '--min-percent-read-identity-long', '--min_percent_read_identity_long',
+        help='Minimum percent read identity used by CoverM for long-reads'
+             'when calculating genome abundances.',
+        dest='long_percent_identity',
+        default='85'
+    )
+
+    batch_options.add_argument(
+        '--min-percent-read-identity-short', '--min_percent_read_identity_short',
+        help='Minimum percent read identity used by CoverM for short-reads \n'
+             'when calculating genome abundances.',
+        dest='short_percent_identity',
+        default='95'
+    )
+
+    batch_options.add_argument(
+        '-w', '--workflow',
+        help='Main workflow to run for each sample',
+        dest='workflow',
+        nargs="+",
+        default=['get_bam_indices', 'recover_mags', 'annotate', 'lorikeet'],
+    )
+
     ##########################   ~ configure ~  ###########################
 
     configure_options = subparsers.add_parser('configure',
@@ -859,7 +945,7 @@ def main():
                                             '''
                                                                ......:::::: CONFIGURE ::::::......
 
-                                            aviary configure --conda-prefix ~/.conda --gtdb-path ~/gtdbtk/release207/ 
+                                            aviary configure --conda-prefix ~/.conda --gtdb-path ~/gtdbtk/release207/ --temp-dir /path/to/new/temp
 
                                             ''')
 
@@ -926,6 +1012,9 @@ def main():
         if args.conda_prefix is not None:
             Config.set_db_path(args.conda_prefix, db_name='CONDA_ENV_PATH')
 
+        if args.tmpdir is not None:
+            Config.set_db_path(args.tmpdir, db_name='TMPDIR')
+
         if args.gtdb_path is not None:
             Config.set_db_path(args.gtdb_path, db_name='GTDBTK_DATA_PATH')
 
@@ -944,32 +1033,38 @@ def main():
     if not os.path.exists(prefix):
         os.makedirs(prefix)
 
-    processor = Processor(args)
+    if args.subparser_name != 'batch':
+        processor = Processor(args)
+        processor.make_config()
 
-    processor.make_config()
+        if args.build:
+            try:
+                args.cmds = args.cmds + '--conda-create-envs-only '
+            except TypeError:
+                args.cmds = '--conda-create-envs-only '
 
-    if args.build:
         try:
-            args.cmds = args.cmds + '--conda-create-envs-only '
-        except TypeError:
-            args.cmds = '--conda-create-envs-only '
+            if args.subparser_name == 'assemble':
+                if args.use_unicycler:
+                    args.workflow.insert(0, "combine_assemblies")
+        except AttributeError:
+            pass
 
-    try:
-        if args.subparser_name == 'assemble':
-            if args.use_unicycler:
-                args.workflow.insert(0, "combine_assemblies")
-    except AttributeError:
-        pass
-
-    processor.run_workflow(cores=int(args.n_cores),
-                           dryrun=args.dryrun,
-                           clean=args.clean,
-                           conda_frontend=args.conda_frontend,
-                           snakemake_args=args.cmds)
+        processor.run_workflow(cores=int(args.n_cores),
+                               dryrun=args.dryrun,
+                               clean=args.clean,
+                               conda_frontend=args.conda_frontend,
+                               snakemake_args=args.cmds)
+    else:
+        process_batch(args, prefix)
 
 def manage_env_vars(args):
     if args.conda_prefix is None:
         args.conda_prefix = Config.get_software_db_path('CONDA_ENV_PATH', '--conda-prefix')
+
+    if args.tmpdir is None:
+        args.tmpdir = Config.get_software_db_path('TMPDIR', '--tmpdir')
+
     try:
         if args.gtdb_path is None:
             args.gtdb_path = Config.get_software_db_path('GTDBTK_DATA_PATH', '--gtdb-path')

@@ -402,7 +402,8 @@ rule spades_assembly:
     params:
         max_memory = config["max_memory"],
         long_read_type = config["long_read_type"],
-        kmer_sizes = " ".join(config["kmer_sizes"])
+        kmer_sizes = " ".join(config["kmer_sizes"]),
+        tmpdir = config["tmpdir"]
     conda:
         "envs/spades.yaml"
     benchmark:
@@ -414,18 +415,18 @@ rule spades_assembly:
         actualsize=$(stat -c%s data/short_reads.filt.fastq.gz);
         if [ -d "data/spades_assembly/" ]
         then
-            spades.py --restart-from last --memory {params.max_memory} -t {threads} -o data/spades_assembly -k {params.kmer_sizes} && \
+            spades.py --restart-from last --memory {params.max_memory} -t {threads} -o data/spades_assembly -k {params.kmer_sizes} --tmp-dir {params.tmpdir} && \
             ln data/spades_assembly/scaffolds.fasta data/spades_assembly.fasta
         elif [ $actualsize -ge $minimumsize ]
         then
             if [ {params.long_read_type} = "ont" ] || [ {params.long_read_type} = "ont_hq" ]
             then
                 spades.py --checkpoints all --memory {params.max_memory} --meta --nanopore {input.long_reads} --12 {input.fastq} \
-                -o data/spades_assembly -t {threads}  -k {params.kmer_sizes} 2>data/spades.err && \
+                -o data/spades_assembly -t {threads}  -k {params.kmer_sizes} --tmp-dir {params.tmpdir} 2>data/spades.err && \
                 ln data/spades_assembly/scaffolds.fasta data/spades_assembly.fasta
             else
                 spades.py --checkpoints all --memory {params.max_memory} --meta --pacbio {input.long_reads} --12 {input.fastq} \
-                -o data/spades_assembly -t {threads}  -k {params.kmer_sizes} 2>data/spades.err && \
+                -o data/spades_assembly -t {threads}  -k {params.kmer_sizes} --tmp-dir {params.tmpdir} 2>data/spades.err && \
                 ln data/spades_assembly/scaffolds.fasta data/spades_assembly.fasta
             fi
         else
@@ -446,7 +447,8 @@ rule spades_assembly_short:
     params:
          max_memory = config["max_memory"],
          kmer_sizes = config["kmer_sizes"],
-         coassemble = config["coassemble"],
+         use_megahit = config["use_megahit"],
+         tmpdir = config["tmpdir"],
          final_assembly = True
     conda:
         "envs/spades.yaml"
@@ -477,6 +479,8 @@ rule spades_assembly_coverage:
          assembly_cov = temp("data/short_read_assembly.cov"),
          bam = temp("data/short_vs_mega.bam"),
          bai = temp("data/short_vs_mega.bam.bai")
+    params:
+         tmpdir = config["tmpdir"]
     conda:
          "../../envs/coverm.yaml"
     threads:
@@ -485,7 +489,7 @@ rule spades_assembly_coverage:
         "benchmarks/spades_assembly_coverage.benchmark.txt"
     shell:
         """
-        coverm contig -m metabat -t {threads} -r {input.fasta} --interleaved {input.fastq} --bam-file-cache-directory data/cached_bams/ > {output.assembly_cov};
+        TMPDIR={params.tmpdir} coverm contig -m metabat -t {threads} -r {input.fasta} --interleaved {input.fastq} --bam-file-cache-directory data/cached_bams/ > {output.assembly_cov};
         mv data/cached_bams/*.bam {output.bam} && samtools index -@ {threads} {output.bam}
         """
 
