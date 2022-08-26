@@ -23,8 +23,8 @@ rule link_reads:
             shell("ln -s {input.fastq} {output}")
         elif len(input.fastq) > 1 and not isinstance(input.fastq, str):
             for reads in input.fastq:
-                shell(f"zcat {reads} >> data/long_reads.fastq")
-            shell("pigz -p {threads} data/long_reads.fastq")
+                shell(f"cat {reads} >> data/long_reads.fastq.gz")
+            # shell("pigz -p {threads} data/long_reads.fastq")
         else:
             shell("touch {output}")
 

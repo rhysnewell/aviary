@@ -427,7 +427,7 @@ class Processor:
                 target_rule=workflow if workflow != "None" else "",
                 conda_prefix="--conda-prefix " + self.conda_prefix,
                 conda_frontend="--conda-frontend " + conda_frontend,
-                resources=f"--default-resources \"tmpdir='{self.tmpdir}'\" {self.resources}"
+                resources=f"--default-resources \"tmpdir='{self.tmpdir}'\" --resources mem_mb={int(self.max_memory)*1024} {self.resources}"
             )
             logging.info("Executing: %s" % cmd)
             try:

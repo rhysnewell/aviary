@@ -20,5 +20,6 @@ elif snakemake.config["short_reads_1"] != "none":
 else:
     short_reads = ""
 
-subprocess.Popen(f"TMPDIR={snakemake.params.tmpdir} lorikeet call -t {snakemake.threads} -d {snakemake.config['mag_directory']} -x {snakemake.params.mag_extension} "
-                 f"-p {snakemake.params.parallel_genomes} {short_reads} {long_reads} -o {snakemake.output.output_directory}", shell=True).wait()
+subprocess.Popen(f"lorikeet call -t {snakemake.threads} -d {snakemake.config['mag_directory']} "
+                 f"-x {snakemake.params.mag_extension} -p {snakemake.params.parallel_genomes} {short_reads} {long_reads} "
+                 f"-o {snakemake.output.output_directory} --calculate-dnds --calculate-fst", shell=True).wait()

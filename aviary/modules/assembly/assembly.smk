@@ -112,6 +112,8 @@ rule flye_assembly:
         info = "data/flye/assembly_info.txt"
     params:
         long_read_type = config["long_read_type"]
+    resources:
+        mem_mb=config["max_memory"]*1024
     conda:
         "envs/flye.yaml"
     benchmark:
@@ -136,6 +138,8 @@ rule polish_metagenome_racon:
         maxcov = 200,
         rounds = 3,
         illumina = False
+    resources:
+        mem_mb=config["max_memory"]*1024
     group: 'assembly'
     output:
         fasta = "data/assembly.pol.rac.fasta"
@@ -176,6 +180,8 @@ rule generate_pilon_sort:
         bai = temp("data/pilon.sort.bam.bai")
     threads:
         config["max_threads"]
+    resources:
+        mem_mb=config["max_memory"]*1024
     conda:
         "envs/pilon.yaml"
     benchmark:
@@ -192,6 +198,8 @@ rule polish_meta_pilon:
     group: 'assembly'
     output:
         fasta = "data/assembly.pol.pil.fasta"
+    resources:
+        mem_mb=config["max_memory"]*1024
     threads:
         config["max_threads"]
     params:
@@ -216,6 +224,8 @@ rule polish_meta_racon_ill:
     output:
         fasta = "data/assembly.pol.fin.fasta",
         paf = "data/racon_polishing/alignment.racon_ill.0.paf"
+    resources:
+        mem_mb=config["max_memory"]*1024
     threads:
         config["max_threads"]
     conda:
@@ -345,9 +355,9 @@ rule filter_illumina_assembly:
         fasta = "data/flye_high_cov.fasta"
     group: 'assembly'
     output:
-        bam = "data/sr_vs_long.sort.bam",
-        bai = "data/sr_vs_long.sort.bam.bai",
-        fastq = "data/short_reads.filt.fastq.gz"
+        bam = temp("data/sr_vs_long.sort.bam"),
+        bai = temp("data/sr_vs_long.sort.bam.bai"),
+        fastq = temp("data/short_reads.filt.fastq.gz")
     conda:
         "../../envs/minimap2.yaml"
     threads:
@@ -399,6 +409,8 @@ rule spades_assembly:
         fasta = "data/spades_assembly.fasta"
     threads:
         config["max_threads"]
+    resources:
+        mem_mb=config["max_memory"]*1024
     params:
         max_memory = config["max_memory"],
         long_read_type = config["long_read_type"],
@@ -441,7 +453,9 @@ rule spades_assembly_short:
         fastq = config["short_reads_1"]
     group: 'assembly'
     output:
-        fasta = "data/short_read_assembly/scaffolds.fasta"
+        fasta = "data/short_read_assembly/scaffolds.fasta",
+        # reads1 = temporary("data/short_reads.1.fastq.gz"),
+        # reads2 = temporary("data/short_reads.2.fastq.gz")
     threads:
          config["max_threads"]
     params:
@@ -450,6 +464,8 @@ rule spades_assembly_short:
          use_megahit = config["use_megahit"],
          tmpdir = config["tmpdir"],
          final_assembly = True
+    resources:
+        mem_mb=config["max_memory"]*1024
     conda:
         "envs/spades.yaml"
     benchmark:
@@ -479,6 +495,8 @@ rule spades_assembly_coverage:
          assembly_cov = temp("data/short_read_assembly.cov"),
          bam = temp("data/short_vs_mega.bam"),
          bai = temp("data/short_vs_mega.bam.bai")
+    resources:
+        mem_mb=config["max_memory"]*1024
     params:
          tmpdir = config["tmpdir"]
     conda:
@@ -523,6 +541,8 @@ rule map_long_mega:
     output:
         bam = temp("data/long_vs_mega.bam"),
         bai = temp("data/long_vs_mega.bam.bai")
+    resources:
+        mem_mb=config["max_memory"]*1024
     threads:
         config["max_threads"]
     conda:
@@ -580,6 +600,8 @@ rule assemble_pools:
     threads:
         config["max_threads"]
     group: 'assembly'
+    resources:
+        mem_mb=config["max_memory"]*1024
     output:
         fasta = "data/unicycler_combined.fa"
     conda:
