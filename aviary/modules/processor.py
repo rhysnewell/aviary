@@ -159,7 +159,7 @@ class Processor:
 
         try:
             self.short_percent_identity = args.short_percent_identity
-            self.use_megahit = args.use_megahit
+
             if args.coupled != "none":
                 self.pe1 = args.coupled[::2]
                 self.pe2 = args.coupled[1::2]
@@ -173,16 +173,19 @@ class Processor:
                 elif args.pe2 == "none" and args.interleaved != "none":
                     self.pe1 = args.interleaved
         except AttributeError:
-            logging.info(f"Exception {args.pe1} {args.pe2}")
             self.pe1 = 'none'
             self.pe2 = 'none'
             self.short_percent_identity = 'none'
-            self.use_megahit = False
+
 
         try:
             self.kmer_sizes = args.kmer_sizes
+            self.use_megahit = args.use_megahit
+            self.coassemble = args.coassemble
         except AttributeError:
             self.kmer_sizes = ['auto']
+            self.use_megahit = False
+            self.coassemble = True
 
         try:
             self.mag_directory = os.path.abspath(args.directory) if args.directory is not None else 'none'

@@ -619,6 +619,18 @@ def main():
     )
 
     assemble_group.add_argument(
+        '--coassemble', '--co-assemble', '--co_assemble',
+        help='Specifies whether or not, when given multiple input reads, to coassemble them. \n'
+             'If False, Aviary will use the first set of short reads and first set of long reads to perform assembly \n'
+             'All read files will still be used during the MAG recovery process for differential coverage.',
+        type=str2bool,
+        nargs='?',
+        const=True,
+        dest='coassemble',
+        default=True,
+    )
+
+    assemble_group.add_argument(
         '--kmer-sizes', '--kmer_sizes', '-k',
         help='Manually specify the kmer-sizes used by SPAdes during assembly. Space separated odd integer values '
              'and less than 128 or "auto"',
@@ -1026,6 +1038,16 @@ def main():
 
         if args.eggnog_db_path is not None:
             Config.set_db_path(args.eggnog_db_path, db_name='EGGNOG_DATA_DIR')
+
+        logging.info("The current aviary environment variables are:")
+        logging.info(f"CONDA_ENV_PATH: {Config.get_software_db_path('CONDA_ENV_PATH', '--conda-prefix')}")
+        logging.info(f"TMPDIR: {Config.get_software_db_path('TMPDIR', '--tmpdir')}")
+        logging.info(f"GTDBTK_DATA_PATH: {Config.get_software_db_path('GTDBTK_DATA_PATH', '--gtdb-path')}")
+        logging.info(f"EGGNOG_DATA_DIR: {Config.get_software_db_path('EGGNOG_DATA_DIR', '--eggnog-db-path')}")
+        logging.info(f"CHECKM2DB: {Config.get_software_db_path('CHECKM2DB', '--checkm2-db-path')}")
+        if not args.download:
+            logging.info("All paths set. Exitting without downloading databases. If you wish to download databases use --download")
+            sys.exit(0)
 
     # else:
     args = manage_env_vars(args)

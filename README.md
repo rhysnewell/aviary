@@ -105,31 +105,6 @@ source ~/.bashrc
 
 These environment variables can be reset using `aviary configure`
 
-## Requirements
-
-Your conda channels should be configured ideally in this order with strict channel priority order
-turned on:
-```
-conda config --add channels defaults
-conda config --add channels bioconda
-conda config --add channels conda-forge
-conda config --set channel_priority strict
-```
-
-Your resulting `.condarc` file should look something like:
-```
-channels:
-  - conda-forge
-  - bioconda
-  - defaults
-channel_priority: strict
-```
-
-Initial requirements for aviary can be downloaded using the `aviary.yml`:
-```
-conda env create -n aviary -f aviary.yml
-```
-
 ## Databases
 
 Aviary uses programs which require access to locally stored databases. 
@@ -139,6 +114,7 @@ The **required** databases are as follows:
 * [GTDB](https://gtdb.ecogenomic.org/downloads)
 * [EggNog](https://github.com/eggnogdb/eggnog-mapper/wiki/eggNOG-mapper-v2.1.5-to-v2.1.8#setup)
 * [CheckM2](https://github.com/chklovski/CheckM2)
+
 
 ### Installing databases
 
