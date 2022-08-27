@@ -14,7 +14,7 @@ if os.path.exists('data/short_reads.fastq.gz'):
                       ), shell=True).wait()
 
 elif snakemake.config['short_reads_2'] != 'none':
-    if len(snakemake.config['short_reads_2']) == 1:
+    if len(snakemake.config['short_reads_2']) == 1 or not snakemake.params.coassemble:
         pe1 = snakemake.config['short_reads_1'][0]
         pe2 = snakemake.config['short_reads_2'][0]
     else:
@@ -36,7 +36,7 @@ elif snakemake.config['short_reads_2'] != 'none':
                       ), shell=True).wait()
 
 elif snakemake.config['short_reads_1']  != 'none':
-    if len(snakemake.config['short_reads_1']) == 1:
+    if len(snakemake.config['short_reads_1']) == 1 or not snakemake.params.coassemble:
         pe1 = snakemake.config['short_reads_1'][0]
     else:
         if not os.path.exists("data/short_reads.1.fastq.gz"):

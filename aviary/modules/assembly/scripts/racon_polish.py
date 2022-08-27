@@ -20,7 +20,7 @@ if snakemake.params.illumina:
     if snakemake.config['reference_filter'] != 'none':
         reads = "data/short_reads.fastq.gz"
     elif snakemake.config['short_reads_2'] != 'none':
-        if len(snakemake.config['short_reads_2']) == 1:
+        if len(snakemake.config['short_reads_2']) == 1 or not snakemake.params.coassemble:
             pe1 = snakemake.config['short_reads_1'][0]
             pe2 = snakemake.config['short_reads_2'][0]
         else:
@@ -32,7 +32,7 @@ if snakemake.params.illumina:
             pe2 = "data/short_reads.2.fastq.gz"
         reads = [' '.join([pe1, pe2])]
     else:
-        if len(snakemake.config['short_reads_1']) == 1:
+        if len(snakemake.config['short_reads_1']) == 1 or not snakemake.params.coassemble:
             pe1 = snakemake.config['short_reads_1'][0]
         else:
             if not os.path.exists("data/short_reads.1.fastq.gz"):

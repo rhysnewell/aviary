@@ -302,6 +302,7 @@ class Processor:
         conf["long_read_type"] = self.longread_type
         conf["kmer_sizes"] = self.kmer_sizes
         conf["use_megahit"] = self.use_megahit
+        conf["coassemble"] = self.coassemble
         conf["min_contig_size"] = int(self.min_contig_size)
         conf["min_bin_size"] = int(self.min_bin_size)
         conf["gtdbtk_folder"] = self.gtdbtk
@@ -461,8 +462,8 @@ def process_batch(args, prefix):
 
     logging.info(f"Reading batch file: {args.batch_file}")
     batch = pd.read_csv(args.batch_file, sep=None, engine='python')
-    if len(batch.columns) != 6:
-        logging.critical(f"Batch file contains incorrect number of columns ({len(batch.columns)}). Should contain 6.")
+    if len(batch.columns) != 7:
+        logging.critical(f"Batch file contains incorrect number of columns ({len(batch.columns)}). Should contain 7.")
         logging.critical(f"Current columns: {batch.columns}")
         sys.exit()
 
@@ -514,6 +515,13 @@ def process_batch(args, prefix):
         else:
             assembly = None
 
+        coassemble = batch.iloc[i, 6]
+
+        if isinstance(coassemble, str):
+            coassemble = coassemble.strip()
+        else:
+            coassemble = False
+
         # update the value of args
         args.output = f"{prefix}/{sample}"
         runs.append(args.output)
@@ -523,6 +531,7 @@ def process_batch(args, prefix):
         args.longreads = l
         args.longread_type = l_type
         args.assembly = assembly
+        args.coassemble = coassemble
 
         # setup processor for this line
         processor = Processor(args)

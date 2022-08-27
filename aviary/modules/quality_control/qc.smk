@@ -10,6 +10,8 @@ if config['fasta'] == 'none':
 rule link_reads:
     input:
         fastq = config["long_reads"],
+    params:
+        coassemble = config["coassemble"]
     output:
         "data/long_reads.fastq.gz"
     threads:
@@ -21,6 +23,8 @@ rule link_reads:
         import sys
         if len(input.fastq) == 1 or isinstance(input.fastq, str): # Check if only one longread sample
             shell("ln -s {input.fastq} {output}")
+        elif params.coassemble and len(input.fastq) >= 1: # Check if only one longread sample
+            shell("ln -s {input.fastq[0]} {output}")
         elif len(input.fastq) > 1 and not isinstance(input.fastq, str):
             for reads in input.fastq:
                 shell(f"cat {reads} >> data/long_reads.fastq.gz")
@@ -36,7 +40,8 @@ rule filtlong_no_reference:
     params:
         min_length = config['min_long_read_length'],
         keep_percent = config['keep_percent'],
-        min_mean_q = config['min_mean_q']
+        min_mean_q = config['min_mean_q'],
+        coassemble = config["coassemble"]
     threads:
         config['max_threads']
     benchmark:
@@ -49,6 +54,10 @@ rule filtlong_no_reference:
         for long_reads in {input.long}
         do
             filtlong --min_length {params.min_length} --min_mean_q {params.min_mean_q} $long_reads | pigz -p {threads} >> {output.long}
+            if ! {params.coassemble}
+            then
+                break
+            fi
         done
         '''
 

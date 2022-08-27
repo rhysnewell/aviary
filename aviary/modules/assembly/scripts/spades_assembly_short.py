@@ -3,7 +3,7 @@ from pathlib import Path
 import os
 
 if snakemake.config['short_reads_2'] != 'none' and snakemake.config['short_reads_1'] != 'none':
-    if len(snakemake.config['short_reads_2']) == 1:
+    if len(snakemake.config['short_reads_2']) == 1 or not snakemake.params.coassemble:
         subprocess.Popen(
             "spades.py --memory %s --meta -t %d -o data/short_read_assembly -1 %s -2 %s -k %s --tmp-dir %s" %
             (snakemake.config["max_memory"], snakemake.threads, snakemake.config["short_reads_1"][0],
@@ -39,7 +39,7 @@ if snakemake.config['short_reads_2'] != 'none' and snakemake.config['short_reads
 
 
 elif snakemake.config['short_reads_1']  != 'none':
-    if len(snakemake.config["short_reads_1"]) == 1:
+    if len(snakemake.config["short_reads_1"]) == 1 or not snakemake.params.coassemble:
         subprocess.Popen(
             "spades.py --memory %s --meta -t %d -o data/short_read_assembly --12 %s -k %s --tmp-dir %s" %
             (snakemake.config["max_memory"], snakemake.threads, snakemake.config["short_reads_1"][0], " ".join(snakemake.params.kmer_sizes), snakemake.params.tmpdir),

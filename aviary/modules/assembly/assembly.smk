@@ -142,7 +142,8 @@ rule polish_metagenome_racon:
         prefix = "racon",
         maxcov = 200,
         rounds = 3,
-        illumina = False
+        illumina = False,
+        coassemble = config["coassemble"]
     resources:
         mem_mb=config["max_memory"]*1024
     group: 'assembly'
@@ -163,6 +164,8 @@ rule filter_illumina_ref:
         bam = temp("data/short_unmapped_ref.bam"),
         fastq = temp("data/short_reads.fastq.gz"),
         filtered = temp("data/short_filter.done")
+    params:
+        coassemble = config["coassemble"]
     conda:
         "../../envs/minimap2.yaml"
     threads:
@@ -179,6 +182,8 @@ rule generate_pilon_sort:
         fastq = config['short_reads_1'],
         filtered = "data/short_filter.done",
         fasta = "data/assembly.pol.rac.fasta"
+    params:
+        coassemble = config["coassemble"]
     group: 'assembly'
     output:
         bam = temp("data/pilon.sort.bam"),
@@ -239,7 +244,8 @@ rule polish_meta_racon_ill:
         prefix = "racon_ill",
         maxcov = 200,
         rounds = 1,
-        illumina = True
+        illumina = True,
+        coassemble = config["coassemble"]
     benchmark:
         "benchmarks/polish_meta_racon_ill.benchmark.txt"
     script:
@@ -363,6 +369,8 @@ rule filter_illumina_assembly:
         bam = temp("data/sr_vs_long.sort.bam"),
         bai = temp("data/sr_vs_long.sort.bam.bai"),
         fastq = temp("data/short_reads.filt.fastq.gz")
+    params:
+        coassemble = config["coassemble"]
     conda:
         "../../envs/minimap2.yaml"
     threads:
@@ -469,6 +477,7 @@ rule spades_assembly_short:
          max_memory = config["max_memory"],
          kmer_sizes = config["kmer_sizes"],
          use_megahit = config["use_megahit"],
+         coassemble = config["coassemble"],
          tmpdir = config["tmpdir"],
          final_assembly = True
     resources:
