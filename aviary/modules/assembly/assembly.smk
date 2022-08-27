@@ -223,7 +223,8 @@ rule polish_meta_racon_ill:
     group: 'assembly'
     output:
         fasta = "data/assembly.pol.fin.fasta",
-        paf = "data/racon_polishing/alignment.racon_ill.0.paf"
+        paf = temp("data/racon_polishing/alignment.racon_ill.0.paf"),
+        racon_out = temp(directory("data/racon_polishing/"))
     resources:
         mem_mb=config["max_memory"]*1024
     threads:
