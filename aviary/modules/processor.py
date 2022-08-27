@@ -109,8 +109,16 @@ class Processor:
             self.semibin_model = args.semibin_model
             self.skip_binners = [binner.lower() for binner in args.skip_binners]
             self.check_binners_to_skip()
-            if "get_bam_indices" not in self.workflows and "complete_assembly" not in self.workflows:
+            if not any(rule in self.workflows for rule in ["get_bam_indices", "complete_assembly", "complete_assembly_with_qc"]):
                 self.workflows.insert(0, 'get_bam_indices')
+            elif any(rule in self.workflows for rule in ["complete_assembly", "complete_assembly_with_qc"]):
+                indices = [idx for idx, rule in enumerate(self.workflows) if rule in ["complete_assembly", "complete_assembly_with_qc"]]
+                if len(indices) > 1:
+                    logging.critical(f"Rules 'complete_assembly' and 'complete_assembly_with_qc' both found in DAG or one found multiple times.")
+                    logging.critical(f"Please revise your --workflow parameter.")
+                    sys.exit(1)
+                self.workflows.insert(indices[0] + 1, 'get_bam_indices')
+
         except AttributeError:
             self.min_contig_size = 1500
             self.min_bin_size = 200000
@@ -427,7 +435,7 @@ class Processor:
                 target_rule=workflow if workflow != "None" else "",
                 conda_prefix="--conda-prefix " + self.conda_prefix,
                 conda_frontend="--conda-frontend " + conda_frontend,
-                resources=f"--default-resources \"tmpdir='{self.tmpdir}'\" --resources mem_mb={int(self.max_memory)*1024} {self.resources}"
+                resources=f"--default-resources \"tmpdir='{self.tmpdir}'\" --resources mem_mb={int(self.max_memory)*1024} {self.resources}" if not dryrun else ""
             )
             logging.info("Executing: %s" % cmd)
             try:

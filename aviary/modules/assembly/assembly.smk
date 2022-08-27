@@ -109,7 +109,12 @@ rule flye_assembly:
     output:
         fasta = "data/flye/assembly.fasta",
         graph = "data/flye/assembly_graph.gfa",
-        info = "data/flye/assembly_info.txt"
+        info = "data/flye/assembly_info.txt",
+        junk1 = temp(directory("data/flye/00-assembly/")),
+        junk2 = temp(directory("data/flye/10-consensus/")),
+        junk3 = temp(directory("data/flye/20-repeat/")),
+        junk4 = temp(directory("data/flye/30-contigger/")),
+        junk5 = temp(directory("data/flye/40-polishing/"))
     params:
         long_read_type = config["long_read_type"]
     resources:
@@ -223,8 +228,7 @@ rule polish_meta_racon_ill:
     group: 'assembly'
     output:
         fasta = "data/assembly.pol.fin.fasta",
-        paf = temp("data/racon_polishing/alignment.racon_ill.0.paf"),
-        racon_out = temp(directory("data/racon_polishing/"))
+        paf = temp("data/racon_polishing/alignment.racon_ill.0.paf")
     resources:
         mem_mb=config["max_memory"]*1024
     threads:
@@ -407,7 +411,8 @@ rule spades_assembly:
         long_reads = "data/long_reads.fastq.gz"
     group: 'assembly'
     output:
-        fasta = "data/spades_assembly.fasta"
+        fasta = "data/spades_assembly.fasta",
+        spades_folder = temp(directory("data/spades_assembly/"))
     threads:
         config["max_threads"]
     resources:
@@ -429,18 +434,18 @@ rule spades_assembly:
         if [ -d "data/spades_assembly/" ]
         then
             spades.py --restart-from last --memory {params.max_memory} -t {threads} -o data/spades_assembly -k {params.kmer_sizes} --tmp-dir {params.tmpdir} && \
-            ln data/spades_assembly/scaffolds.fasta data/spades_assembly.fasta
+            cp data/spades_assembly/scaffolds.fasta data/spades_assembly.fasta
         elif [ $actualsize -ge $minimumsize ]
         then
             if [ {params.long_read_type} = "ont" ] || [ {params.long_read_type} = "ont_hq" ]
             then
                 spades.py --checkpoints all --memory {params.max_memory} --meta --nanopore {input.long_reads} --12 {input.fastq} \
                 -o data/spades_assembly -t {threads}  -k {params.kmer_sizes} --tmp-dir {params.tmpdir} 2>data/spades.err && \
-                ln data/spades_assembly/scaffolds.fasta data/spades_assembly.fasta
+                cp data/spades_assembly/scaffolds.fasta data/spades_assembly.fasta
             else
                 spades.py --checkpoints all --memory {params.max_memory} --meta --pacbio {input.long_reads} --12 {input.fastq} \
                 -o data/spades_assembly -t {threads}  -k {params.kmer_sizes} --tmp-dir {params.tmpdir} 2>data/spades.err && \
-                ln data/spades_assembly/scaffolds.fasta data/spades_assembly.fasta
+                cp data/spades_assembly/scaffolds.fasta data/spades_assembly.fasta
             fi
         else
             touch {output.fasta}
@@ -455,6 +460,7 @@ rule spades_assembly_short:
     group: 'assembly'
     output:
         fasta = "data/short_read_assembly/scaffolds.fasta",
+        output_folder = temp(directory("data/short_read_assembly/"))
         # reads1 = temporary("data/short_reads.1.fastq.gz"),
         # reads2 = temporary("data/short_reads.2.fastq.gz")
     threads:
@@ -704,6 +710,7 @@ rule complete_assembly:
         'mkdir -p assembly; '
         'cd assembly; '
         'ln -s ../data/final_contigs.fasta ./; '
+        'rm -rf data/racon_polishing; '
 
 rule complete_assembly_with_qc:
     input:
@@ -719,6 +726,7 @@ rule complete_assembly_with_qc:
         'mkdir -p assembly; '
         'cd assembly; '
         'ln -s ../data/final_contigs.fasta ./; '
+        'rm -rf data/racon_polishing; '
 
 rule reset_to_spades_assembly:
     output:
