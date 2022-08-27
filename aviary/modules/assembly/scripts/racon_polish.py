@@ -29,7 +29,7 @@ if snakemake.params.illumina:
                     subprocess.Popen(f"cat {reads1} >> data/short_reads.1.fastq.gz", shell=True).wait()
                     subprocess.Popen(f"cat {reads2} >> data/short_reads.2.fastq.gz", shell=True).wait()
             pe1 = "data/short_reads.1.fastq.gz"
-            pe2 = "data/short_reads.1.fastq.gz"
+            pe2 = "data/short_reads.2.fastq.gz"
         reads = [' '.join([pe1, pe2])]
     else:
         if len(snakemake.config['short_reads_1']) == 1:

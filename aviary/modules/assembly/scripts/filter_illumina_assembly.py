@@ -21,7 +21,7 @@ elif snakemake.config['short_reads_2'] != 'none':
                 subprocess.Popen(f"cat {reads1} >> data/short_reads.1.fastq.gz", shell=True).wait()
                 subprocess.Popen(f"cat {reads2} >> data/short_reads.2.fastq.gz", shell=True).wait()
         pe1 = "data/short_reads.1.fastq.gz"
-        pe2 = "data/short_reads.1.fastq.gz"
+        pe2 = "data/short_reads.2.fastq.gz"
 
     subprocess.Popen("minimap2 -ax sr -t %d %s %s %s | samtools view -b -@ %d | "
                      "samtools sort -@ %d -o %s -; samtools index -@ %d %s; "
