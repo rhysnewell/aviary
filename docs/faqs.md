@@ -16,6 +16,9 @@ command.
 
 ### Which databases do I download?
 
+It is probably best to just let Aviary handle the downloading of your databases via the `--download` parameter. But, if you
+would like to set them up yourself, please read ahead
+
 For the GTDB:
 * [GTDB](https://gtdb.ecogenomic.org/downloads) Required for taxonomic annotation
 Download and point the GTDB environment variable to the `db/` folder inside of that download.

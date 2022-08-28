@@ -805,6 +805,8 @@ rule recover_mags:
         "ln -sr data/gtdbtk taxonomy; "
         "touch bins/done; "
         "touch diversity/done; "
+        "rm -f data/binning_bams/*bam; "
+        "rm -f data/binning_bams/*bai; "
 
 rule recover_mags_no_singlem:
     input:
@@ -823,6 +825,8 @@ rule recover_mags_no_singlem:
         "ln -s ../data/coverm.cov ./; "
         "cd ../; "
         "touch bins/done; "
+        "rm -f data/binning_bams/*bam; "
+        "rm -f data/binning_bams/*bai; "
 
 # Special rule to help out with a buggy output
 rule dereplicate_and_get_abundances_paired:

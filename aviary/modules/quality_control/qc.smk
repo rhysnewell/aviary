@@ -54,7 +54,7 @@ rule filtlong_no_reference:
         for long_reads in {input.long}
         do
             filtlong --min_length {params.min_length} --min_mean_q {params.min_mean_q} $long_reads | pigz -p {threads} >> {output.long}
-            if ! {params.coassemble}
+            if ! [ {params.coassemble} ]
             then
                 break
             fi

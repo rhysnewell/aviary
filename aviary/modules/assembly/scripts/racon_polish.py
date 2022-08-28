@@ -20,16 +20,31 @@ if snakemake.params.illumina:
     if snakemake.config['reference_filter'] != 'none':
         reads = "data/short_reads.fastq.gz"
     elif snakemake.config['short_reads_2'] != 'none':
-        if len(snakemake.config['short_reads_2']) == 1 or not snakemake.params.coassemble:
-            pe1 = snakemake.config['short_reads_1'][0]
-            pe2 = snakemake.config['short_reads_2'][0]
-        else:
-            if not os.path.exists("data/short_reads.1.fastq.gz"):
-                for reads1, reads2 in zip(snakemake.config['short_reads_1'], snakemake.config['short_reads_2']):
-                    subprocess.Popen(f"cat {reads1} >> data/short_reads.1.fastq.gz", shell=True).wait()
-                    subprocess.Popen(f"cat {reads2} >> data/short_reads.2.fastq.gz", shell=True).wait()
-            pe1 = "data/short_reads.1.fastq.gz"
-            pe2 = "data/short_reads.2.fastq.gz"
+        # if len(snakemake.config['short_reads_2']) == 1 or not snakemake.params.coassemble:
+        #     pe1 = snakemake.config['short_reads_1'][0]
+        #     pe2 = snakemake.config['short_reads_2'][0]
+        # else:
+        # Racon can't handle paired end reads. It treats them as singled-ended. But when you have paired end reads
+        # in separate files they can share the same read name, so we need to alter the read name based on the pair
+        if not os.path.exists("data/short_reads.racon.1.fastq.gz"):
+            for reads1, reads2 in zip(snakemake.config['short_reads_1'], snakemake.config['short_reads_2']):
+                cat_or_zcat1 = "cat"
+                cat_or_zcat2 = "cat"
+                if reads1[-3::] == ".gz":
+                    cat_or_zcat1 = "zcat"
+                if reads2[-3::] == ".gz":
+                    cat_or_zcat2 = "zcat"
+
+                subprocess.Popen(f"{cat_or_zcat1} {reads1} | sed 's/@/@1_/' >> data/short_reads.racon.1.fastq", shell=True).wait()
+                subprocess.Popen(f"{cat_or_zcat2} {reads2} | sed 's/@/@1_/' >> data/short_reads.racon.2.fastq", shell=True).wait()
+                if not snakemake.params.coassemble:
+                    break
+
+            subprocess.Popen(f"pigz -p {snakemake.threads} --fast data/short_reads.racon.1.fastq", shell=True).wait()
+            subprocess.Popen(f"pigz -p {snakemake.threads} --fast data/short_reads.racon.2.fastq", shell=True).wait()
+
+        pe1 = "data/short_reads.racon.1.fastq.gz"
+        pe2 = "data/short_reads.racon.2.fastq.gz"
         reads = [' '.join([pe1, pe2])]
     else:
         if len(snakemake.config['short_reads_1']) == 1 or not snakemake.params.coassemble:
@@ -37,7 +52,13 @@ if snakemake.params.illumina:
         else:
             if not os.path.exists("data/short_reads.1.fastq.gz"):
                 for reads1 in snakemake.config['short_reads_1']:
-                    subprocess.Popen(f"cat {reads1} >> data/short_reads.1.fastq.gz", shell=True).wait()
+                    cat_or_zcat1 = "cat"
+                    if reads1[-3::] == ".gz":
+                        cat_or_zcat1 = "zcat"
+                    subprocess.Popen(f"{cat_or_zcat1} {reads1} >> data/short_reads.1.fastq", shell=True).wait()
+
+                subprocess.Popen(f"pigz -p {snakemake.threads} --fast data/short_reads.1.fastq",
+                                 shell=True).wait()
             pe1 = "data/short_reads.1.fastq.gz"
         reads = [pe1]
 else:
@@ -161,4 +182,8 @@ for rounds in range(snakemake.params.rounds):
                     o.write(line)
     reference = os.path.join(out, "combined.%s.%d.pol.fa" % (snakemake.params.prefix, rounds))
 
+
+if os.path.exists("data/short_reads.racon.1.fastq.gz"):
+    os.remove("data/short_reads.racon.1.fastq.gz")
+    os.remove("data/short_reads.racon.2.fastq.gz")
 shutil.copy2(reference, snakemake.output.fasta)

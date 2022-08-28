@@ -32,6 +32,11 @@ input reads.
 If at any point the Aviary workflow is interrupted, the pipeline can be restarted and pick up from the last completed
 step.
 
+## Batch Processing
+
+Aviary allows users to supply a batch file to the `aviary batch` command. This will cause aviary to run on every line within
+the input batch file individually. Example batch files can be found at [here](/examples/example_batch.tsv) and [here](/examples/example_batch.csv).
+
 ## Advanced Usage
 
 Often users are required to send long running jobs off on to high performance clusters. Aviary and snakemake are
@@ -81,6 +86,13 @@ can also be kind of memory intensive when given extra threads.
 ### RAM control
 
 When performing assembly, users are required to estimate how much RAM they will need to use via `-m, --max-memory, --max_memory`
+
+### Temporary directory
+
+By default, Aviary will use `/tmp` to store temporary files during many processes throughtout assembly and MAG recovery.
+If you would like to use a different directory, you can specify this by using the flexible `--tmp` parameter.
+If you would permanently like to change the temporary directory, you can use `aviary configure --tmp /new/tmp` to 
+change the `TMPDIR` environment variable within your current conda environment. 
 
 ### Workflow control
 
