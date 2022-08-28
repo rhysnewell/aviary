@@ -109,15 +109,16 @@ class Processor:
             self.semibin_model = args.semibin_model
             self.skip_binners = [binner.lower() for binner in args.skip_binners]
             self.check_binners_to_skip()
-            if not any(rule in self.workflows for rule in ["get_bam_indices", "complete_assembly", "complete_assembly_with_qc"]):
-                self.workflows.insert(0, 'get_bam_indices')
-            elif any(rule in self.workflows for rule in ["complete_assembly", "complete_assembly_with_qc"]):
-                indices = [idx for idx, rule in enumerate(self.workflows) if rule in ["complete_assembly", "complete_assembly_with_qc"]]
-                if len(indices) > 1:
-                    logging.critical(f"Rules 'complete_assembly' and 'complete_assembly_with_qc' both found in DAG or one found multiple times.")
-                    logging.critical(f"Please revise your --workflow parameter.")
-                    sys.exit(1)
-                self.workflows.insert(indices[0] + 1, 'get_bam_indices')
+            if args.subparser_name != 'assemble':
+                if not any(rule in self.workflows for rule in ["get_bam_indices", "complete_assembly", "complete_assembly_with_qc"]):
+                    self.workflows.insert(0, 'get_bam_indices')
+                elif any(rule in self.workflows for rule in ["complete_assembly", "complete_assembly_with_qc"]):
+                    indices = [idx for idx, rule in enumerate(self.workflows) if rule in ["complete_assembly", "complete_assembly_with_qc"]]
+                    if len(indices) > 1:
+                        logging.critical(f"Rules 'complete_assembly' and 'complete_assembly_with_qc' both found in DAG or one found multiple times.")
+                        logging.critical(f"Please revise your --workflow parameter.")
+                        sys.exit(1)
+                    self.workflows.insert(indices[0] + 1, 'get_bam_indices')
 
         except AttributeError:
             self.min_contig_size = 1500
@@ -507,7 +508,12 @@ def process_batch(args, prefix):
         else:
             l = None
 
-        l_type = batch.iloc[i, 4].strip()
+        l_type = batch.iloc[i, 4]
+        if isinstance(l_type, str):
+            l_type = l_type.strip()
+        else:
+            l_type = "ont"
+
         assembly = batch.iloc[i, 5]
 
         if isinstance(assembly, str):
