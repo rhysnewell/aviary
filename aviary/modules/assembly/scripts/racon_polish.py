@@ -36,16 +36,16 @@ if snakemake.params.illumina:
                     cat_or_zcat2 = "zcat"
 
                 subprocess.Popen(f"{cat_or_zcat1} {reads1} | sed 's/@/@1_/' >> data/short_reads.racon.1.fastq", shell=True).wait()
-                subprocess.Popen(f"{cat_or_zcat2} {reads2} | sed 's/@/@1_/' >> data/short_reads.racon.2.fastq", shell=True).wait()
+                subprocess.Popen(f"{cat_or_zcat2} {reads2} | sed 's/@/@2_/' >> data/short_reads.racon.1.fastq", shell=True).wait()
                 if not snakemake.params.coassemble:
                     break
 
             subprocess.Popen(f"pigz -p {snakemake.threads} --fast data/short_reads.racon.1.fastq", shell=True).wait()
-            subprocess.Popen(f"pigz -p {snakemake.threads} --fast data/short_reads.racon.2.fastq", shell=True).wait()
+            # subprocess.Popen(f"pigz -p {snakemake.threads} --fast data/short_reads.racon.2.fastq", shell=True).wait()
 
         pe1 = "data/short_reads.racon.1.fastq.gz"
-        pe2 = "data/short_reads.racon.2.fastq.gz"
-        reads = [' '.join([pe1, pe2])]
+        # pe2 = "data/short_reads.racon.2.fastq.gz"
+        reads = [pe1]
     else:
         if len(snakemake.config['short_reads_1']) == 1 or not snakemake.params.coassemble:
             pe1 = snakemake.config['short_reads_1'][0]
@@ -66,7 +66,7 @@ else:
 
 for rounds in range(snakemake.params.rounds):
     paf = os.path.join(out, 'alignment.%s.%d.paf') % (snakemake.params.prefix, rounds)
-    logging.info("Generating PAF file: %s for racon round %d..." % (paf, rounds))
+    print("Generating PAF file: %s for racon round %d..." % (paf, rounds))
 
     # Generate PAF mapping files
     if not os.path.exists(paf): # Check if mapping already exists
@@ -157,7 +157,11 @@ for rounds in range(snakemake.params.rounds):
         print(seqkit_command)
         subprocess.Popen(seqkit_command, shell=True).wait()
 
-    logging.info("Performing round %d of racon polishing..." % (rounds))
+    print("Performing round %d of racon polishing..." % rounds)
+    print("racon -m 8 -x -6 -g -8 -w 500 -t %d -u %s/reads.%s.%d.fastq.gz %s/filtered.%s.%d.paf %s/filtered.%s.%d.fa"
+                     " > %s/filtered.%s.%d.pol.fa" % (snakemake.threads, out, snakemake.params.prefix, rounds, out,
+                                                   snakemake.params.prefix, rounds, out, snakemake.params.prefix, rounds,
+                                                   out, snakemake.params.prefix, rounds))
     subprocess.Popen("racon -m 8 -x -6 -g -8 -w 500 -t %d -u %s/reads.%s.%d.fastq.gz %s/filtered.%s.%d.paf %s/filtered.%s.%d.fa"
                      " > %s/filtered.%s.%d.pol.fa" % (snakemake.threads, out, snakemake.params.prefix, rounds, out,
                                                    snakemake.params.prefix, rounds, out, snakemake.params.prefix, rounds,
@@ -185,5 +189,5 @@ for rounds in range(snakemake.params.rounds):
 
 if os.path.exists("data/short_reads.racon.1.fastq.gz"):
     os.remove("data/short_reads.racon.1.fastq.gz")
-    os.remove("data/short_reads.racon.2.fastq.gz")
+    # os.remove("data/short_reads.racon.2.fastq.gz")
 shutil.copy2(reference, snakemake.output.fasta)
