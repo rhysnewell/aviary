@@ -209,19 +209,18 @@ rule polish_meta_pilon:
     output:
         fasta = "data/assembly.pol.pil.fasta"
     resources:
-        mem_mb=config["max_memory"]*1024
-    threads:
-        config["max_threads"]
+        mem_mb=config["max_memory"]*512
+    # threads: # Threads no longer supported for pilon
+    #     config["max_threads"]
     params:
-        pilon_memory = config["max_memory"]
+        pilon_memory = config["max_memory"]*512
     conda:
         "envs/pilon.yaml"
     benchmark:
         "benchmarks/polish_meta_pilon.benchmark.txt"
     shell:
         """
-        pilon -Xmx{params.pilon_memory}000m --genome {input.fasta} --frags data/pilon.sort.bam \
-        --threads {threads} --output data/assembly.pol.pil --fix bases >data/pilon.err
+        pilon -Xmx{params.pilon_memory}m --genome {input.fasta} --frags data/pilon.sort.bam --output data/assembly.pol.pil --fix bases >data/pilon.err
         """
 
 

@@ -107,9 +107,12 @@ class Processor:
             self.min_contig_size = args.min_contig_size
             self.min_bin_size = args.min_bin_size
             self.semibin_model = args.semibin_model
-            self.skip_binners = [binner.lower() for binner in args.skip_binners]
-            self.check_binners_to_skip()
-            if args.subparser_name != 'assemble':
+
+            if args.skip_binners is not None:
+                # skipping binners is tricky and requires that bam indices are produced
+                # so we explicitly place the bam indices rule in the DAG before any binning occurs
+                self.skip_binners = [binner.lower() for binner in args.skip_binners]
+                self.check_binners_to_skip()
                 if not any(rule in self.workflows for rule in ["get_bam_indices", "complete_assembly", "complete_assembly_with_qc"]):
                     self.workflows.insert(0, 'get_bam_indices')
                 elif any(rule in self.workflows for rule in ["complete_assembly", "complete_assembly_with_qc"]):
@@ -313,7 +316,6 @@ class Processor:
         conf["use_checkm2_scores"] = self.use_checkm2_scores
         conf["mag_directory"] = self.mag_directory
         conf["mag_extension"] = self.mag_extension
-        # conf["mags"] = self.mags
         conf["previous_runs"] = self.previous_runs
         conf["min_completeness"] = self.min_completeness
         conf["max_contamination"] = self.max_contamination
@@ -481,52 +483,15 @@ def process_batch(args, prefix):
     args.interleaved = "none" # hacky solution to skip attribute error
     args.coupled = "none"
     for i in range(batch.shape[0]):
-        logging.info(f"Processing {batch.iloc[i, 0]}")
-
         # process the batch line
-        sample = batch.iloc[i, 0]
-        if isinstance(sample, str):
-            sample = sample.strip()
-        else:
-            sample = None
-
-        s1 = batch.iloc[i, 1]
-        if isinstance(s1, str):
-            s1 = s1.strip().split(',')
-        else:
-            s1 = None
-
-        s2 = batch.iloc[i, 2]
-        if isinstance(s2, str):
-            s2 = s2.strip().split(',')
-        else:
-            s2 = None
-
-        l = batch.iloc[i, 3]
-        if isinstance(l, str):
-            l = l.strip().split(',')
-        else:
-            l = None
-
-        l_type = batch.iloc[i, 4]
-        if isinstance(l_type, str):
-            l_type = l_type.strip()
-        else:
-            l_type = "ont"
-
-        assembly = batch.iloc[i, 5]
-
-        if isinstance(assembly, str):
-            assembly = assembly.strip()
-        else:
-            assembly = None
-
-        coassemble = batch.iloc[i, 6]
-
-        if isinstance(coassemble, str):
-            coassemble = coassemble.strip()
-        else:
-            coassemble = False
+        sample = check_batch_input(batch.iloc[i, 0], f"sample_{i}", split=False)
+        logging.info(f"Processing {sample}")
+        s1 = check_batch_input(batch.iloc[i, 1], "none", split=True)
+        s2 = check_batch_input(batch.iloc[i, 2], "none", split=True)
+        l = check_batch_input(batch.iloc[i, 3], "none", split=True)
+        l_type = check_batch_input(batch.iloc[i, 4], "ont", split=False)
+        assembly = check_batch_input(batch.iloc[i, 5], None, split=False)
+        coassemble = check_batch_input(batch.iloc[i, 6], False, split=False)
 
         # update the value of args
         args.output = f"{prefix}/{sample}"
@@ -538,6 +503,10 @@ def process_batch(args, prefix):
         args.longread_type = l_type
         args.assembly = assembly
         args.coassemble = coassemble
+
+        # ensure output folder exists
+        if not os.path.exists(args.output):
+            os.makedirs(args.output)
 
         # setup processor for this line
         processor = Processor(args)
@@ -563,6 +532,19 @@ def process_batch(args, prefix):
                                conda_frontend=args.conda_frontend,
                                snakemake_args=args.cmds)
 
+def check_batch_input(val, default=None, split=False, split_val=','):
+    """
+    Takes a batch entry from within a line and ensures the output makes sense for Aviary
+    Split is required for cells that separated by the split_val
+    """
+    if not isinstance(val, str):
+        return default
+
+    new_val = val.strip()
+    if split:
+        new_val = new_val.split(split_val)
+
+    return new_val
 
 def fraction_to_percent(val):
     if val <= 1:

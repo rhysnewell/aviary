@@ -466,8 +466,8 @@ def main():
              'Capitals will be auto-corrected. N.B. specifying "metabat" will skip both \n'
              'MetaBAT1 and MetaBAT2.',
         dest='skip_binners',
-        nargs='*',
-        default=["maxbin2"]
+        nargs='*'
+        # default=["maxbin2"]
     )
 
     ####################################################################
