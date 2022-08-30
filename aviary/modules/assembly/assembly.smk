@@ -264,12 +264,12 @@ rule get_high_cov_contigs:
     benchmark:
         "benchmarks/get_high_cov_contigs.benchmark.txt"
     params:
-        min_cov_long = 20.0,
-        min_cov_short = 3.0,
-        exclude_contig_cov = 100,
+        min_cov_long = 10.0,
+        min_cov_short = 10.0,
+        exclude_contig_cov = 1000,
         exclude_contig_size = 25000,
-        short_contig_size = 200000,
-        long_contig_size = 250000
+        short_contig_size = 20000,
+        long_contig_size = 50000
     run:
         ill_cov_dict = {}
         # populate illumina coverage dictionary using PAF

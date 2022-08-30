@@ -81,7 +81,7 @@ def get_software_db_path(db_name='CONDA_ENV_PATH', software_flag='--conda-prefix
                 print(f'Note: This variable must point to the DIRECTORY containing the files, not the files themselves'.center(100))
                 print('=' * 100)
                 signal.alarm(120)
-                os.environ[db_name] = input(f'Input path to directory for {db_name} now:')
+                os.environ[db_name] = input(f'Input path to directory for {db_name} now:').strip()
                 try:
                     subprocess.Popen(
                         'mkdir -p %s/etc/conda/activate.d/; mkdir -p %s/etc/conda/deactivate.d/; echo "export %s=%s" >> %s/etc/conda/activate.d/aviary.sh; echo "unset %s" >> %s/etc/conda/deactivate.d/aviary.sh; ' %
@@ -93,8 +93,8 @@ def get_software_db_path(db_name='CONDA_ENV_PATH', software_flag='--conda-prefix
                         (db_name, os.environ[db_name]), shell=True).wait()
                 signal.alarm(0)
                 print('=' * 100)
-                print('Reactivate your aviary conda environment or source ~/.bashrc to suppress this message.'.center(100))
-                print('=' * 100)
+                # print('Reactivate your aviary conda environment or source ~/.bashrc to suppress this message.'.center(100))
+                # print('=' * 100)
 
                 return os.environ[db_name]
 
@@ -103,7 +103,7 @@ def get_software_db_path(db_name='CONDA_ENV_PATH', software_flag='--conda-prefix
 Sets an environmental variable and appends it to the conda activation script
 """
 def set_db_path(path, db_name='CONDA_ENV_PATH'):
-    os.environ[db_name] = path
+    os.environ[db_name] = path.strip()
     try:
         subprocess.Popen(
             'mkdir -p %s/etc/conda/activate.d/; mkdir -p %s/etc/conda/deactivate.d/; echo "export %s=%s" >> %s/etc/conda/activate.d/aviary.sh; echo "unset %s" >> %s/etc/conda/deactivate.d/aviary.sh; ' %

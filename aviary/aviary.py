@@ -527,7 +527,7 @@ def main():
         '--ani',
         help='Overall ANI level to dereplicate at with FastANI.',
         dest='ani',
-        default=99
+        default=97
     )
 
     cluster_group.add_argument(
@@ -914,6 +914,14 @@ def main():
     )
 
     batch_options.add_argument(
+        '--write-script', '--write_script',
+        help='Write the aviary batch Snakemake commands to a bash script and exit. \n'
+             'Useful when submitting jobs to HPC cluster with custom queueing.',
+        dest='write_script',
+        required=False
+    )
+
+    batch_options.add_argument(
         '--cluster',
         help='Cluster final output of all samples using aviary cluster if possible.',
         dest='cluster',
@@ -921,6 +929,14 @@ def main():
         nargs='?',
         const=True,
         default=True
+    )
+
+    batch_options.add_argument(
+        '--cluster-ani-values', '--cluster_ani_values', '--ani-values', '--ani_values',
+        help='The range of ANI values to perform clustering and dereplication at during aviary cluster.',
+        dest='ani_values',
+        nargs='*',
+        default=[0.99, 0.97, 0.95]
     )
 
     batch_options.add_argument(

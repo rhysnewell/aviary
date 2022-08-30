@@ -36,6 +36,7 @@ import logging
 import os
 import subprocess
 from pathlib import Path
+from glob import glob
 
 # Local imports
 from snakemake import utils
@@ -89,9 +90,9 @@ class Processor:
 
 
         self.conda_prefix = args.conda_prefix
-        self.tmpdir = args.tmpdir
+        self.tmpdir = os.path.abspath(args.tmpdir)
         self.resources = args.resources
-        self.output = args.output
+        self.output = os.path.abspath(args.output)
         self.threads = args.max_threads
         self.max_memory = args.max_memory
         self.pplacer_threads = min(int(self.threads), 48)
@@ -279,16 +280,16 @@ class Processor:
             conf = yaml.load(template_config)
 
         if self.assembly != "none" and self.assembly is not None:
-            self.assembly = [os.path.abspath(p) for p in self.assembly]
+            self.assembly = list(set([os.path.abspath(p) for p in self.assembly]))
         elif self.assembly is None:
             self.assembly = 'none'
             logging.warning("No assembly provided, assembly will be created using available reads...")
         if self.pe1 != "none":
-            self.pe1 = [os.path.abspath(p) for p in self.pe1]
+            self.pe1 = list(set([os.path.abspath(p) for p in self.pe1]))
         if self.pe2 != "none":
-            self.pe2 = [os.path.abspath(p) for p in self.pe2]
+            self.pe2 = list(set([os.path.abspath(p) for p in self.pe2]))
         if self.longreads != "none":
-            self.longreads = [os.path.abspath(p) for p in self.longreads]
+            self.longreads = list(([os.path.abspath(p) for p in self.longreads]))
         if self.gsa_mappings != "none":
             self.gsa_mappings = os.path.abspath(self.gsa_mappings)
 
@@ -406,7 +407,7 @@ class Processor:
 
     def run_workflow(self, cores=16, profile=None,
                      dryrun=False, clean=True, conda_frontend="mamba",
-                     snakemake_args=""):
+                     snakemake_args="", write_to_script=None):
         """
         Runs the aviary pipeline
         By default all steps are executed
@@ -444,9 +445,14 @@ class Processor:
                 conda_frontend="--conda-frontend " + conda_frontend,
                 resources=f"--default-resources \"tmpdir='{self.tmpdir}'\" --resources mem_mb={int(self.max_memory)*1024} {self.resources}" if not dryrun else ""
             )
-            logging.info("Executing: %s" % cmd)
+
+            if write_to_script is not None:
+                write_to_script.append(cmd)
+                continue
+
             try:
                 subprocess.check_call(cmd, shell=True)
+                logging.info("Executing: %s" % cmd)
             except subprocess.CalledProcessError as e:
                 # removes the traceback
                 logging.critical(e)
@@ -464,7 +470,17 @@ def process_batch(args, prefix):
     import pandas as pd
 
     logging.info(f"Reading batch file: {args.batch_file}")
-    batch = pd.read_csv(args.batch_file, sep=None, engine='python')
+
+    header=None
+    with open(args.batch_file, mode='r') as check_batch:
+        for line in check_batch.readlines():
+            if line == "sample	short_reads_1	short_reads_2	long_reads	long_read_type	assembly    coassemble":
+               header="infer"
+            elif line == "sample,short_reads_1,short_reads_2,long_reads,long_read_type,assembly,coassemble":
+                header="infer"
+            break
+
+    batch = pd.read_csv(args.batch_file, sep=None, engine='python', header=header)
     if len(batch.columns) != 7:
         logging.critical(f"Batch file contains incorrect number of columns ({len(batch.columns)}). Should contain 7.")
         logging.critical(f"Current columns: {batch.columns}")
@@ -478,6 +494,13 @@ def process_batch(args, prefix):
 
     if args.use_unicycler:
         args.workflow.insert(0, "combine_assemblies")
+
+    try:
+        script_file = args.write_script
+        write_to_script = []
+    except AttributeError:
+        script_file = None
+        write_to_script = None
 
     runs = []
     args.interleaved = "none" # hacky solution to skip attribute error
@@ -516,21 +539,35 @@ def process_batch(args, prefix):
                                dryrun=args.dryrun,
                                clean=args.clean,
                                conda_frontend=args.conda_frontend,
-                               snakemake_args=args.cmds)
+                               snakemake_args=args.cmds,
+                               write_to_script=write_to_script)
 
     if args.cluster:
-        logging.info(f"Beginning clustering of {len(runs)} previous Aviary runs...")
-        args.previous_runs = runs
-        args.workflow = ['complete_cluster']
-        args.output = f"{prefix}/aviary_cluster"
-        processor = Processor(args)
-        processor.make_config()
+        logging.info(f"Beginning clustering of {len(runs)} previous Aviary runs with ANI values: {args.ani_values}...")
 
-        processor.run_workflow(cores=int(args.n_cores),
-                               dryrun=args.dryrun,
-                               clean=args.clean,
-                               conda_frontend=args.conda_frontend,
-                               snakemake_args=args.cmds)
+        for ani in args.ani_values:
+            args.previous_runs = runs
+            args.ani = ani
+            args.workflow = ['complete_cluster']
+            args.output = f"{prefix}/aviary_cluster_ani_{ani}"
+            # ensure output folder exists
+            if not os.path.exists(args.output):
+                os.makedirs(args.output)
+            processor = Processor(args)
+            processor.make_config()
+
+            processor.run_workflow(cores=int(args.n_cores),
+                                   dryrun=args.dryrun,
+                                   clean=args.clean,
+                                   conda_frontend=args.conda_frontend,
+                                   snakemake_args=args.cmds,
+                                   write_to_script=write_to_script)
+
+    if script_file is not None:
+        with open(script_file, 'w') as sf:
+            for line in write_to_script:
+                sf.write(f"{line}\n")
+
 
 def check_batch_input(val, default=None, split=False, split_val=','):
     """
@@ -541,8 +578,13 @@ def check_batch_input(val, default=None, split=False, split_val=','):
         return default
 
     new_val = val.strip()
+
     if split:
         new_val = new_val.split(split_val)
+        return_vals = []
+        for paths in new_val:
+            return_vals.extend(glob(paths))
+        new_val = return_vals
 
     return new_val
 
