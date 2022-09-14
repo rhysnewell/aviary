@@ -254,8 +254,8 @@ rule rosella_refine_benchmark_3:
 
 rule rosella_refine_benchmark_4:
     input:
-        checkm = 'data/das_tool_bins_pre_refine/checkm.out',
-        das_tool = 'data/das_tool_bins_pre_refine/done',
+        checkm = 'data/das_tool_bins_with_refine/checkm.out',
+        das_tool = 'data/das_tool_bins_with_refine/done',
         coverage = "data/coverm.cov",
         fasta = config["fasta"],
         # kmers = "data/rosella_bins/rosella_kmer_table.tsv"
@@ -582,6 +582,8 @@ rule das_tool_without_rosella:
         das_tool_done = "data/das_tool_without_rosella/done"
     threads:
         config["max_threads"]
+    benchmark:
+        "benchmarks/das_tool_no_rosella.benchmark.txt"
     conda:
         "../binning/envs/das_tool.yaml"
     shell:
@@ -610,7 +612,7 @@ rule das_tool_no_refine:
     """
     input:
         fasta = config["fasta"],
-        metabat2_done = "data/metabat2_refined/done",
+        metabat2_done = "data/metabat_bins_2/done",
         concoct_done = "data/concoct_bins/done",
         maxbin_done = "data/maxbin2_bins/done",
         metabat_sspec = "data/metabat_bins_sspec/done",
@@ -628,7 +630,7 @@ rule das_tool_no_refine:
     conda:
         "../binning/envs/das_tool.yaml"
     benchmark:
-        "benchmarks/das_tool.benchmark.txt"
+        "benchmarks/das_tool_no_refine.benchmark.txt"
     shell:
         """
         mkdir -p data/no_refine_input/; 

@@ -267,9 +267,9 @@ rule get_high_cov_contigs:
         min_cov_long = 10.0,
         min_cov_short = 10.0,
         exclude_contig_cov = 1000,
-        exclude_contig_size = 25000,
-        short_contig_size = 20000,
-        long_contig_size = 50000
+        exclude_contig_size = 5000,
+        short_contig_size = 10000,
+        long_contig_size = 10000
     run:
         ill_cov_dict = {}
         # populate illumina coverage dictionary using PAF

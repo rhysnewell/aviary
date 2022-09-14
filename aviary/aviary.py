@@ -74,7 +74,7 @@ Metagenome assembly, binning, and annotation:
         annotate  - Annotate MAGs using EggNOG and GTBD-tk
         diversity - Perform strain diversity analysis of MAGs using Lorikeet
         complete  - Runs each stage of the pipeline: assemble, recover, 
-                    annotate, genotype in that order.
+                    annotate, diversity in that order.
         cluster   - Combines and dereplicates the MAGs from multiple Aviary runs
                     using Galah
         batch     - Run Aviary using a given workflow on a supplied batch of samples

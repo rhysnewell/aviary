@@ -44,8 +44,17 @@ def refinery():
     extension = snakemake.params.extension
 
 
-    os.makedirs(contaminated_bin_folder, exist_ok=True)
-    os.makedirs(final_bins, exist_ok=True)
+    try:
+        os.makedirs(contaminated_bin_folder)
+    except FileExistsError:
+        shutil.rmtree(contaminated_bin_folder)
+        os.makedirs(contaminated_bin_folder)
+
+    try:
+        os.makedirs(final_bins)
+    except FileExistsError:
+        shutil.rmtree(final_bins)
+        os.makedirs(final_bins)
 
     final_checkm = current_checkm.copy().loc[current_checkm["Contamination"] <= snakemake.params.max_contamination].copy()
     final_checkm = move_finished_bins(final_checkm, bin_folder, extension, final_bins)
@@ -67,8 +76,7 @@ def refinery():
         output_folder = f"{snakemake.params.output_folder}/rosella_refined_{current_iteration}"
 
         if os.path.exists(output_folder):
-            current_iteration += 1
-            continue
+            shutil.rmtree(output_folder)
         # Refine the contaminated bins
         kmers = refine(assembly, coverage, kmers, checkm_path,
                    contaminated_bin_folder, extension, min_bin_size,
@@ -95,7 +103,9 @@ def refinery():
     if final_refining:
         final_checkm.to_csv("data/checkm.out", sep='\t', index=False)
         final_output_folder = "bins/final_bins"
-        os.makedirs("bins/", exist_ok=True)
+        if os.path.exists("bins/"): # remove pre-existing output, preventing bin duplication
+            shutil.rmtree("bins/")
+        os.makedirs("bins/")
         if not os.path.exists(final_output_folder):
             os.symlink("../" + final_bins, final_output_folder, target_is_directory=True)
         elif not os.path.islink(final_output_folder):

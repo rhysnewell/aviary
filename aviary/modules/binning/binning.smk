@@ -93,6 +93,7 @@ rule maxbin2:
     threads:
         config["max_threads"]
     shell:
+        "rm -rf data/maxbin2_bins/; "
         "mkdir -p data/maxbin2_bins && "
         "run_MaxBin.pl -contig {input.fasta} -thread {threads} -abund_list {input.maxbin_cov} "
         "-out data/maxbin2_bins/maxbin -min_contig_length {params.min_contig_size} && "
@@ -117,6 +118,7 @@ rule concoct:
     threads:
         config["max_threads"]
     shell:
+        "rm -rf data/concoct_*/; "
         "mkdir -p data/concoct_working && "
         "cut_up_fasta.py {input.fasta} -c 10000 -o 0 --merge_last -b data/concoct_working/contigs_10K.bed > data/concoct_working/contigs_10K.fa && "
         "concoct_coverage_table.py data/concoct_working/contigs_10K.bed data/binning_bams/*.bam > data/concoct_working/coverage_table.tsv && "
@@ -206,6 +208,7 @@ rule metabat2:
     benchmark:
         "benchmarks/metabat_2.benchmark.txt"
     shell:
+        "rm -rf data/metabat_bins_2/; "
         "metabat -t {threads} -m {params.min_contig_size} -s {params.min_bin_size} --seed 89 -i {input.fasta} "
         "-a {input.coverage} -o data/metabat_bins_2/binned_contigs && "
         "touch {output[0]} || touch {output[0]}"
@@ -228,6 +231,7 @@ rule metabat_spec:
     threads:
         config["max_threads"]
     shell:
+        "rm -rf data/metabat_bins_spec; "
         "metabat1 -t {threads} -m {params.min_contig_size} -s {params.min_bin_size} --seed 89 --specific -i {input.fasta} "
         "-a {input.coverage} -o data/metabat_bins_spec/binned_contigs && "
         "touch {output[0]} || touch {output[0]}"
@@ -249,6 +253,7 @@ rule metabat_sspec:
     threads:
         config["max_threads"]
     shell:
+        "rm -rf data/metabat_bins_sspec; "
         "metabat1 -t {threads} -m {params.min_contig_size} -s {params.min_bin_size} --seed 89 --superspecific "
         "-i {input.fasta} -a {input.coverage} -o data/metabat_bins_sspec/binned_contigs && "
         "touch {output[0]} || touch {output[0]}"
@@ -270,6 +275,7 @@ rule metabat_sens:
     threads:
         config["max_threads"]
     shell:
+        "rm -rf data/metabat_bins_sens; "
         "metabat1 -t {threads} -m {params.min_contig_size} -s {params.min_bin_size} --seed 89 --sensitive "
         "-i {input.fasta} -a {input.coverage} -o data/metabat_bins_sens/binned_contigs && "
         "touch {output[0]} || touch {output[0]}"
@@ -291,6 +297,7 @@ rule metabat_ssens:
     threads:
         config["max_threads"]
     shell:
+        "rm -rf data/metabat_bins_ssens; "
         "metabat1 -t {threads} -m {params.min_contig_size} -s {params.min_bin_size} --seed 89 --supersensitive "
         "-i {input.fasta} -a {input.coverage} -o data/metabat_bins_ssens/binned_contigs && "
         "touch {output[0]} || touch {output[0]}"
@@ -318,6 +325,7 @@ rule rosella:
     benchmark:
         "benchmarks/rosella.benchmark.txt"
     shell:
+        "rm -rf data/rosella_bins/; "
         "rosella bin -r {input.fasta} -i {input.coverage} -t {threads} -o data/rosella_bins "
         "--min-contig-size {params.min_contig_size} --min-bin-size {params.min_bin_size} --n-neighbors 200 && "
         "touch {output.done} || touch {output.done}"
@@ -342,6 +350,7 @@ rule semibin:
     benchmark:
         "benchmarks/semibin.benchmark.txt"
     shell:
+        "rm -rf data/semibin_bins/; "
         "mkdir -p data/semibin_bins/output_recluster_bins/; "
         "SemiBin single_easy_bin -i {input.fasta} -b data/binning_bams/*.bam -o data/semibin_bins --environment {params.semibin_model} -p {threads} && "
         "touch {output.done} || SemiBin single_easy_bin -i {input.fasta} -b data/binning_bams/*.bam -o data/semibin_bins -p {threads} "
@@ -425,6 +434,8 @@ rule refine_rosella:
         # kmers = "data/rosella_bins/rosella_kmer_table.tsv"
     output:
         'data/rosella_refined/done'
+    benchmark:
+        'benchmarks/refine_rosella.benchmark.txt'
     params:
         bin_folder = "data/rosella_bins/",
         extension = "fna",
@@ -454,6 +465,8 @@ rule refine_metabat2:
         'data/metabat2_refined/done'
     resources:
         mem_mb=config["max_memory"]
+    benchmark:
+        'benchmarks/refine_metabat2.benchmark.txt'
     params:
         bin_folder = "data/metabat_bins_2/",
         extension = "fa",
@@ -481,6 +494,8 @@ rule refine_semibin:
         mem_mb=config["max_memory"]
     output:
         'data/semibin_refined/done'
+    benchmark:
+        'benchmarks/refine_semibin.benchmark.txt'
     params:
         bin_folder = "data/semibin_bins/output_recluster_bins/",
         extension = "fa",
@@ -504,6 +519,7 @@ rule amber_checkm_output:
         metabat_checkm = 'data/metabat_bins_2/checkm.out',
         rosella_checkm = 'data/rosella_bins/checkm.out',
         semibin_checkm = 'data/semibin_bins/checkm.out'
+        # dastool_checkm = 'data/das_tool_bins_with_refine/checkm.out'
     run:
         import pandas as pd
 
@@ -592,6 +608,8 @@ rule refine_dastool:
     output:
         temporary('bins/checkm.out'),
         directory('bins/final_bins')
+    benchmark:
+        'benchmarks/refine_dastool.benchmark.txt'
     params:
         bin_folder = "data/das_tool_bins_pre_refine/das_tool_DASTool_bins/",
         extension = "fa",
@@ -599,7 +617,7 @@ rule refine_dastool:
         min_bin_size = config["min_bin_size"],
         max_iterations = 5,
         pplacer_threads = config["pplacer_threads"],
-        max_contamination = 10,
+        max_contamination = 15,
         final_refining = True
     threads:
         config["max_threads"]
