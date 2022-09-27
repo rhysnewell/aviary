@@ -528,7 +528,7 @@ rule amber_checkm_output:
             amber_table["Bin Id"] = amber_table["Bin Id"].replace(f".{extension}", "", regex=True)
             amber_table["Completeness"] = amber_table["Completeness (bp)"] * 100
             amber_table["Contamination"] = round((1 - amber_table["Purity (bp)"]) * 100, 2)
-            amber_table.to_csv(output, sep='\t')
+            amber_table.to_csv(output, sep='\t', index=False)
 
         try:
             rosella_amber = pd.read_csv("data/amber_refine/for_refine/genome/rosella_amber.tsv/metrics_per_bin.tsv", sep='\t')
@@ -797,7 +797,7 @@ rule singlem_appraise:
         "--assembly_otu_table data/singlem_out/assembly.otu_table.csv "
         "--plot data/singlem_out/singlem_appraise.svg --output_binned_otu_table data/singlem_out/binned.otu_table.csv "
         "--output_unbinned_otu_table data/singlem_out/unbinned.otu_table.csv 1> data/singlem_out/singlem_appraisal.tsv 2> {log} || "
-        "touch data/singlem_out/singlem_appraisal.tsv && echo 'SingleM Errored, please check data/singlem_out/singlem_log.txt'"
+        "echo 'SingleM Errored, please check data/singlem_out/singlem_log.txt' && touch data/singlem_out/singlem_appraisal.tsv"
 
 
 rule recover_mags:
@@ -819,8 +819,8 @@ rule recover_mags:
         "ln -s ../data/coverm_abundances.tsv ./; "
         "ln -s ../data/coverm.cov ./; "
         "cd ../; "
-        "ln -sr data/singlem_out/ diversity; "
-        "ln -sr data/gtdbtk taxonomy; "
+        "ln -sr data/singlem_out/ diversity || echo 'SingleM linked'; "
+        "ln -sr data/gtdbtk taxonomy || echo 'GTDB-tk linked'; "
         "touch bins/done; "
         "touch diversity/done; "
         "rm -f data/binning_bams/*bam; "

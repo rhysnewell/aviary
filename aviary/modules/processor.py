@@ -114,7 +114,7 @@ class Processor:
                 # so we explicitly place the bam indices rule in the DAG before any binning occurs
                 self.skip_binners = [binner.lower() for binner in args.skip_binners]
                 self.check_binners_to_skip()
-                if not any(rule in self.workflows for rule in ["get_bam_indices", "complete_assembly", "complete_assembly_with_qc"]):
+                if not any(rule in self.workflows for rule in ["get_bam_indices", "complete_assembly", "complete_assembly_with_qc", "complete_cluster"]):
                     self.workflows.insert(0, 'get_bam_indices')
                 elif any(rule in self.workflows for rule in ["complete_assembly", "complete_assembly_with_qc"]):
                     indices = [idx for idx, rule in enumerate(self.workflows) if rule in ["complete_assembly", "complete_assembly_with_qc"]]
@@ -426,19 +426,19 @@ class Processor:
         for workflow in self.workflows:
             cmd = (
                 "snakemake --snakefile {snakefile} --directory {working_dir} "
-                "{jobs} --rerun-incomplete "
+                "{jobs} --rerun-incomplete {args} "
                 "--configfile '{config_file}' --nolock "
                 "{profile} {conda_frontend} {resources} --use-conda {conda_prefix} "
-                "{dryrun}{notemp}{args}"
-                " {target_rule}"
+                "{dryrun} {notemp} "
+                "{target_rule}"
             ).format(
                 snakefile=get_snakefile(),
                 working_dir=self.output,
                 jobs="--jobs {}".format(cores) if cores is not None else "",
                 config_file=self.config,
                 profile="" if (profile is None) else "--profile {}".format(profile),
-                dryrun="--dryrun " if dryrun else "",
-                notemp="--notemp " if not clean else "",
+                dryrun="--dryrun" if dryrun else "",
+                notemp="--notemp" if not clean else "",
                 args=snakemake_args,
                 target_rule=workflow if workflow != "None" else "",
                 conda_prefix="--conda-prefix " + self.conda_prefix,
@@ -471,16 +471,20 @@ def process_batch(args, prefix):
 
     logging.info(f"Reading batch file: {args.batch_file}")
 
-    header=None
+    header=0
     with open(args.batch_file, mode='r') as check_batch:
         for line in check_batch.readlines():
-            if line == "sample	short_reads_1	short_reads_2	long_reads	long_read_type	assembly    coassemble":
-               header="infer"
-            elif line == "sample,short_reads_1,short_reads_2,long_reads,long_read_type,assembly,coassemble":
-                header="infer"
+            if "sample\tshort_reads_1\tshort_reads_2\tlong_reads\tlong_read_type\tassembly\tcoassemble" in line \
+                or "sample,short_reads_1,short_reads_2,long_reads,long_read_type,assembly,coassemble" in line \
+                or "sample  short_reads_1   short_reads_2   long_reads      long_read_type  assembly        coassemble" in line \
+                or "sample short_reads_1 short_reads_2 long_reads long_read_type assembly coassemble" in line:
+               header=1
+               logging.debug("Inferred header")
+            else:
+                logging.debug("No heading inferred.")
             break
 
-    batch = pd.read_csv(args.batch_file, sep=None, engine='python', header=header)
+    batch = pd.read_csv(args.batch_file, sep=None, engine='python', skiprows=header)
     if len(batch.columns) != 7:
         logging.critical(f"Batch file contains incorrect number of columns ({len(batch.columns)}). Should contain 7.")
         logging.critical(f"Current columns: {batch.columns}")
