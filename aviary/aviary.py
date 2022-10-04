@@ -460,7 +460,7 @@ def main():
     )
 
     binning_group.add_argument(
-        '--skip-binners', '--skip_binners',
+        '--skip-binners', '--skip_binners', '--skip_binner', '--skip-binner',
         help='Optional list of binning algorithms to skip. Can be any combination of: \n'
              'rosella, semibin, metabat1, metabat2, metabat, vamb, concoct, maxbin2, maxbin \n'
              'Capitals will be auto-corrected. N.B. specifying "metabat" will skip both \n'
