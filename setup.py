@@ -33,9 +33,8 @@ setup(
     long_description_content_type='text/markdown',
     zip_safe=False,
     packages=find_packages(),
-    package_data={'': [
-            "aviary/*",
-                       ]},
+    package_data={'template_config': ['aviary/modules/template_config.yaml'],
+                  'Snakefile': ['aviary/modules/Snakefile']},
     data_files=[(".", ["README.md", "LICENSE"])],
     include_package_data=True,
     install_requires= [
