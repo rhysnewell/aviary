@@ -4,7 +4,7 @@ ruleorder: skip_unicycler_with_qc > skip_unicycler > combine_assemblies > combin
 ruleorder: skip_long_assembly > get_high_cov_contigs > short_only
 ruleorder: skip_long_assembly > filter_illumina_assembly
 ruleorder: filter_illumina_ref > no_ref_filter
-ruleorder: skip_unicycler_with_qc > skip_unicycler > combine_assemblies > combine_long_only > spades_assembly_short
+ruleorder: skip_unicycler_with_qc > skip_unicycler > combine_assemblies > combine_long_only > assemble_short_reads
 ruleorder: skip_unicycler_with_qc > skip_unicycler > complete_assembly_with_qc > complete_assembly
 ruleorder: skip_unicycler_with_qc > skip_unicycler > combine_assemblies > move_spades_assembly
 
@@ -461,7 +461,7 @@ rule spades_assembly:
 
 
 # Perform shrot read assembly only with no other steps
-rule spades_assembly_short:
+rule assemble_short_reads:
     input:
         fastq = config["short_reads_1"]
     group: 'assembly'
@@ -486,7 +486,7 @@ rule spades_assembly_short:
     benchmark:
         "benchmarks/short_read_assembly_short.benchmark.txt"
     script:
-        "scripts/spades_assembly_short.py"
+        "scripts/assemble_short_reads.py"
 
 
 rule move_spades_assembly:
