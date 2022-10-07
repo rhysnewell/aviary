@@ -264,12 +264,11 @@ rule get_high_cov_contigs:
     benchmark:
         "benchmarks/get_high_cov_contigs.benchmark.txt"
     params:
-        min_cov_long = 10.0,
-        min_cov_short = 10.0,
-        exclude_contig_cov = 1000,
-        exclude_contig_size = 5000,
-        short_contig_size = 10000,
-        long_contig_size = 10000
+        min_cov_long = int(config["min_cov_long"]),
+        min_cov_short = int(config["min_cov_short"]),
+        exclude_contig_cov = int(config["exclude_contig_cov"]),
+        exclude_contig_size = int(config["exclude_contig_size"]),
+        long_contig_size = int(config["long_contig_size"])
     run:
         ill_cov_dict = {}
         # populate illumina coverage dictionary using PAF
@@ -291,7 +290,7 @@ rule get_high_cov_contigs:
                 is_circular = circular == "Y"
                 if int(contig_length) >= params.long_contig_size or is_circular:
                     high_cov_set.add(contig_name)
-                elif int(contig_length) < params.short_contig_size:
+                elif int(contig_length) < params.long_contig_size:
                     # Take first and last edge in info file for this contig
                     se1 = graph_path.split(',')[0]
                     # Filter the '-' sign from edge name
@@ -313,13 +312,16 @@ rule get_high_cov_contigs:
                     if not se2 in short_edges:
                         short_edges[se2] = []
                     short_edges[se2].append(contig_name)
-                # if a contig is covered by >= min_cov_long long reads place in high cov set
+                # Filtering:
+                # 1:
+                # exclude contigs with long read coverage less than `exclude_contig_cov` and
+                # shorter than `exclude_contig_size`
+                # 2:
+                # include if a contig is covered by >= min_cov_long long reads place in high cov set
                 # Also place in high coverage set if contig was not covered by illumina reads
                 # Also place in high coverage set if illumina coverage was <= min_cov_short
-                if int(contig_length) >= params.exclude_contig_size:
-                    if ((float(long_coverage) >= params.min_cov_long)
-                        and not (float(long_coverage) <= params.exclude_contig_cov
-                                 and int(contig_length) <= params.exclude_contig_size)) or not contig_name in ill_cov_dict \
+                if not (float(long_coverage) <= params.exclude_contig_cov and int(contig_length) <= params.exclude_contig_size):
+                    if float(long_coverage) >= params.min_cov_long or not contig_name in ill_cov_dict \
                             or ill_cov_dict[contig_name] <= params.min_cov_short:
                         high_cov_set.add(contig_name)
 

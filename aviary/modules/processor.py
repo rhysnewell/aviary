@@ -187,10 +187,20 @@ class Processor:
             self.kmer_sizes = args.kmer_sizes
             self.use_megahit = args.use_megahit
             self.coassemble = args.coassemble
+            self.min_cov_long = args.min_cov_long
+            self.min_cov_short = args.min_cov_short
+            self.exclude_contig_cov = args.exclude_contig_cov
+            self.exclude_contig_size = args.exclude_contig_size
+            self.long_contig_size = args.include_contig_size
         except AttributeError:
             self.kmer_sizes = ['auto']
             self.use_megahit = False
             self.coassemble = True
+            self.min_cov_long = 20
+            self.min_cov_short = 3
+            self.exclude_contig_cov = 100
+            self.exclude_contig_size = 25000
+            self.long_contig_size = 100000
 
         try:
             self.mag_directory = os.path.abspath(args.directory) if args.directory is not None else 'none'
@@ -308,6 +318,11 @@ class Processor:
         conf["kmer_sizes"] = self.kmer_sizes
         conf["use_megahit"] = self.use_megahit
         conf["coassemble"] = self.coassemble
+        conf["min_cov_long"] = self.min_cov_long
+        conf["min_cov_short"] = self.min_cov_short
+        conf["exclude_contig_cov"] = self.exclude_contig_cov
+        conf["exclude_contig_size"] = self.exclude_contig_size
+        conf["long_contig_size"] = self.long_contig_size
         conf["min_contig_size"] = int(self.min_contig_size)
         conf["min_bin_size"] = int(self.min_bin_size)
         conf["gtdbtk_folder"] = self.gtdbtk
@@ -329,7 +344,7 @@ class Processor:
         with open(self.config, "w") as f:
             yaml.dump(conf, f)
         logging.info(
-            "Configuration file written to %s\n" % self.config
+            "Configuration file written to %s" % self.config
         )
 
     def _validate_config(self):
@@ -593,6 +608,7 @@ def check_batch_input(val, default=None, split=False, split_val=','):
     return new_val
 
 def fraction_to_percent(val):
+    val = float(val)
     if val <= 1:
         return val * 100
     return val

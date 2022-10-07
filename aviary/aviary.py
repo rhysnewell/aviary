@@ -639,6 +639,46 @@ def main():
         nargs="+",
     )
 
+    assemble_group.add_argument(
+        '--min-cov-long', '--min_cov_long',
+        help='Automatically include Flye contigs with long read coverage greater than or equal to this. \n'
+             'High long read coverage during assembly indicates that the overlap layout consensus algorithm \n'
+             'is more likely to be correct.',
+        dest='min_cov_long',
+        default=20
+    )
+
+    assemble_group.add_argument(
+        '--min-cov-short', '--min_cov_short',
+        help='Automatically include Flye contigs with short read coverage less than or equal to this. \n'
+             'Low coverage via short reads indicates that metaSPAdes will not be able to better assemble this contig.',
+        dest='min_cov_short',
+        default=3
+    )
+
+    assemble_group.add_argument(
+        '--exclude-contig-cov', '--exclude_contig_cov',
+        help='Automatically exclude Flye contigs with long read coverage less than or equal to this \n'
+             'and less than or equal to `--exclude-contig-size`',
+        dest='exclude_contig_cov',
+        default=100
+    )
+
+    assemble_group.add_argument(
+        '--exclude-contig-size', '--exclude_contig_size',
+        help='Automatically exclude Flye contigs with length less than or equal to this \n'
+             'and long read coverage less than or equal to `--exclude-contig-cov`',
+        dest='exclude_contig_size',
+        default=25000
+    )
+
+    assemble_group.add_argument(
+        '--include-contig-size', '--include_contig_size',
+        help='Automatically include Flye contigs with length less than or equal to this',
+        dest='include_contig_size',
+        default=100000
+    )
+
     #~#~#~#~#~#~#~#~#~#~#~#~#~   sub-parsers   ~#~#~#~#~#~#~#~#~#~#~#~#~#
     ##########################  ~ ASSEMBLE ~  ###########################
 
