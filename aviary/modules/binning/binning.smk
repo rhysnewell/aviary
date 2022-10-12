@@ -82,7 +82,7 @@ rule maxbin2:
     params:
         min_contig_size = config["min_contig_size"]
     resources:
-        mem_mb=config["max_memory"]*128
+        mem_mb=int(config["max_memory"])*128
     group: 'binning'
     output:
         "data/maxbin2_bins/done"
@@ -107,7 +107,7 @@ rule concoct:
     params:
         min_contig_size = config["min_contig_size"]
     resources:
-        mem_mb=config["max_memory"]*128
+        mem_mb=int(config["max_memory"])*128
     group: 'binning'
     output:
         "data/concoct_bins/done"
@@ -165,7 +165,7 @@ rule vamb:
         min_contig_size = config["min_contig_size"],
         vamb_threads = int(config["max_threads"]) // 2 # vamb use double the threads you give it
     resources:
-        mem_mb=config["max_memory"]*128
+        mem_mb=int(config["max_memory"])*128
     group: 'binning'
     output:
         "data/vamb_bins/done"
@@ -313,7 +313,7 @@ rule rosella:
         min_contig_size = config["min_contig_size"],
         min_bin_size = config["min_bin_size"]
     resources:
-        mem_mb=config["max_memory"]*128
+        mem_mb=int(config["max_memory"])*128
     group: 'binning'
     output:
         # kmers = "data/rosella_bins/rosella_kmer_table.tsv",
@@ -340,7 +340,7 @@ rule semibin:
         # Can't use premade model with multiple samples, so disregard if provided
         semibin_model = config['semibin_model']
     resources:
-        mem_mb=config["max_memory"]*1024
+        mem_mb=int(config["max_memory"])*1024
     output:
         done = "data/semibin_bins/done"
     threads:
@@ -446,7 +446,7 @@ rule refine_rosella:
         max_contamination = 15,
         final_refining = False
     resources:
-        mem_mb=config["max_memory"]
+        mem_mb=int(config["max_memory"])
     threads:
         config["max_threads"]
     conda:
@@ -464,7 +464,7 @@ rule refine_metabat2:
     output:
         'data/metabat2_refined/done'
     resources:
-        mem_mb=config["max_memory"]
+        mem_mb=int(config["max_memory"])
     benchmark:
         'benchmarks/refine_metabat2.benchmark.txt'
     params:
@@ -491,7 +491,7 @@ rule refine_semibin:
         fasta = ancient(config["fasta"]),
         # kmers = "data/rosella_bins/rosella_kmer_table.tsv"
     resources:
-        mem_mb=config["max_memory"]
+        mem_mb=int(config["max_memory"])
     output:
         'data/semibin_refined/done'
     benchmark:
@@ -566,7 +566,7 @@ rule das_tool:
         semibin_done = "data/semibin_refined/done",
         vamb_done = "data/vamb_bins/done",
     resources:
-        mem_mb=config["max_memory"]
+        mem_mb=int(config["max_memory"])
     group: 'binning'
     output:
         das_tool_done = "data/das_tool_bins_pre_refine/done"
@@ -604,7 +604,7 @@ rule refine_dastool:
         fasta = ancient(config["fasta"]),
         # kmers = "data/rosella_bins/rosella_kmer_table.tsv"
     resources:
-        mem_mb=config["max_memory"]
+        mem_mb=int(config["max_memory"])
     output:
         temporary('bins/checkm.out'),
         directory('bins/final_bins')
@@ -631,7 +631,7 @@ rule get_abundances:
         "bins/checkm.out"
     group: 'binning'
     resources:
-        mem_mb=config["max_memory"]*1024
+        mem_mb=int(config["max_memory"])*1024
     output:
         "data/coverm_abundances.tsv"
     conda:

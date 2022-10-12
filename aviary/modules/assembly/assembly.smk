@@ -118,7 +118,7 @@ rule flye_assembly:
     params:
         long_read_type = config["long_read_type"]
     resources:
-        mem_mb=config["max_memory"]*1024
+        mem_mb=int(config["max_memory"])*1024
     conda:
         "envs/flye.yaml"
     benchmark:
@@ -145,7 +145,7 @@ rule polish_metagenome_racon:
         illumina = False,
         coassemble = config["coassemble"]
     resources:
-        mem_mb=config["max_memory"]*1024
+        mem_mb=int(config["max_memory"])*1024
     group: 'assembly'
     output:
         fasta = "data/assembly.pol.rac.fasta"
@@ -191,7 +191,7 @@ rule generate_pilon_sort:
     threads:
         config["max_threads"]
     resources:
-        mem_mb=config["max_memory"]*1024
+        mem_mb=int(config["max_memory"])*1024
     conda:
         "envs/pilon.yaml"
     benchmark:
@@ -209,11 +209,11 @@ rule polish_meta_pilon:
     output:
         fasta = "data/assembly.pol.pil.fasta"
     resources:
-        mem_mb=config["max_memory"]*512
+        mem_mb=int(config["max_memory"])*512
     # threads: # Threads no longer supported for pilon
     #     config["max_threads"]
     params:
-        pilon_memory = config["max_memory"]*512
+        pilon_memory = int(config["max_memory"])*512
     conda:
         "envs/pilon.yaml"
     benchmark:
@@ -234,7 +234,7 @@ rule polish_meta_racon_ill:
         fasta = "data/assembly.pol.fin.fasta",
         paf = temp("data/racon_polishing/alignment.racon_ill.0.paf")
     resources:
-        mem_mb=config["max_memory"]*1024
+        mem_mb=int(config["max_memory"])*1024
     threads:
         config["max_threads"]
     conda:
@@ -425,7 +425,7 @@ rule spades_assembly:
     threads:
         config["max_threads"]
     resources:
-        mem_mb=config["max_memory"]*1024
+        mem_mb=int(config["max_memory"])*1024
     params:
         max_memory = config["max_memory"],
         long_read_type = config["long_read_type"],
@@ -482,7 +482,7 @@ rule assemble_short_reads:
          tmpdir = config["tmpdir"],
          final_assembly = True
     resources:
-        mem_mb=config["max_memory"]*1024
+        mem_mb=int(config["max_memory"])*1024
     conda:
         "envs/spades.yaml"
     benchmark:
@@ -513,7 +513,7 @@ rule spades_assembly_coverage:
          bam = temp("data/short_vs_mega.bam"),
          bai = temp("data/short_vs_mega.bam.bai")
     resources:
-        mem_mb=config["max_memory"]*1024
+        mem_mb=int(config["max_memory"])*1024
     params:
          tmpdir = config["tmpdir"]
     conda:
@@ -559,7 +559,7 @@ rule map_long_mega:
         bam = temp("data/long_vs_mega.bam"),
         bai = temp("data/long_vs_mega.bam.bai")
     resources:
-        mem_mb=config["max_memory"]*1024
+        mem_mb=int(config["max_memory"])*1024
     threads:
         config["max_threads"]
     conda:
@@ -618,7 +618,7 @@ rule assemble_pools:
         config["max_threads"]
     group: 'assembly'
     resources:
-        mem_mb=config["max_memory"]*1024
+        mem_mb=int(config["max_memory"])*1024
     output:
         fasta = "data/unicycler_combined.fa"
     conda:

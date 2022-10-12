@@ -154,7 +154,7 @@ rule eggnog:
         eggnog_db = config['eggnog_folder'],
         tmpdir = config["tmpdir"]
     resources:
-        mem_mb=config["max_memory"]*512
+        mem_mb=int(config["max_memory"])*512
     group: 'annotation'
     output:
         done = 'data/eggnog/done'
@@ -183,7 +183,7 @@ rule gtdbtk:
         pplacer_threads = config["pplacer_threads"],
         extension = config['mag_extension']
     resources:
-        mem_mb=config["max_memory"]*1024
+        mem_mb=int(config["max_memory"])*1024
     conda:
         "../../envs/gtdbtk.yaml"
     threads:

@@ -166,7 +166,7 @@ rule generate_pangenomes:
         derep_ani = config["ani"],
         pggb_params = config["pggb_params"]
     resources:
-        mem_mb=config["max_memory"]*512
+        mem_mb=int(config["max_memory"])*512
     conda:
         'envs/pggb.yaml'
     threads:

@@ -67,7 +67,7 @@ rule lorikeet:
         parallel_genomes = 8,
         tmpdir = config['tmpdir']
     resources:
-        mem_mb=config["max_memory"]*512
+        mem_mb=int(config["max_memory"])*512
     threads:
         config["max_threads"]
     script:
