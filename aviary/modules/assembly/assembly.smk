@@ -469,7 +469,10 @@ rule assemble_short_reads:
     group: 'assembly'
     output:
         fasta = "data/short_read_assembly/scaffolds.fasta",
-        output_folder = temp(directory("data/short_read_assembly/"))
+        # We cannot mark the output_folder as temp as then it gets deleted,
+        # causing the "TypeError: '>' not supported between instances of
+        # 'TBDString' and 'int'" error
+        output_folder = directory("data/short_read_assembly/")
         # reads1 = temporary("data/short_reads.1.fastq.gz"),
         # reads2 = temporary("data/short_reads.2.fastq.gz")
     threads:
