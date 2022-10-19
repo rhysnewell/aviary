@@ -374,10 +374,18 @@ rule checkm_rosella:
         config["max_threads"]
     shell:
         'touch {output.output_file}; '
+        'if [ `ls "{params.bin_folder}" |gerp .fna$ |wc -l` -eq 0 ]; then '
+        'echo "No bins found in {params.bin_folder}"; '
+        'touch {output.output_file}; '
+        'mkdir -p {output.output_folder}; '
+        'else '
+
         'export CHECKM2DB={params.checkm2_db_path}/uniref100.KO.1.dmnd; '
         'echo "Using CheckM2 database $CHECKM2DB"; '
         'checkm2 predict -i {params.bin_folder}/ -x {params.extension} -o {output.output_folder} -t {threads} --force; '
-        'cp {output.output_folder}/quality_report.tsv {output.output_file}'
+        'cp {output.output_folder}/quality_report.tsv {output.output_file}; '
+
+        'fi'
 
 rule checkm_metabat2:
     input:
