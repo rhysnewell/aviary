@@ -501,7 +501,7 @@ rule move_spades_assembly:
     output:
         out = "data/final_contigs.fasta"
     shell:
-        "cp {input.assembly} {output.out}"
+        "cp {input.assembly} {output.out}; rm -rf data/short_read_assembly"
 
 
 # Short reads are mapped to the spades assembly and jgi_summarize_bam_contig_depths from metabat
