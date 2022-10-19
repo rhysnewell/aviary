@@ -326,7 +326,7 @@ rule rosella:
         "benchmarks/rosella.benchmark.txt"
     shell:
         "rm -rf data/rosella_bins/; "
-        "rosella bin -r {input.fasta} -i {input.coverage} -t {threads} -o data/rosella_bins "
+        "rosella recover -r {input.fasta} -i {input.coverage} -t {threads} -o data/rosella_bins "
         "--min-contig-size {params.min_contig_size} --min-bin-size {params.min_bin_size} --n-neighbors 200 && "
         "touch {output.done} || touch {output.done}"
 

@@ -9,9 +9,10 @@ dependencies:
   - cxx-compiler
   - numba
   - numpy<=1.21
-  - rosella==0.4.1=h40e92b3_2
+  - rosella==0.4.2
   - checkm-genome==1.1.3
   - flight-genome>=1.5.0
+  - joblib==1.1.0 # For https://github.com/scikit-learn-contrib/hdbscan/pull/563 which is used by flight. Can remove when hdbscan releases past 0.8.28
   - scikit-bio>=0.5.7
   - seaborn
   - umap-learn >= 0.5.3
