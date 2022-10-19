@@ -248,7 +248,7 @@ def main():
 
     base_group.add_argument(
         '--snakemake-cmds',
-        help='Additional commands to supplied to snakemake in the form of a single string'
+        help='Additional commands to supplied to snakemake in the form of a single string '
              'e.g. "--print-compilation True". \n '
              'NOTE: Most commands in snakemake -h are valid but some commands may clash with commands \n '
              'aviary directly supplies to snakemake. Please make sure your additional commands don\'t clash.',
