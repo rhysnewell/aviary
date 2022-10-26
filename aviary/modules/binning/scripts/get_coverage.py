@@ -1,6 +1,10 @@
 import subprocess
 import os
 
+print('where we at?')
+print(snakemake.config['single_short_reads'] != 'none')
+print(not os.path.exists("data/short_cov.tsv"))
+
 if snakemake.config["long_reads"] != "none" and not os.path.exists("data/long_cov.tsv"):
     if snakemake.config["long_read_type"][0] in ["ont", "ont_hq"]:
         subprocess.Popen("TMPDIR=%s coverm contig -t %d -r %s --single %s -p minimap2-ont -m length trimmed_mean variance --bam-file-cache-directory data/binning_bams/ --discard-unmapped --min-read-percent-identity 0.85 > data/long_cov.tsv" %
@@ -20,6 +24,13 @@ if snakemake.config['short_reads_2'] != 'none' and not os.path.exists("data/shor
 elif snakemake.config['short_reads_1']  != 'none' and not os.path.exists("data/short_cov.tsv"):
     subprocess.Popen("TMPDIR=%s coverm contig -t %d -r %s --interleaved %s -m metabat --bam-file-cache-directory data/binning_bams/ --discard-unmapped > data/short_cov.tsv" %
                      (snakemake.params.tmpdir, snakemake.threads, snakemake.input.fasta, " ".join(snakemake.config["short_reads_1"])), shell=True).wait()
+
+elif snakemake.config['single_short_reads'] != 'none' and not os.path.exists("data/short_cov.tsv"):
+    subprocess.Popen("TMPDIR=%s coverm contig -t %d -r %s --single %s -m metabat --bam-file-cache-directory data/binning_bams/ --discard-unmapped > data/short_cov.tsv" %
+                     (snakemake.params.tmpdir, snakemake.threads, snakemake.input.fasta, " ".join(snakemake.config["single_short_reads"])), shell=True).wait()
+
+else:
+    raise Exception("No reads found for coverage calculation, cannot continue. Likely a programming bug in Aviary.")
 
 # subprocess.Popen("ls data/binning_bams/*.bam | parallel -j1 samtools index -@ %d {} {}.bai" % (snakemake.threads-1), shell=True).wait()
 # Concatenate the two coverage files if both long and short exist
@@ -90,7 +101,7 @@ elif snakemake.config["long_reads"] != "none":
                     )
                     print(line, file=file3)
                         
-elif snakemake.config["short_reads_1"] != "none":  # rename shrot reads cov if only they exist
+elif snakemake.config["short_reads_1"] != "none":  # rename short reads cov if only they exist
     os.rename("data/short_cov.tsv", "data/coverm.cov")
 
 if snakemake.config["long_reads"] != "none":
@@ -123,6 +134,12 @@ if snakemake.config["long_reads"] != "none":
                     )
                     print(line, file=file3)
         # os.remove("data/long_cov.tsv")
+
+if snakemake.config['single_short_reads'] != "none":
+    if snakemake.config["long_reads"] != "none" or (snakemake.config["short_reads_1"] != "none"):
+        raise Exception("Aviary's get_coverage cannot currently handle both single ended reads together with paired or long reads, sorry.")
+    os.rename("data/short_cov.tsv", "data/coverm.cov")
+    
 
 try:
     os.makedirs("data/maxbin_cov/")

@@ -50,6 +50,15 @@ class Tests(unittest.TestCase):
             self.assertTrue(os.path.isfile("{}/aviary_out/bins/bin_info.tsv".format(tmpdir)))
             self.assertTrue(os.path.isfile("{}/aviary_out/data/final_contigs.fasta".format(tmpdir)))
             self.assertTrue(os.path.islink("{}/aviary_out/assembly/final_contigs.fasta".format(tmpdir)))
+
+    def test_single_short_reads_recovery(self):
+        with tempfile.TemporaryDirectory() as tmpdir:
+            cmd = "aviary recover -o {}/aviary_out --single-short-reads {}/wgsim.1.fq.gz".format(tmpdir, data)
+            # print(cmd)
+            extern.run(cmd)
+            self.assertTrue(os.path.isfile("{}/aviary_out/bins/bin_info.tsv".format(tmpdir)))
+            self.assertTrue(os.path.isfile("{}/aviary_out/data/final_contigs.fasta".format(tmpdir)))
+            self.assertTrue(os.path.islink("{}/aviary_out/assembly/final_contigs.fasta".format(tmpdir)))
         
 
 

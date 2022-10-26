@@ -376,6 +376,13 @@ def main():
         default='95'
     )
 
+    read_group_exclusive.add_argument(
+        '--single-short-reads', '--single_short_reads',
+        help='[EXPERIMENTAL] A space separated list of single end short read files [experimental, only works for binning]',
+        nargs='+',
+        default="none"
+    )
+
     ####################################################################
 
     long_read_group = argparse.ArgumentParser(formatter_class=CustomHelpFormatter,

@@ -27,6 +27,11 @@ elif snakemake.config['short_reads_1'] != 'none':
                      (snakemake.threads, " ".join(snakemake.config["short_reads_1"]),
                       '--bam-file-cache-directory data/reads_mapped_to_mags/short/ --discard-unmapped' if snakemake.config['strain_analysis'] is True else ''), shell=True).wait()
 
+elif snakemake.config['single_short_reads'] != 'none':
+    subprocess.Popen("coverm genome -t %d -d bins/final_bins/ -m relative_abundance covered_fraction --single %s --min-covered-fraction 0.0 -x fna %s > data/short_abundances.tsv" %
+                     (snakemake.threads, " ".join(snakemake.config["single_short_reads"]),
+                      '--bam-file-cache-directory data/reads_mapped_to_mags/short/ --discard-unmapped' if snakemake.config['strain_analysis'] is True else ''), shell=True).wait()
+
 # Concatenate the two coverage files if both long and short exist
 if snakemake.config["long_reads"] != "none" and (snakemake.config["short_reads_1"] != "none"):
     with open('data/coverm_abundances.tsv', 'w') as file3:
@@ -37,5 +42,7 @@ if snakemake.config["long_reads"] != "none" and (snakemake.config["short_reads_1
                     print(line1.strip(), "\t", long_cov_line, file=file3)
 elif snakemake.config["long_reads"] != "none":  # rename long reads cov if only it exists
     os.rename("data/long_abundances.tsv", "data/coverm_abundances.tsv")
-elif snakemake.config["short_reads_1"] != "none":  # rename shrot reads cov if only they exist
+elif snakemake.config["short_reads_1"] != "none":  # rename short reads cov if only they exist
+    os.rename("data/short_abundances.tsv", "data/coverm_abundances.tsv")
+elif snakemake.config["single_short_reads"] != "none":
     os.rename("data/short_abundances.tsv", "data/coverm_abundances.tsv")

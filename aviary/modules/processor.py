@@ -182,6 +182,11 @@ class Processor:
             self.pe2 = 'none'
             self.short_percent_identity = 'none'
 
+        try:
+            self.single_short_reads = args.single_short_reads
+        except AttributeError:
+            self.single_short_reads = 'none'
+
 
         try:
             self.kmer_sizes = args.kmer_sizes
@@ -302,6 +307,8 @@ class Processor:
             self.longreads = list(dict.fromkeys([os.path.abspath(p) for p in self.longreads]))
         if self.gsa_mappings != "none":
             self.gsa_mappings = os.path.abspath(self.gsa_mappings)
+        if self.single_short_reads != "none":
+            self.single_short_reads = list(set([os.path.abspath(p) for p in self.single_short_reads]))
 
         conf["fasta"] = self.assembly
         conf["reference_filter"] = self.reference_filter
@@ -315,6 +322,7 @@ class Processor:
         conf["short_reads_2"] = self.pe2
         conf["long_reads"] = self.longreads
         conf["long_read_type"] = self.longread_type
+        conf["single_short_reads"] = self.single_short_reads
         conf["kmer_sizes"] = self.kmer_sizes
         conf["use_megahit"] = self.use_megahit
         conf["coassemble"] = self.coassemble
