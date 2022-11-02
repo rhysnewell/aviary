@@ -137,7 +137,7 @@ rule checkm2:
     threads:
         config["max_threads"]
     benchmark:
-        'benchmarks/checkm2.benchmark.xt'
+        'benchmarks/checkm2.benchmark.txt'
     conda:
         "../../envs/checkm2.yaml"
     shell:
