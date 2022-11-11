@@ -295,9 +295,9 @@ class Processor:
             self.assembly = 'none'
             logging.warning("No assembly provided, assembly will be created using available reads...")
         if self.pe1 != "none":
-            self.pe1 = list(set([os.path.abspath(p) for p in self.pe1]))
+            self.pe1 = list(dict.fromkeys([os.path.abspath(p) for p in self.pe1]))
         if self.pe2 != "none":
-            self.pe2 = list(set([os.path.abspath(p) for p in self.pe2]))
+            self.pe2 = list(dict.fromkeys([os.path.abspath(p) for p in self.pe2]))
         if self.longreads != "none":
             self.longreads = list(([os.path.abspath(p) for p in self.longreads]))
         if self.gsa_mappings != "none":
