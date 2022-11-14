@@ -247,6 +247,15 @@ def main():
     )
 
     base_group.add_argument(
+        '--rerun-triggers', '--rerun_triggers',
+        help='Specify which kinds of modifications will trigger rules to rerun',\
+        dest='rerun_triggers',
+        default="mtime",
+        nargs="*",
+        choices=["mtime","params","input","software-env","code"]
+    )
+
+    base_group.add_argument(
         '--snakemake-cmds',
         help='Additional commands to supplied to snakemake in the form of a single string '
              'e.g. "--print-compilation True". \n '

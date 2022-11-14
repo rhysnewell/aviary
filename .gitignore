@@ -2,6 +2,7 @@
 .idea/
 .idea/*
 aviary.egg-info
+build
 dist
 .snakemake
 binsnek.egg-info

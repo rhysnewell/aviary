@@ -290,7 +290,7 @@ class Processor:
             conf = yaml.load(template_config)
 
         if self.assembly != "none" and self.assembly is not None:
-            self.assembly = list(set([os.path.abspath(p) for p in self.assembly]))
+            self.assembly = list(dict.fromkeys([os.path.abspath(p) for p in self.assembly]))
         elif self.assembly is None:
             self.assembly = 'none'
             logging.warning("No assembly provided, assembly will be created using available reads...")
@@ -299,7 +299,7 @@ class Processor:
         if self.pe2 != "none":
             self.pe2 = list(dict.fromkeys([os.path.abspath(p) for p in self.pe2]))
         if self.longreads != "none":
-            self.longreads = list(([os.path.abspath(p) for p in self.longreads]))
+            self.longreads = list(dict.fromkeys([os.path.abspath(p) for p in self.longreads]))
         if self.gsa_mappings != "none":
             self.gsa_mappings = os.path.abspath(self.gsa_mappings)
 
@@ -422,7 +422,7 @@ class Processor:
 
     def run_workflow(self, cores=16, profile=None,
                      dryrun=False, clean=True, conda_frontend="mamba",
-                     snakemake_args="", write_to_script=None):
+                     snakemake_args="", write_to_script=None, rerun_triggers=None):
         """
         Runs the aviary pipeline
         By default all steps are executed
@@ -441,7 +441,7 @@ class Processor:
         for workflow in self.workflows:
             cmd = (
                 "snakemake --snakefile {snakefile} --directory {working_dir} "
-                "{jobs} --rerun-incomplete {args} "
+                "{jobs} --rerun-incomplete {args} {rerun_trigger} "
                 "--configfile '{config_file}' --nolock "
                 "{profile} {conda_frontend} {resources} --use-conda {conda_prefix} "
                 "{dryrun} {notemp} "
@@ -454,6 +454,7 @@ class Processor:
                 profile="" if (profile is None) else "--profile {}".format(profile),
                 dryrun="--dryrun" if dryrun else "",
                 notemp="--notemp" if not clean else "",
+                rerun_triggers="" if (rerun_triggers is None) else "--rerun-triggers {}".format(" ".join(rerun_triggers)),
                 args=snakemake_args,
                 target_rule=workflow if workflow != "None" else "",
                 conda_prefix="--conda-prefix " + self.conda_prefix,
