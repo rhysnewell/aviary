@@ -441,7 +441,7 @@ class Processor:
         for workflow in self.workflows:
             cmd = (
                 "snakemake --snakefile {snakefile} --directory {working_dir} "
-                "{jobs} --rerun-incomplete {args} {rerun_trigger} "
+                "{jobs} --rerun-incomplete {args} {rerun_triggers} "
                 "--configfile '{config_file}' --nolock "
                 "{profile} {conda_frontend} {resources} --use-conda {conda_prefix} "
                 "{dryrun} {notemp} "
