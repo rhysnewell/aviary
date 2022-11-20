@@ -374,7 +374,7 @@ rule checkm_rosella:
         config["max_threads"]
     shell:
         'touch {output.output_file}; '
-        'if [ `ls "{params.bin_folder}" |gerp .fna$ |wc -l` -eq 0 ]; then '
+        'if [ `ls "{params.bin_folder}" |grep .fna$ |wc -l` -eq 0 ]; then '
         'echo "No bins found in {params.bin_folder}"; '
         'touch {output.output_file}; '
         'mkdir -p {output.output_folder}; '
