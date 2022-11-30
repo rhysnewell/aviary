@@ -396,7 +396,6 @@ def main():
              '"rs" for PacBio RSII, "sq" for PacBio Sequel, "ccs" for PacBio CCS \n'
              'reads, "ont" for Oxford Nanopore and "ont_hq" for Oxford Nanopore high quality reads (Guppy5+ or Q20) \n',
         dest='longread_type',
-        nargs=1,
         default="ont",
         choices=["ont","ont_hq", "rs", "sq", "ccs"],
     )
