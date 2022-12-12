@@ -13,7 +13,16 @@ def refinery():
     """
     # These will change
     current_iteration = 0
-    checkm_path = snakemake.input.checkm
+    try:
+        checkm_path = snakemake.input.checkm
+    except AttributeError:
+        checkm_path = snakemake.params.checkm
+
+    # Return if checkm is empty
+    if not os.path.exists(checkm_path):
+        print("No checkm file found, exiting assuming no bins to refine")
+        open(f"{snakemake.params.output_folder}/done", "a").close()
+        return
 
     # These will not change
     coverage = snakemake.input.coverage

@@ -420,18 +420,24 @@ rule checkm_semibin:
         extension = "fa"
     group: 'binning'
     output:
-        output_folder = directory("data/semibin_bins/checkm2_out/"),
-        output_file = "data/semibin_bins/checkm.out"
+        # output_folder = directory("data/semibin_bins/checkm2_out/"),
+        # output_file = "data/semibin_bins/checkm.out"
+        output_done_file = "data/semibin_bins/checkm.done"
     conda:
         "../../envs/checkm2.yaml"
     threads:
         config["max_threads"]
     shell:
-        'touch {output.output_file}; '
+        # If no bins, touch output done file and exit
+        'if [ `ls "{params.bin_folder}" |grep .fa$ |wc -l` -eq 0 ]; then '
+        'echo "No bins found in {params.bin_folder}"; '
+        'else '
         'export CHECKM2DB={params.checkm2_db_path}/uniref100.KO.1.dmnd; '
         'echo "Using CheckM2 database $CHECKM2DB"; '
-        'checkm2 predict -i {params.bin_folder}/ -x {params.extension} -o {output.output_folder} -t {threads} --force; '
-        'cp {output.output_folder}/quality_report.tsv {output.output_file}'
+        'checkm2 predict -i {params.bin_folder} -x {params.extension} -o data/semibin_bins/checkm2_out -t {threads} --force; '
+        'cp data/semibin_bins/checkm2_out/quality_report.tsv data/semibin_bins/checkm.out; '
+        'fi; '
+        'touch {output.output_done_file}; '
 
 rule refine_rosella:
     input:
@@ -493,7 +499,7 @@ rule refine_metabat2:
 
 rule refine_semibin:
     input:
-        checkm = ancient('data/semibin_bins/checkm.out'),
+        checkm_done = ancient('data/semibin_bins/checkm.done'),
         rosella = ancient('data/semibin_bins/done'),
         coverage = ancient("data/coverm.cov"),
         fasta = ancient(config["fasta"]),
@@ -512,7 +518,8 @@ rule refine_semibin:
         max_iterations = 5,
         pplacer_threads = config["pplacer_threads"],
         max_contamination = 15,
-        final_refining = False
+        final_refining = False,
+        checkm = "data/semibin_bins/checkm.out"
     threads:
         config["max_threads"]
     conda:
@@ -526,7 +533,7 @@ rule amber_checkm_output:
     output:
         metabat_checkm = 'data/metabat_bins_2/checkm.out',
         rosella_checkm = 'data/rosella_bins/checkm.out',
-        semibin_checkm = 'data/semibin_bins/checkm.out'
+        semibin_checkm = 'data/semibin_bins/checkm.done'
         # dastool_checkm = 'data/das_tool_bins_with_refine/checkm.out'
     run:
         import pandas as pd
