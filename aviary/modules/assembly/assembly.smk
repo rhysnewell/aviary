@@ -232,7 +232,7 @@ rule polish_meta_racon_ill:
     group: 'assembly'
     output:
         fasta = "data/assembly.pol.fin.fasta",
-        paf = temp("data/racon_polishing/alignment.racon_ill.0.paf")
+        paf = temp("data/polishing/alignment.racon_ill.0.paf")
     resources:
         mem_mb=int(config["max_memory"])*1024
     threads:
@@ -257,7 +257,7 @@ rule get_high_cov_contigs:
         info = "data/flye/assembly_info.txt",
         fasta = "data/assembly.pol.fin.fasta",
         graph = "data/flye/assembly_graph.gfa",
-        paf = "data/racon_polishing/alignment.racon_ill.0.paf"
+        paf = "data/polishing/alignment.racon_ill.0.paf"
     group: 'assembly'
     output:
         fasta = "data/flye_high_cov.fasta"
@@ -723,7 +723,7 @@ rule complete_assembly:
         'mkdir -p assembly; '
         'cd assembly; '
         'ln -s ../data/final_contigs.fasta ./; '
-        'rm -rf data/racon_polishing; '
+        'rm -rf data/polishing; '
 
 rule complete_assembly_with_qc:
     input:
@@ -739,7 +739,7 @@ rule complete_assembly_with_qc:
         'mkdir -p assembly; '
         'cd assembly; '
         'ln -s ../data/final_contigs.fasta ./; '
-        'rm -rf data/racon_polishing; '
+        'rm -rf data/polishing; '
 
 rule reset_to_spades_assembly:
     output:

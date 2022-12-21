@@ -5,7 +5,7 @@ import random
 import shutil
 import logging
 
-out = "data/racon_polishing"
+out = "data/polishing"
 max_cov = snakemake.params.maxcov
 
 try:
