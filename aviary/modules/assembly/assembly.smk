@@ -238,7 +238,7 @@ rule polish_meta_racon_ill:
     threads:
         config["max_threads"]
     conda:
-        "envs/racon.yaml"
+        "envs/polishing.yaml"
     params:
         prefix = "racon_ill",
         maxcov = 200,
@@ -248,7 +248,7 @@ rule polish_meta_racon_ill:
     benchmark:
         "benchmarks/polish_meta_racon_ill.benchmark.txt"
     script:
-        "scripts/racon_polish.py"
+        "scripts/polish.py"
 
 
 # High coverage contigs are identified
