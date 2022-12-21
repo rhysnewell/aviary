@@ -129,17 +129,17 @@ rule flye_assembly:
         "scripts/run_flye.py"
 
 
-# Polish the long reads assembly with Racon
-rule polish_metagenome_racon:
+# Polish the long reads assembly with Racon or Medaka
+rule polish_metagenome_flye:
     input:
         fastq = "data/long_reads.fastq.gz",
         fasta = "data/flye/assembly.fasta",
     conda:
-        "envs/racon.yaml"
+        "envs/polishing.yaml"
     threads:
         config["max_threads"]
     params:
-        prefix = "racon",
+        prefix = "polished",
         maxcov = 200,
         rounds = 3,
         illumina = False,
@@ -150,9 +150,9 @@ rule polish_metagenome_racon:
     output:
         fasta = "data/assembly.pol.rac.fasta"
     benchmark:
-        "benchmarks/polish_metagenome_racon.benchmark.txt"
+        "benchmarks/polish_metagenome_flye.benchmark.txt"
     script:
-        "scripts/racon_polish.py"
+        "scripts/polish.py"
 
 
 ### Filter illumina reads against provided reference
