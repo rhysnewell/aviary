@@ -8,7 +8,7 @@ if snakemake.config["long_reads"] != "none":
         subprocess.Popen("coverm genome -t %d -d bins/final_bins/ -m relative_abundance covered_fraction --single %s -p minimap2-ont --min-covered-fraction 0.0 -x fna %s > data/long_abundances.tsv" %
                          (snakemake.threads, " ".join(snakemake.config["long_reads"]),
                           '--bam-file-cache-directory data/reads_mapped_to_mags/long/ --discard-unmapped' if snakemake.config['strain_analysis'] is True else ''), shell=True).wait()
-    elif snakemake.config["long_read_type"][0] in ["rs", "sq", "ccs"]:
+    elif snakemake.config["long_read_type"][0] in ["rs", "sq", "ccs", "hifi"]:
         subprocess.Popen("coverm genome -t %d -d bins/final_bins/ -m relative_abundance covered_fraction --single %s -p minimap2-pb --min-covered-fraction 0.0 -x fna %s > data/long_abundances.tsv" %
                          (snakemake.threads, " ".join(snakemake.config["long_reads"]),
                           '--bam-file-cache-directory data/reads_mapped_to_mags/long/ --discard-unmapped' if snakemake.config['strain_analysis'] is True else ''), shell=True).wait()
