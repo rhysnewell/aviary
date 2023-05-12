@@ -723,6 +723,7 @@ rule complete_assembly:
         'mkdir -p assembly; '
         'cd assembly; '
         'ln -s ../data/final_contigs.fasta ./; '
+        'cd ../;'
         'rm -rf data/polishing; '
 
 rule complete_assembly_with_qc:
@@ -739,6 +740,7 @@ rule complete_assembly_with_qc:
         'mkdir -p assembly; '
         'cd assembly; '
         'ln -s ../data/final_contigs.fasta ./; '
+        'cd ../;'
         'rm -rf data/polishing; '
 
 rule reset_to_spades_assembly:
