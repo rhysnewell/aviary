@@ -53,10 +53,12 @@ rule map_reads_ref:
         "../../envs/coverm.yaml"
     benchmark:
         "benchmarks/map_reads_ref.benchmark.txt"
+    params:
+        mapper = "map-ont" if config["long_read_type"] in ["ont", "ont-hq"] else "map-pb"
     threads:
          config["max_threads"]
     shell:
-        "minimap2 -ax map-ont --split-prefix=tmp -t {threads} {input.reference_filter} {input.fastq} | samtools view -@ {threads} -b > {output}"
+        "minimap2 -ax {params.mapper} --split-prefix=tmp -t {threads} {input.reference_filter} {input.fastq} | samtools view -@ {threads} -b > {output}"
 
 
 # Get a list of reads that don't map to genome you want to filter
