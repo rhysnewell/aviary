@@ -121,7 +121,7 @@ rule fastqc:
     input:
         config['short_reads_1']
     output:
-        directory("www/fastqc/")
+        output = "www/fastqc/done"
     conda:
         "envs/fastqc.yaml"
     benchmark:
@@ -136,7 +136,7 @@ rule fastqc_long:
     input:
         'data/long_reads.fastq.gz'
     output:
-        directory("www/fastqc_long/")
+        output = "www/fastqc_long/done"
     conda:
         "envs/fastqc.yaml"
     benchmark:
@@ -145,14 +145,14 @@ rule fastqc_long:
     threads:
         config["max_threads"]
     shell:
-        "fastqc -o www/fastqc_long/ -t {threads} {input[0]}; touch www/fastqc_long/done"
+        "fastqc -o www/fastqc_long/ -t {threads} {input[0]}; touch {output.output}"
 
 rule nanoplot:
     input:
         long = config['long_reads']
          # "data/long_reads.fastq.gz"
     output:
-        directory("www/nanoplot/")
+        output = "www/nanoplot/done"
     conda:
         "envs/nanoplot.yaml"
     benchmark:
@@ -161,7 +161,7 @@ rule nanoplot:
     threads:
         config["max_threads"]
     shell:
-        "NanoPlot -o www/nanoplot -p longReads -t {threads} --fastq {input.long}; touch www/nanoplot/done"
+        "NanoPlot -o www/nanoplot -p longReads -t {threads} --fastq {input.long}; touch {output.output}"
 
 rule metaquast:
     """

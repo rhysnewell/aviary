@@ -4,6 +4,8 @@ long_reads:
     none
 long_read_type:
     ont
+medaka_model:
+    r941_min_hac_g507
 short_reads_1:
     none
 short_reads_2:

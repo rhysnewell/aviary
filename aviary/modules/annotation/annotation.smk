@@ -62,8 +62,7 @@ rule download_eggnog_db:
 
 rule download_gtdb:
     params:
-        gtdbtk_folder = os.path.expanduser(config['gtdbtk_folder']),
-        gtdbtk_version = '207.0'
+        gtdbtk_folder = os.path.expanduser(config['gtdbtk_folder'])
     conda:
         '../../envs/gtdbtk.yaml'
     threads: 1
@@ -73,9 +72,8 @@ rule download_gtdb:
         'GTDBTK_DATA_PATH={params.gtdbtk_folder}; '
         'mkdir -p {params.gtdbtk_folder}; '
         # Configuration
-        'N_FILES_IN_TAR=139919; '
-        'DB_URL="https://data.gtdb.ecogenomic.org/releases/release207/207.0/auxillary_files/gtdbtk_r207_v2_data.tar.gz"; '
-        'TARGET_TAR_NAME="gtdbtk_r207_v2_data.tar.gz"; '
+        'DB_URL="https://data.gtdb.ecogenomic.org/releases/latest/auxillary_files/gtdbtk_data.tar.gz"; '
+        'TARGET_TAR_NAME="gtdbtk_data.tar.gz"; '
 
         # Script variables (no need to configure)
         'TARGET_DIR=${{1:-$GTDBTK_DATA_PATH}}; '
@@ -99,7 +97,7 @@ rule download_gtdb:
 
         # Uncompress and pipe output to TQDM
         'echo "[INFO] - Extracting archive..."; '
-        'tar xvzf "$TARGET_TAR" -C "${{TARGET_DIR}}" --strip 1 | tqdm --unit=file --total=$N_FILES_IN_TAR --smoothing=0.1 >/dev/null; '
+        'tar xvzf "$TARGET_TAR" -C "${{TARGET_DIR}}" --strip 1; '
 
         # Remove the file after successful extraction
         'rm "$TARGET_TAR"; '
@@ -192,7 +190,7 @@ rule gtdbtk:
         'benchmarks/gtdbtk.benchmark.txt'
     shell:
         "export GTDBTK_DATA_PATH={params.gtdbtk_folder} && "
-        "gtdbtk classify_wf --cpus {threads} --pplacer_cpus {params.pplacer_threads} --extension {params.extension} "
+        "gtdbtk classify_wf --skip_ani_screen --cpus {threads} --pplacer_cpus {params.pplacer_threads} --extension {params.extension} "
         "--genome_dir {input.mag_folder} --out_dir data/gtdbtk && touch data/gtdbtk/done"
 
 rule annotate:
