@@ -53,10 +53,12 @@ rule map_reads_ref:
         "../../envs/coverm.yaml"
     benchmark:
         "benchmarks/map_reads_ref.benchmark.txt"
+    params:
+        mapper = "map-ont" if config["long_read_type"] in ["ont", "ont-hq"] else "map-pb"
     threads:
          config["max_threads"]
     shell:
-        "minimap2 -ax map-ont --split-prefix=tmp -t {threads} {input.reference_filter} {input.fastq} | samtools view -@ {threads} -b > {output}"
+        "minimap2 -ax {params.mapper} --split-prefix=tmp -t {threads} {input.reference_filter} {input.fastq} | samtools view -@ {threads} -b > {output}"
 
 
 # Get a list of reads that don't map to genome you want to filter
@@ -129,17 +131,17 @@ rule flye_assembly:
         "scripts/run_flye.py"
 
 
-# Polish the long reads assembly with Racon
-rule polish_metagenome_racon:
+# Polish the long reads assembly with Racon or Medaka
+rule polish_metagenome_flye:
     input:
         fastq = "data/long_reads.fastq.gz",
         fasta = "data/flye/assembly.fasta",
     conda:
-        "envs/racon.yaml"
+        "envs/polishing.yaml"
     threads:
         config["max_threads"]
     params:
-        prefix = "racon",
+        prefix = "polished",
         maxcov = 200,
         rounds = 3,
         illumina = False,
@@ -150,9 +152,9 @@ rule polish_metagenome_racon:
     output:
         fasta = "data/assembly.pol.rac.fasta"
     benchmark:
-        "benchmarks/polish_metagenome_racon.benchmark.txt"
+        "benchmarks/polish_metagenome_flye.benchmark.txt"
     script:
-        "scripts/racon_polish.py"
+        "scripts/polish.py"
 
 
 ### Filter illumina reads against provided reference
@@ -232,13 +234,13 @@ rule polish_meta_racon_ill:
     group: 'assembly'
     output:
         fasta = "data/assembly.pol.fin.fasta",
-        paf = temp("data/racon_polishing/alignment.racon_ill.0.paf")
+        paf = temp("data/polishing/alignment.racon_ill.0.paf")
     resources:
         mem_mb=int(config["max_memory"])*1024
     threads:
         config["max_threads"]
     conda:
-        "envs/racon.yaml"
+        "envs/polishing.yaml"
     params:
         prefix = "racon_ill",
         maxcov = 200,
@@ -248,7 +250,7 @@ rule polish_meta_racon_ill:
     benchmark:
         "benchmarks/polish_meta_racon_ill.benchmark.txt"
     script:
-        "scripts/racon_polish.py"
+        "scripts/polish.py"
 
 
 # High coverage contigs are identified
@@ -257,7 +259,7 @@ rule get_high_cov_contigs:
         info = "data/flye/assembly_info.txt",
         fasta = "data/assembly.pol.fin.fasta",
         graph = "data/flye/assembly_graph.gfa",
-        paf = "data/racon_polishing/alignment.racon_ill.0.paf"
+        paf = "data/polishing/alignment.racon_ill.0.paf"
     group: 'assembly'
     output:
         fasta = "data/flye_high_cov.fasta"
@@ -723,7 +725,8 @@ rule complete_assembly:
         'mkdir -p assembly; '
         'cd assembly; '
         'ln -s ../data/final_contigs.fasta ./; '
-        'rm -rf data/racon_polishing; '
+        'cd ../;'
+        'rm -rf data/polishing; '
 
 rule complete_assembly_with_qc:
     input:
@@ -739,7 +742,8 @@ rule complete_assembly_with_qc:
         'mkdir -p assembly; '
         'cd assembly; '
         'ln -s ../data/final_contigs.fasta ./; '
-        'rm -rf data/racon_polishing; '
+        'cd ../;'
+        'rm -rf data/polishing; '
 
 rule reset_to_spades_assembly:
     output:

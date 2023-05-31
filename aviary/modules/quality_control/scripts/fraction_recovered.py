@@ -7,7 +7,7 @@ if snakemake.config["long_reads"] != "none" and not os.path.exists("data/long_co
     if snakemake.config["long_read_type"][0] in ["ont", "ont_hq"]:
         subprocess.Popen("coverm genome -t %d -r %s --single %s -p minimap2-ont --min-read-percent-identity 0.85 > www/fraction_recovered/long_fraction_recovered.tsv" %
                          (snakemake.threads, snakemake.input.fasta, " ".join(snakemake.config["long_reads"])), shell=True).wait()
-    elif snakemake.config["long_read_type"][0] in ["rs", "sq", "ccs"]:
+    elif snakemake.config["long_read_type"][0] in ["rs", "sq", "ccs", "hifi"]:
         subprocess.Popen("coverm genome -t %d -r %s --single %s -p minimap2-pb --min-read-percent-identity 0.85 > www/fraction_recovered/long_fraction_recovered.tsv" %
                          (snakemake.threads, snakemake.input.fasta, " ".join(snakemake.config["long_reads"])), shell=True).wait()
     else:
