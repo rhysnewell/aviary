@@ -14,3 +14,4 @@ dependencies:
   - pigz = 2.6
   - parallel
   - bbmap
+  - extern

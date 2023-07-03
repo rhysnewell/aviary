@@ -44,6 +44,7 @@ setup(
         "ruamel.yaml>=0.15.99",
         "pandas",
         "biopython",
+        "polars=0.18.*",
     ],
     entry_points={
           'console_scripts': [
