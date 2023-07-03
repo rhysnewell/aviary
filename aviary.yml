@@ -8,6 +8,7 @@ dependencies:
   - ruamel.yaml>=0.15.99 # needs to be explicit
   - numpy
   - pandas
+  - polars=0.18.*
   - biopython
   - mamba>=0.8.2
   - pigz = 2.6
