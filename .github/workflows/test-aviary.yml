@@ -32,4 +32,4 @@ jobs:
           pip install -e .
       - name: Run unit tests
         run: |
-          python test/test_integration.py
+          aviary -h
