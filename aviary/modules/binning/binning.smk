@@ -145,10 +145,13 @@ rule vamb_jgi_filter:
     params:
         min_contig_size = config['min_contig_size']
     run:
-        import pandas as pd
-        coverm_out = pd.read_csv('data/coverm.cov', sep='\t')
-        coverm_out = coverm_out[coverm_out['contigLen']>=int(params.min_contig_size)]
-        coverm_out.to_csv("data/coverm.filt.cov", sep='\t', index=False)
+        import polars as pl
+        (
+            pl.scan_csv(input.done, separator="\t")
+            .filter(pl.col("contigLen") >= int(params.min_contig_size))
+            .collect(streaming=True)
+            .write_csv(output.vamb_bams_done, separator="\t")
+        )
 
 
 rule vamb:
