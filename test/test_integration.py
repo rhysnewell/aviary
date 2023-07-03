@@ -37,6 +37,7 @@ class Tests(unittest.TestCase):
                 f"-o {tmpdir}/aviary_out "
                 f"-1 {data}/wgsim.1.fq.gz "
                 f"-2 {data}/wgsim.2.fq.gz "
+                f"-n 32 -t 32"
             )
             extern.run(cmd)
 
@@ -52,6 +53,7 @@ class Tests(unittest.TestCase):
                 f"-o {tmpdir}/aviary_out "
                 f"-1 {data}/wgsim.1.fq.gz "
                 f"-2 {data}/wgsim.2.fq.gz "
+                f"-n 32 -t 32"
             )
             extern.run(cmd)
 
