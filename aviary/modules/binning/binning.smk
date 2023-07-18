@@ -142,6 +142,8 @@ rule vamb_jgi_filter:
         vamb_bams_done = "data/coverm.filt.cov"
     threads:
         config["max_threads"]
+    resources:
+        mem_mb=int(config["max_memory"])*1024
     params:
         min_contig_size = config['min_contig_size']
     run:
@@ -661,6 +663,8 @@ rule finalize_stats:
     output:
         bin_stats = "bins/bin_info.tsv",
         checkm_minimal = "bins/checkm_minimal.tsv"
+    resources:
+        mem_mb=int(config["max_memory"])*1024
     run:
         import pandas as pd
         from Bio import SeqIO
