@@ -15,6 +15,9 @@ class Tests(unittest.TestCase):
     def test_assemble_simple_inputs(self):
         with tempfile.TemporaryDirectory() as tmpdir:
             cmd = (
+                f"GTDBTK_DATA_PATH=. "
+                f"CHECKM2DB=. "
+                f"EGGNOG_DATA_DIR=. "
                 f"aviary assemble "
                 f"-1 {FORWARD_READS} "
                 f"-2 {REVERSE_READS} "
