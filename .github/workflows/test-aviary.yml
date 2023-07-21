@@ -33,3 +33,4 @@ jobs:
       - name: Run unit tests
         run: |
           aviary -h
+          python test/test_assemble.py
