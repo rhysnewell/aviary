@@ -109,26 +109,23 @@ class Processor:
             self.min_bin_size = args.min_bin_size
             self.semibin_model = args.semibin_model
 
-            if args.skip_binners is not None:
-                # skipping binners is tricky and requires that bam indices are produced
-                # so we explicitly place the bam indices rule in the DAG before any binning occurs
-                self.skip_binners = [binner.lower() for binner in args.skip_binners]
-                self.check_binners_to_skip()
-                if not any(rule in self.workflows for rule in ["get_bam_indices", "complete_assembly", "complete_assembly_with_qc", "complete_cluster"]):
-                    self.workflows.insert(0, 'get_bam_indices')
-                elif any(rule in self.workflows for rule in ["complete_assembly", "complete_assembly_with_qc"]):
-                    indices = [idx for idx, rule in enumerate(self.workflows) if rule in ["complete_assembly", "complete_assembly_with_qc"]]
-                    if len(indices) > 1:
-                        logging.critical(f"Rules 'complete_assembly' and 'complete_assembly_with_qc' both found in DAG or one found multiple times.")
-                        logging.critical(f"Please revise your --workflow parameter.")
-                        sys.exit(1)
-                    self.workflows.insert(indices[0] + 1, 'get_bam_indices')
+            self.skip_binners = []
+            if args.skip_binners:
+                for binner in args.skip_binners:
+                    if binner == "metabat":
+                        self.skip_binners.extend(["metabat_sens", "metabat_ssens", "metabat_spec", "metabat_sspec", "metabat2"])
+                    elif binner == "metabat1":
+                        self.skip_binners.extend(["metabat_sens", "metabat_ssens", "metabat_spec", "metabat_sspec"])
+                    elif binner == "maxbin":
+                        self.skip_binners.append("maxbin2")
+                    else:
+                        self.skip_binners.append(binner)
 
         except AttributeError:
             self.min_contig_size = 1500
             self.min_bin_size = 200000
             self.semibin_model = 'global'
-            self.skip_binners = []
+            self.skip_binners = ["none"]
 
         try:
             self.assembly = args.assembly
@@ -309,6 +306,7 @@ class Processor:
         conf["reference_filter"] = self.reference_filter
         conf["gsa"] = self.gold_standard
         conf["gsa_mappings"] = self.gsa_mappings
+        conf["skip_binners"] = self.skip_binners
         conf["semibin_model"] = self.semibin_model
         conf["max_threads"] = int(self.threads)
         conf["pplacer_threads"] = int(self.pplacer_threads)
@@ -352,76 +350,6 @@ class Processor:
 
     def _validate_config(self):
         load_configfile(self.config)
-
-    def check_binners_to_skip(self):
-
-        to_skip = []
-        skipped = 0
-
-        if "rosella" in self.skip_binners:
-            rosella_path = self.output + "/data/rosella_bins/"
-            rosella_ref_path = self.output + "/data/rosella_refined/"
-            os.makedirs(rosella_path, exist_ok=True)
-            os.makedirs(rosella_ref_path, exist_ok=True)
-            to_skip.append(rosella_path + "done")
-            to_skip.append(rosella_ref_path + "done")
-            skipped += 1
-
-        if "semibin" in self.skip_binners:
-            sb_path = self.output + "/data/semibin_bins/"
-            sb_ref_path = self.output + "/data/semibin_refined/"
-            os.makedirs(sb_path, exist_ok=True)
-            os.makedirs(sb_ref_path, exist_ok=True)
-            to_skip.append(sb_path + "done")
-            to_skip.append(sb_ref_path + "done")
-            skipped += 1
-
-        if "vamb" in self.skip_binners:
-            vamb_path = self.output + "/data/vamb_bins/"
-            os.makedirs(vamb_path, exist_ok=True)
-            to_skip.append(vamb_path + "done")
-            skipped += 1
-
-        if "concoct" in self.skip_binners:
-            concoct_path = self.output + "/data/concoct_bins/"
-            os.makedirs(concoct_path, exist_ok=True)
-            to_skip.append(concoct_path + "done")
-            skipped += 1
-
-        if any(m in self.skip_binners for m in ["maxbin", "maxbin2"]):
-            maxbin2_path = self.output + "/data/maxbin2_bins/"
-            os.makedirs(maxbin2_path, exist_ok=True)
-            to_skip.append(maxbin2_path + "done")
-            skipped += 1
-
-        if any(m in self.skip_binners for m in ["metabat", "metabat1"]):
-            to_skip.extend(self.skip_metabat1())
-            skipped += 1
-
-        if any(m in self.skip_binners for m in ["metabat", "metabat2"]):
-            m_path = self.output + "/data/metabat_bins_2/"
-            m_ref_path = self.output + "/data/metabat2_refined/"
-            os.makedirs(m_path, exist_ok=True)
-            os.makedirs(m_ref_path, exist_ok=True)
-            to_skip.append(m_path + "done")
-            to_skip.append(m_ref_path + "done")
-            skipped += 1
-
-        if skipped < 7:
-            [Path(skip).touch(exist_ok=True) for skip in to_skip]
-        else:
-            logging.error("Check --skip-binners. All binners are being skipped. At least one binning algorithm must be used.")
-            sys.exit(1)
-
-
-    def skip_metabat1(self):
-        return_paths = []
-        for m in ["metabat_bins_sens/", "metabat_bins_ssens/", "metabat_bins_spec/", "metabat_bins_sspec/"]:
-            m_path = self.output + "/data/" + m
-            os.makedirs(m_path, exist_ok=True)
-            return_paths.append(m_path + "done")
-
-        return return_paths
 
     def run_workflow(self, cores=16, profile=None,
                      dryrun=False, clean=True, conda_frontend="mamba",
