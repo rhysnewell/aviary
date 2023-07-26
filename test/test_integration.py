@@ -22,36 +22,62 @@
 #=======================================================================
 
 import unittest
-import sys
-import subprocess
 import tempfile
 import os.path
-
 import extern
 
 data = os.path.join(os.path.dirname(__file__), 'data')
+conda = os.path.join(data,'.conda')
 
 class Tests(unittest.TestCase):
     def test_short_read_assembly(self):
         with tempfile.TemporaryDirectory() as tmpdir:
-            cmd = "aviary assemble -o {}/aviary_out -1 {}/wgsim.1.fq.gz -2 {}/wgsim.2.fq.gz".format(tmpdir, data, data)
-            # print(cmd)
+            cmd = (
+                f"aviary assemble "
+                f"-o {tmpdir}/aviary_out "
+                f"-1 {data}/wgsim.1.fq.gz "
+                f"-2 {data}/wgsim.2.fq.gz "
+                f"-n 32 -t 32"
+            )
             extern.run(cmd)
-            self.assertTrue(os.path.isdir("{}/aviary_out".format(tmpdir)))
-            self.assertTrue(os.path.isfile("{}/aviary_out/data/final_contigs.fasta".format(tmpdir)))
-            self.assertTrue(os.path.islink("{}/aviary_out/assembly/final_contigs.fasta".format(tmpdir)))
+
+            self.assertTrue(os.path.isdir(f"{tmpdir}/aviary_out"))
+            self.assertTrue(os.path.isfile(f"{tmpdir}/aviary_out/data/final_contigs.fasta"))
+            self.assertTrue(os.path.islink(f"{tmpdir}/aviary_out/assembly/final_contigs.fasta"))
 
 
     def test_short_read_recovery(self):
         with tempfile.TemporaryDirectory() as tmpdir:
-            cmd = "aviary recover -o {}/aviary_out -1 {}/wgsim.1.fq.gz -2 {}/wgsim.2.fq.gz".format(tmpdir, data, data)
-            # print(cmd)
+            cmd = (
+                f"aviary recover "
+                f"-o {tmpdir}/aviary_out "
+                f"-1 {data}/wgsim.1.fq.gz "
+                f"-2 {data}/wgsim.2.fq.gz "
+                f"-n 32 -t 32"
+            )
             extern.run(cmd)
-            self.assertTrue(os.path.isfile("{}/aviary_out/bins/bin_info.tsv".format(tmpdir)))
-            self.assertTrue(os.path.isfile("{}/aviary_out/data/final_contigs.fasta".format(tmpdir)))
-            self.assertTrue(os.path.islink("{}/aviary_out/assembly/final_contigs.fasta".format(tmpdir)))
-        
+
+            self.assertTrue(os.path.isfile(f"{tmpdir}/aviary_out/bins/bin_info.tsv"))
+            self.assertTrue(os.path.isfile(f"{tmpdir}/aviary_out/data/final_contigs.fasta"))
+            self.assertTrue(os.path.islink(f"{tmpdir}/aviary_out/assembly/final_contigs.fasta"))
+
+
+    def test_short_read_recovery_skip_binners(self):
+        with tempfile.TemporaryDirectory() as tmpdir:
+            cmd = (
+                f"aviary recover "
+                f"-o {tmpdir}/aviary_out "
+                f"-1 {data}/wgsim.1.fq.gz "
+                f"-2 {data}/wgsim.2.fq.gz "
+                f"--skip-binners concoct rosella semibin vamb metabat2 maxbin "
+                f"-n 32 -t 32"
+            )
+            extern.run(cmd)
+
+            self.assertTrue(os.path.isfile(f"{tmpdir}/aviary_out/bins/bin_info.tsv"))
+            self.assertTrue(os.path.isfile(f"{tmpdir}/aviary_out/data/final_contigs.fasta"))
+            self.assertTrue(os.path.islink(f"{tmpdir}/aviary_out/assembly/final_contigs.fasta"))
 
 
 if __name__ == "__main__":
-	unittest.main()
+    unittest.main()
