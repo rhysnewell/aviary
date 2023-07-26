@@ -563,16 +563,16 @@ rule das_tool:
     """
     input:
         fasta = ancient(config["fasta"]),
-        metabat2_done = "data/metabat2_refined/done",
-        concoct_done = "data/concoct_bins/done",
-        maxbin_done = "data/maxbin2_bins/done",
-        metabat_sspec = "data/metabat_bins_sspec/done",
-        metabat_spec = "data/metabat_bins_spec/done",
-        metabat_ssens = "data/metabat_bins_ssens/done",
-        metabat_sense = "data/metabat_bins_sens/done",
-        rosella_done = "data/rosella_refined/done",
-        semibin_done = "data/semibin_refined/done",
-        vamb_done = "data/vamb_bins/done",
+        metabat2_done = [] if "metabat2" in config["skip_binners"] else "data/metabat2_refined/done",
+        concoct_done = [] if "concoct" in config["skip_binners"] else "data/concoct_bins/done",
+        maxbin_done = [] if "maxbin2" in config["skip_binners"] else "data/maxbin2_bins/done",
+        metabat_sspec = [] if "metabat_sspec" in config["skip_binners"] else "data/metabat_bins_sspec/done",
+        metabat_spec = [] if "metabat_spec" in config["skip_binners"] else "data/metabat_bins_spec/done",
+        metabat_ssens = [] if "metabat_ssens" in config["skip_binners"] else "data/metabat_bins_ssens/done",
+        metabat_sense = [] if "metabat_sens" in config["skip_binners"] else "data/metabat_bins_sens/done",
+        rosella_done = [] if "rosella" in config["skip_binners"] else "data/rosella_refined/done",
+        semibin_done = [] if "semibin" in config["skip_binners"] else "data/semibin_refined/done",
+        vamb_done = [] if "vamb" in config["skip_binners"] else "data/vamb_bins/done",
     resources:
         mem_mb=int(config["max_memory"])
     group: 'binning'

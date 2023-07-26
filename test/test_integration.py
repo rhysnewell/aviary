@@ -62,5 +62,22 @@ class Tests(unittest.TestCase):
             self.assertTrue(os.path.islink(f"{tmpdir}/aviary_out/assembly/final_contigs.fasta"))
 
 
+    def test_short_read_recovery_skip_binners(self):
+        with tempfile.TemporaryDirectory() as tmpdir:
+            cmd = (
+                f"aviary recover "
+                f"-o {tmpdir}/aviary_out "
+                f"-1 {data}/wgsim.1.fq.gz "
+                f"-2 {data}/wgsim.2.fq.gz "
+                f"--skip-binners concoct rosella semibin vamb metabat2 maxbin "
+                f"-n 32 -t 32"
+            )
+            extern.run(cmd)
+
+            self.assertTrue(os.path.isfile(f"{tmpdir}/aviary_out/bins/bin_info.tsv"))
+            self.assertTrue(os.path.isfile(f"{tmpdir}/aviary_out/data/final_contigs.fasta"))
+            self.assertTrue(os.path.islink(f"{tmpdir}/aviary_out/assembly/final_contigs.fasta"))
+
+
 if __name__ == "__main__":
     unittest.main()
