@@ -122,5 +122,60 @@ class Tests(unittest.TestCase):
             # Unnecessary
             self.assertTrue("complete_assembly_with_qc" not in output)
 
+    def test_recover_no_singlem(self):
+        with tempfile.TemporaryDirectory() as tmpdir:
+            cmd = (
+                f"GTDBTK_DATA_PATH=. "
+                f"CHECKM2DB=. "
+                f"EGGNOG_DATA_DIR=. "
+                f"aviary recover "
+                f"--workflow recover_mags_no_singlem "
+                f"--assembly {ASSEMBLY} "
+                f"-1 {FORWARD_READS} "
+                f"-2 {REVERSE_READS} "
+                f"--output {tmpdir}/test "
+                f"--conda-prefix {path_to_conda} "
+                f"--dryrun "
+                f"--snakemake-cmds \" --quiet\" "
+            )
+            output = extern.run(cmd)
+
+            # Binners
+            self.assertTrue("prepare_binning_files" in output)
+            self.assertTrue("get_bam_indices" in output)
+            self.assertTrue("metabat_sens" in output)
+            self.assertTrue("metabat_spec" in output)
+            self.assertTrue("metabat_ssens" in output)
+            self.assertTrue("metabat_sspec" in output)
+            self.assertTrue("metabat2" in output)
+            self.assertTrue("maxbin2" in output)
+            self.assertTrue("rosella" in output)
+            self.assertTrue("semibin" in output)
+            self.assertTrue("vamb" in output)
+            self.assertTrue("concoct" in output)
+            self.assertTrue("das_tool" in output)
+
+            # Refinery
+            self.assertTrue("checkm_metabat2" in output)
+            self.assertTrue("refine_metabat2" in output)
+            self.assertTrue("checkm_rosella" in output)
+            self.assertTrue("refine_rosella" in output)
+            self.assertTrue("checkm_semibin" in output)
+            self.assertTrue("refine_semibin" in output)
+            self.assertTrue("checkm_das_tool" in output)
+            self.assertTrue("refine_dastool" in output)
+
+            # Extras
+            self.assertTrue("checkm2" in output)
+            self.assertTrue("gtdbtk" in output)
+            self.assertTrue("get_abundances" in output)
+            self.assertTrue("singlem_pipe_reads" not in output)
+            self.assertTrue("singlem_appraise" not in output)
+            self.assertTrue("finalize_stats" in output)
+            self.assertTrue("recover_mags_no_singlem" in output)
+
+            # Unnecessary
+            self.assertTrue("complete_assembly_with_qc" not in output)
+
 if __name__ == '__main__':
     unittest.main()
