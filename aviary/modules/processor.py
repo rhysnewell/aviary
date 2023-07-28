@@ -108,6 +108,7 @@ class Processor:
             self.min_contig_size = args.min_contig_size
             self.min_bin_size = args.min_bin_size
             self.semibin_model = args.semibin_model
+            self.refinery_max_iterations = args.refinery_max_iterations
 
             self.skip_binners = []
             if args.skip_binners:
@@ -125,6 +126,7 @@ class Processor:
             self.min_contig_size = 1500
             self.min_bin_size = 200000
             self.semibin_model = 'global'
+            self.refinery_max_iterations = 5
             self.skip_binners = ["none"]
 
         try:
@@ -308,6 +310,7 @@ class Processor:
         conf["gsa_mappings"] = self.gsa_mappings
         conf["skip_binners"] = self.skip_binners
         conf["semibin_model"] = self.semibin_model
+        conf["refinery_max_iterations"] = self.refinery_max_iterations
         conf["max_threads"] = int(self.threads)
         conf["pplacer_threads"] = int(self.pplacer_threads)
         conf["max_memory"] = int(self.max_memory)

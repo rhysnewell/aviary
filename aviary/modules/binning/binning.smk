@@ -449,7 +449,7 @@ rule refine_rosella:
         extension = "fna",
         output_folder = "data/rosella_refined/",
         min_bin_size = config["min_bin_size"],
-        max_iterations = 5,
+        max_iterations = config["refinery_max_iterations"],
         pplacer_threads = config["pplacer_threads"],
         max_contamination = 15,
         final_refining = False
@@ -480,7 +480,7 @@ rule refine_metabat2:
         extension = "fa",
         output_folder = "data/metabat2_refined/",
         min_bin_size = config["min_bin_size"],
-        max_iterations = 5,
+        max_iterations = config["refinery_max_iterations"],
         pplacer_threads = config["pplacer_threads"],
         max_contamination = 15,
         final_refining = False
@@ -509,7 +509,7 @@ rule refine_semibin:
         extension = "fa",
         output_folder = "data/semibin_refined/",
         min_bin_size = config["min_bin_size"],
-        max_iterations = 5,
+        max_iterations = config["refinery_max_iterations"],
         pplacer_threads = config["pplacer_threads"],
         max_contamination = 15,
         final_refining = False
@@ -623,7 +623,7 @@ rule refine_dastool:
         extension = "fa",
         output_folder = "data/refined_bins/",
         min_bin_size = config["min_bin_size"],
-        max_iterations = 5,
+        max_iterations = config["refinery_max_iterations"],
         pplacer_threads = config["pplacer_threads"],
         max_contamination = 15,
         final_refining = True
