@@ -363,7 +363,8 @@ rule checkm_rosella:
         pplacer_threads = config["pplacer_threads"],
         checkm2_db_path = config["checkm2_db_folder"],
         bin_folder = "data/rosella_bins/",
-        extension = "fna"
+        extension = "fna",
+        refinery_max_iterations = config["refinery_max_iterations"],
     group: 'binning'
     output:
         output_folder = directory("data/rosella_bins/checkm2_out/"),
@@ -372,20 +373,8 @@ rule checkm_rosella:
         "../../envs/checkm2.yaml"
     threads:
         config["max_threads"]
-    shell:
-        'touch {output.output_file}; '
-        'if [ `ls "{params.bin_folder}" |grep .fna$ |wc -l` -eq 0 ]; then '
-        'echo "No bins found in {params.bin_folder}"; '
-        'touch {output.output_file}; '
-        'mkdir -p {output.output_folder}; '
-        'else '
-
-        'export CHECKM2DB={params.checkm2_db_path}/uniref100.KO.1.dmnd; '
-        'echo "Using CheckM2 database $CHECKM2DB"; '
-        'checkm2 predict -i {params.bin_folder}/ -x {params.extension} -o {output.output_folder} -t {threads} --force; '
-        'cp {output.output_folder}/quality_report.tsv {output.output_file}; '
-
-        'fi'
+    script:
+        "scripts/run_checkm.py"
 
 rule checkm_metabat2:
     input:
@@ -403,20 +392,8 @@ rule checkm_metabat2:
         "../../envs/checkm2.yaml"
     threads:
         config["max_threads"]
-    shell:
-        'touch {output.output_file}; '
-        'if [ `ls "{params.bin_folder}" |grep .fna$ |wc -l` -eq 0 ]; then '
-        'echo "No bins found in {params.bin_folder}"; '
-        'touch {output.output_file}; '
-        'mkdir -p {output.output_folder}; '
-        'else '
-
-        'export CHECKM2DB={params.checkm2_db_path}/uniref100.KO.1.dmnd; '
-        'echo "Using CheckM2 database $CHECKM2DB"; '
-        'checkm2 predict -i {params.bin_folder}/ -x {params.extension} -o {output.output_folder} -t {threads} --force; '
-        'cp {output.output_folder}/quality_report.tsv {output.output_file}'
-
-        'fi'
+    script:
+        "scripts/run_checkm.py"
 
 rule checkm_semibin:
     input:
@@ -434,20 +411,8 @@ rule checkm_semibin:
         "../../envs/checkm2.yaml"
     threads:
         config["max_threads"]
-    shell:
-        'touch {output.output_file}; '
-        'if [ `ls "{params.bin_folder}" |grep .fna$ |wc -l` -eq 0 ]; then '
-        'echo "No bins found in {params.bin_folder}"; '
-        'touch {output.output_file}; '
-        'mkdir -p {output.output_folder}; '
-        'else '
-
-        'export CHECKM2DB={params.checkm2_db_path}/uniref100.KO.1.dmnd; '
-        'echo "Using CheckM2 database $CHECKM2DB"; '
-        'checkm2 predict -i {params.bin_folder}/ -x {params.extension} -o {output.output_folder} -t {threads} --force; '
-        'cp {output.output_folder}/quality_report.tsv {output.output_file}'
-
-        'fi'
+    script:
+        "scripts/run_checkm.py"
 
 rule refine_rosella:
     input:
