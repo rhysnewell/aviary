@@ -498,6 +498,7 @@ def main():
         '--refinery-max-iterations', '--refinery_max_iterations',
         help='Maximum number of iterations for Rosella refinery. Set to 0 to skip refinery.',
         dest='refinery_max_iterations',
+        type=int,
         default=5
     )
 
