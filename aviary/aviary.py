@@ -496,7 +496,7 @@ def main():
 
     binning_group.add_argument(
         '--refinery-max-iterations', '--refinery_max_iterations',
-        help='Maximum number of iterations for Rosella refinery',
+        help='Maximum number of iterations for Rosella refinery. Set to 0 to skip refinery.',
         dest='refinery_max_iterations',
         default=5
     )
