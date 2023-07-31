@@ -32,14 +32,6 @@ def refinery():
     max_contamination = int(snakemake.params.max_contamination)
     contaminated_bin_folder = snakemake.params.output_folder + "/contaminated_bins"
     final_bins = snakemake.params.output_folder + "/final_bins"
-
-    try:
-        current_checkm = pd.read_csv(checkm_path, sep='\t', comment="[")
-    except e.EmptyDataError:
-        open(f"{snakemake.params.output_folder}/done", "a").close()
-        return
-
-
     bin_folder = snakemake.params.bin_folder
     extension = snakemake.params.extension
 
@@ -55,6 +47,17 @@ def refinery():
     except FileExistsError:
         shutil.rmtree(final_bins)
         os.makedirs(final_bins)
+
+    try:
+        current_checkm = pd.read_csv(checkm_path, sep='\t', comment="[")
+    except e.EmptyDataError:
+        if max_iterations == 0:
+            for bin in os.listdir(bin_folder):
+                shutil.copy(f"{bin_folder}/{bin}", f"{final_bins}/{os.path.splitext(bin)[0]}.fna")
+
+        open(f"{snakemake.params.output_folder}/done", "a").close()
+
+        return
 
     final_checkm = current_checkm.copy().loc[current_checkm["Contamination"] <= snakemake.params.max_contamination].copy()
     final_checkm = move_finished_bins(final_checkm, bin_folder, extension, final_bins)
