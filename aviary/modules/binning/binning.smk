@@ -383,7 +383,8 @@ rule checkm_metabat2:
         pplacer_threads = config["pplacer_threads"],
         checkm2_db_path = config["checkm2_db_folder"],
         bin_folder = "data/metabat_bins_2/",
-        extension = "fa"
+        extension = "fa",
+        refinery_max_iterations = config["refinery_max_iterations"],
     group: 'binning'
     output:
         output_folder = directory("data/metabat_bins_2/checkm2_out/"),
@@ -402,7 +403,8 @@ rule checkm_semibin:
         pplacer_threads = config["pplacer_threads"],
         checkm2_db_path = config["checkm2_db_folder"],
         bin_folder = "data/semibin_bins/output_recluster_bins/",
-        extension = "fa"
+        extension = "fa",
+        refinery_max_iterations = config["refinery_max_iterations"],
     group: 'binning'
     output:
         output_folder = directory("data/semibin_bins/checkm2_out/"),
