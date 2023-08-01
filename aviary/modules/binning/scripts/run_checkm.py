@@ -14,7 +14,7 @@ def checkm(checkm2_db, bin_folder, bin_ext, refinery_max_iterations, output_fold
         Path(output_file).touch()
     else:
         print(f"Using CheckM2 database {checkm2_db}/uniref100.KO.1.dmnd")
-        subprocess.run(f"CHECKM2DB={checkm2_db}/uniref100.KO.1.dmnd checkm2 predict -i {bin_folder}/ -x {bin_ext} -o {output_folder} -t {threads} --force")
+        subprocess.run(f"CHECKM2DB={checkm2_db}/uniref100.KO.1.dmnd checkm2 predict -i {bin_folder}/ -x {bin_ext} -o {output_folder} -t {threads} --force", shell=True)
         shutil.copy(f"{output_folder}/quality_report.tsv", output_file)
 
 
