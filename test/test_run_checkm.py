@@ -8,7 +8,7 @@ from unittest.mock import patch
 import subprocess
 from pathlib import Path
 
-def create_output(_):
+def create_output(_, env):
     os.makedirs("output_folder")
     Path(os.path.join("output_folder", "quality_report.tsv")).touch()
 
@@ -25,7 +25,8 @@ class Tests(unittest.TestCase):
 
                 checkm(checkm2_db, bin_folder, "fna", 1, "output_folder", "output_file", 1)
                 self.assertTrue(os.path.exists("output_file"))
-                mock_subprocess.assert_called_once_with(f"CHECKM2DB={checkm2_db}/uniref100.KO.1.dmnd checkm2 predict -i {bin_folder}/ -x fna -o output_folder -t 1 --force")
+                os.environ["CHECKM2DB"] = f"{checkm2_db}/uniref100.KO.1.dmnd"
+                mock_subprocess.assert_called_once_with(f"checkm2 predict -i {bin_folder}/ -x fna -o output_folder -t 1 --force".split(), env=os.environ)
 
     def test_run_checkm_no_bins(self):
         with tempfile.TemporaryDirectory() as tmpdir:
