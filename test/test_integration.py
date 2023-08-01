@@ -25,6 +25,7 @@ import unittest
 import tempfile
 import os.path
 import extern
+import subprocess
 
 data = os.path.join(os.path.dirname(__file__), 'data')
 conda = os.path.join(data,'.conda')
@@ -66,17 +67,19 @@ class Tests(unittest.TestCase):
         with tempfile.TemporaryDirectory() as tmpdir:
             cmd = (
                 f"aviary recover "
+                f"--assembly {data}/assembly.fasta "
                 f"-o {tmpdir}/aviary_out "
                 f"-1 {data}/wgsim.1.fq.gz "
                 f"-2 {data}/wgsim.2.fq.gz "
-                f"--skip-binners concoct rosella semibin vamb metabat2 maxbin "
+                f"--skip-binners concoct rosella vamb metabat maxbin "
+                f"--refinery-max-iterations 0 "
+                f"--conda-prefix /home/aroneys/m/users/aroneys/.conda/envs "
                 f"-n 32 -t 32"
             )
-            extern.run(cmd)
+            output = subprocess.check_output(cmd, shell=True)
 
             self.assertTrue(os.path.isfile(f"{tmpdir}/aviary_out/bins/bin_info.tsv"))
             self.assertTrue(os.path.isfile(f"{tmpdir}/aviary_out/data/final_contigs.fasta"))
-            self.assertTrue(os.path.islink(f"{tmpdir}/aviary_out/assembly/final_contigs.fasta"))
 
 
 if __name__ == "__main__":
