@@ -402,7 +402,9 @@ class Processor:
 
             try:
                 logging.info("Executing: %s" % cmd)
-                subprocess.check_call(cmd, shell=True)
+                subprocess.run(cmd, stderr=subprocess.PIPE) #shell=True)
+                logging.info("Finished: %s" % workflow)
+                logging.info("stderr: %s" % cmd.stderr)
             except subprocess.CalledProcessError as e:
                 # removes the traceback
                 logging.critical(e)
