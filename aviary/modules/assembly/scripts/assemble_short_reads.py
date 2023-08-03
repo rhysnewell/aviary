@@ -16,6 +16,15 @@ def assemble_short_reads(
         kmer_sizes: List[int]):
     '''
     Assemble short reads using either megahit or spades
+    :param read_set1: list of short reads 1, or 'none'
+    :param read_set2: list of short reads 2, or 'none'
+    :param max_memory: maximum memory to use
+    :param use_megahit: use megahit or not
+    :param coassemble: coassemble or not
+    :param threads: number of threads
+    :param tmp_dir: temporary directory
+    :param kmer_sizes: list of kmer sizes
+    :return:
     '''
 
     # deal with read sets i.e. are we coassembling? Which assembler are we using?
