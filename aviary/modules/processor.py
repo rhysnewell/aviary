@@ -383,7 +383,7 @@ class Processor:
             ).format(
                 snakefile=get_snakefile(),
                 working_dir=self.output,
-                jobs="--jobs {}".format(cores) if cores is not None else "",
+                jobs="--cores{}".format(cores) if cores is not None else "",
                 config_file=self.config,
                 profile="" if (profile is None) else "--profile {}".format(profile),
                 dryrun="--dryrun" if dryrun else "",
@@ -402,7 +402,7 @@ class Processor:
 
             try:
                 logging.info("Executing: %s" % cmd)
-                subprocess.run(cmd, stderr=subprocess.PIPE) #shell=True)
+                subprocess.run(cmd.split(), stderr=subprocess.PIPE) #shell=True)
                 logging.info("Finished: %s" % workflow)
                 logging.info("stderr: %s" % cmd.stderr)
             except subprocess.CalledProcessError as e:
