@@ -401,8 +401,8 @@ class Processor:
                 continue
 
             try:
-                subprocess.check_call(cmd.split(), shell=True)
                 logging.info("Executing: %s" % cmd)
+                subprocess.check_call(cmd, shell=True)
             except subprocess.CalledProcessError as e:
                 # removes the traceback
                 logging.critical(e)
