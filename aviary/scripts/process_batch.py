@@ -19,11 +19,7 @@ def process_batch(batch_file_path):
                 os.mkdir("data/" + identifier)
             except FileExistsError:
                 print("Directory already exists for sample %s" % identifier)
-            # Symbolically link to main aviary folder === BAD IDEA ===
-            # subprocess.Popen("ln -s %s/annotation.smk %s/data/%s/"
-            #                  % (main_directory, main_directory, identifier), shell=True).wait()
-            # subprocess.Popen("cp %s/template_config.yaml %s/data/%s/"
-                             # % (main_directory, main_directory, identifier), shell=True).wait()
+                
             subprocess.Popen("ln -s %s/envs %s/data/%s/"
                              % (main_directory, main_directory, identifier), shell=True).wait()
             subprocess.Popen("ln -s %s/scripts %s/data/%s/"

@@ -641,7 +641,7 @@ rule combine_assemblies:
         flye_fasta = "data/flye_high_cov.fasta"
     group: 'assembly'
     output:
-        fasta = "data/final_contigs.fasta",
+        output_fasta = "data/final_contigs.fasta",
     priority: 1
     threads:
         config["max_threads"]
@@ -653,10 +653,10 @@ rule combine_assemblies:
 rule combine_long_only:
     input:
         long_reads = "data/long_reads.fastq.gz",
-        fasta = "data/assembly.pol.rac.fasta"
+        input_fasta = "data/assembly.pol.rac.fasta"
     group: 'assembly'
     output:
-        fasta = "data/final_contigs.fasta",
+        output_fasta = "data/final_contigs.fasta",
         # long_bam = "data/final_long.sort.bam"
     priority: 1
     conda:
