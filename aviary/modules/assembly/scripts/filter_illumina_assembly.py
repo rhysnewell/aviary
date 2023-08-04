@@ -25,6 +25,7 @@ def run_mapping_process(
     minimap_p1 = Popen(minimap_cmd, stdout=PIPE, stderr=PIPE) # stderr=PIPE optional, dd is chatty
     samtools_view_p2 = Popen(samtools_view_cmd, stdin=minimap_p1.stdout, stdout=PIPE)
     samtools_sort_p3 = Popen(samtools_sort_cmd, stdin=samtools_view_p2.stdout)
+    samtools_sort_p3.wait()
 
     # thoretically p1 and p2 may still be running, this ensures we are collecting their return codes
     minimap_p1.wait()
@@ -140,7 +141,7 @@ if __name__ == "__main__":
     output_fastq = snakemake.output.fastq
 
     threads = snakemake.threads
-    coassemble = snakemake.config['coassamble']
+    coassemble = snakemake.params.coassemble
 
     filter_illumina_assembly(
         short_reads_1=short_reads_1,
