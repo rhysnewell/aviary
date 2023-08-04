@@ -376,14 +376,14 @@ class Processor:
             cmd = (
                 "snakemake --snakefile {snakefile} --directory {working_dir} "
                 "{jobs} --rerun-incomplete {args} {rerun_triggers} "
-                "--configfile '{config_file}' --nolock "
+                "--configfile {config_file} --nolock "
                 "{profile} {conda_frontend} {resources} --use-conda {conda_prefix} "
                 "{dryrun} {notemp} "
                 "{target_rule}"
             ).format(
                 snakefile=get_snakefile(),
                 working_dir=self.output,
-                jobs="--cores{}".format(cores) if cores is not None else "",
+                jobs="--cores {}".format(cores) if cores is not None else "--jobs 1",
                 config_file=self.config,
                 profile="" if (profile is None) else "--profile {}".format(profile),
                 dryrun="--dryrun" if dryrun else "",
@@ -402,9 +402,9 @@ class Processor:
 
             try:
                 logging.info("Executing: %s" % cmd)
-                subprocess.run(cmd.split(), stderr=subprocess.PIPE) #shell=True)
+                subprocess.run(cmd.split())
                 logging.info("Finished: %s" % workflow)
-                logging.info("stderr: %s" % cmd.stderr)
+                # logging.info("stderr: %s" % cmd_output)
             except subprocess.CalledProcessError as e:
                 # removes the traceback
                 logging.critical(e)
