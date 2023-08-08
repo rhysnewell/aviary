@@ -38,7 +38,7 @@ class Tests(unittest.TestCase):
                 f"-o {tmpdir}/aviary_out "
                 f"-1 {data}/wgsim.1.fq.gz "
                 f"-2 {data}/wgsim.2.fq.gz "
-                f"-n 32 -t 32"
+                f"-n 32 -t 32 --tmpdir {tmpdir}"
             )
             extern.run(cmd)
 
@@ -54,7 +54,7 @@ class Tests(unittest.TestCase):
                 f"-o {tmpdir}/aviary_out "
                 f"-1 {data}/wgsim.1.fq.gz "
                 f"-2 {data}/wgsim.2.fq.gz "
-                f"-n 32 -t 32"
+                f"-n 32 -t 32 --tmpdir {tmpdir}"
             )
             extern.run(cmd)
 
@@ -73,8 +73,7 @@ class Tests(unittest.TestCase):
                 f"-2 {data}/wgsim.2.fq.gz "
                 f"--skip-binners concoct rosella vamb metabat maxbin "
                 f"--refinery-max-iterations 1 "
-                f"--conda-prefix /home/aroneys/m/users/aroneys/.conda/envs "
-                f"-n 32 -t 32"
+                f"-n 32 -t 32 --tmpdir {tmpdir}"
             )
             output = subprocess.check_output(cmd, shell=True)
 

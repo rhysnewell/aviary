@@ -371,7 +371,7 @@ class Processor:
         self._validate_config()
 
         cores = max(int(self.threads), cores)
-
+        os.environ["TMPDIR"] = self.tmpdir
         for workflow in self.workflows:
             cmd = (
                 "snakemake --snakefile {snakefile} --directory {working_dir} "
@@ -393,7 +393,7 @@ class Processor:
                 target_rule=workflow if workflow != "None" else "",
                 conda_prefix="--conda-prefix " + self.conda_prefix,
                 conda_frontend="--conda-frontend " + conda_frontend,
-                resources=f"--default-resources \"tmpdir='{self.tmpdir}'\" --resources mem_mb={int(self.max_memory)*1024} {self.resources}" if not dryrun else ""
+                resources=f"--resources mem_mb={int(self.max_memory)*1024} {self.resources}" if not dryrun else ""
             )
 
             if write_to_script is not None:
