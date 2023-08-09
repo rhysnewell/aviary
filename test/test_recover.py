@@ -62,7 +62,7 @@ class Tests(unittest.TestCase):
             self.assertTrue("get_abundances" in output)
             self.assertTrue("singlem_pipe_reads" in output)
             self.assertTrue("singlem_appraise" in output)
-            self.assertTrue("finalize_stats" in output)
+            self.assertTrue("finalise_stats" in output)
             self.assertTrue("recover_mags" in output)
 
             # Unnecessary
@@ -117,7 +117,7 @@ class Tests(unittest.TestCase):
             self.assertTrue("get_abundances" in output)
             self.assertTrue("singlem_pipe_reads" in output)
             self.assertTrue("singlem_appraise" in output)
-            self.assertTrue("finalize_stats" in output)
+            self.assertTrue("finalise_stats" in output)
             self.assertTrue("recover_mags" in output)
 
             # Unnecessary
@@ -172,7 +172,7 @@ class Tests(unittest.TestCase):
             self.assertTrue("get_abundances" in output)
             self.assertTrue("singlem_pipe_reads" not in output)
             self.assertTrue("singlem_appraise" not in output)
-            self.assertTrue("finalize_stats" in output)
+            self.assertTrue("finalise_stats" in output)
             self.assertTrue("recover_mags_no_singlem" in output)
 
             # Unnecessary
