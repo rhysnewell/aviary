@@ -18,7 +18,7 @@ modules are added to aviary.
 - **Circulator**: Hunt, M. et al. Circlator: automated circularization of genome assemblies using long sequencing reads. Genome Biology 16, 294 (2015). https://doi.org/10.1186/s13059-015-0849-0
 - **Racon**: Vaser, R., Sović, I., Nagarajan, N. & Šikić, M. Fast and accurate de novo genome assembly from long uncorrected reads. Genome Res 27, 737–746 (2017). https://doi.org/10.1101/gr.214270.116 
 - **Pilon**: Walker, B. J. et al. Pilon: An Integrated Tool for Comprehensive Microbial Variant Detection and Genome Assembly Improvement. PLOS ONE 9, e112963 (2014). https://doi.org/10.1371/journal.pone.0112963
-- **metaSPAdes**: Nurk, S., Meleshko, D., Korobeynikov, A., & Pevzner, P. A. (2017). metaSPAdes: a new versatile metagenomic assembler. Genome research, 27(5), 824-834. https://doi.org/10.1101%2Fgr.213959.116
+- **metaSPAdes**: Nurk, S., Meleshko, D., Korobeynikov, A., & Pevzner, P. A. (2017). metaSPAdes: a new versatile metagenomic assembler. Genome research, 27(5), 824-834. https://doi.org/10.1101/gr.213959.116
 - **Unicycler**: Wick, R. R., Judd, L. M., Gorrie, C. L. & Holt, K. E. Unicycler: Resolving bacterial genome assemblies from short and long sequencing reads. PLOS Computational Biology 13, e1005595 (2017). https://doi.org/10.1371/journal.pcbi.1005595
 - **MEGAHIT**: Li, D., Liu, C.-M., Luo, R., Sadakane, K. & Lam, T.-W. MEGAHIT: an ultra-fast single-node solution for large and complex metagenomics assembly via succinct de Bruijn graph. Bioinformatics 31, 1674–1676 (2015). https://doi.org/10.1093/bioinformatics/btv033
 
