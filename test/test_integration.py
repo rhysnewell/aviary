@@ -28,7 +28,7 @@ import extern
 import subprocess
 
 data = os.path.join(os.path.dirname(__file__), 'data')
-conda = os.path.join(data,'.conda')
+path_to_conda = os.path.join(data,'.conda')
 
 class Tests(unittest.TestCase):
     def test_short_read_assembly(self):
@@ -38,6 +38,7 @@ class Tests(unittest.TestCase):
                 f"-o {tmpdir}/aviary_out "
                 f"-1 {data}/wgsim.1.fq.gz "
                 f"-2 {data}/wgsim.2.fq.gz "
+                f"--conda-prefix {path_to_conda} "
                 f"-n 32 -t 32 --tmpdir {tmpdir} "
             )
             extern.run(cmd)
@@ -54,6 +55,7 @@ class Tests(unittest.TestCase):
                 f"-o {tmpdir}/aviary_out "
                 f"-1 {data}/wgsim.1.fq.gz "
                 f"-2 {data}/wgsim.2.fq.gz "
+                f"--conda-prefix {path_to_conda} "
                 f"-n 32 -t 32 --tmpdir {tmpdir} "
             )
             extern.run(cmd)
@@ -73,6 +75,7 @@ class Tests(unittest.TestCase):
                 f"-2 {data}/wgsim.2.fq.gz "
                 f"--skip-binners concoct rosella vamb metabat maxbin "
                 f"--refinery-max-iterations 1 "
+                f"--conda-prefix {path_to_conda} "
                 f"-n 32 -t 32 --tmpdir {tmpdir} "
             )
             # output = subprocess.check_output(cmd, shell=True)
