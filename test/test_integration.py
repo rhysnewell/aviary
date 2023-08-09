@@ -38,7 +38,7 @@ class Tests(unittest.TestCase):
                 f"-o {tmpdir}/aviary_out "
                 f"-1 {data}/wgsim.1.fq.gz "
                 f"-2 {data}/wgsim.2.fq.gz "
-                f"-n 32 -t 32 --tmpdir {tmpdir}"
+                f"-n 32 -t 32 --tmpdir {tmpdir} "
             )
             extern.run(cmd)
 
@@ -54,7 +54,7 @@ class Tests(unittest.TestCase):
                 f"-o {tmpdir}/aviary_out "
                 f"-1 {data}/wgsim.1.fq.gz "
                 f"-2 {data}/wgsim.2.fq.gz "
-                f"-n 32 -t 32 --tmpdir {tmpdir}"
+                f"-n 32 -t 32 --tmpdir {tmpdir} "
             )
             extern.run(cmd)
 
@@ -73,9 +73,10 @@ class Tests(unittest.TestCase):
                 f"-2 {data}/wgsim.2.fq.gz "
                 f"--skip-binners concoct rosella vamb metabat maxbin "
                 f"--refinery-max-iterations 1 "
-                f"-n 32 -t 32 --tmpdir {tmpdir}"
+                f"-n 32 -t 32 --tmpdir {tmpdir} "
             )
-            output = subprocess.check_output(cmd, shell=True)
+            # output = subprocess.check_output(cmd, shell=True)
+            extern.run(cmd)
 
             self.assertTrue(os.path.isfile(f"{tmpdir}/aviary_out/bins/bin_info.tsv"))
             self.assertTrue(os.path.isfile(f"{tmpdir}/aviary_out/data/final_contigs.fasta"))

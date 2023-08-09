@@ -1,6 +1,6 @@
-from subprocess import run
+from subprocess import CalledProcessError, run
 import os
-import sys
+from pathlib import Path
 
 
 def run_singlem(
@@ -27,7 +27,16 @@ def run_singlem(
         run(singlem_pipe_cmd)
 
     summarise_cmd = f"singlem summarise --input_otu_tables data/singlem_out/*.csv --output_otu_table data/singlem_out/metagenome.combined_otu_table.csv".split()
-    run(summarise_cmd)
+    
+    try:
+        run(summarise_cmd)
+        Path("data/singlem_out/metagenome.combined_otu_table.csv").touch()
+    except CalledProcessError as e:
+        print(e)
+        print("SingleM summarise failed. Exiting.")
+        Path("data/singlem_out/metagenome.combined_otu_table.csv").touch()
+        
+        
 
 
 if __name__ == '__main__':

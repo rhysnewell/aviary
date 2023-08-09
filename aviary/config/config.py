@@ -89,16 +89,16 @@ def get_software_db_path(db_name='CONDA_ENV_PATH', software_flag='--conda-prefix
                     os.makedirs(f"{conda_prefix}/etc/conda/deactivate.d/", exist_ok=True)
                     # add the export to the activate script
                     with open(f"{conda_prefix}/etc/conda/activate.d/aviary.sh", 'a') as f:
-                        f.write(f'export {db_name}={os.environ[db_name]}')
+                        f.write(f'export {db_name}={os.environ[db_name]}\n')
                     
                     # add the unset to the deactivate script
                     with open(f"{conda_prefix}/etc/conda/deactivate.d/aviary.sh", 'a') as f:
-                        f.write(f'unset {db_name}')
+                        f.write(f'unset {db_name}\n')
 
                 except KeyError:
                     # put the export in the bashrc
                     with open(f"{os.environ['HOME']}/.bashrc", 'a') as f:
-                        f.write(f'export {db_name}={os.environ[db_name]}')
+                        f.write(f'export {db_name}={os.environ[db_name]}\n')
 
                 signal.alarm(0)
                 print('=' * 100)
@@ -120,12 +120,12 @@ def set_db_path(path, db_name='CONDA_ENV_PATH'):
         os.makedirs(f"{conda_prefix}/etc/conda/deactivate.d/", exist_ok=True)
         # add the export to the activate script
         with open(f"{conda_prefix}/etc/conda/activate.d/aviary.sh", 'a') as f:
-            f.write(f'export {db_name}={os.environ[db_name]}')
+            f.write(f'export {db_name}={os.environ[db_name]}\n')
         
         # add the unset to the deactivate script
         with open(f"{conda_prefix}/etc/conda/deactivate.d/aviary.sh", 'a') as f:
-            f.write(f'unset {db_name}')
+            f.write(f'unset {db_name}\n')
     except KeyError:
         # put the export in the bashrc
         with open(f"{os.environ['HOME']}/.bashrc", 'a') as f:
-            f.write(f'export {db_name}={os.environ[db_name]}')
+            f.write(f'export {db_name}={os.environ[db_name]}\n')

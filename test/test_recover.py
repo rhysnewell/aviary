@@ -26,7 +26,7 @@ class Tests(unittest.TestCase):
                 f"-2 {REVERSE_READS} "
                 f"--output {tmpdir}/test "
                 # f"--conda-prefix {path_to_conda} "
-                f"--dryrun --tmpdir {tmpdir}"
+                f"--dryrun --tmpdir {tmpdir} "
                 f"--snakemake-cmds \" --quiet\" "
             )
             output = extern.run(cmd)
@@ -81,7 +81,7 @@ class Tests(unittest.TestCase):
                 f"--output {tmpdir}/test "
                 # f"--conda-prefix {path_to_conda} "
                 f"--skip-binners metabat concoct "
-                f"--dryrun --tmpdir {tmpdir}"
+                f"--dryrun --tmpdir {tmpdir} "
                 f"--snakemake-cmds \" --quiet\" "
             )
             output = extern.run(cmd)
@@ -136,7 +136,7 @@ class Tests(unittest.TestCase):
                 f"-2 {REVERSE_READS} "
                 f"--output {tmpdir}/test "
                 # f"--conda-prefix {path_to_conda} "
-                f"--dryrun --tmpdir {tmpdir}"
+                f"--dryrun --tmpdir {tmpdir} "
                 f"--snakemake-cmds \" --quiet\" "
             )
             output = extern.run(cmd)
@@ -189,7 +189,7 @@ class Tests(unittest.TestCase):
                 f"--assembly {ASSEMBLY} "
                 f"-1 {FORWARD_READS} "
                 f"-2 {REVERSE_READS} "
-                f"--output {tmpdir}/test "
+                f"--output {tmpdir}/test --tmpdir {tmpdir} "
                 # f"--conda-prefix {path_to_conda} "
                 f"--dryrun "
                 f"--snakemake-cmds \" --quiet\" "
