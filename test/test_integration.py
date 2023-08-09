@@ -59,9 +59,7 @@ class Tests(unittest.TestCase):
                 f"--conda-prefix {path_to_conda} "
                 f"-n 32 -t 32 --tmpdir {tmpdir} "
             )
-            output = subprocess.check_output(cmd, shell=True)
-            #extern.run(cmd)
-            import pdb; pdb.set_trace()
+            extern.run(cmd)
 
             self.assertTrue(os.path.isdir(f"{tmpdir}/aviary_out"))
             self.assertTrue(os.path.isfile(f"{tmpdir}/aviary_out/data/final_contigs.fasta"))
