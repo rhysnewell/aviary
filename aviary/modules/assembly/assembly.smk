@@ -82,7 +82,7 @@ rule get_umapped_reads_ref:
 rule get_reads_list_ref:
     input:
         fastq = config["long_reads"],
-        list = "data/unmapped_to_ref.list"
+        unmapped_list = "data/unmapped_to_ref.list"
     group: 'assembly'
     output:
         temp("data/long_reads.fastq.gz")
@@ -93,7 +93,7 @@ rule get_reads_list_ref:
     benchmark:
         "benchmarks/get_reads_list_ref.benchmark.txt"
     shell:
-        "seqtk subseq {input.fastq} {input.list} | pigz -p {threads} > {output}"
+        "seqtk subseq {input.fastq} {input.unmapped_list} | pigz -p {threads} > {output}"
 
 # if no reference filter output this done file just to keep the DAG happy
 rule no_ref_filter:
@@ -163,9 +163,9 @@ rule filter_illumina_ref:
         reference_filter = config["reference_filter"]
     group: 'assembly'
     output:
-        bam = temp("data/short_unmapped_ref.bam"),
-        fastq = temp("data/short_reads.fastq.gz"),
-        filtered = temp("data/short_filter.done")
+        bam = "data/short_unmapped_ref.bam",
+        fastq = "data/short_reads.fastq.gz",
+        filtered = "data/short_filter.done"
     params:
         coassemble = config["coassemble"]
     conda:
@@ -727,6 +727,10 @@ rule complete_assembly:
         'ln -s ../data/final_contigs.fasta ./; '
         'cd ../;'
         'rm -rf data/polishing; '
+        'rm -rf data/short_reads.fastq.gz; '
+        'rm -rf data/short_unmapped_ref.bam; '
+        'rm -rf data/short_unmapped_ref.bam.bai; '
+        'rm -rf data/short_filter.done; '
 
 rule complete_assembly_with_qc:
     input:
@@ -744,6 +748,10 @@ rule complete_assembly_with_qc:
         'ln -s ../data/final_contigs.fasta ./; '
         'cd ../;'
         'rm -rf data/polishing; '
+        'rm -rf data/short_reads.fastq.gz; '
+        'rm -rf data/short_unmapped_ref.bam; '
+        'rm -rf data/short_unmapped_ref.bam.bai; '
+        'rm -rf data/short_filter.done; '
 
 rule reset_to_spades_assembly:
     output:

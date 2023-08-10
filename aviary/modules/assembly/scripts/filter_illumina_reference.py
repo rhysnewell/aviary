@@ -19,7 +19,7 @@ def run_mapping_process(
     """
     minimap_cmd = f"minimap2 -ax sr -t {threads} {input_fasta} {reads_string}".split()
     samtools_view_cmd = f"samtools view -b -f 12 -@ {threads} -o {output_bam}".split()
-    print(f"Shell style : {' '.join(minimap_cmd)} | {' '.join(samtools_view_cmd)} | {' '.join(samtools_sort_cmd)}")
+    print(f"Shell style : {' '.join(minimap_cmd)} | {' '.join(samtools_view_cmd)}")
 
     minimap_p1 = Popen(minimap_cmd, stdout=PIPE, stderr=PIPE) # stderr=PIPE optional, dd is chatty
     samtools_view_p2 = Popen(samtools_view_cmd, stdin=minimap_p1.stdout)
@@ -39,7 +39,7 @@ def run_mapping_process(
     pigz_cmd = f"pigz -p {threads}".split()
 
     print(f"Shell style : {' '.join(samtools_bam2fq_cmd)} | {' '.join(pigz_cmd)} > {output_fastq}")
-    with open(output_fastq) as output_fq:
+    with open(output_fastq, 'w') as output_fq:
         samtools_bam2fq_p1 = Popen(samtools_bam2fq_cmd, stdout=PIPE)
         pigz_p2 = Popen(pigz_cmd, stdin=samtools_bam2fq_p1.stdout, stdout=output_fq)
 

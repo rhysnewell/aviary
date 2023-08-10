@@ -288,7 +288,6 @@ def main():
         '-r', '--reference-filter', '--reference_filter',
         help='Reference filter file to aid in the assembly',
         dest="reference_filter",
-        nargs=1,
         default='none'
     )
 

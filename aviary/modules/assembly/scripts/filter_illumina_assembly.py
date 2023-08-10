@@ -3,11 +3,11 @@ import os
 
 
 def run_mapping_process(
-        reads_string: str, # combination of reads1 and reads2 or just reads1
-        input_fasta: str,
-        output_bam: str,
-        output_fastq: str,
-        threads: int,
+    reads_string: str, # combination of reads1 and reads2 or just reads1
+    input_fasta: str,
+    output_bam: str,
+    output_fastq: str,
+    threads: int,
 ):
     """
     :param reads_string: combination of reads1 and reads2 or just reads1
@@ -43,7 +43,7 @@ def run_mapping_process(
     pigz_cmd = f"pigz -p {threads}".split()
 
     print(f"Shell style : {' '.join(samtools_bam2fq_cmd)} | {' '.join(pigz_cmd)} > {output_fastq}")
-    with open(output_fastq) as output_fq:
+    with open(output_fastq, 'w') as output_fq:
         samtools_bam2fq_p1 = Popen(samtools_bam2fq_cmd, stdout=PIPE)
         pigz_p2 = Popen(pigz_cmd, stdin=samtools_bam2fq_p1.stdout, stdout=output_fq)
 

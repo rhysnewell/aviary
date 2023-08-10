@@ -1,4 +1,4 @@
-ruleorder: filtlong_no_reference > link_reads
+ruleorder: get_reads_list_ref > filtlong_no_reference > link_reads
 ruleorder: complete_qc_all > complete_qc_long > complete_qc_short
 # ruleorder: filtlong_paired > filtlong_single
 # ruleorder: filtlong_paired > filtlong_no_reference
@@ -60,6 +60,7 @@ rule filtlong_no_reference:
             fi
         done
         '''
+
 
 # rule filtlong_reference:
 #     input:
