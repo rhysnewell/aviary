@@ -100,7 +100,7 @@ class Tests(unittest.TestCase):
             extern.run(cmd)
 
             self.assertTrue(os.path.isfile(f"{tmpdir}/aviary_out/bins/bin_info.tsv"))
-            self.assertTrue(os.path.isfile(f"{tmpdir}/aviary_out/data/final_contigs.fasta"))
+            self.assertFalse(os.path.isfile(f"{tmpdir}/aviary_out/data/final_contigs.fasta"))
 
 
 if __name__ == "__main__":
