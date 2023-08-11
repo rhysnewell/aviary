@@ -3,7 +3,7 @@ name: Deploy documentation site
 on:
   push:
     branches:
-      - master
+      - main
     paths:
     - 'docs/**'
     - 'doctave.yml'
@@ -15,7 +15,7 @@ jobs:
     runs-on: ubuntu-latest
     steps:
     - name: 'Checkout GitHub Action'
-      uses: actions/checkout@master
+      uses: actions/checkout@main
 
     - name: 'Build and deploy'
       shell: bash
@@ -24,8 +24,8 @@ jobs:
         doctave build --release --allow-failed-checks
 
     - name: GitHub Pages
-      if: github.ref == 'refs/heads/master'
-      uses: crazy-max/ghaction-github-pages@v3.0.0
+      if: github.ref == 'refs/heads/main'
+      uses: crazy-max/ghaction-github-pages@v3.1.0
       with:
         build_dir: site/
       env:
