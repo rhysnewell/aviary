@@ -48,7 +48,8 @@ rule map_reads_ref:
         reference_filter = config["reference_filter"]
     group: 'assembly'
     output:
-        temp("data/raw_mapped_ref.bam")
+        temp("data/raw_mapped_ref.bam"),
+        temp("data/raw_mapped_ref.bai")
     conda:
         "../../envs/coverm.yaml"
     benchmark:
@@ -58,7 +59,7 @@ rule map_reads_ref:
     threads:
          config["max_threads"]
     shell:
-        "minimap2 -ax {params.mapper} --split-prefix=tmp -t {threads} {input.reference_filter} {input.fastq} | samtools view -@ {threads} -b > {output}"
+        "minimap2 -ax {params.mapper} --split-prefix=tmp -t {threads} {input.reference_filter} {input.fastq} | samtools view -@ {threads} -b > {output} && samtools index {output}"
 
 
 # Get a list of reads that don't map to genome you want to filter
@@ -82,7 +83,7 @@ rule get_umapped_reads_ref:
 rule get_reads_list_ref:
     input:
         fastq = config["long_reads"],
-        list = "data/unmapped_to_ref.list"
+        unmapped_list = "data/unmapped_to_ref.list"
     group: 'assembly'
     output:
         temp("data/long_reads.fastq.gz")
@@ -93,7 +94,7 @@ rule get_reads_list_ref:
     benchmark:
         "benchmarks/get_reads_list_ref.benchmark.txt"
     shell:
-        "seqtk subseq {input.fastq} {input.list} | pigz -p {threads} > {output}"
+        "seqtk subseq {input.fastq} {input.unmapped_list} | pigz -p {threads} > {output}"
 
 # if no reference filter output this done file just to keep the DAG happy
 rule no_ref_filter:
@@ -163,9 +164,9 @@ rule filter_illumina_ref:
         reference_filter = config["reference_filter"]
     group: 'assembly'
     output:
-        bam = temp("data/short_unmapped_ref.bam"),
-        fastq = temp("data/short_reads.fastq.gz"),
-        filtered = temp("data/short_filter.done")
+        bam = "data/short_unmapped_ref.bam",
+        fastq = "data/short_reads.fastq.gz",
+        filtered = "data/short_filter.done"
     params:
         coassemble = config["coassemble"]
     conda:
@@ -641,7 +642,7 @@ rule combine_assemblies:
         flye_fasta = "data/flye_high_cov.fasta"
     group: 'assembly'
     output:
-        fasta = "data/final_contigs.fasta",
+        output_fasta = "data/final_contigs.fasta",
     priority: 1
     threads:
         config["max_threads"]
@@ -653,10 +654,10 @@ rule combine_assemblies:
 rule combine_long_only:
     input:
         long_reads = "data/long_reads.fastq.gz",
-        fasta = "data/assembly.pol.rac.fasta"
+        input_fasta = "data/assembly.pol.rac.fasta"
     group: 'assembly'
     output:
-        fasta = "data/final_contigs.fasta",
+        output_fasta = "data/final_contigs.fasta",
         # long_bam = "data/final_long.sort.bam"
     priority: 1
     conda:
@@ -727,6 +728,10 @@ rule complete_assembly:
         'ln -s ../data/final_contigs.fasta ./; '
         'cd ../;'
         'rm -rf data/polishing; '
+        'rm -rf data/short_reads.fastq.gz; '
+        'rm -rf data/short_unmapped_ref.bam; '
+        'rm -rf data/short_unmapped_ref.bam.bai; '
+        'rm -rf data/short_filter.done; '
 
 rule complete_assembly_with_qc:
     input:
@@ -744,6 +749,10 @@ rule complete_assembly_with_qc:
         'ln -s ../data/final_contigs.fasta ./; '
         'cd ../;'
         'rm -rf data/polishing; '
+        'rm -rf data/short_reads.fastq.gz; '
+        'rm -rf data/short_unmapped_ref.bam; '
+        'rm -rf data/short_unmapped_ref.bam.bai; '
+        'rm -rf data/short_filter.done; '
 
 rule reset_to_spades_assembly:
     output:

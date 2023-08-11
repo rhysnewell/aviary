@@ -28,7 +28,7 @@ import extern
 import subprocess
 
 data = os.path.join(os.path.dirname(__file__), 'data')
-conda = os.path.join(data,'.conda')
+path_to_conda = os.path.join(data,'.conda')
 
 class Tests(unittest.TestCase):
     def test_short_read_assembly(self):
@@ -38,7 +38,26 @@ class Tests(unittest.TestCase):
                 f"-o {tmpdir}/aviary_out "
                 f"-1 {data}/wgsim.1.fq.gz "
                 f"-2 {data}/wgsim.2.fq.gz "
-                f"-n 32 -t 32"
+                f"--conda-prefix {path_to_conda} "
+                f"-n 32 -t 32 --tmpdir {tmpdir} "
+            )
+            extern.run(cmd)
+
+            self.assertTrue(os.path.isdir(f"{tmpdir}/aviary_out"))
+            self.assertTrue(os.path.isfile(f"{tmpdir}/aviary_out/data/final_contigs.fasta"))
+            self.assertTrue(os.path.islink(f"{tmpdir}/aviary_out/assembly/final_contigs.fasta"))
+
+    def test_long_read_assembly(self):
+        with tempfile.TemporaryDirectory() as tmpdir:
+            cmd = (
+                f"aviary assemble "
+                f"-o {tmpdir}/aviary_out "
+                f"-1 {data}/wgsim.1.fq.gz "
+                f"-2 {data}/wgsim.2.fq.gz "
+                f"-l {data}/pbsim.fq.gz "
+                f"--longread-type ont "
+                f"--conda-prefix {path_to_conda} "
+                f"-n 32 -t 32 --tmpdir {tmpdir} "
             )
             extern.run(cmd)
 
@@ -54,7 +73,8 @@ class Tests(unittest.TestCase):
                 f"-o {tmpdir}/aviary_out "
                 f"-1 {data}/wgsim.1.fq.gz "
                 f"-2 {data}/wgsim.2.fq.gz "
-                f"-n 32 -t 32"
+                f"--conda-prefix {path_to_conda} "
+                f"-n 32 -t 32 --tmpdir {tmpdir} "
             )
             extern.run(cmd)
 
@@ -73,13 +93,14 @@ class Tests(unittest.TestCase):
                 f"-2 {data}/wgsim.2.fq.gz "
                 f"--skip-binners concoct rosella vamb metabat maxbin "
                 f"--refinery-max-iterations 1 "
-                f"--conda-prefix /home/aroneys/m/users/aroneys/.conda/envs "
-                f"-n 32 -t 32"
+                f"--conda-prefix {path_to_conda} "
+                f"-n 32 -t 32 --tmpdir {tmpdir} "
             )
-            output = subprocess.check_output(cmd, shell=True)
+            # output = subprocess.check_output(cmd, shell=True)
+            extern.run(cmd)
 
             self.assertTrue(os.path.isfile(f"{tmpdir}/aviary_out/bins/bin_info.tsv"))
-            self.assertTrue(os.path.isfile(f"{tmpdir}/aviary_out/data/final_contigs.fasta"))
+            self.assertFalse(os.path.isfile(f"{tmpdir}/aviary_out/data/final_contigs.fasta"))
 
 
 if __name__ == "__main__":

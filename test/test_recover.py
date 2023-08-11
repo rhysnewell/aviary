@@ -26,7 +26,7 @@ class Tests(unittest.TestCase):
                 f"-2 {REVERSE_READS} "
                 f"--output {tmpdir}/test "
                 f"--conda-prefix {path_to_conda} "
-                f"--dryrun "
+                f"--dryrun --tmpdir {tmpdir} "
                 f"--snakemake-cmds \" --quiet\" "
             )
             output = extern.run(cmd)
@@ -62,7 +62,7 @@ class Tests(unittest.TestCase):
             self.assertTrue("get_abundances" in output)
             self.assertTrue("singlem_pipe_reads" in output)
             self.assertTrue("singlem_appraise" in output)
-            self.assertTrue("finalize_stats" in output)
+            self.assertTrue("finalise_stats" in output)
             self.assertTrue("recover_mags" in output)
 
             # Unnecessary
@@ -81,7 +81,7 @@ class Tests(unittest.TestCase):
                 f"--output {tmpdir}/test "
                 f"--conda-prefix {path_to_conda} "
                 f"--skip-binners metabat concoct "
-                f"--dryrun "
+                f"--dryrun --tmpdir {tmpdir} "
                 f"--snakemake-cmds \" --quiet\" "
             )
             output = extern.run(cmd)
@@ -117,7 +117,7 @@ class Tests(unittest.TestCase):
             self.assertTrue("get_abundances" in output)
             self.assertTrue("singlem_pipe_reads" in output)
             self.assertTrue("singlem_appraise" in output)
-            self.assertTrue("finalize_stats" in output)
+            self.assertTrue("finalise_stats" in output)
             self.assertTrue("recover_mags" in output)
 
             # Unnecessary
@@ -136,7 +136,7 @@ class Tests(unittest.TestCase):
                 f"-2 {REVERSE_READS} "
                 f"--output {tmpdir}/test "
                 f"--conda-prefix {path_to_conda} "
-                f"--dryrun "
+                f"--dryrun --tmpdir {tmpdir} "
                 f"--snakemake-cmds \" --quiet\" "
             )
             output = extern.run(cmd)
@@ -172,7 +172,7 @@ class Tests(unittest.TestCase):
             self.assertTrue("get_abundances" in output)
             self.assertTrue("singlem_pipe_reads" not in output)
             self.assertTrue("singlem_appraise" not in output)
-            self.assertTrue("finalize_stats" in output)
+            self.assertTrue("finalise_stats" in output)
             self.assertTrue("recover_mags_no_singlem" in output)
 
             # Unnecessary
@@ -189,7 +189,7 @@ class Tests(unittest.TestCase):
                 f"--assembly {ASSEMBLY} "
                 f"-1 {FORWARD_READS} "
                 f"-2 {REVERSE_READS} "
-                f"--output {tmpdir}/test "
+                f"--output {tmpdir}/test --tmpdir {tmpdir} "
                 f"--conda-prefix {path_to_conda} "
                 f"--dryrun "
                 f"--snakemake-cmds \" --quiet\" "
