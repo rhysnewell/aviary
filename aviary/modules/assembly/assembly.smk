@@ -48,7 +48,8 @@ rule map_reads_ref:
         reference_filter = config["reference_filter"]
     group: 'assembly'
     output:
-        temp("data/raw_mapped_ref.bam")
+        temp("data/raw_mapped_ref.bam"),
+        temp("data/raw_mapped_ref.bai")
     conda:
         "../../envs/coverm.yaml"
     benchmark:
@@ -58,7 +59,7 @@ rule map_reads_ref:
     threads:
          config["max_threads"]
     shell:
-        "minimap2 -ax {params.mapper} --split-prefix=tmp -t {threads} {input.reference_filter} {input.fastq} | samtools view -@ {threads} -b > {output}"
+        "minimap2 -ax {params.mapper} --split-prefix=tmp -t {threads} {input.reference_filter} {input.fastq} | samtools view -@ {threads} -b > {output} && samtools index {output}"
 
 
 # Get a list of reads that don't map to genome you want to filter
