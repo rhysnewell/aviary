@@ -45,7 +45,7 @@ import glob
 
 rule prepare_binning_files:
     input:
-        fasta = config["fasta"]
+        input_fasta = config["fasta"]
     group: 'binning'
     output:
         maxbin_coverage = "data/maxbin.cov.list",
@@ -352,8 +352,8 @@ rule semibin:
     shell:
         "rm -rf data/semibin_bins/; "
         "mkdir -p data/semibin_bins/output_recluster_bins/; "
-        "SemiBin single_easy_bin -i {input.fasta} -b data/binning_bams/*.bam -o data/semibin_bins --environment {params.semibin_model} -p {threads} && "
-        "touch {output.done} || SemiBin single_easy_bin -i {input.fasta} -b data/binning_bams/*.bam -o data/semibin_bins -p {threads} "
+        "SemiBin single_easy_bin -i {input.fasta} -b data/binning_bams/*.bam -o data/semibin_bins --environment {params.semibin_model} -p {threads} --self-supervised && "
+        "touch {output.done} || SemiBin single_easy_bin -i {input.fasta} -b data/binning_bams/*.bam -o data/semibin_bins -p {threads} --self-supervised "
         "&& touch {output.done} || touch {output.done}"
 
 rule checkm_rosella:
@@ -363,7 +363,8 @@ rule checkm_rosella:
         pplacer_threads = config["pplacer_threads"],
         checkm2_db_path = config["checkm2_db_folder"],
         bin_folder = "data/rosella_bins/",
-        extension = "fna"
+        extension = "fna",
+        refinery_max_iterations = config["refinery_max_iterations"],
     group: 'binning'
     output:
         output_folder = directory("data/rosella_bins/checkm2_out/"),
@@ -372,20 +373,8 @@ rule checkm_rosella:
         "../../envs/checkm2.yaml"
     threads:
         config["max_threads"]
-    shell:
-        'touch {output.output_file}; '
-        'if [ `ls "{params.bin_folder}" |grep .fna$ |wc -l` -eq 0 ]; then '
-        'echo "No bins found in {params.bin_folder}"; '
-        'touch {output.output_file}; '
-        'mkdir -p {output.output_folder}; '
-        'else '
-
-        'export CHECKM2DB={params.checkm2_db_path}/uniref100.KO.1.dmnd; '
-        'echo "Using CheckM2 database $CHECKM2DB"; '
-        'checkm2 predict -i {params.bin_folder}/ -x {params.extension} -o {output.output_folder} -t {threads} --force; '
-        'cp {output.output_folder}/quality_report.tsv {output.output_file}; '
-
-        'fi'
+    script:
+        "scripts/run_checkm.py"
 
 rule checkm_metabat2:
     input:
@@ -394,7 +383,8 @@ rule checkm_metabat2:
         pplacer_threads = config["pplacer_threads"],
         checkm2_db_path = config["checkm2_db_folder"],
         bin_folder = "data/metabat_bins_2/",
-        extension = "fa"
+        extension = "fa",
+        refinery_max_iterations = config["refinery_max_iterations"],
     group: 'binning'
     output:
         output_folder = directory("data/metabat_bins_2/checkm2_out/"),
@@ -403,12 +393,8 @@ rule checkm_metabat2:
         "../../envs/checkm2.yaml"
     threads:
         config["max_threads"]
-    shell:
-        'touch {output.output_file}; '
-        'export CHECKM2DB={params.checkm2_db_path}/uniref100.KO.1.dmnd; '
-        'echo "Using CheckM2 database $CHECKM2DB"; '
-        'checkm2 predict -i {params.bin_folder}/ -x {params.extension} -o {output.output_folder} -t {threads} --force; '
-        'cp {output.output_folder}/quality_report.tsv {output.output_file}'
+    script:
+        "scripts/run_checkm.py"
 
 rule checkm_semibin:
     input:
@@ -417,7 +403,8 @@ rule checkm_semibin:
         pplacer_threads = config["pplacer_threads"],
         checkm2_db_path = config["checkm2_db_folder"],
         bin_folder = "data/semibin_bins/output_recluster_bins/",
-        extension = "fa"
+        extension = "fa",
+        refinery_max_iterations = config["refinery_max_iterations"],
     group: 'binning'
     output:
         output_folder = directory("data/semibin_bins/checkm2_out/"),
@@ -426,12 +413,8 @@ rule checkm_semibin:
         "../../envs/checkm2.yaml"
     threads:
         config["max_threads"]
-    shell:
-        'touch {output.output_file}; '
-        'export CHECKM2DB={params.checkm2_db_path}/uniref100.KO.1.dmnd; '
-        'echo "Using CheckM2 database $CHECKM2DB"; '
-        'checkm2 predict -i {params.bin_folder}/ -x {params.extension} -o {output.output_folder} -t {threads} --force; '
-        'cp {output.output_folder}/quality_report.tsv {output.output_file}'
+    script:
+        "scripts/run_checkm.py"
 
 rule refine_rosella:
     input:
@@ -449,7 +432,7 @@ rule refine_rosella:
         extension = "fna",
         output_folder = "data/rosella_refined/",
         min_bin_size = config["min_bin_size"],
-        max_iterations = 5,
+        max_iterations = config["refinery_max_iterations"],
         pplacer_threads = config["pplacer_threads"],
         max_contamination = 15,
         final_refining = False
@@ -480,7 +463,7 @@ rule refine_metabat2:
         extension = "fa",
         output_folder = "data/metabat2_refined/",
         min_bin_size = config["min_bin_size"],
-        max_iterations = 5,
+        max_iterations = config["refinery_max_iterations"],
         pplacer_threads = config["pplacer_threads"],
         max_contamination = 15,
         final_refining = False
@@ -509,7 +492,7 @@ rule refine_semibin:
         extension = "fa",
         output_folder = "data/semibin_refined/",
         min_bin_size = config["min_bin_size"],
-        max_iterations = 5,
+        max_iterations = config["refinery_max_iterations"],
         pplacer_threads = config["pplacer_threads"],
         max_contamination = 15,
         final_refining = False
@@ -623,7 +606,7 @@ rule refine_dastool:
         extension = "fa",
         output_folder = "data/refined_bins/",
         min_bin_size = config["min_bin_size"],
-        max_iterations = 5,
+        max_iterations = config["refinery_max_iterations"],
         pplacer_threads = config["pplacer_threads"],
         max_contamination = 15,
         final_refining = True
@@ -649,7 +632,7 @@ rule get_abundances:
     script:
         "scripts/get_abundances.py"
 
-rule finalize_stats:
+rule finalise_stats:
     input:
         checkm1_done = "bins/checkm.out",
         checkm2_done = "bins/checkm2_output/quality_report.tsv",
@@ -658,97 +641,8 @@ rule finalize_stats:
     output:
         bin_stats = "bins/bin_info.tsv",
         checkm_minimal = "bins/checkm_minimal.tsv"
-    run:
-        import pandas as pd
-        from Bio import SeqIO
-        import os
-
-        def find_circular(checkm_output, checkm1=True):
-            if checkm1:
-                bin_column = "Bin Id"
-            else:
-                bin_column = "Name"
-
-            circular_contigs = []
-            circular_bps = []
-            circular_fractions = []
-
-            assembly_info = pd.read_csv("data/flye/assembly_info.txt", sep="\t")
-
-            for bin_name in checkm_output[bin_column]:
-
-                fasta_path = f"bins/final_bins/{bin_name}.fna"
-                circular = 0
-                circular_bases = 0
-                total_size = 0
-                for sequence in SeqIO.parse(open(fasta_path), "fasta"):
-                    total_size += len(sequence.seq)
-                    seq_name = sequence.id.strip("_pilon")
-
-                    if seq_name not in assembly_info["#seq_name"].values:
-                        continue
-
-                    found = assembly_info[assembly_info["#seq_name"] == seq_name]
-
-                    if found["circ."].values[0] == "N":
-                        continue
-                    circular += 1
-                    circular_bases += found["length"].values[0]
-
-                circular_bps.append(circular_bases)
-                circular_contigs.append(circular)
-                circular_fractions.append(circular_bases / total_size)
-
-            checkm_output["Circular contigs"], checkm_output["Circular bp"], checkm_output["Circular fraction"] = [circular_contigs, circular_bps, circular_fractions]
-            return checkm_output
-
-        def get_taxonomy(rename_columns="Bin Id"):
-            taxa = []
-            try:
-                df_bac = pd.read_csv(glob.glob("data/gtdbtk/gtdbtk.bac*.summary.tsv")[0], sep="\t")
-                taxa.append(df_bac)
-            except (FileNotFoundError, IndexError):
-                pass
-
-            try:
-                df_arc = pd.read_csv(glob.glob("data/gtdbtk/gtdbtk.ar*.summary.tsv")[0], sep="\t")
-                taxa.append(df_arc)
-            except (FileNotFoundError, IndexError) as e:
-                pass
-
-            taxa = pd.concat(taxa)
-            taxa.rename({'user_genome' : rename_columns}, inplace=True, axis=1)
-            return taxa
-
-        coverage_file = pd.read_csv(input.coverage_file, sep='\t')
-
-        # checkm file for all bins
-        checkm1_output = pd.read_csv(input.checkm1_done, sep='\t', comment="[")
-
-        checkm2_output = pd.read_csv(input.checkm2_done, sep='\t')
-
-        checkm1_output.rename({'Completeness' : 'Completeness (CheckM1)', 'Contamination' : 'Contamination (CheckM1)'}, inplace=True, axis=1)
-        checkm2_output.rename({'Name' : checkm1_output.columns[0], 'Completeness' : 'Completeness (CheckM2)', 'Contamination' : 'Contamination (CheckM2)'}, inplace=True, axis=1)
-
-        checkm_output = pd.merge(checkm1_output, checkm2_output, on=[checkm1_output.columns[0]])
-        is_checkm1 = "Bin Id" in checkm_output.columns
-        coverage_file.rename({"Genome" : checkm_output.columns[0]}, inplace=True, axis=1)
-
-
-        if os.path.isfile("data/flye/assembly_info.txt"):
-            checkm_output = find_circular(checkm_output, is_checkm1)
-
-        taxa = get_taxonomy(checkm_output.columns[0])
-
-        merged_out = pd.merge(checkm_output, coverage_file, on=[checkm_output.columns[0]])
-        merged_out = pd.merge(merged_out, taxa, on=[checkm_output.columns[0]])
-        merged_out.to_csv(output.bin_stats, sep='\t', index=False)
-
-        checkm_minimal = checkm_output[["Bin Id",  "Marker lineage",  "# genomes", "# markers", "# marker sets",
-                                        "0", "1", "2", "3", "4", "5+", "Completeness (CheckM1)", "Contamination (CheckM1)",
-                                        "Completeness (CheckM2)", "Contamination (CheckM2)", "Strain heterogeneity"]]
-
-        checkm_minimal.to_csv(output.checkm_minimal, sep="\t", index=False)
+    script:
+        "scripts/finalise_stats.py"
 
 
 

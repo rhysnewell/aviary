@@ -1,9 +1,12 @@
-import subprocess
+from subprocess import run
 import os
-import sys
+from pathlib import Path
 
 
-def process_batch(batch_file_path):
+def process_batch(
+    batch_file_path: str,
+    threads: int,
+    ):
     main_directory = os.getcwd()
     with open(batch_file_path, "r") as batch_file:
         for line in batch_file:
@@ -18,17 +21,10 @@ def process_batch(batch_file_path):
                 os.mkdir("data/" + identifier)
             except FileExistsError:
                 print("Directory already exists for sample %s" % identifier)
-            # Symbolically link to main aviary folder === BAD IDEA ===
-            # subprocess.Popen("ln -s %s/annotation.smk %s/data/%s/"
-            #                  % (main_directory, main_directory, identifier), shell=True).wait()
-            # subprocess.Popen("cp %s/template_config.yaml %s/data/%s/"
-                             # % (main_directory, main_directory, identifier), shell=True).wait()
-            subprocess.Popen("ln -s %s/envs %s/data/%s/"
-                             % (main_directory, main_directory, identifier), shell=True).wait()
-            subprocess.Popen("ln -s %s/scripts %s/data/%s/"
-                             % (main_directory, main_directory, identifier), shell=True).wait()
-            subprocess.Popen("ln -s %s/.snakemake/ %s/data/%s/"
-                             % (main_directory, main_directory, identifier), shell=True).wait()
+            # Symbolically link to main aviary folder
+            os.symlink(f"{main_directory}/envs", f"{main_directory}/data/{identifier}/envs")
+            os.symlink(f"{main_directory}/scripts", f"{main_directory}/data/{identifier}/scripts")
+            os.symlink(f"{main_directory}/.snakemake", f"{main_directory}/data/{identifier}/.snakemake")
 
             # Flags to specify when to change the next line
             changing_fasta = False
@@ -70,12 +66,15 @@ def process_batch(batch_file_path):
 
 
             os.chdir("%s/data/%s" % (main_directory, identifier))
-            # Run a new snakemake process using the updated template_config.yaml
-            subprocess.Popen("snakemake --use-conda --conda-prefix %s/.snakemake/ -s %s/annotation.smk --cores %d recover_mags"
-                             % (main_directory, main_directory, snakemake.threads), shell=True).wait()
+            # Run a new snakemake process using the updated template_config.yam
+            unlock_cmd = f"snakemake --unlock --use-conda --conda-prefix {main_directory}/.snakemake/ -s {main_directory}/assembly.smk recover_mags".split()
+            run(unlock_cmd)
+
+            run_cmd = f"snakemake --use-conda --conda-prefix {main_directory}/.snakemake/ -s {main_directory}/assembly.smk --cores {threads} recover_mags".split()
+            run(run_cmd)
             os.chdir(main_directory)
 
 
 if __name__ == "__main__":
-    process_batch(snakemake.config["batch_file"])
-    subprocess.Popen("touch data/done", shell=True).wait()
+    process_batch(snakemake.config["batch_file"], snakemake.threads)
+    Path("data/done").touch()

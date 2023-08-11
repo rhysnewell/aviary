@@ -1,5 +1,5 @@
 name: Test Aviary with Setup-Miniconda From Marketplace
-on: [push]
+on: [push, pull_request]
 
 jobs:
   miniconda:
@@ -34,3 +34,5 @@ jobs:
         run: |
           aviary -h
           python test/test_assemble.py
+          python test/test_recover.py
+          python test/test_run_checkm.py -b

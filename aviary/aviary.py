@@ -288,7 +288,6 @@ def main():
         '-r', '--reference-filter', '--reference_filter',
         help='Reference filter file to aid in the assembly',
         dest="reference_filter",
-        nargs=1,
         default='none'
     )
 
@@ -492,6 +491,14 @@ def main():
              'human_gut, dog_gut, ocean, soil, cat_gut, human_oral, mouse_gut, pig_gut, built_environment, wastewater, global',
         dest='semibin_model',
         default='global'
+    )
+
+    binning_group.add_argument(
+        '--refinery-max-iterations', '--refinery_max_iterations',
+        help='Maximum number of iterations for Rosella refinery. Set to 0 to skip refinery.',
+        dest='refinery_max_iterations',
+        type=int,
+        default=5
     )
 
     binning_group.add_argument(

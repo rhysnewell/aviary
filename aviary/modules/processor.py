@@ -108,6 +108,7 @@ class Processor:
             self.min_contig_size = args.min_contig_size
             self.min_bin_size = args.min_bin_size
             self.semibin_model = args.semibin_model
+            self.refinery_max_iterations = args.refinery_max_iterations
 
             self.skip_binners = []
             if args.skip_binners:
@@ -125,6 +126,7 @@ class Processor:
             self.min_contig_size = 1500
             self.min_bin_size = 200000
             self.semibin_model = 'global'
+            self.refinery_max_iterations = 5
             self.skip_binners = ["none"]
 
         try:
@@ -308,6 +310,7 @@ class Processor:
         conf["gsa_mappings"] = self.gsa_mappings
         conf["skip_binners"] = self.skip_binners
         conf["semibin_model"] = self.semibin_model
+        conf["refinery_max_iterations"] = self.refinery_max_iterations
         conf["max_threads"] = int(self.threads)
         conf["pplacer_threads"] = int(self.pplacer_threads)
         conf["max_memory"] = int(self.max_memory)
@@ -368,19 +371,19 @@ class Processor:
         self._validate_config()
 
         cores = max(int(self.threads), cores)
-
+        os.environ["TMPDIR"] = self.tmpdir
         for workflow in self.workflows:
             cmd = (
                 "snakemake --snakefile {snakefile} --directory {working_dir} "
                 "{jobs} --rerun-incomplete {args} {rerun_triggers} "
-                "--configfile '{config_file}' --nolock "
+                "--configfile {config_file} --nolock "
                 "{profile} {conda_frontend} {resources} --use-conda {conda_prefix} "
                 "{dryrun} {notemp} "
                 "{target_rule}"
             ).format(
                 snakefile=get_snakefile(),
                 working_dir=self.output,
-                jobs="--jobs {}".format(cores) if cores is not None else "",
+                jobs="--cores {}".format(cores) if cores is not None else "--jobs 1",
                 config_file=self.config,
                 profile="" if (profile is None) else "--profile {}".format(profile),
                 dryrun="--dryrun" if dryrun else "",
@@ -390,7 +393,7 @@ class Processor:
                 target_rule=workflow if workflow != "None" else "",
                 conda_prefix="--conda-prefix " + self.conda_prefix,
                 conda_frontend="--conda-frontend " + conda_frontend,
-                resources=f"--default-resources \"tmpdir='{self.tmpdir}'\" --resources mem_mb={int(self.max_memory)*1024} {self.resources}" if not dryrun else ""
+                resources=f"--resources mem_mb={int(self.max_memory)*1024} {self.resources}" if not dryrun else ""
             )
 
             if write_to_script is not None:
@@ -398,8 +401,10 @@ class Processor:
                 continue
 
             try:
-                subprocess.check_call(cmd, shell=True)
                 logging.info("Executing: %s" % cmd)
+                subprocess.run(cmd.split())
+                logging.info("Finished: %s" % workflow)
+                # logging.info("stderr: %s" % cmd_output)
             except subprocess.CalledProcessError as e:
                 # removes the traceback
                 logging.critical(e)

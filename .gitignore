@@ -9,3 +9,4 @@ binsnek.egg-info
 aviary_genome.egg-info
 
 example/
+test/data/.conda

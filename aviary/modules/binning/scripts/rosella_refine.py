@@ -1,5 +1,5 @@
 import pandas as pd
-import subprocess
+from subprocess import run
 import shutil
 import glob
 import os
@@ -32,14 +32,6 @@ def refinery():
     max_contamination = int(snakemake.params.max_contamination)
     contaminated_bin_folder = snakemake.params.output_folder + "/contaminated_bins"
     final_bins = snakemake.params.output_folder + "/final_bins"
-
-    try:
-        current_checkm = pd.read_csv(checkm_path, sep='\t', comment="[")
-    except e.EmptyDataError:
-        open(f"{snakemake.params.output_folder}/done", "a").close()
-        return
-
-
     bin_folder = snakemake.params.bin_folder
     extension = snakemake.params.extension
 
@@ -55,6 +47,17 @@ def refinery():
     except FileExistsError:
         shutil.rmtree(final_bins)
         os.makedirs(final_bins)
+
+    try:
+        current_checkm = pd.read_csv(checkm_path, sep='\t', comment="[")
+    except e.EmptyDataError:
+        if max_iterations == 0:
+            for bin in os.listdir(bin_folder):
+                shutil.copy(f"{bin_folder}/{bin}", f"{final_bins}/{os.path.splitext(bin)[0]}.fna")
+
+        open(f"{snakemake.params.output_folder}/done", "a").close()
+
+        return
 
     final_checkm = current_checkm.copy().loc[current_checkm["Contamination"] <= snakemake.params.max_contamination].copy()
     final_checkm = move_finished_bins(final_checkm, bin_folder, extension, final_bins)
@@ -186,16 +189,16 @@ def refine(
         threads, output_folder, max_contamination,
 ):
     if kmers is None:
-        subprocess.Popen(f"rosella refine -a {assembly} --coverage-values {coverage} "
-                         f"-d {bin_folder} -x {extension} --checkm-file {checkm} --max-contamination {max_contamination} "
-                         f"--min-bin-size {min_bin_size} -t {threads} -o {output_folder}", shell=True).wait()
+        rosella_cmd = f"rosella refine -a {assembly} --coverage-values {coverage} -d {bin_folder} -x {extension} --checkm-file {checkm} --max-contamination {max_contamination} --min-bin-size {min_bin_size} -t {threads} -o {output_folder}".split()
+        run(rosella_cmd)
+
         os.makedirs("data/rosella_bins/", exist_ok=True)
-        shutil.copy(f"{output_folder}/rosella_kmer_table.tsv", f"data/rosella_bins/rosella_kmer_table.tsv")
+        shutil.copyfile(f"{output_folder}/rosella_kmer_table.tsv", f"data/rosella_bins/rosella_kmer_table.tsv")
         kmers = "data/rosella_bins/rosella_kmer_table.tsv"
     else:
-        subprocess.Popen(f"rosella refine -a {assembly} --coverage-values {coverage} --kmer-frequencies {kmers} "
-                         f"-d {bin_folder} -x {extension} --checkm-file {checkm} --max-contamination {max_contamination} "
-                         f"--min-bin-size {min_bin_size} -t {threads} -o {output_folder}", shell=True).wait()
+        rosella_cmd = f"rosella refine -a {assembly} --coverage-values {coverage} --kmer-frequencies {kmers} -d {bin_folder} -x {extension} --checkm-file {checkm} --max-contamination {max_contamination} --min-bin-size {min_bin_size} -t {threads} -o {output_folder}".split()
+
+        run(rosella_cmd)
 
     return kmers
 
@@ -206,14 +209,12 @@ def get_checkm_results(
         final_refining=False
 ):
 
-    subprocess.Popen(f"checkm lineage_wf -t {threads} --pplacer_threads {pplacer_threads} -x fna "
-                     f"--tab_table -f {refined_folder}/checkm.out {refined_folder} {refined_folder}/checkm",
-                     shell=True).wait()
+    checkm_cmd = f"checkm lineage_wf -t {threads} --pplacer_threads {pplacer_threads} -x fna --tab_table -f {refined_folder}/checkm.out {refined_folder} {refined_folder}/checkm".split()
+    run(checkm_cmd)
 
     if final_refining:
-        subprocess.Popen(f"checkm qa -o 2 --tab_table -f {refined_folder}/checkm.out "
-                         f"{refined_folder}/checkm/lineage.ms {refined_folder}/checkm/",
-                         shell=True).wait()
+        checkm_qa_cmd = f"checkm qa -o 2 --tab_table -f {refined_folder}/checkm.out {refined_folder}/checkm/lineage.ms {refined_folder}/checkm/".split()
+        run(checkm_qa_cmd)
 
 
 if __name__ == '__main__':

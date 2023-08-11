@@ -1,19 +1,6 @@
 channels:
   - conda-forge
-#  - anaconda
-#  - numba
   - bioconda
-  - defaults
 dependencies:
-  - pip
-  - python
-  - setuptools
-  - mkl
-#  - numpy=1.17.2
-#  - pandas=0.25.1
-#  - samtools = 1.11
-  - blas=*=mkl
-  - openblas
-  - concoct
-#  - pip:
-#    - "https://github.com/BinPro/CONCOCT/archive/refs/tags/1.1.0.zip"
+  - scikit-learn=1.1.0
+  - concoct=1.1.0
