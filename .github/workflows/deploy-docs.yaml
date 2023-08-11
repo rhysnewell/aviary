@@ -5,8 +5,8 @@ on:
     branches:
       - main
     paths:
-    - 'docs/**'
-    - 'doctave.yml'
+      - 'docs/**'
+      - 'doctave.yml'
   workflow_dispatch:
 
 jobs:
@@ -17,6 +17,9 @@ jobs:
     - name: 'Checkout GitHub Action'
       uses: actions/checkout@main
 
+    - name: 'Setup homebrew'
+      uses: Homebrew/actions/setup-homebrew@master
+      
     - name: 'Build and deploy'
       shell: bash
       run: |
