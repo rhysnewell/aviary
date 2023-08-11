@@ -15,7 +15,7 @@ modules are added to aviary.
 
 ## Assembly
 - **Flye**: Kolmogorov, M., Yuan, J., Lin, Y. & Pevzner, P. A. Assembly of long, error-prone reads using repeat graphs. Nature Biotechnology 37, 540–546 (2019). https://doi.org/10.1038/s41587-019-0072-8
-- **Circulator**: Hunt, M. et al. Circlator: automated circularization of genome assemblies using long sequencing reads. Genome Biology 16, 294 (2015). https://doi.org/10.1186/s13059-015-0849-0
+- **Circlator**: Hunt, M. et al. Circlator: automated circularization of genome assemblies using long sequencing reads. Genome Biology 16, 294 (2015). https://doi.org/10.1186/s13059-015-0849-0
 - **Racon**: Vaser, R., Sović, I., Nagarajan, N. & Šikić, M. Fast and accurate de novo genome assembly from long uncorrected reads. Genome Res 27, 737–746 (2017). https://doi.org/10.1101/gr.214270.116 
 - **Pilon**: Walker, B. J. et al. Pilon: An Integrated Tool for Comprehensive Microbial Variant Detection and Genome Assembly Improvement. PLOS ONE 9, e112963 (2014). https://doi.org/10.1371/journal.pone.0112963
 - **metaSPAdes**: Nurk, S., Meleshko, D., Korobeynikov, A., & Pevzner, P. A. (2017). metaSPAdes: a new versatile metagenomic assembler. Genome research, 27(5), 824-834. https://doi.org/10.1101/gr.213959.116
