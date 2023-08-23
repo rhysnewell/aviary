@@ -654,14 +654,12 @@ rule combine_assemblies:
 rule combine_long_only:
     input:
         long_reads = "data/long_reads.fastq.gz",
-        input_fasta = "data/assembly.pol.rac.fasta"
+        flye_fasta = "data/assembly.pol.rac.fasta"
     group: 'assembly'
     output:
         output_fasta = "data/final_contigs.fasta",
         # long_bam = "data/final_long.sort.bam"
     priority: 1
-    conda:
-        "../../envs/minimap2.yaml"
     threads:
         config["max_threads"]
     script:
