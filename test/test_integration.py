@@ -24,7 +24,6 @@
 import unittest
 import tempfile
 import os.path
-import extern
 import subprocess
 
 data = os.path.join(os.path.dirname(__file__), 'data')
@@ -41,7 +40,7 @@ class Tests(unittest.TestCase):
                 f"--conda-prefix {path_to_conda} "
                 f"-n 32 -t 32 --tmpdir {tmpdir} "
             )
-            extern.run(cmd)
+            subprocess.run(cmd, shell=True, check=True)
 
             self.assertTrue(os.path.isdir(f"{tmpdir}/aviary_out"))
             self.assertTrue(os.path.isfile(f"{tmpdir}/aviary_out/data/final_contigs.fasta"))
@@ -59,7 +58,7 @@ class Tests(unittest.TestCase):
                 f"--conda-prefix {path_to_conda} "
                 f"-n 32 -t 32 --tmpdir {tmpdir} "
             )
-            extern.run(cmd)
+            subprocess.run(cmd, shell=True, check=True)
 
             self.assertTrue(os.path.isdir(f"{tmpdir}/aviary_out"))
             self.assertTrue(os.path.isfile(f"{tmpdir}/aviary_out/data/final_contigs.fasta"))
@@ -76,7 +75,7 @@ class Tests(unittest.TestCase):
                 f"--conda-prefix {path_to_conda} "
                 f"-n 32 -t 32 --tmpdir {tmpdir} "
             )
-            extern.run(cmd)
+            subprocess.run(cmd, shell=True, check=True)
 
             self.assertTrue(os.path.isfile(f"{tmpdir}/aviary_out/bins/bin_info.tsv"))
             self.assertTrue(os.path.isfile(f"{tmpdir}/aviary_out/data/final_contigs.fasta"))
@@ -96,8 +95,27 @@ class Tests(unittest.TestCase):
                 f"--conda-prefix {path_to_conda} "
                 f"-n 32 -t 32 --tmpdir {tmpdir} "
             )
-            # output = subprocess.check_output(cmd, shell=True)
-            extern.run(cmd)
+            subprocess.run(cmd, shell=True, check=True)
+
+            self.assertTrue(os.path.isfile(f"{tmpdir}/aviary_out/bins/bin_info.tsv"))
+            self.assertFalse(os.path.isfile(f"{tmpdir}/aviary_out/data/final_contigs.fasta"))
+
+
+    def test_short_read_recovery_skip_abundances(self):
+        with tempfile.TemporaryDirectory() as tmpdir:
+            cmd = (
+                f"aviary recover "
+                f"--assembly {data}/assembly.fasta "
+                f"-o {tmpdir}/aviary_out "
+                f"-1 {data}/wgsim.1.fq.gz "
+                f"-2 {data}/wgsim.2.fq.gz "
+                f"--skip-abundances "
+                f"--skip-binners concoct rosella vamb metabat maxbin "
+                f"--refinery-max-iterations 1 "
+                f"--conda-prefix {path_to_conda} "
+                f"-n 32 -t 32 --tmpdir {tmpdir} "
+            )
+            subprocess.run(cmd, shell=True, check=True)
 
             self.assertTrue(os.path.isfile(f"{tmpdir}/aviary_out/bins/bin_info.tsv"))
             self.assertFalse(os.path.isfile(f"{tmpdir}/aviary_out/data/final_contigs.fasta"))

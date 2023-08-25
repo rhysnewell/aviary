@@ -62,7 +62,10 @@ def get_taxonomy(rename_columns="Bin Id"):
 
 
 if __name__ == "__main__":
-    coverage_file = pd.read_csv(snakemake.input.coverage_file, sep='\t')
+    try:
+        coverage_file = pd.read_csv(snakemake.input.coverage_file, sep='\t')
+    except ValueError:
+        coverage_file = pd.DataFrame(columns=["Genome"])
 
     # checkm file for all bins
     checkm1_output = pd.read_csv(snakemake.input.checkm1_done, sep='\t', comment="[")
