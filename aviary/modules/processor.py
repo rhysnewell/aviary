@@ -405,7 +405,7 @@ class Processor:
 
             try:
                 logging.info("Executing: %s" % cmd)
-                subprocess.run(cmd.split())
+                subprocess.run(cmd.split(), check=True)
                 logging.info("Finished: %s" % workflow)
                 # logging.info("stderr: %s" % cmd_output)
             except subprocess.CalledProcessError as e:
