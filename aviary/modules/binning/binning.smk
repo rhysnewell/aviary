@@ -636,7 +636,7 @@ rule finalise_stats:
     input:
         checkm1_done = "bins/checkm.out",
         checkm2_done = "bins/checkm2_output/quality_report.tsv",
-        coverage_file = "data/coverm_abundances.tsv",
+        coverage_file = "data/coverm_abundances.tsv" if not config["skip_abundances"] else [],
         gtdbtk_done = "data/gtdbtk/done"
     output:
         bin_stats = "bins/bin_info.tsv",
@@ -706,7 +706,7 @@ rule recover_mags:
     input:
         final_bins = "bins/bin_info.tsv",
         gtdbtk = "data/gtdbtk/done",
-        coverm = "data/coverm_abundances.tsv",
+        coverm = "data/coverm_abundances.tsv" if not config["skip_abundances"] else [],
         singlem = "data/singlem_out/singlem_appraisal.tsv"
     conda:
         "../../envs/coverm.yaml"
@@ -731,7 +731,7 @@ rule recover_mags:
 rule recover_mags_no_singlem:
     input:
         final_bins = "bins/bin_info.tsv",
-        coverm = "data/coverm_abundances.tsv",
+        coverm = "data/coverm_abundances.tsv" if not config["skip_abundances"] else [],
     conda:
         "../../envs/coverm.yaml"
     group: 'binning'

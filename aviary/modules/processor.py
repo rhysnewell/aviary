@@ -109,6 +109,7 @@ class Processor:
             self.min_bin_size = args.min_bin_size
             self.semibin_model = args.semibin_model
             self.refinery_max_iterations = args.refinery_max_iterations
+            self.skip_abundances = args.skip_abundances
 
             self.skip_binners = []
             if args.skip_binners:
@@ -128,6 +129,7 @@ class Processor:
             self.semibin_model = 'global'
             self.refinery_max_iterations = 5
             self.skip_binners = ["none"]
+            self.skip_abundances = False
 
         try:
             self.assembly = args.assembly
@@ -309,6 +311,7 @@ class Processor:
         conf["gsa"] = self.gold_standard
         conf["gsa_mappings"] = self.gsa_mappings
         conf["skip_binners"] = self.skip_binners
+        conf["skip_abundances"] = self.skip_abundances
         conf["semibin_model"] = self.semibin_model
         conf["refinery_max_iterations"] = self.refinery_max_iterations
         conf["max_threads"] = int(self.threads)
@@ -402,7 +405,7 @@ class Processor:
 
             try:
                 logging.info("Executing: %s" % cmd)
-                subprocess.run(cmd.split())
+                subprocess.run(cmd.split(), check=True)
                 logging.info("Finished: %s" % workflow)
                 # logging.info("stderr: %s" % cmd_output)
             except subprocess.CalledProcessError as e:

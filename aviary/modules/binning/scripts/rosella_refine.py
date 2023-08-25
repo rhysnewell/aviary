@@ -53,7 +53,8 @@ def refinery():
     except e.EmptyDataError:
         if max_iterations == 0:
             for bin in os.listdir(bin_folder):
-                shutil.copy(f"{bin_folder}/{bin}", f"{final_bins}/{os.path.splitext(bin)[0]}.fna")
+                if bin.endswith(extension):
+                    shutil.copy(f"{bin_folder}/{bin}", f"{final_bins}/{os.path.splitext(bin)[0]}.fna")
 
         open(f"{snakemake.params.output_folder}/done", "a").close()
 

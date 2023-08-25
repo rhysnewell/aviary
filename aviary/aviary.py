@@ -512,6 +512,14 @@ def main():
         # default=["maxbin2"]
     )
 
+    binning_group.add_argument(
+        '--skip-abundances', '--skip_abundances',
+        help='Skip CoverM post-binning abundance calculations.',
+        dest='skip_abundances',
+        default=False,
+        action="store_true",
+    )
+
     ####################################################################
     mag_group = argparse.ArgumentParser(formatter_class=CustomHelpFormatter,
                                         add_help=False)
