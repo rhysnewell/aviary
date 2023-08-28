@@ -85,7 +85,7 @@ if __name__ == "__main__":
 
     taxa = get_taxonomy(checkm_output.columns[0])
 
-    merged_out = pd.merge(checkm_output, coverage_file, on=[checkm_output.columns[0]])
+    merged_out = pd.merge(checkm_output, coverage_file, on=[checkm_output.columns[0]], how="left")
     merged_out = pd.merge(merged_out, taxa, on=[checkm_output.columns[0]])
     merged_out.to_csv(snakemake.output.bin_stats, sep='\t', index=False)
 
