@@ -77,7 +77,12 @@ class Tests(unittest.TestCase):
             )
             subprocess.run(cmd, shell=True, check=True)
 
-            self.assertTrue(os.path.isfile(f"{tmpdir}/aviary_out/bins/bin_info.tsv"))
+            bin_info_path = f"{tmpdir}/aviary_out/bins/bin_info.tsv"
+            self.assertTrue(os.path.isfile(bin_info_path))
+            with open(bin_info_path) as f:
+                num_lines = sum(1 for _ in f)
+            self.assertTrue(num_lines > 1)
+
             self.assertTrue(os.path.isfile(f"{tmpdir}/aviary_out/data/final_contigs.fasta"))
             self.assertTrue(os.path.islink(f"{tmpdir}/aviary_out/assembly/final_contigs.fasta"))
 
@@ -97,7 +102,11 @@ class Tests(unittest.TestCase):
             )
             subprocess.run(cmd, shell=True, check=True)
 
-            self.assertTrue(os.path.isfile(f"{tmpdir}/aviary_out/bins/bin_info.tsv"))
+            bin_info_path = f"{tmpdir}/aviary_out/bins/bin_info.tsv"
+            self.assertTrue(os.path.isfile(bin_info_path))
+            with open(bin_info_path) as f:
+                num_lines = sum(1 for _ in f)
+            self.assertTrue(num_lines > 1)
             self.assertFalse(os.path.isfile(f"{tmpdir}/aviary_out/data/final_contigs.fasta"))
 
 
@@ -117,7 +126,12 @@ class Tests(unittest.TestCase):
             )
             subprocess.run(cmd, shell=True, check=True)
 
-            self.assertTrue(os.path.isfile(f"{tmpdir}/aviary_out/bins/bin_info.tsv"))
+            bin_info_path = f"{tmpdir}/aviary_out/bins/bin_info.tsv"
+            self.assertTrue(os.path.isfile(bin_info_path))
+            with open(bin_info_path) as f:
+                num_lines = sum(1 for _ in f)
+            self.assertEqual(num_lines, 3)
+
             self.assertFalse(os.path.isfile(f"{tmpdir}/aviary_out/data/final_contigs.fasta"))
 
 
