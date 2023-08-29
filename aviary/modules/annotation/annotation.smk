@@ -1,3 +1,4 @@
+localrules: download_databases, download_eggnog_db, download_gtdb, download_checkm2, annotate
 
 onstart:
     import os
@@ -134,6 +135,9 @@ rule checkm2:
         checkm2_db_path = config["checkm2_db_folder"]
     threads:
         config["max_threads"]
+    resources:
+        mem_mb=int(config["max_memory"])*128,
+        runtime = "8h",
     benchmark:
         'benchmarks/checkm2.benchmark.txt'
     conda:
@@ -152,7 +156,8 @@ rule eggnog:
         eggnog_db = config['eggnog_folder'],
         tmpdir = config["tmpdir"]
     resources:
-        mem_mb=int(config["max_memory"])*512
+        mem_mb=int(config["max_memory"])*512,
+        runtime = "24h",
     group: 'annotation'
     output:
         done = 'data/eggnog/done'
@@ -181,7 +186,8 @@ rule gtdbtk:
         pplacer_threads = config["pplacer_threads"],
         extension = config['mag_extension']
     resources:
-        mem_mb=int(config["max_memory"])*1024
+        mem_mb=int(config["max_memory"])*1024,
+        runtime = "12h",
     conda:
         "../../envs/gtdbtk.yaml"
     threads:
