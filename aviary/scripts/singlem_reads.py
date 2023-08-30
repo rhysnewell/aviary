@@ -14,7 +14,7 @@ def run_singlem(
         os.mkdir("data/singlem_out/")
     except OSError:
         with open(log, "a") as logf:
-            logf.write("Using prexisting directory: data/singlem_out/")
+            logf.write("Using prexisting directory: data/singlem_out/\n")
 
     singlem_output_list = []
     if long_reads != "none":
@@ -49,7 +49,7 @@ def run_singlem(
     except CalledProcessError as e:
         with open(log, "a") as logf:
             logf.write(e)
-            logf.write("SingleM summarise failed. Exiting.")
+            logf.write("\nSingleM summarise failed. Exiting.\n")
         Path("data/singlem_out/metagenome.combined_otu_table.csv").touch()
 
 

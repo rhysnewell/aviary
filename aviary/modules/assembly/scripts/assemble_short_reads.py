@@ -64,12 +64,12 @@ def assemble_short_reads(
         # forward reads must always be present as either
         # forward or interleaved or single ended
         with open(log, 'a') as logf:
-            logf.write(f"============= ERROR =============\n")
-            logf.write(f"Invalid read sets provided \n "
-                f"for short read assembly: \n")
-            logf.write(f"    Set 1: {read_set1}\n")
-            logf.write(f"    Set 2: {read_set2}\n")
-            logf.write("Validate read sets and resubmit")
+            logf.write(f"============= ERROR =============\n\n")
+            logf.write(f"Invalid read sets provided \n\n "
+                f"for short read assembly: \n\n")
+            logf.write(f"    Set 1: {read_set1}\n\n")
+            logf.write(f"    Set 2: {read_set2}\n\n")
+            logf.write("Validate read sets and resubmit\n")
         sys.exit(1)
 
 

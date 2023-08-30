@@ -6,7 +6,7 @@ from pathlib import Path
 def checkm(checkm2_db, bin_folder, bin_ext, refinery_max_iterations, output_folder, output_file, threads, log):
     if len([f for f in os.listdir(bin_folder) if f.endswith(bin_ext)]) == 0:
         with open(log, "a") as logf:
-            logf.write(f"No bins found in {bin_folder}")
+            logf.write(f"No bins found in {bin_folder}\n")
         os.makedirs(output_folder)
         Path(output_file).touch()
     elif refinery_max_iterations == 0:
