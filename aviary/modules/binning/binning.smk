@@ -389,7 +389,7 @@ rule semibin:
         min(config["max_threads"], 16)
     resources:
         mem_mb = lambda wildcards, attempt: min(int(config["max_memory"])*1024, 128*1024*attempt),
-        runtime = lambda wildcards, attempt: 24*60*attempt,
+        runtime = lambda wildcards, attempt: 24*60 + 48*60*(attempt-1),
     conda:
         "envs/semibin.yaml"
     log:
