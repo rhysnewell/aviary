@@ -163,7 +163,7 @@ class Tests(unittest.TestCase):
             f"--refinery-max-iterations 0 "
             f"--conda-prefix {path_to_conda} "
             f"-n 32 -t 32 --tmpdir {output_dir} "
-            f"--snakemake-cmds '--profile mqsub --retries 3' "
+            f"--snakemake-profile mqsub --cluster-retries 3 "
         )
         subprocess.run(cmd, shell=True, check=True)
 
