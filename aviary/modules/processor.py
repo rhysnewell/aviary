@@ -388,7 +388,7 @@ class Processor:
                 working_dir=self.output,
                 jobs="--cores {}".format(cores) if cores is not None else "--jobs 1",
                 config_file=self.config,
-                profile="" if (profile is None) else "--profile {}".format(profile),
+                profile="" if not profile else "--profile {}".format(profile),
                 retries="" if (cluster_retries is None) else "--retries {}".format(cluster_retries),
                 dryrun="--dryrun" if dryrun else "",
                 notemp="--notemp" if not clean else "",
