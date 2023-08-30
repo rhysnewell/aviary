@@ -1182,7 +1182,8 @@ def main():
                                dryrun=args.dryrun,
                                clean=args.clean,
                                conda_frontend=args.conda_frontend,
-                               snakemake_args=args.cmds)
+                               snakemake_args=args.cmds,
+                               rerun_triggers=args.rerun_triggers,)
     else:
         process_batch(args, prefix)
 
