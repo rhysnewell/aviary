@@ -18,7 +18,12 @@ def checkm(checkm2_db, bin_folder, bin_ext, refinery_max_iterations, output_fold
         os.environ["CHECKM2DB"] = f"{checkm2_db}/uniref100.KO.1.dmnd"
         with open(log, "a") as logf:
             logf.write(f"Using CheckM2 database {checkm2_db}/uniref100.KO.1.dmnd\n")
-            subprocess.run(f"checkm2 predict -i {bin_folder}/ -x {bin_ext} -o {output_folder} -t {threads} --force".split(), env=os.environ, stdout=logf, stderr=subprocess.STDOUT)
+            subprocess.run(
+                f"checkm2 predict -i {bin_folder}/ -x {bin_ext} -o {output_folder} -t {threads} --force".split(),
+                env=os.environ,
+                stdout=logf,
+                stderr=subprocess.STDOUT
+                )
         shutil.copy(f"{output_folder}/quality_report.tsv", output_file)
 
 
