@@ -146,9 +146,9 @@ rule checkm2:
         "../../envs/checkm2.yaml"
     shell:
         'export CHECKM2DB={params.checkm2_db_path}/uniref100.KO.1.dmnd; '
-        'echo "Using CheckM2 database $CHECKM2DB"; '
+        'echo "Using CheckM2 database $CHECKM2DB" > {log}; '
         'checkm2 predict -i {input.mag_folder}/ -x {params.mag_extension} -o {output.checkm2_folder} -t {threads} --force'
-        '> {log} 2>&1 '
+        '>> {log} 2>&1 '
 
 rule eggnog:
     input:
