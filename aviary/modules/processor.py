@@ -499,6 +499,7 @@ def process_batch(args, prefix):
                                clean=args.clean,
                                conda_frontend=args.conda_frontend,
                                snakemake_args=args.cmds,
+                               rerun_triggers=args.rerun_triggers,
                                write_to_script=write_to_script)
 
     if args.cluster:
@@ -520,6 +521,7 @@ def process_batch(args, prefix):
                                    clean=args.clean,
                                    conda_frontend=args.conda_frontend,
                                    snakemake_args=args.cmds,
+                                   rerun_triggers=args.rerun_triggers,
                                    write_to_script=write_to_script)
 
     if script_file is not None:
