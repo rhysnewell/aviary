@@ -57,7 +57,7 @@ rule prepare_binning_files:
     conda:
         "../../envs/coverm.yaml"
     threads:
-        config["max_threads"]
+        min(config["max_threads"], 64)
     resources:
         mem_mb = lambda wildcards, attempt: min(int(config["max_memory"])*1024, 512*1024*attempt),
         runtime = lambda wildcards, attempt: 24*60 + 24*60*attempt,
@@ -86,6 +86,8 @@ rule maxbin2:
         maxbin_cov = ancient("data/maxbin.cov.list")
     params:
         min_contig_size = config["min_contig_size"]
+    threads:
+        min(config["max_threads"], 16)
     resources:
         mem_mb = lambda wildcards, attempt: min(int(config["max_memory"])*1024, 128*1024*attempt),
         runtime = lambda wildcards, attempt: 72*60 + 24*60*attempt,
@@ -96,8 +98,6 @@ rule maxbin2:
         "envs/maxbin2.yaml"
     benchmark:
         "benchmarks/maxbin2.benchmark.txt"
-    threads:
-        config["max_threads"]
     shell:
         "rm -rf data/maxbin2_bins/; "
         "mkdir -p data/maxbin2_bins && "
@@ -112,6 +112,8 @@ rule concoct:
         bam_done = ancient("data/binning_bams/done")
     params:
         min_contig_size = config["min_contig_size"]
+    threads:
+        min(config["max_threads"], 16)
     resources:
         mem_mb = lambda wildcards, attempt: min(int(config["max_memory"])*1024, 128*1024*attempt),
         runtime = lambda wildcards, attempt: 72*60 + 24*60*attempt,
@@ -122,8 +124,6 @@ rule concoct:
         "envs/concoct.yaml"
     benchmark:
         "benchmarks/concoct.benchmark.txt"
-    threads:
-        config["max_threads"]
     shell:
         "rm -rf data/concoct_*/; "
         "mkdir -p data/concoct_working && "
@@ -170,7 +170,9 @@ rule vamb:
     params:
         min_bin_size = config["min_bin_size"],
         min_contig_size = config["min_contig_size"],
-        vamb_threads = int(config["max_threads"]) // 2 # vamb use double the threads you give it
+        vamb_threads = min(int(config["max_threads"]), 16) // 2 # vamb use double the threads you give it
+    threads:
+        min(config["max_threads"], 16)
     resources:
         mem_mb = lambda wildcards, attempt: min(int(config["max_memory"])*1024, 128*1024*attempt),
         runtime = lambda wildcards, attempt: 12*60*attempt,
@@ -181,8 +183,6 @@ rule vamb:
         "envs/vamb.yaml"
     benchmark:
         "benchmarks/vamb.benchmark.txt"
-    threads:
-         config["max_threads"]
     shell:
         "rm -rf data/vamb_bins/; "
         "bash -c 'vamb --outdir data/vamb_bins/ -p {params.vamb_threads} --jgi {input.coverage} --fasta {input.fasta} "
@@ -212,7 +212,7 @@ rule metabat2:
     conda:
         "envs/metabat2.yaml"
     threads:
-        config["max_threads"]
+        min(config["max_threads"], 16)
     resources:
         mem_mb = lambda wildcards, attempt: min(int(config["max_memory"])*1024, 128*1024*attempt),
         runtime = lambda wildcards, attempt: 12*60*attempt,
@@ -240,7 +240,7 @@ rule metabat_spec:
     benchmark:
         "benchmarks/metabat_spec.benchmark.txt"
     threads:
-        config["max_threads"]
+        min(config["max_threads"], 16)
     resources:
         mem_mb = lambda wildcards, attempt: min(int(config["max_memory"])*1024, 128*1024*attempt),
         runtime = lambda wildcards, attempt: 24*60*attempt,
@@ -265,7 +265,7 @@ rule metabat_sspec:
     benchmark:
         "benchmarks/metabat_sspec.benchmark.txt"
     threads:
-        config["max_threads"]
+        min(config["max_threads"], 16)
     resources:
         mem_mb = lambda wildcards, attempt: min(int(config["max_memory"])*1024, 128*1024*attempt),
         runtime = lambda wildcards, attempt: 24*60*attempt,
@@ -290,7 +290,7 @@ rule metabat_sens:
     benchmark:
         "benchmarks/metabat_sens.benchmark.txt"
     threads:
-        config["max_threads"]
+        min(config["max_threads"], 16)
     resources:
         mem_mb = lambda wildcards, attempt: min(int(config["max_memory"])*1024, 128*1024*attempt),
         runtime = lambda wildcards, attempt: 24*60*attempt,
@@ -315,7 +315,7 @@ rule metabat_ssens:
     benchmark:
         "benchmarks/metabat_ssens.benchmark.txt"
     threads:
-        config["max_threads"]
+        min(config["max_threads"], 16)
     resources:
         mem_mb = lambda wildcards, attempt: min(int(config["max_memory"])*1024, 128*1024*attempt),
         runtime = lambda wildcards, attempt: 24*60*attempt,
@@ -342,7 +342,7 @@ rule rosella:
     conda:
         "envs/rosella.yaml"
     threads:
-        config["max_threads"]
+        min(config["max_threads"], 16)
     resources:
         mem_mb = lambda wildcards, attempt: min(int(config["max_memory"])*1024, 128*1024*attempt),
         runtime = lambda wildcards, attempt: 24*60*attempt,
@@ -366,7 +366,7 @@ rule semibin:
     output:
         done = "data/semibin_bins/done"
     threads:
-        config["max_threads"]
+        min(config["max_threads"], 16)
     resources:
         mem_mb = lambda wildcards, attempt: min(int(config["max_memory"])*1024, 128*1024*attempt),
         runtime = lambda wildcards, attempt: 24*60*attempt,
@@ -397,7 +397,7 @@ rule checkm_rosella:
     conda:
         "../../envs/checkm2.yaml"
     threads:
-        config["max_threads"]
+        min(config["max_threads"], 16)
     resources:
         mem_mb = lambda wildcards, attempt: min(int(config["max_memory"])*1024, 128*1024*attempt),
         runtime = lambda wildcards, attempt: 8*60*attempt,
@@ -420,7 +420,7 @@ rule checkm_metabat2:
     conda:
         "../../envs/checkm2.yaml"
     threads:
-        config["max_threads"]
+        min(config["max_threads"], 16)
     resources:
         mem_mb = lambda wildcards, attempt: min(int(config["max_memory"])*1024, 128*1024*attempt),
         runtime = lambda wildcards, attempt: 8*60*attempt,
@@ -443,7 +443,7 @@ rule checkm_semibin:
     conda:
         "../../envs/checkm2.yaml"
     threads:
-        config["max_threads"]
+        min(config["max_threads"], 16)
     resources:
         mem_mb = lambda wildcards, attempt: min(int(config["max_memory"])*1024, 128*1024*attempt),
         runtime = lambda wildcards, attempt: 8*60*attempt,
@@ -470,11 +470,11 @@ rule refine_rosella:
         pplacer_threads = config["pplacer_threads"],
         max_contamination = 15,
         final_refining = False
+    threads:
+        min(config["max_threads"], 16)
     resources:
         mem_mb = lambda wildcards, attempt: min(int(config["max_memory"])*1024, 128*1024*attempt),
         runtime = lambda wildcards, attempt: 72*60 + 24*60*attempt,
-    threads:
-        config["max_threads"]
     conda:
         "envs/rosella.yaml"
     script:
@@ -489,6 +489,8 @@ rule refine_metabat2:
         # kmers = "data/rosella_bins/rosella_kmer_table.tsv"
     output:
         'data/metabat2_refined/done'
+    threads:
+        min(config["max_threads"], 16)
     resources:
         mem_mb = lambda wildcards, attempt: min(int(config["max_memory"])*1024, 128*1024*attempt),
         runtime = lambda wildcards, attempt: 72*60 + 24*60*attempt,
@@ -503,8 +505,6 @@ rule refine_metabat2:
         pplacer_threads = config["pplacer_threads"],
         max_contamination = 15,
         final_refining = False
-    threads:
-        config["max_threads"]
     conda:
         "envs/rosella.yaml"
     script:
@@ -517,6 +517,8 @@ rule refine_semibin:
         coverage = ancient("data/coverm.cov"),
         fasta = ancient(config["fasta"]),
         # kmers = "data/rosella_bins/rosella_kmer_table.tsv"
+    threads:
+        min(config["max_threads"], 16)
     resources:
         mem_mb = lambda wildcards, attempt: min(int(config["max_memory"])*1024, 128*1024*attempt),
         runtime = lambda wildcards, attempt: 72*60 + 24*60*attempt,
@@ -533,8 +535,6 @@ rule refine_semibin:
         pplacer_threads = config["pplacer_threads"],
         max_contamination = 15,
         final_refining = False
-    threads:
-        config["max_threads"]
     conda:
         "envs/rosella.yaml"
     script:
@@ -593,14 +593,14 @@ rule das_tool:
         rosella_done = [] if "rosella" in config["skip_binners"] else "data/rosella_refined/done",
         semibin_done = [] if "semibin" in config["skip_binners"] else "data/semibin_refined/done",
         vamb_done = [] if "vamb" in config["skip_binners"] else "data/vamb_bins/done",
+    threads:
+        min(config["max_threads"], 64)
     resources:
         mem_mb = lambda wildcards, attempt: min(int(config["max_memory"])*1024, 512*1024*attempt),
         runtime = lambda wildcards, attempt: 12*60*attempt,
     group: 'binning'
     output:
         das_tool_done = "data/das_tool_bins_pre_refine/done"
-    threads:
-        config["max_threads"]
     conda:
         "envs/das_tool.yaml"
     benchmark:
@@ -632,6 +632,8 @@ rule refine_dastool:
         coverage = ancient("data/coverm.cov"),
         fasta = ancient(config["fasta"]),
         # kmers = "data/rosella_bins/rosella_kmer_table.tsv"
+    threads:
+        min(config["max_threads"], 16)
     resources:
         mem_mb = lambda wildcards, attempt: min(int(config["max_memory"])*1024, 128*1024*attempt),
         runtime = lambda wildcards, attempt: 72*60 + 24*60*attempt,
@@ -649,8 +651,6 @@ rule refine_dastool:
         pplacer_threads = config["pplacer_threads"],
         max_contamination = 15,
         final_refining = True
-    threads:
-        config["max_threads"]
     conda:
         "envs/rosella.yaml"
     script:
@@ -660,6 +660,8 @@ rule get_abundances:
     input:
         "bins/checkm.out"
     group: 'binning'
+    threads:
+        min(config["max_threads"], 64)
     resources:
         mem_mb = lambda wildcards, attempt: min(int(config["max_memory"])*1024, 512*1024*attempt),
         runtime = lambda wildcards, attempt: 24*60 + 24*60*attempt,
@@ -667,8 +669,6 @@ rule get_abundances:
         "data/coverm_abundances.tsv"
     conda:
         "../../envs/coverm.yaml"
-    threads:
-        config["max_threads"]
     script:
         "scripts/get_abundances.py"
 
@@ -697,7 +697,7 @@ rule checkm_das_tool:
     conda:
         "../../envs/checkm.yaml"
     threads:
-        config["max_threads"]
+        min(config["max_threads"], 16)
     resources:
         mem_mb = lambda wildcards, attempt: min(int(config["max_memory"])*1024, 128*1024*attempt),
         runtime = lambda wildcards, attempt: 8*60*attempt,
@@ -733,8 +733,7 @@ rule singlem_appraise:
     params:
         pplacer_threads = config['pplacer_threads'],
         fasta = config['fasta']
-    threads:
-        config["pplacer_threads"]
+    threads: 1
     resources:
         mem_mb = lambda wildcards, attempt: min(int(config["max_memory"])*1024, 8*1024*attempt),
         runtime = lambda wildcards, attempt: 12*60*attempt,
@@ -809,7 +808,7 @@ rule dereplicate_and_get_abundances_paired:
         final_bins = 'bins/final_bins',
         derep_ani = 0.97
     threads:
-        config['max_threads']
+        min(config["max_threads"], 64)
     resources:
         mem_mb = lambda wildcards, attempt: min(int(config["max_memory"])*1024, 512*1024*attempt),
         runtime = lambda wildcards, attempt: 24*60 + 24*60*attempt,
@@ -828,7 +827,7 @@ rule dereplicate_and_get_abundances_interleaved:
         final_bins = 'bins/final_bins',
         derep_ani = 0.97
     threads:
-        config['max_threads']
+        min(config["max_threads"], 64)
     resources:
         mem_mb = lambda wildcards, attempt: min(int(config["max_memory"])*1024, 512*1024*attempt),
         runtime = lambda wildcards, attempt: 24*60 + 24*60*attempt,
