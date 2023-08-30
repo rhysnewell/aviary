@@ -11,13 +11,13 @@ def checkm(checkm2_db, bin_folder, bin_ext, refinery_max_iterations, output_fold
         Path(output_file).touch()
     elif refinery_max_iterations == 0:
         with open(log, "a") as logf:
-            logf.write("Skipping pre-refinery CheckM2 rules")
+            logf.write("Skipping pre-refinery CheckM2 rules\n")
         os.makedirs(output_folder)
         Path(output_file).touch()
     else:
         os.environ["CHECKM2DB"] = f"{checkm2_db}/uniref100.KO.1.dmnd"
         with open(log, "a") as logf:
-            logf.write(f"Using CheckM2 database {checkm2_db}/uniref100.KO.1.dmnd")
+            logf.write(f"Using CheckM2 database {checkm2_db}/uniref100.KO.1.dmnd\n")
             subprocess.run(f"checkm2 predict -i {bin_folder}/ -x {bin_ext} -o {output_folder} -t {threads} --force".split(), env=os.environ, stdout=logf, stderr=subprocess.STDOUT)
         shutil.copy(f"{output_folder}/quality_report.tsv", output_file)
 
