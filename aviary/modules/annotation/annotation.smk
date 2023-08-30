@@ -148,7 +148,7 @@ rule checkm2:
         'export CHECKM2DB={params.checkm2_db_path}/uniref100.KO.1.dmnd; '
         'echo "Using CheckM2 database $CHECKM2DB"; '
         'checkm2 predict -i {input.mag_folder}/ -x {params.mag_extension} -o {output.checkm2_folder} -t {threads} --force'
-        '&> {log} '
+        '> {log} 2>&1 '
 
 rule eggnog:
     input:
@@ -178,7 +178,7 @@ rule eggnog:
         'find {input.mag_folder}/*.{params.mag_extension} | parallel -j1 \'emapper.py --data_dir {params.eggnog_db} '
         '--dmnd_db {params.eggnog_db}/*dmnd --cpu {threads} -m diamond --itype genome --genepred prodigal -i {{}} '
         '--output_dir data/eggnog/ --temp_dir {params.tmpdir} -o {{/.}} || echo "Genome already annotated"\' '
-        '&> {log}; '
+        '> {log} 2>&1; '
         'touch data/eggnog/done; '
 
 rule gtdbtk:
@@ -206,7 +206,7 @@ rule gtdbtk:
         "export GTDBTK_DATA_PATH={params.gtdbtk_folder} && "
         "gtdbtk classify_wf --skip_ani_screen --cpus {threads} --pplacer_cpus {params.pplacer_threads} --extension {params.extension} "
         "--genome_dir {input.mag_folder} --out_dir data/gtdbtk "
-        "&> {log} "
+        "> {log} 2>&1 "
         "&& touch data/gtdbtk/done"
 
 rule annotate:

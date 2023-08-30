@@ -106,7 +106,7 @@ rule maxbin2:
         "rm -rf data/maxbin2_bins/; "
         "mkdir -p data/maxbin2_bins && "
         "run_MaxBin.pl -contig {input.fasta} -thread {threads} -abund_list {input.maxbin_cov} "
-        "-out data/maxbin2_bins/maxbin -min_contig_length {params.min_contig_size} &> {log} "
+        "-out data/maxbin2_bins/maxbin -min_contig_length {params.min_contig_size} > {log} 2>&1 "
         "&& touch {output[0]} || touch {output[0]}"
 
 
@@ -138,7 +138,7 @@ rule concoct:
         "concoct --threads {threads} -l {params.min_contig_size} --composition_file data/concoct_working/contigs_10K.fa --coverage_file data/concoct_working/coverage_table.tsv -b data/concoct_working/ 2>/dev/null && "
         "merge_cutup_clustering.py data/concoct_working/clustering_gt{params.min_contig_size}.csv > data/concoct_working/clustering_merged.csv 2>> {log} && "
         "mkdir -p data/concoct_bins && "
-        "extract_fasta_bins.py {input.fasta} data/concoct_working/clustering_merged.csv --output_path data/concoct_bins/ 2>> {log} && "
+        "extract_fasta_bins.py {input.fasta} data/concoct_working/clustering_merged.csv --output_path data/concoct_bins/ >> {log} 2>&1 && "
         "touch {output[0]} || touch {output[0]}"
 
 
@@ -194,7 +194,7 @@ rule vamb:
     shell:
         "rm -rf data/vamb_bins/; "
         "bash -c 'vamb --outdir data/vamb_bins/ -p {params.vamb_threads} --jgi {input.coverage} --fasta {input.fasta} "
-        "--minfasta {params.min_bin_size} -m {params.min_contig_size} &> {log} && touch {output[0]}' || "
+        "--minfasta {params.min_bin_size} -m {params.min_contig_size} > {log} 2>&1 && touch {output[0]}' || "
         "touch {output[0]} && mkdir -p data/vamb_bins/bins"
 
 
@@ -231,7 +231,7 @@ rule metabat2:
     shell:
         "rm -rf data/metabat_bins_2/; "
         "metabat -t {threads} -m {params.min_contig_size} -s {params.min_bin_size} --seed 89 -i {input.fasta} "
-        "-a {input.coverage} -o data/metabat_bins_2/binned_contigs &> {log} && "
+        "-a {input.coverage} -o data/metabat_bins_2/binned_contigs > {log} 2>&1 && "
         "touch {output[0]} || touch {output[0]}"
 
 
@@ -259,7 +259,7 @@ rule metabat_spec:
     shell:
         "rm -rf data/metabat_bins_spec; "
         "metabat1 -t {threads} -m {params.min_contig_size} -s {params.min_bin_size} --seed 89 --specific -i {input.fasta} "
-        "-a {input.coverage} -o data/metabat_bins_spec/binned_contigs &> {log} && "
+        "-a {input.coverage} -o data/metabat_bins_spec/binned_contigs > {log} 2>&1 && "
         "touch {output[0]} || touch {output[0]}"
 
 rule metabat_sspec:
@@ -286,7 +286,7 @@ rule metabat_sspec:
     shell:
         "rm -rf data/metabat_bins_sspec; "
         "metabat1 -t {threads} -m {params.min_contig_size} -s {params.min_bin_size} --seed 89 --superspecific "
-        "-i {input.fasta} -a {input.coverage} -o data/metabat_bins_sspec/binned_contigs &> {log} && "
+        "-i {input.fasta} -a {input.coverage} -o data/metabat_bins_sspec/binned_contigs > {log} 2>&1 && "
         "touch {output[0]} || touch {output[0]}"
 
 rule metabat_sens:
@@ -313,7 +313,7 @@ rule metabat_sens:
     shell:
         "rm -rf data/metabat_bins_sens; "
         "metabat1 -t {threads} -m {params.min_contig_size} -s {params.min_bin_size} --seed 89 --sensitive "
-        "-i {input.fasta} -a {input.coverage} -o data/metabat_bins_sens/binned_contigs &> {log} && "
+        "-i {input.fasta} -a {input.coverage} -o data/metabat_bins_sens/binned_contigs > {log} 2>&1 && "
         "touch {output[0]} || touch {output[0]}"
 
 rule metabat_ssens:
@@ -340,7 +340,7 @@ rule metabat_ssens:
     shell:
         "rm -rf data/metabat_bins_ssens; "
         "metabat1 -t {threads} -m {params.min_contig_size} -s {params.min_bin_size} --seed 89 --supersensitive "
-        "-i {input.fasta} -a {input.coverage} -o data/metabat_bins_ssens/binned_contigs &> {log} && "
+        "-i {input.fasta} -a {input.coverage} -o data/metabat_bins_ssens/binned_contigs > {log} 2>&1 && "
         "touch {output[0]} || touch {output[0]}"
 
 rule rosella:
@@ -371,7 +371,7 @@ rule rosella:
     shell:
         "rm -rf data/rosella_bins/; "
         "rosella recover -r {input.fasta} -i {input.coverage} -t {threads} -o data/rosella_bins "
-        "--min-contig-size {params.min_contig_size} --min-bin-size {params.min_bin_size} --n-neighbors 200 &> {log} && "
+        "--min-contig-size {params.min_contig_size} --min-bin-size {params.min_bin_size} --n-neighbors 200 > {log} 2>&1 && "
         "touch {output.done} || touch {output.done}"
 
 
@@ -399,8 +399,8 @@ rule semibin:
     shell:
         "rm -rf data/semibin_bins/; "
         "mkdir -p data/semibin_bins/output_recluster_bins/; "
-        "SemiBin single_easy_bin -i {input.fasta} -b data/binning_bams/*.bam -o data/semibin_bins --environment {params.semibin_model} -p {threads} --self-supervised &> {log} && "
-        "touch {output.done} || SemiBin single_easy_bin -i {input.fasta} -b data/binning_bams/*.bam -o data/semibin_bins -p {threads} --self-supervised &> {log} "
+        "SemiBin single_easy_bin -i {input.fasta} -b data/binning_bams/*.bam -o data/semibin_bins --environment {params.semibin_model} -p {threads} --self-supervised > {log} 2>&1 && "
+        "touch {output.done} || SemiBin single_easy_bin -i {input.fasta} -b data/binning_bams/*.bam -o data/semibin_bins -p {threads} --self-supervised > {log} 2>&1 "
         "&& touch {output.done} || touch {output.done}"
 
 rule checkm_rosella:
@@ -746,7 +746,7 @@ rule checkm_das_tool:
     shell:
         'checkm lineage_wf -t {threads} --pplacer_threads {params.pplacer_threads} '
         '-x fa data/das_tool_bins_pre_refine/das_tool_DASTool_bins data/das_tool_bins_pre_refine/checkm --tab_table '
-        '-f data/das_tool_bins_pre_refine/checkm.out &> {log}; '
+        '-f data/das_tool_bins_pre_refine/checkm.out > {log} 2>&1; '
         'checkm qa -o 2 --tab_table -f data/das_tool_bins_pre_refine/checkm.out '
         'data/das_tool_bins_pre_refine/checkm/lineage.ms data/das_tool_bins_pre_refine/checkm/ >> {log} 2>&1; '
 
@@ -786,12 +786,12 @@ rule singlem_appraise:
     log:
         "data/singlem_out/singlem_log.txt"
     shell:
-        "singlem pipe --threads {threads} --sequences bins/final_bins/*.fna --otu_table data/singlem_out/genomes.otu_table.csv 2> {log}; "
-        "singlem pipe --threads {threads} --sequences {params.fasta} --otu_table data/singlem_out/assembly.otu_table.csv 2>> {log}; "
+        "singlem pipe --threads {threads} --sequences bins/final_bins/*.fna --otu_table data/singlem_out/genomes.otu_table.csv > {log} 2>&1; "
+        "singlem pipe --threads {threads} --sequences {params.fasta} --otu_table data/singlem_out/assembly.otu_table.csv >> {log} 2>&1; "
         "singlem appraise --metagenome_otu_tables {input.metagenome} --genome_otu_tables data/singlem_out/genomes.otu_table.csv "
         "--assembly_otu_table data/singlem_out/assembly.otu_table.csv "
         "--plot data/singlem_out/singlem_appraise.svg --output_binned_otu_table data/singlem_out/binned.otu_table.csv "
-        "--output_unbinned_otu_table data/singlem_out/unbinned.otu_table.csv 1> data/singlem_out/singlem_appraisal.tsv 2>> {log} || "
+        "--output_unbinned_otu_table data/singlem_out/unbinned.otu_table.csv > data/singlem_out/singlem_appraisal.tsv 2>> {log} || "
         "echo 'SingleM Errored, please check data/singlem_out/singlem_log.txt' && touch data/singlem_out/singlem_appraisal.tsv"
 
 
