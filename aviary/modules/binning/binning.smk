@@ -502,7 +502,7 @@ rule refine_rosella:
         min(config["max_threads"], 16)
     resources:
         mem_mb = lambda wildcards, attempt: min(int(config["max_memory"])*1024, 128*1024*attempt),
-        runtime = lambda wildcards, attempt: 72*60 + 24*60*attempt,
+        runtime = lambda wildcards, attempt: 48*60 + 24*60*attempt,
     log:
         "logs/refine_rosella.log"
     conda:
@@ -523,7 +523,7 @@ rule refine_metabat2:
         min(config["max_threads"], 16)
     resources:
         mem_mb = lambda wildcards, attempt: min(int(config["max_memory"])*1024, 128*1024*attempt),
-        runtime = lambda wildcards, attempt: 72*60 + 24*60*attempt,
+        runtime = lambda wildcards, attempt: 48*60 + 24*60*attempt,
     benchmark:
         'benchmarks/refine_metabat2.benchmark.txt'
     params:
@@ -553,7 +553,7 @@ rule refine_semibin:
         min(config["max_threads"], 16)
     resources:
         mem_mb = lambda wildcards, attempt: min(int(config["max_memory"])*1024, 128*1024*attempt),
-        runtime = lambda wildcards, attempt: 72*60 + 24*60*attempt,
+        runtime = lambda wildcards, attempt: 48*60 + 24*60*attempt,
     output:
         'data/semibin_refined/done'
     benchmark:
@@ -672,7 +672,7 @@ rule refine_dastool:
         min(config["max_threads"], 16)
     resources:
         mem_mb = lambda wildcards, attempt: min(int(config["max_memory"])*1024, 128*1024*attempt),
-        runtime = lambda wildcards, attempt: 72*60 + 24*60*attempt,
+        runtime = lambda wildcards, attempt: 48*60 + 24*60*attempt,
     output:
         temporary('bins/checkm.out'),
         directory('bins/final_bins')
