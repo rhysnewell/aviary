@@ -136,8 +136,8 @@ rule checkm2:
     threads:
         config["max_threads"]
     resources:
-        mem_mb=int(config["max_memory"])*128,
-        runtime = "8h",
+        mem_mb = lambda wildcards, attempt: min(int(config["max_memory"])*1024, 128*1024*attempt),
+        runtime = lambda wildcards, attempt: 8*60*attempt,
     benchmark:
         'benchmarks/checkm2.benchmark.txt'
     conda:
@@ -156,8 +156,8 @@ rule eggnog:
         eggnog_db = config['eggnog_folder'],
         tmpdir = config["tmpdir"]
     resources:
-        mem_mb=int(config["max_memory"])*512,
-        runtime = "24h",
+        mem_mb = lambda wildcards, attempt: min(int(config["max_memory"])*1024, 512*1024*attempt),
+        runtime = lambda wildcards, attempt: 24*60*attempt,
     group: 'annotation'
     output:
         done = 'data/eggnog/done'
@@ -186,8 +186,8 @@ rule gtdbtk:
         pplacer_threads = config["pplacer_threads"],
         extension = config['mag_extension']
     resources:
-        mem_mb=int(config["max_memory"])*1024,
-        runtime = "12h",
+        mem_mb = lambda wildcards, attempt: min(int(config["max_memory"])*1024, 512*1024*attempt),
+        runtime = lambda wildcards, attempt: 12*60*attempt,
     conda:
         "../../envs/gtdbtk.yaml"
     threads:
