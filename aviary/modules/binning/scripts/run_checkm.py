@@ -3,19 +3,22 @@ import shutil
 import os
 from pathlib import Path
 
-def checkm(checkm2_db, bin_folder, bin_ext, refinery_max_iterations, output_folder, output_file, threads):
+def checkm(checkm2_db, bin_folder, bin_ext, refinery_max_iterations, output_folder, output_file, threads, log):
     if len([f for f in os.listdir(bin_folder) if f.endswith(bin_ext)]) == 0:
-        print(f"No bins found in {bin_folder}")
+        with open(log, "a") as logf:
+            logf.write(f"No bins found in {bin_folder}")
         os.makedirs(output_folder)
         Path(output_file).touch()
     elif refinery_max_iterations == 0:
-        print("Skipping pre-refinery CheckM2 rules")
+        with open(log, "a") as logf:
+            logf.write("Skipping pre-refinery CheckM2 rules")
         os.makedirs(output_folder)
         Path(output_file).touch()
     else:
-        print(f"Using CheckM2 database {checkm2_db}/uniref100.KO.1.dmnd")
         os.environ["CHECKM2DB"] = f"{checkm2_db}/uniref100.KO.1.dmnd"
-        subprocess.run(f"checkm2 predict -i {bin_folder}/ -x {bin_ext} -o {output_folder} -t {threads} --force".split(), env=os.environ)
+        with open(log, "a") as logf:
+            logf.write(f"Using CheckM2 database {checkm2_db}/uniref100.KO.1.dmnd")
+            subprocess.run(f"checkm2 predict -i {bin_folder}/ -x {bin_ext} -o {output_folder} -t {threads} --force".split(), env=os.environ, stdout=logf, stderr=subprocess.STDOUT)
         shutil.copy(f"{output_folder}/quality_report.tsv", output_file)
 
 
@@ -27,5 +30,17 @@ if __name__ == '__main__':
     output_folder = snakemake.output.output_folder
     output_file = snakemake.output.output_file
     threads = snakemake.threads
+    log = snakemake.log[0]
 
-    checkm(checkm2_db, bin_folder, bin_ext, refinery_max_iterations, output_folder, output_file, threads)
+    with open(log, "w") as logf: pass
+
+    checkm(
+        checkm2_db,
+        bin_folder,
+        bin_ext,
+        refinery_max_iterations,
+        output_folder,
+        output_file,
+        threads,
+        log,
+    )

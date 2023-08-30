@@ -64,7 +64,7 @@ rule prepare_binning_files:
     log:
         "logs/coverm_prepare.log"
     script:
-        "scripts/get_coverage.py &> {log}"
+        "scripts/get_coverage.py"
 
 
 rule get_bam_indices:
@@ -426,7 +426,7 @@ rule checkm_rosella:
     log:
         "logs/checkm_rosella.log"
     script:
-        "scripts/run_checkm.py &> {log}"
+        "scripts/run_checkm.py"
 
 rule checkm_metabat2:
     input:
@@ -451,7 +451,7 @@ rule checkm_metabat2:
     log:
         "logs/checkm_metabat2.log"
     script:
-        "scripts/run_checkm.py &> {log}"
+        "scripts/run_checkm.py"
 
 rule checkm_semibin:
     input:
@@ -476,7 +476,7 @@ rule checkm_semibin:
     log:
         "logs/checkm_semibin.log"
     script:
-        "scripts/run_checkm.py &> {log}"
+        "scripts/run_checkm.py"
 
 rule refine_rosella:
     input:
@@ -508,7 +508,7 @@ rule refine_rosella:
     conda:
         "envs/rosella.yaml"
     script:
-        "scripts/rosella_refine.py &> {log}"
+        "scripts/rosella_refine.py"
 
 rule refine_metabat2:
     input:
@@ -540,7 +540,7 @@ rule refine_metabat2:
     conda:
         "envs/rosella.yaml"
     script:
-        "scripts/rosella_refine.py &> {log}"
+        "scripts/rosella_refine.py"
 
 rule refine_semibin:
     input:
@@ -572,7 +572,7 @@ rule refine_semibin:
     conda:
         "envs/rosella.yaml"
     script:
-        "scripts/rosella_refine.py &> {log}"
+        "scripts/rosella_refine.py"
 
 rule amber_checkm_output:
     input:
@@ -692,7 +692,7 @@ rule refine_dastool:
     conda:
         "envs/rosella.yaml"
     script:
-        "scripts/rosella_refine.py &> {log}"
+        "scripts/rosella_refine.py"
 
 rule get_abundances:
     input:
@@ -710,7 +710,7 @@ rule get_abundances:
     conda:
         "../../envs/coverm.yaml"
     script:
-        "scripts/get_abundances.py &> {log}"
+        "scripts/get_abundances.py"
 
 rule finalise_stats:
     input:
@@ -764,7 +764,7 @@ rule singlem_pipe_reads:
     conda:
         "../../envs/singlem.yaml"
     script:
-        "../../scripts/singlem_reads.py &> {log}"
+        "../../scripts/singlem_reads.py"
 
 rule singlem_appraise:
     input:

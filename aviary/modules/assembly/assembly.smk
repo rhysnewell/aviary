@@ -517,7 +517,7 @@ rule assemble_short_reads:
     benchmark:
         "benchmarks/short_read_assembly_short.benchmark.txt"
     script:
-        "scripts/assemble_short_reads.py &> {log}"
+        "scripts/assemble_short_reads.py"
 
 
 rule move_spades_assembly:
