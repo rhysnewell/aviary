@@ -512,10 +512,12 @@ rule assemble_short_reads:
         runtime = lambda wildcards, attempt: 72*60 + 24*60*attempt,
     conda:
         "envs/spades.yaml"
+    log:
+        "logs/short_read_assembly.log"
     benchmark:
         "benchmarks/short_read_assembly_short.benchmark.txt"
     script:
-        "scripts/assemble_short_reads.py"
+        "scripts/assemble_short_reads.py &> {log}"
 
 
 rule move_spades_assembly:

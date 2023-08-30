@@ -138,6 +138,8 @@ rule checkm2:
     resources:
         mem_mb = lambda wildcards, attempt: min(int(config["max_memory"])*1024, 128*1024*attempt),
         runtime = lambda wildcards, attempt: 8*60*attempt,
+    log:
+        'logs/checkm2.log'
     benchmark:
         'benchmarks/checkm2.benchmark.txt'
     conda:
@@ -146,6 +148,7 @@ rule checkm2:
         'export CHECKM2DB={params.checkm2_db_path}/uniref100.KO.1.dmnd; '
         'echo "Using CheckM2 database $CHECKM2DB"; '
         'checkm2 predict -i {input.mag_folder}/ -x {params.mag_extension} -o {output.checkm2_folder} -t {threads} --force'
+        '&> {log} '
 
 rule eggnog:
     input:
@@ -163,6 +166,8 @@ rule eggnog:
     resources:
         mem_mb = lambda wildcards, attempt: min(int(config["max_memory"])*1024, 512*1024*attempt),
         runtime = lambda wildcards, attempt: 24*60*attempt,
+    log:
+        'logs/eggnog.log'
     benchmark:
         'benchmarks/eggnog.benchmark.txt'
     conda:
@@ -172,7 +177,8 @@ rule eggnog:
         'mkdir -p data/eggnog/; '
         'find {input.mag_folder}/*.{params.mag_extension} | parallel -j1 \'emapper.py --data_dir {params.eggnog_db} '
         '--dmnd_db {params.eggnog_db}/*dmnd --cpu {threads} -m diamond --itype genome --genepred prodigal -i {{}} '
-        '--output_dir data/eggnog/ --temp_dir {params.tmpdir} -o {{/.}} || echo "Genome already annotated"\'; '
+        '--output_dir data/eggnog/ --temp_dir {params.tmpdir} -o {{/.}} || echo "Genome already annotated"\' '
+        '&> {log}; '
         'touch data/eggnog/done; '
 
 rule gtdbtk:
@@ -192,12 +198,16 @@ rule gtdbtk:
     resources:
         mem_mb = lambda wildcards, attempt: min(int(config["max_memory"])*1024, 256*1024*attempt),
         runtime = lambda wildcards, attempt: 12*60*attempt,
+    log:
+        'logs/gtdbtk.log'
     benchmark:
         'benchmarks/gtdbtk.benchmark.txt'
     shell:
         "export GTDBTK_DATA_PATH={params.gtdbtk_folder} && "
         "gtdbtk classify_wf --skip_ani_screen --cpus {threads} --pplacer_cpus {params.pplacer_threads} --extension {params.extension} "
-        "--genome_dir {input.mag_folder} --out_dir data/gtdbtk && touch data/gtdbtk/done"
+        "--genome_dir {input.mag_folder} --out_dir data/gtdbtk "
+        "&> {log} "
+        "&& touch data/gtdbtk/done"
 
 rule annotate:
     input:
