@@ -657,7 +657,7 @@ rule das_tool:
         DAS_Tool --search_engine diamond --write_bin_evals 1 --write_bins 1 -t {threads} --score_threshold -42 \
          -i $scaffold2bin_files \
          -c {input.fasta} \
-         -o data/das_tool_bins_pre_refine/das_tool 2>> {log} && \
+         -o data/das_tool_bins_pre_refine/das_tool >> {log} 2>&1 && \
         touch data/das_tool_bins_pre_refine/done
         """
 
@@ -748,7 +748,7 @@ rule checkm_das_tool:
         '-x fa data/das_tool_bins_pre_refine/das_tool_DASTool_bins data/das_tool_bins_pre_refine/checkm --tab_table '
         '-f data/das_tool_bins_pre_refine/checkm.out &> {log}; '
         'checkm qa -o 2 --tab_table -f data/das_tool_bins_pre_refine/checkm.out '
-        'data/das_tool_bins_pre_refine/checkm/lineage.ms data/das_tool_bins_pre_refine/checkm/ 2>> {log}; '
+        'data/das_tool_bins_pre_refine/checkm/lineage.ms data/das_tool_bins_pre_refine/checkm/ >> {log} 2>&1; '
 
 
 rule singlem_pipe_reads:
