@@ -250,7 +250,7 @@ def main():
         '--rerun-triggers', '--rerun_triggers',
         help='Specify which kinds of modifications will trigger rules to rerun',\
         dest='rerun_triggers',
-        default="mtime",
+        default=["mtime"],
         nargs="*",
         choices=["mtime","params","input","software-env","code"]
     )
