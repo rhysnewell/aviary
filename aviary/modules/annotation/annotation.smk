@@ -158,7 +158,6 @@ rule eggnog:
         mag_extension = config['mag_extension'],
         eggnog_db = config['eggnog_folder'],
         tmpdir = config["tmpdir"]
-    group: 'annotation'
     output:
         done = 'data/eggnog/done'
     threads:
@@ -184,7 +183,6 @@ rule eggnog:
 rule gtdbtk:
     input:
         mag_folder = config['mag_directory']
-    group: 'annotation'
     output:
         done = "data/gtdbtk/done"
     params:

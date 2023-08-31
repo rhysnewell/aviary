@@ -48,7 +48,6 @@ rule map_reads_ref:
     input:
         fastq = config["long_reads"],
         reference_filter = config["reference_filter"]
-    group: 'assembly'
     output:
         temp("data/raw_mapped_ref.bam"),
         temp("data/raw_mapped_ref.bai")
@@ -71,7 +70,6 @@ rule map_reads_ref:
 rule get_umapped_reads_ref:
     input:
         "data/raw_mapped_ref.bam"
-    group: 'assembly'
     output:
         temp("data/unmapped_to_ref.list")
     params:
@@ -89,7 +87,6 @@ rule get_reads_list_ref:
     input:
         fastq = config["long_reads"],
         unmapped_list = "data/unmapped_to_ref.list"
-    group: 'assembly'
     output:
         temp("data/long_reads.fastq.gz")
     threads:
@@ -106,7 +103,6 @@ rule get_reads_list_ref:
 
 # if no reference filter output this done file just to keep the DAG happy
 rule no_ref_filter:
-    group: 'assembly'
     output:
         filtered = temp("data/short_filter.done")
     shell:
@@ -116,7 +112,6 @@ rule no_ref_filter:
 rule flye_assembly:
     input:
         fastq = "data/long_reads.fastq.gz"
-    group: 'assembly'
     output:
         fasta = "data/flye/assembly.fasta",
         graph = "data/flye/assembly_graph.gfa",
@@ -159,7 +154,6 @@ rule polish_metagenome_flye:
     resources:
         mem_mb = lambda wildcards, attempt: min(int(config["max_memory"])*1024, 512*1024*attempt),
         runtime = lambda wildcards, attempt: 24*60*attempt,
-    group: 'assembly'
     output:
         fasta = "data/assembly.pol.rac.fasta"
     benchmark:
@@ -172,7 +166,6 @@ rule polish_metagenome_flye:
 rule filter_illumina_ref:
     input:
         reference_filter = config["reference_filter"]
-    group: 'assembly'
     output:
         bam = "data/short_unmapped_ref.bam",
         fastq = "data/short_reads.fastq.gz",
@@ -200,7 +193,6 @@ rule generate_pilon_sort:
         fasta = "data/assembly.pol.rac.fasta"
     params:
         coassemble = config["coassemble"]
-    group: 'assembly'
     output:
         bam = temp("data/pilon.sort.bam"),
         bai = temp("data/pilon.sort.bam.bai")
@@ -222,7 +214,6 @@ rule polish_meta_pilon:
         fasta = "data/assembly.pol.rac.fasta",
         bam = "data/pilon.sort.bam",
         bai = "data/pilon.sort.bam.bai"
-    group: 'assembly'
     output:
         fasta = "data/assembly.pol.pil.fasta"
     threads: 1 # Threads no longer supported for pilon
@@ -247,7 +238,6 @@ rule polish_meta_racon_ill:
     input:
         fastq = config['short_reads_1'], # check short reads are here
         fasta = "data/assembly.pol.pil.fasta"
-    group: 'assembly'
     output:
         fasta = "data/assembly.pol.fin.fasta",
         paf = temp("data/polishing/alignment.racon_ill.0.paf")
@@ -277,7 +267,6 @@ rule get_high_cov_contigs:
         fasta = "data/assembly.pol.fin.fasta",
         graph = "data/flye/assembly_graph.gfa",
         paf = "data/polishing/alignment.racon_ill.0.paf"
-    group: 'assembly'
     output:
         fasta = "data/flye_high_cov.fasta"
     benchmark:
@@ -384,7 +373,6 @@ rule filter_illumina_assembly:
     input:
         fastq = config['short_reads_1'], # check short reads were supplied
         fasta = "data/flye_high_cov.fasta"
-    group: 'assembly'
     output:
         bam = temp("data/sr_vs_long.sort.bam"),
         bai = temp("data/sr_vs_long.sort.bam.bai"),
@@ -408,7 +396,6 @@ rule filter_illumina_assembly:
 rule skip_long_assembly:
     input:
         unassembled_long = config["unassembled_long"]
-    group: 'assembly'
     output:
         # fastq = "data/short_reads.filt.fastq.gz",
         fasta = "data/flye_high_cov.fasta",
@@ -424,7 +411,6 @@ rule skip_long_assembly:
 rule short_only:
     input:
         fastq = config["short_reads_1"]
-    group: 'assembly'
     output:
         fasta = "data/flye_high_cov.fasta",
         # long_reads = temp("data/long_reads.fastq.gz")
@@ -440,7 +426,6 @@ rule spades_assembly:
     input:
         fastq = "data/short_reads.filt.fastq.gz",
         long_reads = "data/long_reads.fastq.gz"
-    group: 'assembly'
     output:
         fasta = "data/spades_assembly.fasta",
         spades_folder = temp(directory("data/spades_assembly/"))
@@ -489,7 +474,6 @@ rule spades_assembly:
 rule assemble_short_reads:
     input:
         fastq = config["short_reads_1"]
-    group: 'assembly'
     output:
         fasta = "data/short_read_assembly/scaffolds.fasta",
         # We cannot mark the output_folder as temp as then it gets deleted,
@@ -523,7 +507,6 @@ rule assemble_short_reads:
 rule move_spades_assembly:
     input:
         assembly = "data/short_read_assembly/scaffolds.fasta"
-    group: 'assembly'
     output:
         out = "data/final_contigs.fasta"
     shell:
@@ -536,7 +519,6 @@ rule spades_assembly_coverage:
     input:
          fastq = "data/short_reads.filt.fastq.gz",
          fasta = "data/spades_assembly.fasta"
-    group: 'assembly'
     output:
          assembly_cov = temp("data/short_read_assembly.cov"),
          bam = temp("data/short_vs_mega.bam"),
@@ -562,7 +544,6 @@ rule metabat_binning_short:
     input:
          assembly_cov = "data/short_read_assembly.cov",
          fasta = "data/spades_assembly.fasta"
-    group: 'assembly'
     output:
          metabat_done = "data/metabat_bins/done"
     conda:
@@ -587,7 +568,6 @@ rule map_long_mega:
     input:
         fastq = "data/long_reads.fastq.gz",
         fasta = "data/spades_assembly.fasta"
-    group: 'assembly'
     output:
         bam = temp("data/long_vs_mega.bam"),
         bai = temp("data/long_vs_mega.bam.bai")
@@ -615,7 +595,6 @@ rule pool_reads:
         short_bam = "data/short_vs_mega.bam",
         short_bai = "data/short_vs_mega.bam.bai",
         metabat_done = "data/metabat_bins/done",
-    group: 'assembly'
     output:
         list = "data/list_of_lists.txt"
     conda:
@@ -629,7 +608,6 @@ rule pool_reads:
 rule get_read_pools:
     input:
         list = "data/list_of_lists.txt"
-    group: 'assembly'
     output:
         "data/binned_reads/done"
     conda:
@@ -651,7 +629,6 @@ rule assemble_pools:
         list = "data/list_of_lists.txt",
         fasta = "data/spades_assembly.fasta",
         metabat_done = "data/metabat_bins/done"
-    group: 'assembly'
     threads:
         min(config["max_threads"], 64)
     resources:
@@ -672,7 +649,6 @@ rule combine_assemblies:
     input:
         short_fasta = "data/unicycler_combined.fa",
         flye_fasta = "data/flye_high_cov.fasta"
-    group: 'assembly'
     output:
         output_fasta = "data/final_contigs.fasta",
     priority: 1
@@ -685,7 +661,6 @@ rule combine_long_only:
     input:
         long_reads = "data/long_reads.fastq.gz",
         flye_fasta = "data/assembly.pol.rac.fasta"
-    group: 'assembly'
     output:
         output_fasta = "data/final_contigs.fasta",
         # long_bam = "data/final_long.sort.bam"
@@ -698,7 +673,6 @@ rule skip_unicycler:
     input:
         short_fasta = "data/spades_assembly.fasta",
         flye_fasta = "data/flye_high_cov.fasta"
-    group: 'assembly'
     output:
         fasta = "data/final_contigs.fasta",
         final_link = 'assembly/final_contigs.fasta',
@@ -721,7 +695,6 @@ rule skip_unicycler_with_qc:
         short_fasta = "data/spades_assembly.fasta",
         flye_fasta = "data/flye_high_cov.fasta",
         qc_done = 'data/qc_done'
-    group: 'assembly'
     output:
         fasta = "data/final_contigs.fasta",
         final_link = 'assembly/final_contigs.fasta',
@@ -742,7 +715,6 @@ rule skip_unicycler_with_qc:
 rule complete_assembly:
     input:
         fasta = 'data/final_contigs.fasta'
-    group: 'assembly'
     output:
         final_link = 'assembly/final_contigs.fasta',
         sizes = "www/assembly_stats.txt"
@@ -763,7 +735,6 @@ rule complete_assembly_with_qc:
     input:
         fasta = 'data/final_contigs.fasta',
         qc_done = 'data/qc_done'
-    group: 'assembly'
     output:
         final_link = 'assembly/final_contigs.fasta',
         sizes = "www/assembly_stats.txt"

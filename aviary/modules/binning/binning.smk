@@ -48,7 +48,6 @@ import glob
 rule prepare_binning_files:
     input:
         input_fasta = config["fasta"]
-    group: 'binning'
     output:
         maxbin_coverage = "data/maxbin.cov.list",
         metabat_coverage = "data/coverm.cov"
@@ -70,7 +69,6 @@ rule prepare_binning_files:
 rule get_bam_indices:
     input:
         coverage = "data/coverm.cov"
-    group: 'binning'
     output:
         bams = "data/binning_bams/done"
     conda:
@@ -93,7 +91,6 @@ rule maxbin2:
     resources:
         mem_mb = lambda wildcards, attempt: min(int(config["max_memory"])*1024, 128*1024*attempt),
         runtime = lambda wildcards, attempt: 72*60 + 24*60*attempt,
-    group: 'binning'
     output:
         "data/maxbin2_bins/done"
     conda:
@@ -121,7 +118,6 @@ rule concoct:
     resources:
         mem_mb = lambda wildcards, attempt: min(int(config["max_memory"])*1024, 128*1024*attempt),
         runtime = lambda wildcards, attempt: 72*60 + 24*60*attempt,
-    group: 'binning'
     output:
         "data/concoct_bins/done"
     conda:
@@ -150,7 +146,6 @@ rule vamb_jgi_filter:
     input:
         fasta = ancient(config["fasta"]),
         done = ancient("data/coverm.cov")
-    group: 'binning'
     output:
         vamb_bams_done = "data/coverm.filt.cov"
     threads:
@@ -182,7 +177,6 @@ rule vamb:
     resources:
         mem_mb = lambda wildcards, attempt: min(int(config["max_memory"])*1024, 128*1024*attempt),
         runtime = lambda wildcards, attempt: 12*60*attempt,
-    group: 'binning'
     output:
         "data/vamb_bins/done"
     conda:
@@ -199,7 +193,6 @@ rule vamb:
 
 
 rule vamb_skip:
-    group: 'binning'
     output:
         "data/vamb_bins/skipped"
     shell:
@@ -214,7 +207,6 @@ rule metabat2:
     params:
         min_contig_size = max(int(config["min_contig_size"]), 1500),
         min_bin_size = config["min_bin_size"]
-    group: 'binning'
     output:
         metabat_done = "data/metabat_bins_2/done"
     conda:
@@ -239,7 +231,6 @@ rule metabat_spec:
     input:
         coverage = ancient("data/coverm.cov"),
         fasta = ancient(config["fasta"])
-    group: 'binning'
     output:
         'data/metabat_bins_spec/done'
     conda:
@@ -266,7 +257,6 @@ rule metabat_sspec:
     input:
         coverage = ancient("data/coverm.cov"),
         fasta = ancient(config["fasta"])
-    group: 'binning'
     output:
         'data/metabat_bins_sspec/done'
     conda:
@@ -293,7 +283,6 @@ rule metabat_sens:
     input:
         coverage = ancient("data/coverm.cov"),
         fasta = ancient(config["fasta"])
-    group: 'binning'
     output:
         'data/metabat_bins_sens/done'
     conda:
@@ -320,7 +309,6 @@ rule metabat_ssens:
     input:
         coverage = ancient("data/coverm.cov"),
         fasta = ancient(config["fasta"])
-    group: 'binning'
     output:
         'data/metabat_bins_ssens/done'
     conda:
@@ -353,7 +341,6 @@ rule rosella:
     params:
         min_contig_size = config["min_contig_size"],
         min_bin_size = config["min_bin_size"]
-    group: 'binning'
     output:
         # kmers = "data/rosella_bins/rosella_kmer_table.tsv",
         done = "data/rosella_bins/done"
@@ -379,7 +366,6 @@ rule semibin:
     input:
         fasta = ancient(config["fasta"]),
         bams_indexed = ancient("data/binning_bams/done")
-    group: 'binning'
     params:
         # Can't use premade model with multiple samples, so disregard if provided
         semibin_model = config['semibin_model']
@@ -412,7 +398,6 @@ rule checkm_rosella:
         bin_folder = "data/rosella_bins/",
         extension = "fna",
         refinery_max_iterations = config["refinery_max_iterations"],
-    group: 'binning'
     output:
         output_folder = directory("data/rosella_bins/checkm2_out/"),
         output_file = "data/rosella_bins/checkm.out"
@@ -437,7 +422,6 @@ rule checkm_metabat2:
         bin_folder = "data/metabat_bins_2/",
         extension = "fa",
         refinery_max_iterations = config["refinery_max_iterations"],
-    group: 'binning'
     output:
         output_folder = directory("data/metabat_bins_2/checkm2_out/"),
         output_file = "data/metabat_bins_2/checkm.out"
@@ -462,7 +446,6 @@ rule checkm_semibin:
         bin_folder = "data/semibin_bins/output_recluster_bins/",
         extension = "fa",
         refinery_max_iterations = config["refinery_max_iterations"],
-    group: 'binning'
     output:
         output_folder = directory("data/semibin_bins/checkm2_out/"),
         output_file = "data/semibin_bins/checkm.out"
@@ -632,7 +615,6 @@ rule das_tool:
     resources:
         mem_mb = lambda wildcards, attempt: min(int(config["max_memory"])*1024, 512*1024*attempt),
         runtime = lambda wildcards, attempt: 12*60*attempt,
-    group: 'binning'
     output:
         das_tool_done = "data/das_tool_bins_pre_refine/done"
     conda:
@@ -697,7 +679,6 @@ rule refine_dastool:
 rule get_abundances:
     input:
         "bins/checkm.out"
-    group: 'binning'
     threads:
         min(config["max_threads"], 64)
     resources:
@@ -731,7 +712,6 @@ rule checkm_das_tool:
         done = "data/das_tool_bins_pre_refine/done"
     params:
         pplacer_threads = config["pplacer_threads"]
-    group: 'binning'
     output:
         "data/das_tool_bins_pre_refine/checkm.out"
     conda:
@@ -752,7 +732,6 @@ rule checkm_das_tool:
 
 
 rule singlem_pipe_reads:
-    group: 'binning'
     output:
         "data/singlem_out/metagenome.combined_otu_table.csv"
     threads: 1
@@ -771,7 +750,6 @@ rule singlem_appraise:
         metagenome = "data/singlem_out/metagenome.combined_otu_table.csv",
         gtdbtk_done = "data/gtdbtk/done",
         bins_complete = "bins/checkm.out"
-    group: 'binning'
     output:
         "data/singlem_out/singlem_appraisal.tsv"
     params:
@@ -803,7 +781,6 @@ rule recover_mags:
         singlem = "data/singlem_out/singlem_appraisal.tsv"
     conda:
         "../../envs/coverm.yaml"
-    group: 'binning'
     output:
         bins = "bins/done",
         diversity = 'diversity/done'
@@ -827,7 +804,6 @@ rule recover_mags_no_singlem:
         coverm = "data/coverm_abundances.tsv" if not config["skip_abundances"] else [],
     conda:
         "../../envs/coverm.yaml"
-    group: 'binning'
     output:
         bins = "bins/done",
     threads:
