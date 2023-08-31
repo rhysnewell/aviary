@@ -46,7 +46,7 @@ class Tests(unittest.TestCase):
             f"-1 {data}/wgsim.1.fq.gz "
             f"-2 {data}/wgsim.2.fq.gz "
             f"--conda-prefix {path_to_conda} "
-            f"-n 32 -t 32 --tmpdir {output_dir} "
+            f"-n 32 -t 32 "
         )
         subprocess.run(cmd, shell=True, check=True)
 
@@ -65,7 +65,7 @@ class Tests(unittest.TestCase):
             f"-l {data}/pbsim.fq.gz "
             f"--longread-type ont "
             f"--conda-prefix {path_to_conda} "
-            f"-n 32 -t 32 --tmpdir {output_dir} "
+            f"-n 32 -t 32 "
         )
         subprocess.run(cmd, shell=True, check=True)
 
@@ -83,7 +83,7 @@ class Tests(unittest.TestCase):
             f"-1 {data}/wgsim.1.fq.gz "
             f"-2 {data}/wgsim.2.fq.gz "
             f"--conda-prefix {path_to_conda} "
-            f"-n 32 -t 32 --tmpdir {output_dir} "
+            f"-n 32 -t 32 "
         )
         subprocess.run(cmd, shell=True, check=True)
 
@@ -107,7 +107,7 @@ class Tests(unittest.TestCase):
             f"-l {data}/pbsim.fq.gz "
             f"--longread-type ont "
             f"--conda-prefix {path_to_conda} "
-            f"-n 32 -t 32 --tmpdir {output_dir} "
+            f"-n 32 -t 32 "
         )
         subprocess.run(cmd, shell=True, check=True)
 
@@ -129,7 +129,7 @@ class Tests(unittest.TestCase):
             f"--skip-binners concoct rosella vamb metabat maxbin "
             f"--refinery-max-iterations 0 "
             f"--conda-prefix {path_to_conda} "
-            f"-n 32 -t 32 --tmpdir {output_dir} "
+            f"-n 32 -t 32 "
         )
         subprocess.run(cmd, shell=True, check=True)
 
@@ -153,7 +153,7 @@ class Tests(unittest.TestCase):
             f"-1 {data}/wgsim.1.fq.gz "
             f"-2 {data}/wgsim.2.fq.gz "
             f"--conda-prefix {path_to_conda} "
-            f"-n 32 -t 32 --tmpdir {output_dir} "
+            f"-n 32 -t 32 "
             f"--snakemake-profile mqsub --cluster-retries 3 "
         )
         subprocess.run(cmd, shell=True, check=True)
