@@ -1,3 +1,5 @@
+localrules: link_reads, assembly_size, assembly_quality, complete_qc_short, complete_qc_long, complete_qc_all
+
 ruleorder: get_reads_list_ref > filtlong_no_reference > link_reads
 ruleorder: complete_qc_all > complete_qc_long > complete_qc_short
 # ruleorder: filtlong_paired > filtlong_single
@@ -42,7 +44,10 @@ rule filtlong_no_reference:
         min_mean_q = config['min_mean_q'],
         coassemble = config["coassemble"]
     threads:
-        config['max_threads']
+        min(config["max_threads"], 16)
+    resources:
+        mem_mb = lambda wildcards, attempt: min(int(config["max_memory"])*1024, 128*1024*attempt),
+        runtime = lambda wildcards, attempt: 12*60*attempt,
     benchmark:
         "benchmarks/filtlong.benchmark.txt"
     conda:
@@ -126,7 +131,10 @@ rule fastqc:
     benchmark:
         "benchmarks/fastqc_short.benchmark.txt"
     threads:
-        config["max_threads"]
+        min(config["max_threads"], 16)
+    resources:
+        mem_mb = lambda wildcards, attempt: min(int(config["max_memory"])*1024, 128*1024*attempt),
+        runtime = lambda wildcards, attempt: 12*60*attempt,
     script:
         "scripts/run_fastqc.py"
 
@@ -140,7 +148,10 @@ rule fastqc_long:
     benchmark:
         "benchmarks/fastqc_long.benchmark.txt"
     threads:
-        config["max_threads"]
+        min(config["max_threads"], 16)
+    resources:
+        mem_mb = lambda wildcards, attempt: min(int(config["max_memory"])*1024, 128*1024*attempt),
+        runtime = lambda wildcards, attempt: 12*60*attempt,
     shell:
         "fastqc -o www/fastqc_long/ -t {threads} {input[0]}; touch {output.output}"
 
@@ -155,7 +166,10 @@ rule nanoplot:
     benchmark:
         "benchmarks/nanoplot.benchmark.txt"
     threads:
-        config["max_threads"]
+        min(config["max_threads"], 16)
+    resources:
+        mem_mb = lambda wildcards, attempt: min(int(config["max_memory"])*1024, 128*1024*attempt),
+        runtime = lambda wildcards, attempt: 12*60*attempt,
     shell:
         "NanoPlot -o www/nanoplot -p longReads -t {threads} --fastq {input.long}; touch {output.output}"
 
@@ -170,7 +184,10 @@ rule metaquast:
     output:
         "www/metaquast/report.html"
     threads:
-        config["max_threads"]
+        min(config["max_threads"], 16)
+    resources:
+        mem_mb = lambda wildcards, attempt: min(int(config["max_memory"])*1024, 128*1024*attempt),
+        runtime = lambda wildcards, attempt: 12*60*attempt,
     conda:
         "envs/quast.yaml"
     shell:
@@ -187,7 +204,10 @@ rule read_fraction_recovered:
     conda:
         "../../envs/coverm.yaml"
     threads:
-        config["max_threads"]
+        min(config["max_threads"], 64)
+    resources:
+        mem_mb = lambda wildcards, attempt: min(int(config["max_memory"])*1024, 512*1024*attempt),
+        runtime = lambda wildcards, attempt: 24*60 + 24*60*attempt,
     script:
         "scripts/fraction_recovered.py"
 
