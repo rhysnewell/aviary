@@ -117,7 +117,7 @@ class Tests(unittest.TestCase):
 
 
     def test_short_read_recovery_fast(self):
-        output_dir = os.path.join("example", "test_short_read_recovery_skip_abundances")
+        output_dir = os.path.join("example", "test_short_read_recovery_fast")
         self.setup_output_dir(output_dir)
         cmd = (
             f"aviary recover "
