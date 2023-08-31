@@ -154,13 +154,9 @@ class Tests(unittest.TestCase):
         cmd = (
             f"aviary recover "
             f"--output {output_dir} "
-            f"--assembly {data}/assembly.fasta "
             f"-o {output_dir}/aviary_out "
             f"-1 {data}/wgsim.1.fq.gz "
             f"-2 {data}/wgsim.2.fq.gz "
-            f"--skip-abundances "
-            f"--skip-binners semibin concoct rosella vamb metabat1 maxbin "
-            f"--refinery-max-iterations 0 "
             f"--conda-prefix {path_to_conda} "
             f"-n 32 -t 32 --tmpdir {output_dir} "
             f"--snakemake-profile mqsub --cluster-retries 3 "
