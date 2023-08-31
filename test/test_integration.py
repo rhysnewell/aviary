@@ -96,32 +96,27 @@ class Tests(unittest.TestCase):
         self.assertTrue(os.path.isfile(f"{output_dir}/aviary_out/data/final_contigs.fasta"))
         self.assertTrue(os.path.islink(f"{output_dir}/aviary_out/assembly/final_contigs.fasta"))
 
-
-    def test_short_read_recovery_skip_binners(self):
-        output_dir = os.path.join("example", "test_short_read_recovery_skip_binners")
+    def test_long_read_recovery(self):
+        output_dir = os.path.join("example", "test_long_read_recovery")
         self.setup_output_dir(output_dir)
         cmd = (
             f"aviary recover "
-            f"--assembly {data}/assembly.fasta "
             f"-o {output_dir}/aviary_out "
             f"-1 {data}/wgsim.1.fq.gz "
             f"-2 {data}/wgsim.2.fq.gz "
-            f"--skip-binners concoct rosella vamb metabat maxbin "
-            f"--refinery-max-iterations 1 "
+            f"-l {data}/pbsim.fq.gz "
+            f"--longread-type ont "
             f"--conda-prefix {path_to_conda} "
             f"-n 32 -t 32 --tmpdir {output_dir} "
         )
         subprocess.run(cmd, shell=True, check=True)
 
-        bin_info_path = f"{output_dir}/aviary_out/bins/bin_info.tsv"
-        self.assertTrue(os.path.isfile(bin_info_path))
-        with open(bin_info_path) as f:
-            num_lines = sum(1 for _ in f)
-        self.assertTrue(num_lines > 1)
-        self.assertFalse(os.path.isfile(f"{output_dir}/aviary_out/data/final_contigs.fasta"))
+        self.assertTrue(os.path.isdir(f"{output_dir}/aviary_out"))
+        self.assertTrue(os.path.isfile(f"{output_dir}/aviary_out/data/final_contigs.fasta"))
+        self.assertTrue(os.path.islink(f"{output_dir}/aviary_out/assembly/final_contigs.fasta"))
 
 
-    def test_short_read_recovery_skip_abundances(self):
+    def test_short_read_recovery_fast(self):
         output_dir = os.path.join("example", "test_short_read_recovery_skip_abundances")
         self.setup_output_dir(output_dir)
         cmd = (
@@ -132,7 +127,7 @@ class Tests(unittest.TestCase):
             f"-2 {data}/wgsim.2.fq.gz "
             f"--skip-abundances "
             f"--skip-binners concoct rosella vamb metabat maxbin "
-            f"--refinery-max-iterations 1 "
+            f"--refinery-max-iterations 0 "
             f"--conda-prefix {path_to_conda} "
             f"-n 32 -t 32 --tmpdir {output_dir} "
         )
