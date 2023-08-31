@@ -163,13 +163,13 @@ class Tests(unittest.TestCase):
         )
         subprocess.run(cmd, shell=True, check=True)
 
+        self.assertTrue(os.path.isfile(f"{output_dir}/aviary_out/data/final_contigs.fasta"))
+
         bin_info_path = f"{output_dir}/aviary_out/bins/bin_info.tsv"
         self.assertTrue(os.path.isfile(bin_info_path))
         with open(bin_info_path) as f:
             num_lines = sum(1 for _ in f)
         self.assertEqual(num_lines, 3)
-
-        self.assertFalse(os.path.isfile(f"{output_dir}/aviary_out/data/final_contigs.fasta"))
 
 
 if __name__ == "__main__":
