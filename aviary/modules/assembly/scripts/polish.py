@@ -18,8 +18,8 @@ def clean_short_reads(
     sed_cmd = f"""sed s/@/@{read_pair}_/""".split()
 
     with open(log, "a") as logf:
-        logf.write(f"Shell command: {' '.join(cat_cmd)} | {' '.join(sed_cmd)} > {output_path}")
-        logf.write(sed_cmd)
+        logf.write(f"Shell command: {' '.join(cat_cmd)} | {' '.join(sed_cmd)} > {output_path}\n")
+        logf.write(' '.join(sed_cmd))
         with open(output_path, 'a') as out:
             cat = Popen(cat_cmd, stdout=PIPE, stderr=logf)
             sed = Popen(sed_cmd, stdin=cat.stdout, stdout=out, stderr=logf)
@@ -27,8 +27,8 @@ def clean_short_reads(
             sed.wait()
             cat.wait()
 
-            logf.write("cat return: ", cat.returncode)
-            logf.write("sed return: ", sed.returncode)
+            logf.write(f"cat return: {cat.returncode}\n")
+            logf.write(f"sed return: {sed.returncode}\n")
 
 def minimap2_process(
     minimap2_type: str,
@@ -55,15 +55,15 @@ def run_seqkit(
     pigz_cmd = f"pigz -p {threads}".split()
 
     with open(log, "a") as logf:
-        logf.write(f"Shell style: {' '.join(seqkit_cmd)} | {' '.join(pigz_cmd)} > {output_file}")
+        logf.write(f"Shell style: {' '.join(seqkit_cmd)} | {' '.join(pigz_cmd)} > {output_file}\n")
 
         with open(output_file, 'a') as out:
             seqkit = Popen(seqkit_cmd, stdout=PIPE, stderr=logf)
             pigz = Popen(pigz_cmd, stdin=seqkit.stdout, stdout=out, stderr=logf)
             pigz.wait()
             seqkit.wait()
-            logf.write("seqkit return: ", seqkit.returncode)
-            logf.write("pigz return: ", pigz.returncode)
+            logf.write(f"seqkit return: {seqkit.returncode}\n")
+            logf.write(f"pigz return: {pigz.returncode}\n")
 
 def run_racon(
     reads: str,
@@ -108,16 +108,16 @@ def run_minimap_with_samtools(
     # check if output file exists and is not empty
     with open(log, "a") as logf:
         if os.path.exists(output_file) and os.path.getsize(output_file) > 0:
-            logf.write(f"{output_file} created.")
+            logf.write(f"{output_file} created.\n")
             if samtools.returncode == 0:
-                logf.write("samtools successfully created bam file.")
+                logf.write("samtools successfully created bam file.\n")
             else:
-                logf.write("samtools failed to create bam file.")
-                logf.write("samtools return: ", samtools.returncode)
+                logf.write("samtools failed to create bam file.\n")
+                logf.write(f"samtools return: {samtools.returncode}\n")
             return True
         else:
-            logf.write(f"Error: {output_file} is empty or does not exist.")
-            logf.write("samtools return: ", samtools.returncode)
+            logf.write(f"Error: {output_file} is empty or does not exist.\n")
+            logf.write(f"samtools return: {samtools.returncode}\n")
             return False
 
 
@@ -203,7 +203,7 @@ def run_polish(
         for rounds in range(polishing_rounds):
             paf = os.path.join(output_dir, 'alignment.%s.%d.paf') % (output_prefix, rounds)
             with open(log, "a") as logf:
-                logf.write("Generating PAF file: %s for racon round %d..." % (paf, rounds))
+                logf.write("Generating PAF file: %s for racon round %d...\n" % (paf, rounds))
 
             # Generate PAF mapping files
             if not os.path.exists(paf): # Check if mapping already exists
@@ -364,11 +364,10 @@ def run_polish(
         #     output_file=bam,
         #     threads=threads,
         # )
-        
-        print("Running medaka...")
-        medaka_cmd = f"medaka_consensus -t {threads} -i {reads} -m {medaka_model} -o data/polishing/ -d {reference}".split()
-        print(' '.join(medaka_cmd))
         with open(log, "a") as logf:
+            logf.write("Running medaka...\n")
+            medaka_cmd = f"medaka_consensus -t {threads} -i {reads} -m {medaka_model} -o data/polishing/ -d {reference}".split()
+            logf.write(' '.join(medaka_cmd))
             run(medaka_cmd, stdout=logf, stderr=STDOUT)
 
         # copy the output to the expected location

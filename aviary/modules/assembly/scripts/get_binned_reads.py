@@ -22,8 +22,8 @@ def run_mfqe(
 
         # thoretically p1 and p2 may still be running, this ensures we are collecting their return codes
         seqtk.wait()
-        logf.write("seqtk return: ", seqtk.returncode)
-        logf.write("mfqe return: ", mfqe.returncode)
+        logf.write(f"seqtk return: {seqtk.returncode}\n")
+        logf.write(f"mfqe return: {mfqe.returncode}\n")
 
 def process_short_reads_interleaved_filtered(reads, file, log):
     run_mfqe(read_pair='1', input_reads=reads, output_file=file, log=log)
@@ -51,9 +51,9 @@ def run_seqkit(
 
             seqtk.wait()
             seqkit.wait()
-            logf.write("seqtk return: ", seqtk.returncode)
-            logf.write("seqkit return: ", seqkit.returncode)
-            logf.write("pigz return: ", pigz.returncode)
+            logf.write(f"seqtk return: {seqtk.returncode}\n")
+            logf.write(f"seqkit return: {seqkit.returncode}\n")
+            logf.write(f"pigz return: {pigz.returncode}\n")
 
 
 def process_short_reads_interleaved(reads, file, threads, log):
@@ -79,8 +79,8 @@ def run_seqkit_without_seqtk(
             pigz.wait()
 
             seqkit.wait()
-            logf.write("seqkit return: ", seqkit.returncode)
-            logf.write("pigz return: ", pigz.returncode)
+            logf.write(f"seqkit return: {seqkit.returncode}\n")
+            logf.write(f"pigz return: {pigz.returncode}\n")
 
 def process_short_reads_paired(reads_1, reads_2, file, threads, log):
     run_seqkit_without_seqtk(read_pair='1', reads=reads_1, output_file=file, threads=threads, log=log)
@@ -100,8 +100,8 @@ def process_long_reads(reads, file, threads, log):
             pigz.wait()
 
             seqtk.wait()
-            logf.write("seqtk return: ", seqtk.returncode)
-            logf.write("pigz return: ", pigz.returncode)
+            logf.write(f"seqtk return: {seqtk.returncode}\n")
+            logf.write(f"pigz return: {pigz.returncode}\n")
 
 
 def get_index(n_files, current):
