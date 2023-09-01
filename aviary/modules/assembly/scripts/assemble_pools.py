@@ -6,7 +6,8 @@ def assemble_pools(
     input_fasta: str,
     output_fasta: str,
     metabat_done: str,
-    threads: int):
+    threads: int,
+    log: str):
     """
     Assemble metagenome bins using unicycler
     """
@@ -37,12 +38,22 @@ def assemble_pools(
             length, bases_nano, bases_ill = float(length), float(bases_nano), float(bases_ill)
             out_assemblies.append('data/final_assemblies/%s_unicyc/assembly.fasta' % mb_bin)
             if not os.path.exists('data/final_assemblies/%s_unicyc/assembly.fasta' % mb_bin):
-                if short_reads == 'none':
-                    subprocess.run(f"unicycler --verbosity 0 -t {threads} -l {long_reads} -o data/final_assemblies/{mb_bin}_unicyc".split())
-                elif no_long:
-                    subprocess.run(f"unicycler --verbosity 0 -t {threads} -1 {short_reads_1} -2 {short_reads_2} -o data/final_assemblies/{mb_bin}_unicyc".split())
-                else:
-                    subprocess.run(f"unicycler --verbosity 0 -t {threads} -1 {short_reads_1} -2 {short_reads_2} -l {long_reads} -o data/final_assemblies/{mb_bin}_unicyc".split())
+                with open(log, 'a') as logf:
+                    if short_reads == 'none':
+                        subprocess.run(
+                            f"unicycler --verbosity 0 -t {threads} -l {long_reads} -o data/final_assemblies/{mb_bin}_unicyc".split(),
+                            stdout=logf, stderr=subprocess.STDOUT
+                            )
+                    elif no_long:
+                        subprocess.run(
+                            f"unicycler --verbosity 0 -t {threads} -1 {short_reads_1} -2 {short_reads_2} -o data/final_assemblies/{mb_bin}_unicyc".split(),
+                            stdout=logf, stderr=subprocess.STDOUT
+                            )
+                    else:
+                        subprocess.run(
+                            f"unicycler --verbosity 0 -t {threads} -1 {short_reads_1} -2 {short_reads_2} -l {long_reads} -o data/final_assemblies/{mb_bin}_unicyc".split(),
+                            stdout=logf, stderr=subprocess.STDOUT
+                            )
 
     unbinned_set = set()
     if os.path.exists(metabat_done[:-4] + "binned_contigs.unbinned"):
@@ -92,5 +103,8 @@ if __name__ == '__main__':
     metabat_done = snakemake.input.metabat_done
 
     threads = snakemake.threads
+    log = snakemake.log[0]
 
-    assemble_pools(input_list, input_fasta, output_fasta, metabat_done, threads)
+    with open(log, 'w') as logf: pass
+
+    assemble_pools(input_list, input_fasta, output_fasta, metabat_done, threads, log)

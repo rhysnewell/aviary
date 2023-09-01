@@ -1,11 +1,12 @@
-from subprocess import run
+from subprocess import run, STDOUT
 
 def run_flye(
     long_read_type: str,
     input_fastq: str,
     output_dir: str,
     meta_flag: bool,
-    threads: int
+    threads: int,
+    log: str,
 ):
     meta = ""
     flye_type = "--nano-raw"
@@ -21,7 +22,8 @@ def run_flye(
         flye_type = "--pacbio-raw"
     
     flye_cmd = f"flye {flye_type} {input_fastq} {meta} -o {output_dir} -t {threads}".split()
-    run(flye_cmd)
+    with open(log, "a") as logf:
+        run(flye_cmd, stdout=logf, stderr=STDOUT)
 
 
 if __name__ == '__main__':
@@ -30,11 +32,15 @@ if __name__ == '__main__':
     output_dir = "data/flye"
     meta_flag = True
     threads = snakemake.threads
+    log = snakemake.log[0]
+
+    with open(log, "w") as logf: pass
 
     run_flye(
         long_read_type=long_read_type,
         input_fastq=input_fastq,
         output_dir=output_dir,
         meta_flag=meta_flag,
-        threads=threads
+        threads=threads,
+        log=log,
     )

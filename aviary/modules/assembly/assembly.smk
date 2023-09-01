@@ -62,8 +62,12 @@ rule map_reads_ref:
     resources:
         mem_mb = lambda wildcards, attempt: min(int(config["max_memory"])*1024, 512*1024*attempt),
         runtime = lambda wildcards, attempt: 12*60*attempt,
+    log:
+        "logs/map_reads_ref.log"
     shell:
-        "minimap2 -ax {params.mapper} --split-prefix=tmp -t {threads} {input.reference_filter} {input.fastq} | samtools view -@ {threads} -b > {output} && samtools index {output}"
+        "minimap2 -ax {params.mapper} --split-prefix=tmp -t {threads} {input.reference_filter} {input.fastq} 2> {log} | "
+        "samtools view -@ {threads} -b > {output} 2>> {log} && "
+        "samtools index {output} 2> {log}"
 
 
 # Get a list of reads that don't map to genome you want to filter
@@ -94,12 +98,14 @@ rule get_reads_list_ref:
     resources:
         mem_mb = lambda wildcards, attempt: min(int(config["max_memory"])*1024, 512*1024*attempt),
         runtime = lambda wildcards, attempt: 12*60*attempt,
+    log:
+        "logs/get_reads_list_ref.log"
     conda:
         "envs/seqtk.yaml"
     benchmark:
         "benchmarks/get_reads_list_ref.benchmark.txt"
     shell:
-        "seqtk subseq {input.fastq} {input.unmapped_list} | pigz -p {threads} > {output}"
+        "seqtk subseq {input.fastq} {input.unmapped_list} 2> {log} | pigz -p {threads} > {output} 2>> {log}"
 
 # if no reference filter output this done file just to keep the DAG happy
 rule no_ref_filter:
@@ -128,6 +134,8 @@ rule flye_assembly:
     resources:
         mem_mb = lambda wildcards, attempt: min(int(config["max_memory"])*1024, 512*1024*attempt),
         runtime = lambda wildcards, attempt: 24*60 + 24*60*attempt,
+    log:
+        "logs/flye_assembly.log"
     conda:
         "envs/flye.yaml"
     benchmark:
@@ -154,6 +162,8 @@ rule polish_metagenome_flye:
     resources:
         mem_mb = lambda wildcards, attempt: min(int(config["max_memory"])*1024, 512*1024*attempt),
         runtime = lambda wildcards, attempt: 24*60*attempt,
+    log:
+        "logs/polish_metagenome_flye.log"
     output:
         fasta = "data/assembly.pol.rac.fasta"
     benchmark:
@@ -179,6 +189,8 @@ rule filter_illumina_ref:
     resources:
         mem_mb = lambda wildcards, attempt: min(int(config["max_memory"])*1024, 512*1024*attempt),
         runtime = lambda wildcards, attempt: 8*60*attempt,
+    log:
+        "logs/filter_illumina_ref.log"
     benchmark:
         "benchmarks/filter_illumina_ref.benchmark.txt"
     script:
@@ -201,6 +213,8 @@ rule generate_pilon_sort:
     resources:
         mem_mb = lambda wildcards, attempt: min(int(config["max_memory"])*1024, 512*1024*attempt),
         runtime = lambda wildcards, attempt: 24*60*attempt,
+    log:
+        "logs/generate_pilon_sort.log"
     conda:
         "envs/pilon.yaml"
     benchmark:
@@ -221,6 +235,8 @@ rule polish_meta_pilon:
     resources:
         mem_mb = lambda wildcards, attempt: min(int(config["max_memory"])*1024, 512*1024*attempt),
         runtime = lambda wildcards, attempt: 24*60*attempt,
+    log:
+        "logs/polish_meta_pilon.log"
     params:
         pilon_memory = int(config["max_memory"])*512
     conda:
@@ -229,7 +245,7 @@ rule polish_meta_pilon:
         "benchmarks/polish_meta_pilon.benchmark.txt"
     shell:
         """
-        pilon -Xmx{params.pilon_memory}m --genome {input.fasta} --frags data/pilon.sort.bam --output data/assembly.pol.pil --fix bases >data/pilon.err
+        pilon -Xmx{params.pilon_memory}m --genome {input.fasta} --frags data/pilon.sort.bam --output data/assembly.pol.pil --fix bases >data/pilon.err 2> {log}
         """
 
 
@@ -246,6 +262,8 @@ rule polish_meta_racon_ill:
     resources:
         mem_mb = lambda wildcards, attempt: min(int(config["max_memory"])*1024, 512*1024*attempt),
         runtime = lambda wildcards, attempt: 24*60*attempt,
+    log:
+        "logs/polish_meta_racon_ill.log"
     conda:
         "envs/polishing.yaml"
     params:
@@ -386,6 +404,8 @@ rule filter_illumina_assembly:
     resources:
         mem_mb = lambda wildcards, attempt: min(int(config["max_memory"])*1024, 512*1024*attempt),
         runtime = lambda wildcards, attempt: 24*60*attempt,
+    log:
+        "logs/filter_illumina_assembly.log"
     benchmark:
         "benchmarks/filter_illumina_assembly.benchmark.txt"
     script:
@@ -434,6 +454,8 @@ rule spades_assembly:
     resources:
         mem_mb = lambda wildcards, attempt: min(int(config["max_memory"])*1024, 512*1024*attempt),
         runtime = lambda wildcards, attempt: 72*60 + 24*60*attempt,
+    log:
+        "logs/spades_assembly.log"
     params:
         max_memory = config["max_memory"],
         long_read_type = config["long_read_type"],
@@ -450,18 +472,18 @@ rule spades_assembly:
         actualsize=$(stat -c%s data/short_reads.filt.fastq.gz);
         if [ -d "data/spades_assembly/" ]
         then
-            spades.py --restart-from last --memory {params.max_memory} -t {threads} -o data/spades_assembly -k {params.kmer_sizes} --tmp-dir {params.tmpdir} && \
+            spades.py --restart-from last --memory {params.max_memory} -t {threads} -o data/spades_assembly -k {params.kmer_sizes} --tmp-dir {params.tmpdir} > {log} 2>&1 && \
             cp data/spades_assembly/scaffolds.fasta data/spades_assembly.fasta
         elif [ $actualsize -ge $minimumsize ]
         then
             if [ {params.long_read_type} = "ont" ] || [ {params.long_read_type} = "ont_hq" ]
             then
                 spades.py --checkpoints all --memory {params.max_memory} --meta --nanopore {input.long_reads} --12 {input.fastq} \
-                -o data/spades_assembly -t {threads}  -k {params.kmer_sizes} --tmp-dir {params.tmpdir} 2>data/spades.err && \
+                -o data/spades_assembly -t {threads}  -k {params.kmer_sizes} --tmp-dir {params.tmpdir} >> {log} 2>&1 && \
                 cp data/spades_assembly/scaffolds.fasta data/spades_assembly.fasta
             else
                 spades.py --checkpoints all --memory {params.max_memory} --meta --pacbio {input.long_reads} --12 {input.fastq} \
-                -o data/spades_assembly -t {threads}  -k {params.kmer_sizes} --tmp-dir {params.tmpdir} 2>data/spades.err && \
+                -o data/spades_assembly -t {threads}  -k {params.kmer_sizes} --tmp-dir {params.tmpdir} >> {log} 2>&1 && \
                 cp data/spades_assembly/scaffolds.fasta data/spades_assembly.fasta
             fi
         else
@@ -470,7 +492,7 @@ rule spades_assembly:
         """
 
 
-# Perform shrot read assembly only with no other steps
+# Perform short read assembly only with no other steps
 rule assemble_short_reads:
     input:
         fastq = config["short_reads_1"]
@@ -494,6 +516,8 @@ rule assemble_short_reads:
     resources:
         mem_mb = lambda wildcards, attempt: min(int(config["max_memory"])*1024, 512*1024*attempt),
         runtime = lambda wildcards, attempt: 72*60 + 24*60*attempt,
+    log:
+        "logs/short_read_assembly.log"
     conda:
         "envs/spades.yaml"
     log:
@@ -528,6 +552,8 @@ rule spades_assembly_coverage:
     resources:
         mem_mb = lambda wildcards, attempt: min(int(config["max_memory"])*1024, 512*1024*attempt),
         runtime = lambda wildcards, attempt: 24*60*attempt,
+    log:
+        "logs/spades_assembly_coverage.log"
     params:
          tmpdir = config["tmpdir"]
     conda:
@@ -536,8 +562,8 @@ rule spades_assembly_coverage:
         "benchmarks/spades_assembly_coverage.benchmark.txt"
     shell:
         """
-        TMPDIR={params.tmpdir} coverm contig -m metabat -t {threads} -r {input.fasta} --interleaved {input.fastq} --bam-file-cache-directory data/cached_bams/ > {output.assembly_cov};
-        mv data/cached_bams/*.bam {output.bam} && samtools index -@ {threads} {output.bam}
+        TMPDIR={params.tmpdir} coverm contig -m metabat -t {threads} -r {input.fasta} --interleaved {input.fastq} --bam-file-cache-directory data/cached_bams/ > {output.assembly_cov} 2> {log};
+        mv data/cached_bams/*.bam {output.bam} && samtools index -@ {threads} {output.bam} 2>> {log}
         """
 
 rule metabat_binning_short:
@@ -553,13 +579,15 @@ rule metabat_binning_short:
     resources:
         mem_mb = lambda wildcards, attempt: min(int(config["max_memory"])*1024, 512*1024*attempt),
         runtime = lambda wildcards, attempt: 24*60*attempt,
+    log:
+        "logs/metabat_binning_short.log"
     benchmark:
         "benchmarks/metabat_binning_short.benchmark.txt"
     shell:
          """
          mkdir -p data/metabat_bins && \
          metabat --seed 89 --unbinned -m 1500 -l -i {input.fasta} -t {threads} -a {input.assembly_cov} \
-         -o data/metabat_bins/binned_contigs && \
+         -o data/metabat_bins/binned_contigs > {log} 2>&1 && \
          touch data/metabat_bins/done
          """
 
@@ -576,15 +604,17 @@ rule map_long_mega:
     resources:
         mem_mb = lambda wildcards, attempt: min(int(config["max_memory"])*1024, 512*1024*attempt),
         runtime = lambda wildcards, attempt: 24*60*attempt,
+    log:
+        "logs/map_long_mega.log"
     conda:
         "../../envs/minimap2.yaml"
     benchmark:
         "benchmarks/map_long_mega.benchmark.txt"
     shell:
         """
-        minimap2 -t {threads} --split-prefix=tmp -ax map-ont -a {input.fasta} {input.fastq} |  samtools view -@ {threads} -b |
-        samtools sort -@ {threads} -o {output.bam} - && \
-        samtools index -@ {threads} {output.bam}
+        minimap2 -t {threads} --split-prefix=tmp -ax map-ont -a {input.fasta} {input.fastq} 2> {log} | samtools view -@ {threads} -b 2>> {log} |
+        samtools sort -@ {threads} -o {output.bam} - 2>> {log} && \
+        samtools index -@ {threads} {output.bam} 2>> {log}
         """
 
 # Long and short reads that mapped to the spades assembly are pooled (binned) together
@@ -617,6 +647,8 @@ rule get_read_pools:
     resources:
         mem_mb = lambda wildcards, attempt: min(int(config["max_memory"])*1024, 512*1024*attempt),
         runtime = lambda wildcards, attempt: 12*60*attempt,
+    log:
+        "logs/get_read_pools.log"
     benchmark:
         "benchmarks/get_read_pools.benchmark.txt"
     script:
@@ -634,6 +666,8 @@ rule assemble_pools:
     resources:
         mem_mb = lambda wildcards, attempt: min(int(config["max_memory"])*1024, 512*1024*attempt),
         runtime = lambda wildcards, attempt: 72*60 + 24*60*attempt,
+    log:
+        "logs/assemble_pools.log"
     output:
         fasta = "data/unicycler_combined.fa"
     conda:

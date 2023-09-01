@@ -1,6 +1,6 @@
 import os
 import sys
-from subprocess import run, Popen, PIPE
+from subprocess import run, Popen, PIPE, STDOUT
 import random
 import shutil
 import logging
@@ -12,20 +12,23 @@ def clean_short_reads(
     read_pair: str,
     output_path: str,
     threads: int,
+    log: str,
 ):
     cat_cmd = f"{cat_or_zcat} {read_path}".split()
     sed_cmd = f"""sed s/@/@{read_pair}_/""".split()
-    print(f"Shell command: {' '.join(cat_cmd)} | {' '.join(sed_cmd)} > {output_path}")
-    print(sed_cmd)
-    with open(output_path, 'a') as out:
-        cat = Popen(cat_cmd, stdout=PIPE)
-        sed = Popen(sed_cmd, stdin=cat.stdout, stdout=out)
 
-        sed.wait()
-        cat.wait()
+    with open(log, "a") as logf:
+        logf.write(f"Shell command: {' '.join(cat_cmd)} | {' '.join(sed_cmd)} > {output_path}")
+        logf.write(sed_cmd)
+        with open(output_path, 'a') as out:
+            cat = Popen(cat_cmd, stdout=PIPE, stderr=logf)
+            sed = Popen(sed_cmd, stdin=cat.stdout, stdout=out, stderr=logf)
 
-        print("cat return: ", cat.returncode)
-        print("sed return: ", sed.returncode)
+            sed.wait()
+            cat.wait()
+
+            logf.write("cat return: ", cat.returncode)
+            logf.write("sed return: ", sed.returncode)
 
 def minimap2_process(
     minimap2_type: str,
@@ -33,30 +36,34 @@ def minimap2_process(
     reads: str,
     threads: int,
     output_paf: str,
+    log: str,
 ):
     minimap2_cmd = f"minimap2 -x {minimap2_type} -t {threads} {reference} {reads}".split()
 
-    with open(output_paf, 'w') as out:
-        Popen(minimap2_cmd, stdout=out).wait()
+    with open(log, "a") as logf:
+        with open(output_paf, 'w') as out:
+            Popen(minimap2_cmd, stdout=out, stderr=logf).wait()
 
 def run_seqkit(
     reads,
     pattern_file: str,
     output_file: str,
     threads: int,
+    log: str,
 ):
     seqkit_cmd = f"seqkit -j {threads} grep  --pattern-file {pattern_file} {reads}".split()
     pigz_cmd = f"pigz -p {threads}".split()
 
-    print(f"Shell style: {' '.join(seqkit_cmd)} | {' '.join(pigz_cmd)} > {output_file}")
+    with open(log, "a") as logf:
+        logf.write(f"Shell style: {' '.join(seqkit_cmd)} | {' '.join(pigz_cmd)} > {output_file}")
 
-    with open(output_file, 'a') as out:    
-        seqkit = Popen(seqkit_cmd, stdout=PIPE)
-        pigz = Popen(pigz_cmd, stdin=seqkit.stdout, stdout=out)
-        pigz.wait()
-        seqkit.wait()
-        print("seqkit return: ", seqkit.returncode)
-        print("pigz return: ", pigz.returncode)
+        with open(output_file, 'a') as out:
+            seqkit = Popen(seqkit_cmd, stdout=PIPE, stderr=logf)
+            pigz = Popen(pigz_cmd, stdin=seqkit.stdout, stdout=out, stderr=logf)
+            pigz.wait()
+            seqkit.wait()
+            logf.write("seqkit return: ", seqkit.returncode)
+            logf.write("pigz return: ", pigz.returncode)
 
 def run_racon(
     reads: str,
@@ -64,49 +71,54 @@ def run_racon(
     reference: str,
     output_file: str,
     threads: int,
+    log: str,
 ):
     racon_cmd = f"racon -m 8 -x -6 -g -8 -w 500 -t {threads} -u {reads} {paf} {reference}".split()
 
-    print(' '.join(racon_cmd))
-    with open(output_file, 'w') as out:
-        Popen(racon_cmd, stdout=out).wait()
+    with open(log, "a") as logf:
+        logf.write(' '.join(racon_cmd))
+        with open(output_file, 'w') as out:
+            Popen(racon_cmd, stdout=out, stderr=logf).wait()
 
 
 def run_minimap_with_samtools(
     reference: str,
     reads: str,
     threads: int,
-    output_file: str
+    output_file: str,
+    log: str,
 ):
 
     # write minimap2 output to temporary file
 
-    minimap2_cmd = f"minimap2 -ax map-ont -t {threads} {reference} {reads}".split()
-    print(' '.join(minimap2_cmd))
-    samtools_cmd = f"samtools view -F 4 -b -@ {threads-1} -o {output_file}".split()
-    print(' '.join(samtools_cmd))
-    minimap2 = Popen(minimap2_cmd, stdout=PIPE)
-    samtools = Popen(samtools_cmd, stdin=minimap2.stdout)
-    samtools.wait()
-    minimap2.wait()
-    # minimap2.stdout.close()
-    # # minimap2.wait()
-    # # samtools.stdin.close()
-    # samtools.communicate()
+    with open(log, "a") as logf:
+        minimap2_cmd = f"minimap2 -ax map-ont -t {threads} {reference} {reads}".split()
+        logf.write(' '.join(minimap2_cmd))
+        samtools_cmd = f"samtools view -F 4 -b -@ {threads-1} -o {output_file}".split()
+        logf.write(' '.join(samtools_cmd))
+        minimap2 = Popen(minimap2_cmd, stdout=PIPE, stderr=logf)
+        samtools = Popen(samtools_cmd, stdin=minimap2.stdout, stderr=logf)
+        samtools.wait()
+        minimap2.wait()
+        # minimap2.stdout.close()
+        # # minimap2.wait()
+        # # samtools.stdin.close()
+        # samtools.communicate()
 
     # check if output file exists and is not empty
-    if os.path.exists(output_file) and os.path.getsize(output_file) > 0:
-        print(f"{output_file} created.")
-        if samtools.returncode == 0:
-            print("samtools successfully created bam file.")
+    with open(log, "a") as logf:
+        if os.path.exists(output_file) and os.path.getsize(output_file) > 0:
+            logf.write(f"{output_file} created.")
+            if samtools.returncode == 0:
+                logf.write("samtools successfully created bam file.")
+            else:
+                logf.write("samtools failed to create bam file.")
+                logf.write("samtools return: ", samtools.returncode)
+            return True
         else:
-            print("samtools failed to create bam file.")
-            print("samtools return: ", samtools.returncode)
-        return True
-    else:
-        print(f"Error: {output_file} is empty or does not exist.")
-        print("samtools return: ", samtools.returncode)
-        return False
+            logf.write(f"Error: {output_file} is empty or does not exist.")
+            logf.write("samtools return: ", samtools.returncode)
+            return False
 
 
 def run_polish(
@@ -125,6 +137,7 @@ def run_polish(
     long_read_type: str,
     coassemble: bool,
     threads: int,
+    log: str,
 ):
     # out = "data/polishing"
 
@@ -152,12 +165,13 @@ def run_polish(
                     if reads2[-3::] == ".gz":
                         cat_or_zcat2 = "zcat"
 
-                    clean_short_reads(cat_or_zcat1, reads1, 1, "data/short_reads.racon.1.fastq", threads)
-                    clean_short_reads(cat_or_zcat2, reads2, 2, "data/short_reads.racon.1.fastq", threads)
+                    clean_short_reads(cat_or_zcat1, reads1, 1, "data/short_reads.racon.1.fastq", threads, log)
+                    clean_short_reads(cat_or_zcat2, reads2, 2, "data/short_reads.racon.1.fastq", threads, log)
                     if not coassemble:
                         break
-                
-                run(f"pigz -p {threads} --fast data/short_reads.racon.1.fastq".split())
+
+                with open(log, "a") as logf:
+                    run(f"pigz -p {threads} --fast data/short_reads.racon.1.fastq".split(), stdout=logf, stderr=STDOUT)
 
             pe1 = "data/short_reads.racon.1.fastq.gz"
             reads = [pe1]
@@ -173,9 +187,12 @@ def run_polish(
                         
                         with open("data/short_reads.1.fastq", 'a') as out:
                             cat_cmd = f"{cat_or_zcat1} {reads1}".split()
-                            Popen(cat_cmd, stdout=out).wait()
+                            with open(log, "a") as logf:
+                                Popen(cat_cmd, stdout=out, stderr=logf).wait()
 
-                    run("pigz -p {threads} --fast data/short_reads.1.fastq".split())
+                    with open(log, "a") as logf:
+                        run("pigz -p {threads} --fast data/short_reads.1.fastq".split(), stdout=logf, stderr=STDOUT)
+
                 pe1 = "data/short_reads.1.fastq.gz"
             reads = [pe1]
     else:
@@ -185,19 +202,20 @@ def run_polish(
     if illumina or long_read_type not in ['ont', 'ont_hq']:
         for rounds in range(polishing_rounds):
             paf = os.path.join(output_dir, 'alignment.%s.%d.paf') % (output_prefix, rounds)
-            print("Generating PAF file: %s for racon round %d..." % (paf, rounds))
+            with open(log, "a") as logf:
+                logf.write("Generating PAF file: %s for racon round %d..." % (paf, rounds))
 
             # Generate PAF mapping files
             if not os.path.exists(paf): # Check if mapping already exists
                 if illumina:
                     if reads != "data/short_reads.fastq.gz":
-                        minimap2_process("sr", reference, ' '.join(reads), threads, paf)
+                        minimap2_process("sr", reference, ' '.join(reads), threads, paf, log)
                     else:
-                        minimap2_process("sr", reference, reads, threads, paf)
+                        minimap2_process("sr", reference, reads, threads, paf, log)
                 elif long_read_type in ['ont', 'ont_hq']:
                     sys.exit("ONT reads are not supported for racon polishing")
                 else:
-                    minimap2_process("map-pb", reference, reads, threads, paf)
+                    minimap2_process("map-pb", reference, reads, threads, paf, log)
 
             cov_dict = {}
             # Populate coverage dictionary,
@@ -279,6 +297,7 @@ def run_polish(
                         pattern_file,
                         output_file=output_file,
                         threads=threads,
+                        log=log,
                     )
 
             else:
@@ -289,6 +308,7 @@ def run_polish(
                     pattern_file,
                     output_file=output_file,
                     threads=threads,
+                    log=log,
                 )
 
 
@@ -305,6 +325,7 @@ def run_polish(
                 reference,
                 output_file,
                 threads=threads,
+                log=log,
             )
 
             with open(os.path.join(output_dir, "combined.%s.%d.pol.fa" % (output_prefix, rounds)), "w") as o:
@@ -347,7 +368,8 @@ def run_polish(
         print("Running medaka...")
         medaka_cmd = f"medaka_consensus -t {threads} -i {reads} -m {medaka_model} -o data/polishing/ -d {reference}".split()
         print(' '.join(medaka_cmd))
-        run(medaka_cmd)
+        with open(log, "a") as logf:
+            run(medaka_cmd, stdout=logf, stderr=STDOUT)
 
         # copy the output to the expected location
 
@@ -381,6 +403,9 @@ if __name__ == "__main__":
     max_cov = snakemake.params.maxcov
     threads = snakemake.threads
     coassemble = snakemake.params.coassemble
+    log = snakemake.log[0]
+
+    with open(log, "w") as logf: pass
 
     run_polish(
         short_reads_1,
@@ -397,5 +422,6 @@ if __name__ == "__main__":
         illumina=illumina,
         max_cov=max_cov,
         threads=threads,
-        coassemble=coassemble
+        coassemble=coassemble,
+        log=log,
     )
