@@ -311,8 +311,8 @@ def run_polish(
                     log=log,
                 )
 
-
-            print("Performing round %d of racon polishing..." % rounds)
+            with open(log, "a") as logf:
+                logf.write("Performing round %d of racon polishing..." % rounds)
 
             reads = f"{output_dir}/reads.{output_prefix}.{rounds}.fastq.gz"
             paf_file = f"{output_dir}/filtered.{output_prefix}.{rounds}.paf"
