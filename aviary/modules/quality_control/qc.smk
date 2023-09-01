@@ -48,6 +48,8 @@ rule filtlong_no_reference:
     resources:
         mem_mb = lambda wildcards, attempt: min(int(config["max_memory"])*1024, 128*1024*attempt),
         runtime = lambda wildcards, attempt: 12*60*attempt,
+    log:
+        "logs/filtlong.log"
     benchmark:
         "benchmarks/filtlong.benchmark.txt"
     conda:
@@ -56,7 +58,7 @@ rule filtlong_no_reference:
         '''
         for long_reads in {input.long}
         do
-            filtlong --min_length {params.min_length} --min_mean_q {params.min_mean_q} $long_reads | pigz -p {threads} >> {output.long}
+            filtlong --min_length {params.min_length} --min_mean_q {params.min_mean_q} $long_reads 2> {log} | pigz -p {threads} >> {output.long} 2>> {log}
             if ! [ {params.coassemble} ]
             then
                 break
@@ -135,6 +137,8 @@ rule fastqc:
     resources:
         mem_mb = lambda wildcards, attempt: min(int(config["max_memory"])*1024, 128*1024*attempt),
         runtime = lambda wildcards, attempt: 12*60*attempt,
+    log:
+        "logs/fastqc.log"
     script:
         "scripts/run_fastqc.py"
 
@@ -152,8 +156,10 @@ rule fastqc_long:
     resources:
         mem_mb = lambda wildcards, attempt: min(int(config["max_memory"])*1024, 128*1024*attempt),
         runtime = lambda wildcards, attempt: 12*60*attempt,
+    log:
+        "logs/fastqc_long.log"
     shell:
-        "fastqc -o www/fastqc_long/ -t {threads} {input[0]}; touch {output.output}"
+        "fastqc -o www/fastqc_long/ -t {threads} {input[0]} > {log} 2>&1; touch {output.output}"
 
 rule nanoplot:
     input:
@@ -170,8 +176,10 @@ rule nanoplot:
     resources:
         mem_mb = lambda wildcards, attempt: min(int(config["max_memory"])*1024, 128*1024*attempt),
         runtime = lambda wildcards, attempt: 12*60*attempt,
+    log:
+        "logs/nanoplot.log"
     shell:
-        "NanoPlot -o www/nanoplot -p longReads -t {threads} --fastq {input.long}; touch {output.output}"
+        "NanoPlot -o www/nanoplot -p longReads -t {threads} --fastq {input.long} > {log} 2>&1; touch {output.output}"
 
 rule metaquast:
     """
@@ -188,10 +196,12 @@ rule metaquast:
     resources:
         mem_mb = lambda wildcards, attempt: min(int(config["max_memory"])*1024, 128*1024*attempt),
         runtime = lambda wildcards, attempt: 12*60*attempt,
+    log:
+        "logs/metaquast.log"
     conda:
         "envs/quast.yaml"
     shell:
-        "metaquast.py {input.assembly} -t {threads} -o www/metaquast {params.gsa} --min-identity 80 --extensive-mis-size 20000"
+        "metaquast.py {input.assembly} -t {threads} -o www/metaquast {params.gsa} --min-identity 80 --extensive-mis-size 20000 > {log} 2>&1""
 
 rule read_fraction_recovered:
     """
@@ -208,6 +218,8 @@ rule read_fraction_recovered:
     resources:
         mem_mb = lambda wildcards, attempt: min(int(config["max_memory"])*1024, 512*1024*attempt),
         runtime = lambda wildcards, attempt: 24*60 + 24*60*attempt,
+    log:
+        "logs/fraction_recovered.log"
     script:
         "scripts/fraction_recovered.py"
 
@@ -219,8 +231,10 @@ rule assembly_size:
         fasta = config["fasta"]
     output:
         sizes = "www/assembly_stats.txt"
+    log:
+        "logs/assembly_stats.log"
     shell:
-        "stats.sh {input.fasta} > {output.sizes}"
+        "stats.sh {input.fasta} > {output.sizes} 2> {log}"
 
 
 rule assembly_quality:
