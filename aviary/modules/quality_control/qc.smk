@@ -201,7 +201,7 @@ rule metaquast:
     conda:
         "envs/quast.yaml"
     shell:
-        "metaquast.py {input.assembly} -t {threads} -o www/metaquast {params.gsa} --min-identity 80 --extensive-mis-size 20000 > {log} 2>&1""
+        "metaquast.py {input.assembly} -t {threads} -o www/metaquast {params.gsa} --min-identity 80 --extensive-mis-size 20000 > {log} 2>&1"
 
 rule read_fraction_recovered:
     """
