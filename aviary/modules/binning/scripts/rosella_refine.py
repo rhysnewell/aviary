@@ -54,6 +54,9 @@ def refinery():
     try:
         current_checkm = pd.read_csv(checkm_path, sep='\t', comment="[")
     except e.EmptyDataError:
+        with open(log, "a") as logf:
+            logf.write("No bins found in checkm file\n")
+            logf.write("Skipping refinement\n")
         if max_iterations == 0:
             for bin in os.listdir(bin_folder):
                 if bin.endswith(extension):
@@ -120,6 +123,9 @@ def refinery():
             os.symlink("../" + final_bins, final_output_folder, target_is_directory=True)
         final_checkm.to_csv("bins/checkm.out", sep='\t', index=False)
     else:
+        with open(log, "a") as logf:
+            logf.write("No bins to refine\n")
+            logf.write("Skipping refinement\n")
         open(f"{snakemake.params.output_folder}/done", "a").close()
 
 
