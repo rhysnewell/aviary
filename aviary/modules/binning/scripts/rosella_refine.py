@@ -107,6 +107,9 @@ def refinery():
             final_checkm = pd.concat([final_checkm, bins_to_keep])
             current_iteration += 1
         except FileNotFoundError:
+            with open(log, "a") as logf:
+                logf.write("No bins to refine\n")
+                logf.write("Skipping refinement\n")
             # No bins to refine, break out and move on
             break
 
@@ -123,9 +126,6 @@ def refinery():
             os.symlink("../" + final_bins, final_output_folder, target_is_directory=True)
         final_checkm.to_csv("bins/checkm.out", sep='\t', index=False)
     else:
-        with open(log, "a") as logf:
-            logf.write("No bins to refine\n")
-            logf.write("Skipping refinement\n")
         open(f"{snakemake.params.output_folder}/done", "a").close()
 
 
