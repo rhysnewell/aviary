@@ -32,7 +32,7 @@ input reads.
 If at any point the Aviary workflow is interrupted, the pipeline can be restarted and pick up from the last completed
 step.
 
-## Advanced Usage
+## HPC cluster submission
 
 Often users are required to send long running jobs off on to high performance clusters. Aviary and snakemake are
 perfectly compatible with clusters and can be sent off as either a single pipeline via PBS script or equivalent.
