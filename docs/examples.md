@@ -72,4 +72,5 @@ can also be kind of memory intensive when given extra threads.
 
 ### RAM control
 
-When performing assembly, users are required to estimate how much RAM they will need to use via `-m, --max-memory, --max_memory`
+When performing assembly, users are required to estimate how much RAM they will need to use via `-m, --max-memory, --max_memory`.
+With HPC cluster submission (see above), requested job memory is increased with each rerun and capped at `max_memory`.

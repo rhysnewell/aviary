@@ -452,7 +452,7 @@ rule spades_assembly:
     threads:
         min(config["max_threads"], 64)
     resources:
-        mem_mb = lambda wildcards, attempt: min(int(config["max_memory"])*1024, 512*1024*attempt),
+        mem_mb = lambda wildcards, attempt: min(int(config["max_memory"])*1024, 256*1024*attempt),
         runtime = lambda wildcards, attempt: 72*60 + 24*60*attempt,
     log:
         "logs/spades_assembly.log"
