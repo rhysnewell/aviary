@@ -1,3 +1,5 @@
+localrules: link_reads, assembly_size, assembly_quality, complete_qc_short, complete_qc_long, complete_qc_all
+
 ruleorder: get_reads_list_ref > filtlong_no_reference > link_reads
 ruleorder: complete_qc_all > complete_qc_long > complete_qc_short
 # ruleorder: filtlong_paired > filtlong_single
@@ -16,7 +18,6 @@ rule link_reads:
         "data/long_reads.fastq.gz"
     threads:
         config['max_threads']
-    group: 'qc'
     run:
         import subprocess
         import os
@@ -43,17 +44,21 @@ rule filtlong_no_reference:
         min_mean_q = config['min_mean_q'],
         coassemble = config["coassemble"]
     threads:
-        config['max_threads']
+        min(config["max_threads"], 16)
+    resources:
+        mem_mb = lambda wildcards, attempt: min(int(config["max_memory"])*1024, 128*1024*attempt),
+        runtime = lambda wildcards, attempt: 12*60*attempt,
+    log:
+        "logs/filtlong.log"
     benchmark:
         "benchmarks/filtlong.benchmark.txt"
-    group: 'qc'
     conda:
         'envs/filtlong.yaml'
     shell:
         '''
         for long_reads in {input.long}
         do
-            filtlong --min_length {params.min_length} --min_mean_q {params.min_mean_q} $long_reads | pigz -p {threads} >> {output.long}
+            filtlong --min_length {params.min_length} --min_mean_q {params.min_mean_q} $long_reads 2> {log} | pigz -p {threads} >> {output.long} 2>> {log}
             if ! [ {params.coassemble} ]
             then
                 break
@@ -127,9 +132,13 @@ rule fastqc:
         "envs/fastqc.yaml"
     benchmark:
         "benchmarks/fastqc_short.benchmark.txt"
-    group: 'qc'
     threads:
-        config["max_threads"]
+        min(config["max_threads"], 16)
+    resources:
+        mem_mb = lambda wildcards, attempt: min(int(config["max_memory"])*1024, 128*1024*attempt),
+        runtime = lambda wildcards, attempt: 12*60*attempt,
+    log:
+        "logs/fastqc.log"
     script:
         "scripts/run_fastqc.py"
 
@@ -142,11 +151,15 @@ rule fastqc_long:
         "envs/fastqc.yaml"
     benchmark:
         "benchmarks/fastqc_long.benchmark.txt"
-    group: 'qc'
     threads:
-        config["max_threads"]
+        min(config["max_threads"], 16)
+    resources:
+        mem_mb = lambda wildcards, attempt: min(int(config["max_memory"])*1024, 128*1024*attempt),
+        runtime = lambda wildcards, attempt: 12*60*attempt,
+    log:
+        "logs/fastqc_long.log"
     shell:
-        "fastqc -o www/fastqc_long/ -t {threads} {input[0]}; touch {output.output}"
+        "fastqc -o www/fastqc_long/ -t {threads} {input[0]} > {log} 2>&1; touch {output.output}"
 
 rule nanoplot:
     input:
@@ -158,11 +171,15 @@ rule nanoplot:
         "envs/nanoplot.yaml"
     benchmark:
         "benchmarks/nanoplot.benchmark.txt"
-    group: 'qc'
     threads:
-        config["max_threads"]
+        min(config["max_threads"], 16)
+    resources:
+        mem_mb = lambda wildcards, attempt: min(int(config["max_memory"])*1024, 128*1024*attempt),
+        runtime = lambda wildcards, attempt: 12*60*attempt,
+    log:
+        "logs/nanoplot.log"
     shell:
-        "NanoPlot -o www/nanoplot -p longReads -t {threads} --fastq {input.long}; touch {output.output}"
+        "NanoPlot -o www/nanoplot -p longReads -t {threads} --fastq {input.long} > {log} 2>&1; touch {output.output}"
 
 rule metaquast:
     """
@@ -175,11 +192,16 @@ rule metaquast:
     output:
         "www/metaquast/report.html"
     threads:
-        config["max_threads"]
+        min(config["max_threads"], 16)
+    resources:
+        mem_mb = lambda wildcards, attempt: min(int(config["max_memory"])*1024, 128*1024*attempt),
+        runtime = lambda wildcards, attempt: 12*60*attempt,
+    log:
+        "logs/metaquast.log"
     conda:
         "envs/quast.yaml"
     shell:
-        "metaquast.py {input.assembly} -t {threads} -o www/metaquast {params.gsa} --min-identity 80 --extensive-mis-size 20000"
+        "metaquast.py {input.assembly} -t {threads} -o www/metaquast {params.gsa} --min-identity 80 --extensive-mis-size 20000 > {log} 2>&1"
 
 rule read_fraction_recovered:
     """
@@ -187,13 +209,17 @@ rule read_fraction_recovered:
     """
     input:
         fasta = config["fasta"]
-    group: 'binning'
     output:
         "www/fraction_recovered/short_fraction_recovered" if config['short_reads_1'] != 'none' else "www/fraction_recovered/long_fraction_recovered"
     conda:
         "../../envs/coverm.yaml"
     threads:
-        config["max_threads"]
+        min(config["max_threads"], 64)
+    resources:
+        mem_mb = lambda wildcards, attempt: min(int(config["max_memory"])*1024, 512*1024*attempt),
+        runtime = lambda wildcards, attempt: 24*60 + 24*60*attempt,
+    log:
+        "logs/fraction_recovered.log"
     script:
         "scripts/fraction_recovered.py"
 
@@ -205,8 +231,10 @@ rule assembly_size:
         fasta = config["fasta"]
     output:
         sizes = "www/assembly_stats.txt"
+    log:
+        "logs/assembly_stats.log"
     shell:
-        "stats.sh {input.fasta} > {output.sizes}"
+        "stats.sh {input.fasta} > {output.sizes} 2> {log}"
 
 
 rule assembly_quality:
@@ -225,7 +253,6 @@ rule complete_qc_short:
         'www/fastqc/done',
     output:
         temp('data/qc_done')
-    group: 'qc'
     shell:
         'touch data/qc_done'
 
@@ -236,7 +263,6 @@ rule complete_qc_long:
         'data/long_reads.fastq.gz'
     output:
         temp('data/qc_done')
-    group: 'qc'
     shell:
         'touch data/qc_done'
 
@@ -248,6 +274,5 @@ rule complete_qc_all:
         'data/long_reads.fastq.gz'
     output:
         temp('data/qc_done')
-    group: 'qc'
     shell:
         'touch data/qc_done'

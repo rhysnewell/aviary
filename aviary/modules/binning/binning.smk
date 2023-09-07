@@ -1,3 +1,5 @@
+localrules: get_bam_indices, vamb_jgi_filter, vamb_skip, amber_checkm_output, finalise_stats, recover_mags, recover_mags_no_singlem
+
 ruleorder: dereplicate_and_get_abundances_paired > dereplicate_and_get_abundances_interleaved
 ruleorder: checkm_rosella > amber_checkm_output
 ruleorder: checkm_metabat2 > amber_checkm_output
@@ -46,7 +48,6 @@ import glob
 rule prepare_binning_files:
     input:
         input_fasta = config["fasta"]
-    group: 'binning'
     output:
         maxbin_coverage = "data/maxbin.cov.list",
         metabat_coverage = "data/coverm.cov"
@@ -55,7 +56,12 @@ rule prepare_binning_files:
     conda:
         "../../envs/coverm.yaml"
     threads:
-        config["max_threads"]
+        min(config["max_threads"], 64)
+    resources:
+        mem_mb = lambda wildcards, attempt: min(int(config["max_memory"])*1024, 512*1024*attempt),
+        runtime = lambda wildcards, attempt: 24*60 + 24*60*attempt,
+    log:
+        "logs/coverm_prepare.log"
     script:
         "scripts/get_coverage.py"
 
@@ -63,7 +69,6 @@ rule prepare_binning_files:
 rule get_bam_indices:
     input:
         coverage = "data/coverm.cov"
-    group: 'binning'
     output:
         bams = "data/binning_bams/done"
     conda:
@@ -81,23 +86,25 @@ rule maxbin2:
         maxbin_cov = ancient("data/maxbin.cov.list")
     params:
         min_contig_size = config["min_contig_size"]
+    threads:
+        min(config["max_threads"], 16)
     resources:
-        mem_mb=int(config["max_memory"])*128
-    group: 'binning'
+        mem_mb = lambda wildcards, attempt: min(int(config["max_memory"])*1024, 128*1024*attempt),
+        runtime = lambda wildcards, attempt: 72*60 + 24*60*attempt,
     output:
         "data/maxbin2_bins/done"
     conda:
         "envs/maxbin2.yaml"
+    log:
+        "logs/maxbin2.log"
     benchmark:
         "benchmarks/maxbin2.benchmark.txt"
-    threads:
-        config["max_threads"]
     shell:
         "rm -rf data/maxbin2_bins/; "
         "mkdir -p data/maxbin2_bins && "
         "run_MaxBin.pl -contig {input.fasta} -thread {threads} -abund_list {input.maxbin_cov} "
-        "-out data/maxbin2_bins/maxbin -min_contig_length {params.min_contig_size} && "
-        "touch {output[0]} || touch {output[0]}"
+        "-out data/maxbin2_bins/maxbin -min_contig_length {params.min_contig_size} > {log} 2>&1 "
+        "&& touch {output[0]} || touch {output[0]}"
 
 
 rule concoct:
@@ -106,26 +113,28 @@ rule concoct:
         bam_done = ancient("data/binning_bams/done")
     params:
         min_contig_size = config["min_contig_size"]
+    threads:
+        min(config["max_threads"], 16)
     resources:
-        mem_mb=int(config["max_memory"])*128
-    group: 'binning'
+        mem_mb = lambda wildcards, attempt: min(int(config["max_memory"])*1024, 128*1024*attempt),
+        runtime = lambda wildcards, attempt: 72*60 + 24*60*attempt,
     output:
         "data/concoct_bins/done"
     conda:
         "envs/concoct.yaml"
+    log:
+        "logs/concoct.log"
     benchmark:
         "benchmarks/concoct.benchmark.txt"
-    threads:
-        config["max_threads"]
     shell:
         "rm -rf data/concoct_*/; "
         "mkdir -p data/concoct_working && "
-        "cut_up_fasta.py {input.fasta} -c 10000 -o 0 --merge_last -b data/concoct_working/contigs_10K.bed > data/concoct_working/contigs_10K.fa && "
-        "concoct_coverage_table.py data/concoct_working/contigs_10K.bed data/binning_bams/*.bam > data/concoct_working/coverage_table.tsv && "
+        "cut_up_fasta.py {input.fasta} -c 10000 -o 0 --merge_last -b data/concoct_working/contigs_10K.bed > data/concoct_working/contigs_10K.fa 2> {log} && "
+        "concoct_coverage_table.py data/concoct_working/contigs_10K.bed data/binning_bams/*.bam > data/concoct_working/coverage_table.tsv 2>> {log} && "
         "concoct --threads {threads} -l {params.min_contig_size} --composition_file data/concoct_working/contigs_10K.fa --coverage_file data/concoct_working/coverage_table.tsv -b data/concoct_working/ 2>/dev/null && "
-        "merge_cutup_clustering.py data/concoct_working/clustering_gt{params.min_contig_size}.csv > data/concoct_working/clustering_merged.csv && "
+        "merge_cutup_clustering.py data/concoct_working/clustering_gt{params.min_contig_size}.csv > data/concoct_working/clustering_merged.csv 2>> {log} && "
         "mkdir -p data/concoct_bins && "
-        "extract_fasta_bins.py {input.fasta} data/concoct_working/clustering_merged.csv --output_path data/concoct_bins/ && "
+        "extract_fasta_bins.py {input.fasta} data/concoct_working/clustering_merged.csv --output_path data/concoct_bins/ >> {log} 2>&1 && "
         "touch {output[0]} || touch {output[0]}"
 
 
@@ -137,7 +146,6 @@ rule vamb_jgi_filter:
     input:
         fasta = ancient(config["fasta"]),
         done = ancient("data/coverm.cov")
-    group: 'binning'
     output:
         vamb_bams_done = "data/coverm.filt.cov"
     threads:
@@ -163,27 +171,28 @@ rule vamb:
     params:
         min_bin_size = config["min_bin_size"],
         min_contig_size = config["min_contig_size"],
-        vamb_threads = int(config["max_threads"]) // 2 # vamb use double the threads you give it
+        vamb_threads = min(int(config["max_threads"]), 16) // 2 # vamb use double the threads you give it
+    threads:
+        min(config["max_threads"], 16)
     resources:
-        mem_mb=int(config["max_memory"])*128
-    group: 'binning'
+        mem_mb = lambda wildcards, attempt: min(int(config["max_memory"])*1024, 128*1024*attempt),
+        runtime = lambda wildcards, attempt: 12*60*attempt,
     output:
         "data/vamb_bins/done"
     conda:
         "envs/vamb.yaml"
+    log:
+        "logs/vamb.log"
     benchmark:
         "benchmarks/vamb.benchmark.txt"
-    threads:
-         config["max_threads"]
     shell:
         "rm -rf data/vamb_bins/; "
         "bash -c 'vamb --outdir data/vamb_bins/ -p {params.vamb_threads} --jgi {input.coverage} --fasta {input.fasta} "
-        "--minfasta {params.min_bin_size} -m {params.min_contig_size} && touch {output[0]}' || "
+        "--minfasta {params.min_bin_size} -m {params.min_contig_size} > {log} 2>&1 && touch {output[0]}' || "
         "touch {output[0]} && mkdir -p data/vamb_bins/bins"
 
 
 rule vamb_skip:
-    group: 'binning'
     output:
         "data/vamb_bins/skipped"
     shell:
@@ -198,19 +207,23 @@ rule metabat2:
     params:
         min_contig_size = max(int(config["min_contig_size"]), 1500),
         min_bin_size = config["min_bin_size"]
-    group: 'binning'
     output:
         metabat_done = "data/metabat_bins_2/done"
     conda:
         "envs/metabat2.yaml"
     threads:
-        config["max_threads"]
+        min(config["max_threads"], 16)
+    resources:
+        mem_mb = lambda wildcards, attempt: min(int(config["max_memory"])*1024, 128*1024*attempt),
+        runtime = lambda wildcards, attempt: 12*60*attempt,
+    log:
+        "logs/metabat2.log"
     benchmark:
         "benchmarks/metabat_2.benchmark.txt"
     shell:
         "rm -rf data/metabat_bins_2/; "
         "metabat -t {threads} -m {params.min_contig_size} -s {params.min_bin_size} --seed 89 -i {input.fasta} "
-        "-a {input.coverage} -o data/metabat_bins_2/binned_contigs && "
+        "-a {input.coverage} -o data/metabat_bins_2/binned_contigs > {log} 2>&1 && "
         "touch {output[0]} || touch {output[0]}"
 
 
@@ -218,7 +231,6 @@ rule metabat_spec:
     input:
         coverage = ancient("data/coverm.cov"),
         fasta = ancient(config["fasta"])
-    group: 'binning'
     output:
         'data/metabat_bins_spec/done'
     conda:
@@ -226,21 +238,25 @@ rule metabat_spec:
     params:
         min_contig_size = max(int(config["min_contig_size"]), 1500),
         min_bin_size = config["min_bin_size"]
+    log:
+        "logs/metabat_spec.log"
     benchmark:
         "benchmarks/metabat_spec.benchmark.txt"
     threads:
-        config["max_threads"]
+        min(config["max_threads"], 16)
+    resources:
+        mem_mb = lambda wildcards, attempt: min(int(config["max_memory"])*1024, 128*1024*attempt),
+        runtime = lambda wildcards, attempt: 24*60*attempt,
     shell:
         "rm -rf data/metabat_bins_spec; "
         "metabat1 -t {threads} -m {params.min_contig_size} -s {params.min_bin_size} --seed 89 --specific -i {input.fasta} "
-        "-a {input.coverage} -o data/metabat_bins_spec/binned_contigs && "
+        "-a {input.coverage} -o data/metabat_bins_spec/binned_contigs > {log} 2>&1 && "
         "touch {output[0]} || touch {output[0]}"
 
 rule metabat_sspec:
     input:
         coverage = ancient("data/coverm.cov"),
         fasta = ancient(config["fasta"])
-    group: 'binning'
     output:
         'data/metabat_bins_sspec/done'
     conda:
@@ -248,21 +264,25 @@ rule metabat_sspec:
     params:
         min_contig_size = max(int(config["min_contig_size"]), 1500),
         min_bin_size = config["min_bin_size"]
+    log:
+        "logs/metabat_sspec.log"
     benchmark:
         "benchmarks/metabat_sspec.benchmark.txt"
     threads:
-        config["max_threads"]
+        min(config["max_threads"], 16)
+    resources:
+        mem_mb = lambda wildcards, attempt: min(int(config["max_memory"])*1024, 128*1024*attempt),
+        runtime = lambda wildcards, attempt: 24*60*attempt,
     shell:
         "rm -rf data/metabat_bins_sspec; "
         "metabat1 -t {threads} -m {params.min_contig_size} -s {params.min_bin_size} --seed 89 --superspecific "
-        "-i {input.fasta} -a {input.coverage} -o data/metabat_bins_sspec/binned_contigs && "
+        "-i {input.fasta} -a {input.coverage} -o data/metabat_bins_sspec/binned_contigs > {log} 2>&1 && "
         "touch {output[0]} || touch {output[0]}"
 
 rule metabat_sens:
     input:
         coverage = ancient("data/coverm.cov"),
         fasta = ancient(config["fasta"])
-    group: 'binning'
     output:
         'data/metabat_bins_sens/done'
     conda:
@@ -270,21 +290,25 @@ rule metabat_sens:
     params:
         min_contig_size = max(int(config["min_contig_size"]), 1500),
         min_bin_size = config["min_bin_size"]
+    log:
+        "logs/metabat_sens.log"
     benchmark:
         "benchmarks/metabat_sens.benchmark.txt"
     threads:
-        config["max_threads"]
+        min(config["max_threads"], 16)
+    resources:
+        mem_mb = lambda wildcards, attempt: min(int(config["max_memory"])*1024, 128*1024*attempt),
+        runtime = lambda wildcards, attempt: 24*60*attempt,
     shell:
         "rm -rf data/metabat_bins_sens; "
         "metabat1 -t {threads} -m {params.min_contig_size} -s {params.min_bin_size} --seed 89 --sensitive "
-        "-i {input.fasta} -a {input.coverage} -o data/metabat_bins_sens/binned_contigs && "
+        "-i {input.fasta} -a {input.coverage} -o data/metabat_bins_sens/binned_contigs > {log} 2>&1 && "
         "touch {output[0]} || touch {output[0]}"
 
 rule metabat_ssens:
     input:
         coverage = ancient("data/coverm.cov"),
         fasta = ancient(config["fasta"])
-    group: 'binning'
     output:
         'data/metabat_bins_ssens/done'
     conda:
@@ -292,14 +316,19 @@ rule metabat_ssens:
     params:
         min_contig_size = max(int(config["min_contig_size"]), 1500),
         min_bin_size = config["min_bin_size"]
+    log:
+        "logs/metabat_ssens.log"
     benchmark:
         "benchmarks/metabat_ssens.benchmark.txt"
     threads:
-        config["max_threads"]
+        min(config["max_threads"], 16)
+    resources:
+        mem_mb = lambda wildcards, attempt: min(int(config["max_memory"])*1024, 128*1024*attempt),
+        runtime = lambda wildcards, attempt: 24*60*attempt,
     shell:
         "rm -rf data/metabat_bins_ssens; "
         "metabat1 -t {threads} -m {params.min_contig_size} -s {params.min_bin_size} --seed 89 --supersensitive "
-        "-i {input.fasta} -a {input.coverage} -o data/metabat_bins_ssens/binned_contigs && "
+        "-i {input.fasta} -a {input.coverage} -o data/metabat_bins_ssens/binned_contigs > {log} 2>&1 && "
         "touch {output[0]} || touch {output[0]}"
 
 rule rosella:
@@ -312,22 +341,24 @@ rule rosella:
     params:
         min_contig_size = config["min_contig_size"],
         min_bin_size = config["min_bin_size"]
-    resources:
-        mem_mb=int(config["max_memory"])*128
-    group: 'binning'
     output:
         # kmers = "data/rosella_bins/rosella_kmer_table.tsv",
         done = "data/rosella_bins/done"
     conda:
         "envs/rosella.yaml"
     threads:
-        config["max_threads"]
+        min(config["max_threads"], 16)
+    resources:
+        mem_mb = lambda wildcards, attempt: min(int(config["max_memory"])*1024, 128*1024*attempt),
+        runtime = lambda wildcards, attempt: 24*60*attempt,
+    log:
+        "logs/rosella.log"
     benchmark:
         "benchmarks/rosella.benchmark.txt"
     shell:
         "rm -rf data/rosella_bins/; "
         "rosella recover -r {input.fasta} -i {input.coverage} -t {threads} -o data/rosella_bins "
-        "--min-contig-size {params.min_contig_size} --min-bin-size {params.min_bin_size} --n-neighbors 200 && "
+        "--min-contig-size {params.min_contig_size} --min-bin-size {params.min_bin_size} --n-neighbors 200 > {log} 2>&1 && "
         "touch {output.done} || touch {output.done}"
 
 
@@ -335,25 +366,27 @@ rule semibin:
     input:
         fasta = ancient(config["fasta"]),
         bams_indexed = ancient("data/binning_bams/done")
-    group: 'binning'
     params:
         # Can't use premade model with multiple samples, so disregard if provided
         semibin_model = config['semibin_model']
-    resources:
-        mem_mb=int(config["max_memory"])*1024
     output:
         done = "data/semibin_bins/done"
     threads:
-        config["max_threads"]
+        min(config["max_threads"], 16)
+    resources:
+        mem_mb = lambda wildcards, attempt: min(int(config["max_memory"])*1024, 128*1024*attempt),
+        runtime = lambda wildcards, attempt: 24*60 + 48*60*(attempt-1),
     conda:
         "envs/semibin.yaml"
+    log:
+        "logs/semibin.log"
     benchmark:
         "benchmarks/semibin.benchmark.txt"
     shell:
         "rm -rf data/semibin_bins/; "
         "mkdir -p data/semibin_bins/output_recluster_bins/; "
-        "SemiBin single_easy_bin -i {input.fasta} -b data/binning_bams/*.bam -o data/semibin_bins --environment {params.semibin_model} -p {threads} --self-supervised && "
-        "touch {output.done} || SemiBin single_easy_bin -i {input.fasta} -b data/binning_bams/*.bam -o data/semibin_bins -p {threads} --self-supervised "
+        "SemiBin single_easy_bin -i {input.fasta} -b data/binning_bams/*.bam -o data/semibin_bins --environment {params.semibin_model} -p {threads} --self-supervised > {log} 2>&1 && "
+        "touch {output.done} || SemiBin single_easy_bin -i {input.fasta} -b data/binning_bams/*.bam -o data/semibin_bins -p {threads} --self-supervised > {log} 2>&1 "
         "&& touch {output.done} || touch {output.done}"
 
 rule checkm_rosella:
@@ -365,14 +398,18 @@ rule checkm_rosella:
         bin_folder = "data/rosella_bins/",
         extension = "fna",
         refinery_max_iterations = config["refinery_max_iterations"],
-    group: 'binning'
     output:
         output_folder = directory("data/rosella_bins/checkm2_out/"),
         output_file = "data/rosella_bins/checkm.out"
     conda:
         "../../envs/checkm2.yaml"
     threads:
-        config["max_threads"]
+        min(config["max_threads"], 16)
+    resources:
+        mem_mb = lambda wildcards, attempt: min(int(config["max_memory"])*1024, 128*1024*attempt),
+        runtime = lambda wildcards, attempt: 8*60*attempt,
+    log:
+        "logs/checkm_rosella.log"
     script:
         "scripts/run_checkm.py"
 
@@ -385,14 +422,18 @@ rule checkm_metabat2:
         bin_folder = "data/metabat_bins_2/",
         extension = "fa",
         refinery_max_iterations = config["refinery_max_iterations"],
-    group: 'binning'
     output:
         output_folder = directory("data/metabat_bins_2/checkm2_out/"),
         output_file = "data/metabat_bins_2/checkm.out"
     conda:
         "../../envs/checkm2.yaml"
     threads:
-        config["max_threads"]
+        min(config["max_threads"], 16)
+    resources:
+        mem_mb = lambda wildcards, attempt: min(int(config["max_memory"])*1024, 128*1024*attempt),
+        runtime = lambda wildcards, attempt: 8*60*attempt,
+    log:
+        "logs/checkm_metabat2.log"
     script:
         "scripts/run_checkm.py"
 
@@ -405,14 +446,18 @@ rule checkm_semibin:
         bin_folder = "data/semibin_bins/output_recluster_bins/",
         extension = "fa",
         refinery_max_iterations = config["refinery_max_iterations"],
-    group: 'binning'
     output:
         output_folder = directory("data/semibin_bins/checkm2_out/"),
         output_file = "data/semibin_bins/checkm.out"
     conda:
         "../../envs/checkm2.yaml"
     threads:
-        config["max_threads"]
+        min(config["max_threads"], 16)
+    resources:
+        mem_mb = lambda wildcards, attempt: min(int(config["max_memory"])*1024, 128*1024*attempt),
+        runtime = lambda wildcards, attempt: 8*60*attempt,
+    log:
+        "logs/checkm_semibin.log"
     script:
         "scripts/run_checkm.py"
 
@@ -436,10 +481,13 @@ rule refine_rosella:
         pplacer_threads = config["pplacer_threads"],
         max_contamination = 15,
         final_refining = False
-    resources:
-        mem_mb=int(config["max_memory"])
     threads:
-        config["max_threads"]
+        min(config["max_threads"], 16)
+    resources:
+        mem_mb = lambda wildcards, attempt: min(int(config["max_memory"])*1024, 128*1024*attempt),
+        runtime = lambda wildcards, attempt: 48*60 + 24*60*attempt,
+    log:
+        "logs/refine_rosella.log"
     conda:
         "envs/rosella.yaml"
     script:
@@ -454,8 +502,11 @@ rule refine_metabat2:
         # kmers = "data/rosella_bins/rosella_kmer_table.tsv"
     output:
         'data/metabat2_refined/done'
+    threads:
+        min(config["max_threads"], 16)
     resources:
-        mem_mb=int(config["max_memory"])
+        mem_mb = lambda wildcards, attempt: min(int(config["max_memory"])*1024, 128*1024*attempt),
+        runtime = lambda wildcards, attempt: 48*60 + 24*60*attempt,
     benchmark:
         'benchmarks/refine_metabat2.benchmark.txt'
     params:
@@ -467,8 +518,8 @@ rule refine_metabat2:
         pplacer_threads = config["pplacer_threads"],
         max_contamination = 15,
         final_refining = False
-    threads:
-        config["max_threads"]
+    log:
+        "logs/refine_metabat2.log"
     conda:
         "envs/rosella.yaml"
     script:
@@ -481,8 +532,11 @@ rule refine_semibin:
         coverage = ancient("data/coverm.cov"),
         fasta = ancient(config["fasta"]),
         # kmers = "data/rosella_bins/rosella_kmer_table.tsv"
+    threads:
+        min(config["max_threads"], 16)
     resources:
-        mem_mb=int(config["max_memory"])
+        mem_mb = lambda wildcards, attempt: min(int(config["max_memory"])*1024, 128*1024*attempt),
+        runtime = lambda wildcards, attempt: 48*60 + 24*60*attempt,
     output:
         'data/semibin_refined/done'
     benchmark:
@@ -496,8 +550,8 @@ rule refine_semibin:
         pplacer_threads = config["pplacer_threads"],
         max_contamination = 15,
         final_refining = False
-    threads:
-        config["max_threads"]
+    log:
+        "logs/refine_semibin.log"
     conda:
         "envs/rosella.yaml"
     script:
@@ -556,34 +610,36 @@ rule das_tool:
         rosella_done = [] if "rosella" in config["skip_binners"] else "data/rosella_refined/done",
         semibin_done = [] if "semibin" in config["skip_binners"] else "data/semibin_refined/done",
         vamb_done = [] if "vamb" in config["skip_binners"] else "data/vamb_bins/done",
+    threads:
+        min(config["max_threads"], 64)
     resources:
-        mem_mb=int(config["max_memory"])
-    group: 'binning'
+        mem_mb = lambda wildcards, attempt: min(int(config["max_memory"])*1024, 512*1024*attempt),
+        runtime = lambda wildcards, attempt: 12*60*attempt,
     output:
         das_tool_done = "data/das_tool_bins_pre_refine/done"
-    threads:
-        config["max_threads"]
     conda:
         "envs/das_tool.yaml"
+    log:
+        "logs/das_tool.log"
     benchmark:
         "benchmarks/das_tool.benchmark.txt"
     shell:
         """
-        Fasta_to_Scaffolds2Bin.sh -i data/metabat_bins_sspec -e fa > data/metabat_bins_sspec.tsv; 
-        Fasta_to_Scaffolds2Bin.sh -i data/metabat_bins_ssens -e fa > data/metabat_bins_ssens.tsv; 
-        Fasta_to_Scaffolds2Bin.sh -i data/metabat_bins_sens -e fa > data/metabat_bins_sens.tsv; 
-        Fasta_to_Scaffolds2Bin.sh -i data/metabat_bins_spec -e fa > data/metabat_bins_spec.tsv; 
-        Fasta_to_Scaffolds2Bin.sh -i data/concoct_bins -e fa > data/concoct_bins.tsv; 
-        Fasta_to_Scaffolds2Bin.sh -i data/maxbin2_bins -e fasta > data/maxbin_bins.tsv; 
-        Fasta_to_Scaffolds2Bin.sh -i data/vamb_bins/bins -e fna > data/vamb_bins.tsv; 
-        Fasta_to_Scaffolds2Bin.sh -i data/rosella_refined/final_bins/ -e fna > data/rosella_refined_bins.tsv; 
-        Fasta_to_Scaffolds2Bin.sh -i data/metabat2_refined/final_bins/ -e fna > data/metabat2_refined_bins.tsv; 
-        Fasta_to_Scaffolds2Bin.sh -i data/semibin_refined/final_bins/ -e fna > data/semibin_refined_bins.tsv; 
+        Fasta_to_Scaffolds2Bin.sh -i data/metabat_bins_sspec -e fa > data/metabat_bins_sspec.tsv 2> {log}; 
+        Fasta_to_Scaffolds2Bin.sh -i data/metabat_bins_ssens -e fa > data/metabat_bins_ssens.tsv 2>> {log}; 
+        Fasta_to_Scaffolds2Bin.sh -i data/metabat_bins_sens -e fa > data/metabat_bins_sens.tsv 2>> {log}; 
+        Fasta_to_Scaffolds2Bin.sh -i data/metabat_bins_spec -e fa > data/metabat_bins_spec.tsv 2>> {log}; 
+        Fasta_to_Scaffolds2Bin.sh -i data/concoct_bins -e fa > data/concoct_bins.tsv 2>> {log}; 
+        Fasta_to_Scaffolds2Bin.sh -i data/maxbin2_bins -e fasta > data/maxbin_bins.tsv 2>> {log}; 
+        Fasta_to_Scaffolds2Bin.sh -i data/vamb_bins/bins -e fna > data/vamb_bins.tsv 2>> {log}; 
+        Fasta_to_Scaffolds2Bin.sh -i data/rosella_refined/final_bins/ -e fna > data/rosella_refined_bins.tsv 2>> {log}; 
+        Fasta_to_Scaffolds2Bin.sh -i data/metabat2_refined/final_bins/ -e fna > data/metabat2_refined_bins.tsv 2>> {log}; 
+        Fasta_to_Scaffolds2Bin.sh -i data/semibin_refined/final_bins/ -e fna > data/semibin_refined_bins.tsv 2>> {log}; 
         scaffold2bin_files=$(find data/*bins*.tsv -not -empty -exec ls {{}} \; | tr "\n" ',' | sed "s/,$//g"); 
         DAS_Tool --search_engine diamond --write_bin_evals 1 --write_bins 1 -t {threads} --score_threshold -42 \
          -i $scaffold2bin_files \
          -c {input.fasta} \
-         -o data/das_tool_bins_pre_refine/das_tool && \
+         -o data/das_tool_bins_pre_refine/das_tool >> {log} 2>&1 && \
         touch data/das_tool_bins_pre_refine/done
         """
 
@@ -594,8 +650,11 @@ rule refine_dastool:
         coverage = ancient("data/coverm.cov"),
         fasta = ancient(config["fasta"]),
         # kmers = "data/rosella_bins/rosella_kmer_table.tsv"
+    threads:
+        min(config["max_threads"], 16)
     resources:
-        mem_mb=int(config["max_memory"])
+        mem_mb = lambda wildcards, attempt: min(int(config["max_memory"])*1024, 128*1024*attempt),
+        runtime = lambda wildcards, attempt: 48*60 + 24*60*attempt,
     output:
         temporary('bins/checkm.out'),
         directory('bins/final_bins')
@@ -610,8 +669,8 @@ rule refine_dastool:
         pplacer_threads = config["pplacer_threads"],
         max_contamination = 15,
         final_refining = True
-    threads:
-        config["max_threads"]
+    log:
+        "logs/refine_dastool.log"
     conda:
         "envs/rosella.yaml"
     script:
@@ -620,15 +679,17 @@ rule refine_dastool:
 rule get_abundances:
     input:
         "bins/checkm.out"
-    group: 'binning'
+    threads:
+        min(config["max_threads"], 64)
     resources:
-        mem_mb=int(config["max_memory"])*1024
+        mem_mb = lambda wildcards, attempt: min(int(config["max_memory"])*1024, 512*1024*attempt),
+        runtime = lambda wildcards, attempt: 24*60 + 24*60*attempt,
     output:
         "data/coverm_abundances.tsv"
+    log:
+        "logs/coverm_abundances.log"
     conda:
         "../../envs/coverm.yaml"
-    threads:
-        config["max_threads"]
     script:
         "scripts/get_abundances.py"
 
@@ -651,25 +712,34 @@ rule checkm_das_tool:
         done = "data/das_tool_bins_pre_refine/done"
     params:
         pplacer_threads = config["pplacer_threads"]
-    group: 'binning'
     output:
         "data/das_tool_bins_pre_refine/checkm.out"
     conda:
         "../../envs/checkm.yaml"
     threads:
-        config["max_threads"]
+        min(config["max_threads"], 16)
+    resources:
+        mem_mb = lambda wildcards, attempt: min(int(config["max_memory"])*1024, 128*1024*attempt),
+        runtime = lambda wildcards, attempt: 8*60*attempt,
+    log:
+        "logs/checkm_das_tool.log"
     shell:
         'checkm lineage_wf -t {threads} --pplacer_threads {params.pplacer_threads} '
         '-x fa data/das_tool_bins_pre_refine/das_tool_DASTool_bins data/das_tool_bins_pre_refine/checkm --tab_table '
-        '-f data/das_tool_bins_pre_refine/checkm.out; '
+        '-f data/das_tool_bins_pre_refine/checkm.out > {log} 2>&1; '
         'checkm qa -o 2 --tab_table -f data/das_tool_bins_pre_refine/checkm.out '
-        'data/das_tool_bins_pre_refine/checkm/lineage.ms data/das_tool_bins_pre_refine/checkm/; '
+        'data/das_tool_bins_pre_refine/checkm/lineage.ms data/das_tool_bins_pre_refine/checkm/ >> {log} 2>&1; '
 
 
 rule singlem_pipe_reads:
-    group: 'binning'
     output:
         "data/singlem_out/metagenome.combined_otu_table.csv"
+    threads: 1
+    resources:
+        mem_mb = lambda wildcards, attempt: min(int(config["max_memory"])*1024, 8*1024*attempt),
+        runtime = lambda wildcards, attempt: 12*60*attempt,
+    log:
+        "data/singlem_out/singlem_reads_log.txt"
     conda:
         "../../envs/singlem.yaml"
     script:
@@ -680,25 +750,26 @@ rule singlem_appraise:
         metagenome = "data/singlem_out/metagenome.combined_otu_table.csv",
         gtdbtk_done = "data/gtdbtk/done",
         bins_complete = "bins/checkm.out"
-    group: 'binning'
     output:
         "data/singlem_out/singlem_appraisal.tsv"
     params:
         pplacer_threads = config['pplacer_threads'],
         fasta = config['fasta']
-    threads:
-        config["pplacer_threads"]
+    threads: 1
+    resources:
+        mem_mb = lambda wildcards, attempt: min(int(config["max_memory"])*1024, 8*1024*attempt),
+        runtime = lambda wildcards, attempt: 12*60*attempt,
     conda:
         "../../envs/singlem.yaml"
     log:
         "data/singlem_out/singlem_log.txt"
     shell:
-        "singlem pipe --threads {threads} --sequences bins/final_bins/*.fna --otu_table data/singlem_out/genomes.otu_table.csv; "
-        "singlem pipe --threads {threads} --sequences {params.fasta} --otu_table data/singlem_out/assembly.otu_table.csv; "
+        "singlem pipe --threads {threads} --sequences bins/final_bins/*.fna --otu_table data/singlem_out/genomes.otu_table.csv > {log} 2>&1; "
+        "singlem pipe --threads {threads} --sequences {params.fasta} --otu_table data/singlem_out/assembly.otu_table.csv >> {log} 2>&1; "
         "singlem appraise --metagenome_otu_tables {input.metagenome} --genome_otu_tables data/singlem_out/genomes.otu_table.csv "
         "--assembly_otu_table data/singlem_out/assembly.otu_table.csv "
         "--plot data/singlem_out/singlem_appraise.svg --output_binned_otu_table data/singlem_out/binned.otu_table.csv "
-        "--output_unbinned_otu_table data/singlem_out/unbinned.otu_table.csv 1> data/singlem_out/singlem_appraisal.tsv 2> {log} || "
+        "--output_unbinned_otu_table data/singlem_out/unbinned.otu_table.csv > data/singlem_out/singlem_appraisal.tsv 2>> {log} || "
         "echo 'SingleM Errored, please check data/singlem_out/singlem_log.txt' && touch data/singlem_out/singlem_appraisal.tsv"
 
 
@@ -710,7 +781,6 @@ rule recover_mags:
         singlem = "data/singlem_out/singlem_appraisal.tsv"
     conda:
         "../../envs/coverm.yaml"
-    group: 'binning'
     output:
         bins = "bins/done",
         diversity = 'diversity/done'
@@ -734,7 +804,6 @@ rule recover_mags_no_singlem:
         coverm = "data/coverm_abundances.tsv" if not config["skip_abundances"] else [],
     conda:
         "../../envs/coverm.yaml"
-    group: 'binning'
     output:
         bins = "bins/done",
     threads:
@@ -759,11 +828,16 @@ rule dereplicate_and_get_abundances_paired:
         final_bins = 'bins/final_bins',
         derep_ani = 0.97
     threads:
-        config['max_threads']
+        min(config["max_threads"], 64)
+    resources:
+        mem_mb = lambda wildcards, attempt: min(int(config["max_memory"])*1024, 512*1024*attempt),
+        runtime = lambda wildcards, attempt: 24*60 + 24*60*attempt,
+    log:
+        "logs/coverm_abundances_paired.log"
     conda:
         "../../envs/coverm.yaml"
     shell:
-        "coverm genome -t {threads} -d bins/final_bins/ -1 {input.pe_1} -2 {input.pe_2} --min-covered-fraction 0.0 -x fna > bins/coverm_abundances.tsv; "
+        "coverm genome -t {threads} -d bins/final_bins/ -1 {input.pe_1} -2 {input.pe_2} --min-covered-fraction 0.0 -x fna > bins/coverm_abundances.tsv 2> {log}; "
 
 # Special rule to help out with a buggy output
 rule dereplicate_and_get_abundances_interleaved:
@@ -775,8 +849,13 @@ rule dereplicate_and_get_abundances_interleaved:
         final_bins = 'bins/final_bins',
         derep_ani = 0.97
     threads:
-        config['max_threads']
+        min(config["max_threads"], 64)
+    resources:
+        mem_mb = lambda wildcards, attempt: min(int(config["max_memory"])*1024, 512*1024*attempt),
+        runtime = lambda wildcards, attempt: 24*60 + 24*60*attempt,
+    log:
+        "logs/coverm_abundances_interleaved.log"
     conda:
         "../../envs/coverm.yaml"
     shell:
-        "coverm genome -t {threads} -d bins/final_bins/ --interleaved {input.pe_1} --min-covered-fraction 0.0 -x fna > bins/coverm_abundances.tsv; "
+        "coverm genome -t {threads} -d bins/final_bins/ --interleaved {input.pe_1} --min-covered-fraction 0.0 -x fna > bins/coverm_abundances.tsv 2> {log}; "

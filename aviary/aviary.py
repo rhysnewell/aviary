@@ -196,6 +196,23 @@ def main():
     )
 
     base_group.add_argument(
+        '--snakemake-profile',
+        help='Snakemake profile (see https://snakemake.readthedocs.io/en/stable/executing/cli.html#profiles)\n'
+             'Create profile as `~/.config/snakemake/[CLUSTER_PROFILE]/config.yaml`. \n'
+             'Can be used to submit rules as jobs to cluster engine (see https://snakemake.readthedocs.io/en/stable/executing/cluster.html), \n'
+             'requires cluster, cluster-status, jobs, cluster-cancel. ',
+        dest='snakemake_profile',
+        default=""
+    )
+
+    base_group.add_argument(
+        '--cluster-retries',
+        help='Number of times to retry a failed job when using cluster submission (see `--snakemake-profile`). ',
+        dest='cluster_retries',
+        default=0
+    )
+
+    base_group.add_argument(
         '--dry-run', '--dry_run', '--dryrun',
         help='Perform snakemake dry run, tests workflow order and conda environments',
         type=str2bool,
@@ -250,7 +267,7 @@ def main():
         '--rerun-triggers', '--rerun_triggers',
         help='Specify which kinds of modifications will trigger rules to rerun',\
         dest='rerun_triggers',
-        default="mtime",
+        default=["mtime"],
         nargs="*",
         choices=["mtime","params","input","software-env","code"]
     )
@@ -1182,7 +1199,10 @@ def main():
                                dryrun=args.dryrun,
                                clean=args.clean,
                                conda_frontend=args.conda_frontend,
-                               snakemake_args=args.cmds)
+                               snakemake_args=args.cmds,
+                               rerun_triggers=args.rerun_triggers,
+                               profile=args.snakemake_profile,
+                               cluster_retries=args.cluster_retries)
     else:
         process_batch(args, prefix)
 

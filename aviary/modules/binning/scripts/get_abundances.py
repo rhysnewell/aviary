@@ -1,4 +1,4 @@
-from subprocess import run
+from subprocess import run, STDOUT
 import os
 
 def run_coverm(
@@ -9,12 +9,14 @@ def run_coverm(
     threads: int,
     strain_analysis: bool,
     output_dir: str,
+    log: str,
 ):
     strain_analysis_flag = f"--bam-file-cache-directory {output_dir} --discard-unmapped" if strain_analysis else ""
 
     coverm_cmd = f"coverm genome -t {threads} {strain_analysis_flag} -d bins/final_bins/ -m relative_abundance covered_fraction {read_type} {reads} -p {minimap2_type} --output-file {output_file} --min-covered-fraction 0.0 -x fna".split()
 
-    run(coverm_cmd)
+    with open(log, "a") as logf:
+        run(coverm_cmd, stdout=logf, stderr=STDOUT)
 
 def get_abundances(
     long_reads,
@@ -23,6 +25,7 @@ def get_abundances(
     long_read_type: str,
     threads: int,
     strain_analysis: bool,
+    log: str,
 ):
     if long_reads != "none":
         if long_read_type in ["ont", "ont_hq"]:
@@ -34,6 +37,7 @@ def get_abundances(
                 threads=threads,
                 strain_analysis=strain_analysis,
                 output_dir="data/reads_mapped_to_mags/long/",
+                log=log,
             )
 
         elif long_read_type in ["rs", "sq", "ccs", "hifi"]:
@@ -45,6 +49,7 @@ def get_abundances(
                 threads=threads,
                 strain_analysis=strain_analysis,
                 output_dir="data/reads_mapped_to_mags/long/",
+                log=log,
             )
 
         else:
@@ -56,6 +61,7 @@ def get_abundances(
                 threads=threads,
                 strain_analysis=strain_analysis,
                 output_dir="data/reads_mapped_to_mags/long/",
+                log=log,
             )
 
     if short_reads_2 != 'none':
@@ -72,6 +78,7 @@ def get_abundances(
             threads=threads,
             strain_analysis=strain_analysis,
             output_dir="data/reads_mapped_to_mags/short/",
+            log=log,
         )
 
     elif short_reads_1 != 'none':
@@ -83,6 +90,7 @@ def get_abundances(
             threads=threads,
             strain_analysis=strain_analysis,
             output_dir="data/reads_mapped_to_mags/short/",
+            log=log,
         )
 
     # Concatenate the two coverage files if both long and short exist
@@ -100,6 +108,10 @@ def get_abundances(
 
 
 if __name__ == '__main__':
+    log = snakemake.log[0]
+
+    with open(log, "w") as logf: pass
+
     get_abundances(
         snakemake.config["long_reads"],
         snakemake.config["short_reads_1"],
@@ -107,4 +119,5 @@ if __name__ == '__main__':
         snakemake.config["long_read_type"][0],
         snakemake.threads,
         snakemake.config["strain_analysis"],
+        log,
     )

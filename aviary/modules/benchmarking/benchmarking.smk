@@ -5,7 +5,6 @@ rule rerun_rosella:
     params:
         min_contig_size = config["min_contig_size"],
         min_bin_size = config["min_bin_size"]
-    group: 'binning'
     output:
         temp("data/rosella_bins/rerun")
     conda:
@@ -39,7 +38,6 @@ rule rosella_checkm:
 rule benchmark_vamb:
     input:
         "data/vamb_bins/done"
-    group: 'binning'
     output:
         "data/vamb_bins/checkm.out"
     params:
@@ -64,7 +62,6 @@ rule binner_result:
         rosella_done = "data/rosella_bins/done",
         vamb_done = "data/vamb_bins/done",
         semibin_done = "data/semibin_bins/done",
-    group: 'binning'
     output:
          "data/all_bins/checkm.out"
     params:
@@ -364,7 +361,6 @@ rule das_tool_with_refine:
         metabat_sense = "data/metabat_bins_sens/done",
         # rosella_done = "data/rosella_refined/done",
         vamb_done = "data/vamb_bins/done"
-    group: 'binning'
     output:
         das_tool_done = "data/das_tool_bins_with_refine/done"
     threads:
@@ -399,7 +395,6 @@ rule checkm_das_tool_refine:
         done = "data/das_tool_bins_with_refine/done"
     params:
         pplacer_threads = config["pplacer_threads"]
-    group: 'binning'
     output:
         "data/das_tool_bins_with_refine/checkm.out"
     conda:
@@ -577,7 +572,6 @@ rule das_tool_without_rosella:
         metabat_ssens = "data/metabat_bins_ssens/done",
         metabat_sense = "data/metabat_bins_sens/done",
         vamb_done = "data/vamb_bins/done"
-    group: 'binning'
     output:
         das_tool_done = "data/das_tool_without_rosella/done"
     threads:
@@ -622,7 +616,6 @@ rule das_tool_no_refine:
         rosella_done = "data/rosella_bins/done",
         semibin_done = "data/semibin_bins/done",
         vamb_done = "data/vamb_bins/done",
-    group: 'binning'
     output:
         das_tool_done = "data/das_tool_bins_no_refine/done"
     threads:
@@ -669,7 +662,6 @@ rule das_tool_no_refine:
 #         metabat_sense = "data/metabat_bins_sens/done",
 #         # rosella_done = "data/rosella_refined/done",
 #         vamb_done = "data/vamb_bins/done",
-#     group: 'binning'
 #     output:
 #         das_tool_done = "data/das_tool_bins_wr_and_sb/done"
 #     threads:
@@ -703,7 +695,6 @@ rule checkm_das_tool_no_refine:
         done = "data/das_tool_bins_no_refine/done"
     params:
         pplacer_threads = config["pplacer_threads"]
-    group: 'binning'
     output:
         "data/das_tool_bins_no_refine/checkm.out"
     conda:
@@ -721,7 +712,6 @@ rule checkm_without_rosella:
         done = "data/das_tool_without_rosella/done"
     params:
         pplacer_threads = config["pplacer_threads"]
-    group: 'binning'
     output:
         "data/checkm_without_rosella.out"
     conda:
@@ -851,7 +841,6 @@ rule rosella_benchmark:
         "data/das_tool_bins_no_refine/checkm.out",
         "data/checkm_without_rosella.out",
         # "data/coverm_abundances.tsv",
-    group: 'binning'
     output:
         "data/done"
     shell:
@@ -1005,7 +994,6 @@ rule simulate_atlas:
          dastool_done = "data/atlas_dastool/done"
     params:
         pplacer_threads = config["pplacer_threads"]
-    group: 'binning'
     output:
         "data/atlas_dastool/checkm.out"
     conda:
@@ -1035,7 +1023,6 @@ rule simulate_atlas:
 #         metabat_sense = "data/metabat_bins_sens/done",
 #         rosella_done = "data/rosella_bins/done",
 #         vamb_done = "data/vamb_bins/done",
-#     group: 'binning'
 #     output:
 #         das_tool_done = "data/das_tool_bins_no_refine/done"
 #     threads:
@@ -1069,7 +1056,6 @@ rule simulate_atlas:
 #          dastool_done = "data/das_tool_bins_no_refine/done"
 #     params:
 #         pplacer_threads = config["pplacer_threads"]
-#     group: 'binning'
 #     output:
 #         "data/das_tool_bins_no_refine/checkm.out"
 #     conda:

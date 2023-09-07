@@ -1,5 +1,5 @@
 import pandas as pd
-from subprocess import run
+from subprocess import run, STDOUT
 import shutil
 import glob
 import os
@@ -19,6 +19,9 @@ def refinery():
     coverage = snakemake.input.coverage
     assembly = snakemake.input.fasta
     final_refining = snakemake.params.final_refining
+    log = snakemake.log[0]
+
+    with open(log, "w") as logf: pass
 
     # kmers = snakemake.input.kmers
     if os.path.isfile("data/rosella_bins/rosella_kmer_table.tsv"):
@@ -51,6 +54,9 @@ def refinery():
     try:
         current_checkm = pd.read_csv(checkm_path, sep='\t', comment="[")
     except e.EmptyDataError:
+        with open(log, "a") as logf:
+            logf.write("No bins found in checkm file\n")
+            logf.write("Skipping refinement\n")
         if max_iterations == 0:
             for bin in os.listdir(bin_folder):
                 if bin.endswith(extension):
@@ -84,14 +90,14 @@ def refinery():
         # Refine the contaminated bins
         kmers = refine(assembly, coverage, kmers, checkm_path,
                    contaminated_bin_folder, extension, min_bin_size,
-                   threads, output_folder, max_contamination)
+                   threads, output_folder, max_contamination, log)
 
         # update the bin folder variable to the current refined folder
         bin_folder = output_folder
 
         # retrieve the checkm results for the refined bins
         try:
-            get_checkm_results(bin_folder, threads, pplacer_threads, final_refining)
+            get_checkm_results(bin_folder, threads, pplacer_threads, log, final_refining)
             # update the checkm results and counter
             checkm_path = f"{bin_folder}/checkm.out"
             current_checkm = pd.read_csv(checkm_path, sep='\t', comment='[')
@@ -101,6 +107,9 @@ def refinery():
             final_checkm = pd.concat([final_checkm, bins_to_keep])
             current_iteration += 1
         except FileNotFoundError:
+            with open(log, "a") as logf:
+                logf.write("No bins to refine\n")
+                logf.write("Skipping refinement\n")
             # No bins to refine, break out and move on
             break
 
@@ -117,6 +126,9 @@ def refinery():
             os.symlink("../" + final_bins, final_output_folder, target_is_directory=True)
         final_checkm.to_csv("bins/checkm.out", sep='\t', index=False)
     else:
+        with open(log, "a") as logf:
+            logf.write("No bins to refine\n")
+            logf.write("Skipping refinement\n")
         open(f"{snakemake.params.output_folder}/done", "a").close()
 
 
@@ -188,10 +200,12 @@ def refine(
         assembly, coverage, kmers, checkm,
         bin_folder, extension, min_bin_size,
         threads, output_folder, max_contamination,
+        log,
 ):
     if kmers is None:
         rosella_cmd = f"rosella refine -a {assembly} --coverage-values {coverage} -d {bin_folder} -x {extension} --checkm-file {checkm} --max-contamination {max_contamination} --min-bin-size {min_bin_size} -t {threads} -o {output_folder}".split()
-        run(rosella_cmd)
+        with open(log, "a") as logf:
+            run(rosella_cmd, stdout=logf, stderr=STDOUT)
 
         os.makedirs("data/rosella_bins/", exist_ok=True)
         shutil.copyfile(f"{output_folder}/rosella_kmer_table.tsv", f"data/rosella_bins/rosella_kmer_table.tsv")
@@ -199,7 +213,8 @@ def refine(
     else:
         rosella_cmd = f"rosella refine -a {assembly} --coverage-values {coverage} --kmer-frequencies {kmers} -d {bin_folder} -x {extension} --checkm-file {checkm} --max-contamination {max_contamination} --min-bin-size {min_bin_size} -t {threads} -o {output_folder}".split()
 
-        run(rosella_cmd)
+        with open(log, "a") as logf:
+            run(rosella_cmd, stdout=logf, stderr=STDOUT)
 
     return kmers
 
@@ -207,15 +222,18 @@ def get_checkm_results(
         refined_folder,
         threads,
         pplacer_threads,
-        final_refining=False
+        log,
+        final_refining=False,
 ):
 
     checkm_cmd = f"checkm lineage_wf -t {threads} --pplacer_threads {pplacer_threads} -x fna --tab_table -f {refined_folder}/checkm.out {refined_folder} {refined_folder}/checkm".split()
-    run(checkm_cmd)
+    with open(log, "a") as logf:
+        run(checkm_cmd, stdout=logf, stderr=STDOUT)
 
     if final_refining:
         checkm_qa_cmd = f"checkm qa -o 2 --tab_table -f {refined_folder}/checkm.out {refined_folder}/checkm/lineage.ms {refined_folder}/checkm/".split()
-        run(checkm_qa_cmd)
+        with open(log, "a") as logf:
+            run(checkm_qa_cmd, stdout=logf, stderr=STDOUT)
 
 
 if __name__ == '__main__':

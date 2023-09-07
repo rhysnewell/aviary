@@ -1,4 +1,4 @@
-from subprocess import run
+from subprocess import run, STDOUT
 import os
 
 
@@ -10,31 +10,37 @@ def get_coverage(
     input_fasta: str,
     tmpdir: str,
     threads: int,
+    log: str,
 ):
     os.environ["TMPDIR"] = tmpdir
     if long_reads != "none" and not os.path.exists("data/long_cov.tsv"):
         if long_read_type in ["ont", "ont_hq"]:
             coverm_cmd = f"coverm contig -t {threads} -r {input_fasta} --single {' '.join(long_reads)} -p minimap2-ont -m length trimmed_mean variance --bam-file-cache-directory data/binning_bams/ --discard-unmapped --min-read-percent-identity 0.85 --output-file data/long_cov.tsv".split()
-            run(coverm_cmd)
+            with open(log, "a") as logf:
+                run(coverm_cmd, stdout=logf, stderr=STDOUT)
 
         elif long_read_type in ["rs", "sq", "ccs", "hifi"]:
             coverm_cmd = f"coverm contig -t {threads} -r {input_fasta} --single {' '.join(long_reads)} -p minimap2-pb -m length trimmed_mean variance --bam-file-cache-directory data/binning_bams/ --discard-unmapped --min-read-percent-identity 0.9 --output-file data/long_cov.tsv".split()
 
-            run(coverm_cmd)
+            with open(log, "a") as logf:
+                run(coverm_cmd, stdout=logf, stderr=STDOUT)
 
         else:
             coverm_cmd = f"coverm contig -t {threads} -r {input_fasta} --single {' '.join(long_reads)} -p minimap2-ont -m length trimmed_mean variance --bam-file-cache-directory data/binning_bams/ --discard-unmapped --min-read-percent-identity 0.85 --output-file data/long_cov.tsv".split()
 
-            run(coverm_cmd)
+            with open(log, "a") as logf:
+                run(coverm_cmd, stdout=logf, stderr=STDOUT)
 
     if short_reads_2 != 'none' and not os.path.exists("data/short_cov.tsv"):
         coverm_cmd = f"coverm contig -t {threads} -r {input_fasta} -1 {' '.join(short_reads_1)} -2 {' '.join(short_reads_2)} -m metabat --bam-file-cache-directory data/binning_bams/ --discard-unmapped --output-file data/short_cov.tsv".split()
-        run(coverm_cmd)
+        with open(log, "a") as logf:
+                run(coverm_cmd, stdout=logf, stderr=STDOUT)
 
     elif short_reads_1  != 'none' and not os.path.exists("data/short_cov.tsv"):
         coverm_cmd = f"coverm contig -t {threads} -r {input_fasta} --interleaved {' '.join(short_reads_1)} -m metabat --bam-file-cache-directory data/binning_bams/ --discard-unmapped --output-file data/short_cov.tsv".split()
 
-        run(coverm_cmd)
+        with open(log, "a") as logf:
+                run(coverm_cmd, stdout=logf, stderr=STDOUT)
 
     # Concatenate the two coverage files if both long and short exist
     if long_reads != "none" and (short_reads_1 != "none"):
@@ -162,7 +168,6 @@ def get_coverage(
     #     o.write('done')
 
 
-
 if __name__ == '__main__':
     long_reads = snakemake.config["long_reads"]
     short_reads_1 = snakemake.config["short_reads_1"]
@@ -171,7 +176,9 @@ if __name__ == '__main__':
     input_fasta = snakemake.input.input_fasta
     tmpdir = snakemake.params.tmpdir
     threads = snakemake.threads
+    log = snakemake.log[0]
 
+    with open(log, "w") as logf: pass
 
     get_coverage(
         long_reads,
@@ -180,7 +187,8 @@ if __name__ == '__main__':
         long_read_type,
         input_fasta,
         tmpdir,
-        threads
+        threads,
+        log,
     )
 
 

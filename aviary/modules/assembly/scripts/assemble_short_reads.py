@@ -13,7 +13,8 @@ def assemble_short_reads(
         coassemble: bool,
         threads: int,
         tmp_dir: str,
-        kmer_sizes: List[int]):
+        kmer_sizes: List[int],
+        log: str):
     '''
     Assemble short reads using either megahit or spades
     :param read_set1: list of short reads 1, or 'none'
@@ -38,18 +39,20 @@ def assemble_short_reads(
         elif not use_megahit:
             if read_set2 != 'none':
                 for reads1, reads2 in zip(read_set1, read_set2):
-                    with open('data/short_reads.1.fastq.gz', 'a') as out1:
-                        subprocess.run(f"cat {reads1}".split(), stdout=out1)
+                    with open(log, 'a') as logf:
+                        with open('data/short_reads.1.fastq.gz', 'a') as out1:
+                            subprocess.run(f"cat {reads1}".split(), stdout=out1, stderr=logf)
 
-                    with open('data/short_reads.2.fastq.gz', 'a') as out2:
-                        subprocess.run(f"cat {reads2}".split(), stdout=out2)
+                        with open('data/short_reads.2.fastq.gz', 'a') as out2:
+                            subprocess.run(f"cat {reads2}".split(), stdout=out2, stderr=logf)
 
                 read_set1 = 'data/short_reads.1.fastq.gz'
                 read_set2 = 'data/short_reads.2.fastq.gz'
             else:
                 for reads1 in read_set1:
-                    with open('data/short_reads.1.fastq.gz', 'a') as out1:
-                        subprocess.run(f"cat {reads1}".split(), stdout=out1)
+                    with open(log, 'a') as logf:
+                        with open('data/short_reads.1.fastq.gz', 'a') as out1:
+                            subprocess.run(f"cat {reads1}".split(), stdout=out1, stderr=logf)
 
                 read_set1 = 'data/short_reads.1.fastq.gz'
 
@@ -60,12 +63,13 @@ def assemble_short_reads(
     else:
         # forward reads must always be present as either
         # forward or interleaved or single ended
-        print(f"============= ERROR =============\n")
-        print(f"Invalid read sets provided \n "
-            f"for short read assembly: \n")
-        print(f"    Set 1: {read_set1}\n")
-        print(f"    Set 2: {read_set2}\n")
-        print("Validate read sets and resubmit")
+        with open(log, 'a') as logf:
+            logf.write(f"============= ERROR =============\n\n")
+            logf.write(f"Invalid read sets provided \n\n "
+                f"for short read assembly: \n\n")
+            logf.write(f"    Set 1: {read_set1}\n\n")
+            logf.write(f"    Set 2: {read_set2}\n\n")
+            logf.write("Validate read sets and resubmit\n")
         sys.exit(1)
 
 
@@ -79,9 +83,10 @@ def assemble_short_reads(
     if use_megahit:
 
         command = f"megahit {read_string} -t {threads} -m {max_memory} -o data/megahit_assembly --tmp-dir {tmp_dir}"
-        print(f"Queueing command {command}")
 
-        subprocess.run(command.split())
+        with open(log, 'a') as logf:
+            logf.write(f"Queueing command {command}\n")
+            subprocess.run(command.split(), stdout=logf, stderr=subprocess.STDOUT)
         os.makedirs("data/short_read_assembly", exist_ok=True)
         shutil.copyfile("data/megahit_assembly/final.contigs.fa", "data/short_read_assembly/scaffolds.fasta")
 
@@ -89,13 +94,17 @@ def assemble_short_reads(
         kmers = " ".join(kmer_sizes)
         command = f"spades.py --memory {max_memory} --meta -t {threads} " \
                 f"-o data/short_read_assembly {read_string} -k {kmers} --tmp-dir {tmp_dir}"
-        print(f"Queueing command {command}")
-        subprocess.run(command.split())
+        with open(log, 'a') as logf:
+            logf.write(f"Queueing command {command}\n")
+            subprocess.run(command.split(), stdout=logf, stderr=subprocess.STDOUT)
 
 
 if __name__ == '__main__':
     read_set1 = snakemake.config['short_reads_1']
     read_set2 = snakemake.config['short_reads_2']
+    log = snakemake.log[0]
+
+    with open(log, 'w') as logf: pass
 
     assemble_short_reads(
         read_set1,
@@ -106,4 +115,5 @@ if __name__ == '__main__':
         snakemake.threads,
         snakemake.params.tmpdir,
         snakemake.params.kmer_sizes,
+        log,
     )
