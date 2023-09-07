@@ -73,7 +73,6 @@ class Tests(unittest.TestCase):
         self.assertTrue(os.path.isfile(f"{output_dir}/aviary_out/data/final_contigs.fasta"))
         self.assertTrue(os.path.islink(f"{output_dir}/aviary_out/assembly/final_contigs.fasta"))
 
-
     def test_short_read_recovery(self):
         output_dir = os.path.join("example", "test_short_read_recovery")
         self.setup_output_dir(output_dir)
@@ -115,7 +114,6 @@ class Tests(unittest.TestCase):
         self.assertTrue(os.path.isfile(f"{output_dir}/aviary_out/data/final_contigs.fasta"))
         self.assertTrue(os.path.islink(f"{output_dir}/aviary_out/assembly/final_contigs.fasta"))
 
-
     def test_short_read_recovery_fast(self):
         output_dir = os.path.join("example", "test_short_read_recovery_fast")
         self.setup_output_dir(output_dir)
@@ -140,7 +138,6 @@ class Tests(unittest.TestCase):
         self.assertEqual(num_lines, 3)
 
         self.assertFalse(os.path.isfile(f"{output_dir}/aviary_out/data/final_contigs.fasta"))
-
 
     def test_short_read_recovery_queue_submission(self):
         output_dir = os.path.join("example", "test_short_read_recovery_queue_submission")
