@@ -15,7 +15,7 @@ rule link_reads:
     params:
         coassemble = config["coassemble"]
     output:
-        "data/long_reads.fastq.gz"
+        temp("data/long_reads.fastq.gz")
     threads:
         config['max_threads']
     run:
@@ -37,7 +37,7 @@ rule filtlong_no_reference:
     input:
         long = config['long_reads']
     output:
-        long = "data/long_reads.fastq.gz",
+        long = temp("data/long_reads.fastq.gz"),
     params:
         min_length = config['min_long_read_length'],
         keep_percent = config['keep_percent'],
