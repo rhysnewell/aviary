@@ -24,12 +24,11 @@ rule link_reads:
         import sys
         if len(input.fastq) == 1 or isinstance(input.fastq, str): # Check if only one longread sample
             shell("ln -s {input.fastq} {output}")
-        elif params.coassemble and len(input.fastq) >= 1: # Check if only one longread sample
+        elif not params.coassemble and len(input.fastq) >= 1: # Check if only one longread sample
             shell("ln -s {input.fastq[0]} {output}")
         elif len(input.fastq) > 1 and not isinstance(input.fastq, str):
             for reads in input.fastq:
                 shell(f"cat {reads} >> data/long_reads.fastq.gz")
-            # shell("pigz -p {threads} data/long_reads.fastq")
         else:
             shell("touch {output}")
 
