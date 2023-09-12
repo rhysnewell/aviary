@@ -303,8 +303,9 @@ def main():
 
     qc_group.add_argument(
         '-r', '--reference-filter', '--reference_filter',
-        help='Reference filter file to aid in the assembly',
+        help='One or more reference filter files to aid in the assembly. Remove contaminant reads from the assembly.',
         dest="reference_filter",
+        nargs='*',
         default='none'
     )
 
@@ -312,21 +313,31 @@ def main():
         '--min-read-size', '--min_read_size',
         help='Minimum long read size when filtering using Filtlong',
         dest="min_read_size",
-        default=250
+        default=100
     )
 
     qc_group.add_argument(
         '--min-mean-q', '--min_mean_q',
         help='Minimum mean quality threshold',
         dest="min_mean_q",
-        default=50
+        default=10
     )
 
     qc_group.add_argument(
         '--keep-percent', '--keep_percent',
-        help='Percentage of reads passing quality thresholds kept by filtlong',
+        help='DEPRECATED: Percentage of reads passing quality thresholds kept by filtlong',
         dest="keep_percent",
         default=100
+    )
+
+    qc_group.add_argument(
+        '--skip-qc', '--skip_qc',
+        help='Skip quality control steps',
+        type=str2bool,
+        nargs='?',
+        const=True,
+        dest="skip_qc",
+        default=False
     )
 
 
@@ -689,7 +700,7 @@ def main():
         nargs='?',
         const=True,
         dest='coassemble',
-        default=True,
+        default=False,
     )
 
     assemble_group.add_argument(

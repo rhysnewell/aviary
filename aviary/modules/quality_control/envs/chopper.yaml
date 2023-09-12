@@ -3,5 +3,5 @@ channels:
   - bioconda
   - defaults
 dependencies:
-  - filtlong = 0.2.0
+  - chopper >= 0.6
   - pigz
