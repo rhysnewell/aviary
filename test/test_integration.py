@@ -64,6 +64,7 @@ class Tests(unittest.TestCase):
             f"-2 {data}/wgsim.2.fq.gz "
             f"-l {data}/pbsim.fq.gz "
             f"--longread-type ont "
+            f"--min-read-size 10 --min-mean-q 1 "
             f"--conda-prefix {path_to_conda} "
             f"-n 32 -t 32 "
         )
@@ -105,6 +106,7 @@ class Tests(unittest.TestCase):
             f"-2 {data}/wgsim.2.fq.gz "
             f"-l {data}/pbsim.fq.gz "
             f"--longread-type ont "
+            f"--min-read-size 10 --min-mean-q 1 "
             f"--conda-prefix {path_to_conda} "
             f"-n 32 -t 32 "
         )
