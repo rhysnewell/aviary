@@ -97,6 +97,7 @@ class Processor:
         self.max_memory = args.max_memory
         self.pplacer_threads = min(int(self.threads), 48)
         self.workflows = args.workflow
+        self.request_gpu = args.request_gpu
 
         try:
             self.strain_analysis = args.strain_analysis
@@ -137,14 +138,23 @@ class Processor:
             self.assembly = 'none'
 
         try:
-            self.reference_filter = os.path.abspath(args.reference_filter) if args.reference_filter != 'none' else 'none'
+            self.reference_filter = [os.path.abspath(ref_fil) for ref_fil in args.reference_filter if ref_fil != 'none']
             if args.gold_standard is not None:
                 self.gold_standard = [os.path.abspath(p) for p in args.gold_standard]
             else:
                 self.gold_standard = 'none'
+            
+            self.min_read_size = args.min_read_size
+            self.min_mean_q = args.min_mean_q
+            self.keep_percent = args.keep_percent
+            self.skip_qc = args.skip_qc
         except AttributeError:
             self.reference_filter = 'none'
             self.gold_standard = 'none'
+            self.min_read_size = args.min_read_size
+            self.min_mean_q = args.min_mean_q
+            self.keep_percent = args.keep_percent
+            self.skip_qc = args.skip_qc
 
         try:
             self.gsa_mappings = args.gsa_mappings
@@ -308,6 +318,10 @@ class Processor:
 
         conf["fasta"] = self.assembly
         conf["reference_filter"] = self.reference_filter
+        conf["min_read_size"] = self.min_read_size
+        conf["min_mean_q"] = self.min_mean_q
+        conf["keep_percent"] = self.keep_percent
+        conf["skip_qc"] = self.skip_qc
         conf["gsa"] = self.gold_standard
         conf["gsa_mappings"] = self.gsa_mappings
         conf["skip_binners"] = self.skip_binners
@@ -317,6 +331,7 @@ class Processor:
         conf["max_threads"] = int(self.threads)
         conf["pplacer_threads"] = int(self.pplacer_threads)
         conf["max_memory"] = int(self.max_memory)
+        conf["request_gpu"] = self.request_gpu
         conf["short_reads_1"] = self.pe1
         conf["short_reads_2"] = self.pe2
         conf["long_reads"] = self.longreads

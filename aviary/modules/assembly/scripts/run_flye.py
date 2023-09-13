@@ -1,4 +1,24 @@
 from subprocess import run, STDOUT
+import os
+from pathlib import Path
+
+def dummy_fasta(output_fasta: str):
+    with open(output_fasta, "w") as out:
+        out.write(">dummy\n")
+        out.write("ACGT\n")
+
+def create_dummy_output(output_dir: str):
+    # need to create dummy output files
+    os.makedirs(output_dir, exist_ok=True)
+    output_fasta = f"{output_dir}/assembly.fasta"
+    dummy_fasta(output_fasta)
+    Path.joinpath(Path(output_dir), "assembly_info.txt").touch()
+    Path.joinpath(Path(output_dir), "assembly_graph.gfa").touch()
+    os.makedirs(f"{output_dir}/00-assembly", exist_ok=True)
+    os.makedirs(f"{output_dir}/10-consensus", exist_ok=True)
+    os.makedirs(f"{output_dir}/20-repeat", exist_ok=True)
+    os.makedirs(f"{output_dir}/30-contigger", exist_ok=True)
+    os.makedirs(f"{output_dir}/40-polishing", exist_ok=True)
 
 def run_flye(
     long_read_type: str,
@@ -8,6 +28,14 @@ def run_flye(
     threads: int,
     log: str,
 ):
+    # check if input_fastq has any reads
+    if os.path.getsize(input_fastq) == 0:
+        with open(log, "a") as logf:
+            logf.write(f"Input fastq file {input_fastq} is empty\n")
+            logf.write(f"Skipping flye assembly\n")
+        create_dummy_output(output_dir)
+        return
+
     meta = ""
     flye_type = "--nano-raw"
     if meta_flag:

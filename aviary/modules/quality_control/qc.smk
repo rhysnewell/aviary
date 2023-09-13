@@ -1,126 +1,64 @@
-localrules: link_reads, assembly_size, assembly_quality, complete_qc_short, complete_qc_long, complete_qc_all
+localrules: assembly_size, assembly_quality, complete_qc_short, complete_qc_long, complete_qc_all
 
-ruleorder: get_reads_list_ref > filtlong_no_reference > link_reads
 ruleorder: complete_qc_all > complete_qc_long > complete_qc_short
-# ruleorder: filtlong_paired > filtlong_single
-# ruleorder: filtlong_paired > filtlong_no_reference
 
 if config['fasta'] == 'none':
     config['fasta'] = 'assembly/final_contigs.fasta'
 
-# If you don't want to filter the reads using a genome just link them into the folder
-rule link_reads:
-    input:
-        fastq = config["long_reads"],
-    params:
-        coassemble = config["coassemble"]
-    output:
-        temp("data/long_reads.fastq.gz")
-    threads:
-        config['max_threads']
-    run:
-        import subprocess
-        import os
-        import sys
-        if len(input.fastq) == 1 or isinstance(input.fastq, str): # Check if only one longread sample
-            shell("ln -s {input.fastq} {output}")
-        elif params.coassemble and len(input.fastq) >= 1: # Check if only one longread sample
-            shell("ln -s {input.fastq[0]} {output}")
-        elif len(input.fastq) > 1 and not isinstance(input.fastq, str):
-            for reads in input.fastq:
-                shell(f"cat {reads} >> data/long_reads.fastq.gz")
-            # shell("pigz -p {threads} data/long_reads.fastq")
-        else:
-            shell("touch {output}")
 
-rule filtlong_no_reference:
+### Filter illumina reads against provided reference
+rule qc_short_reads:
     input:
-        long = config['long_reads']
+        short_reads_1 = config["short_reads_1"],
+        short_reads_2 = config["short_reads_2"],
     output:
-        long = temp("data/long_reads.fastq.gz"),
+        bam = temp("data/short_unmapped_ref.bam"),
+        fastq = "data/short_reads.fastq.gz",
+        filtered = "data/short_filter.done"
     params:
-        min_length = config['min_long_read_length'],
+        coassemble = config["coassemble"],
+        reference_filter = [] if "none" in config["reference_filter"] else config["reference_filter"],
+        skip_qc = config["skip_qc"]
+    conda:
+        "../../envs/minimap2.yaml"
+    threads:
+        min(config["max_threads"], 64)
+    resources:
+        mem_mb = lambda wildcards, attempt: min(int(config["max_memory"])*1024, 512*1024*attempt),
+        runtime = lambda wildcards, attempt: 8*60*attempt,
+    log:
+        "logs/qc_short_reads.log"
+    benchmark:
+        "benchmarks/qc_short_reads.benchmark.txt"
+    script:
+        "scripts/qc_short_reads.py"
+
+
+rule qc_long_reads:
+    input:
+        long_reads = config["long_reads"]
+    output:
+        output_long = temp("data/long_reads.fastq.gz")
+    params:
+        coassemble = config["coassemble"],
+        min_length = config['min_read_size'],
         keep_percent = config['keep_percent'],
         min_mean_q = config['min_mean_q'],
-        coassemble = config["coassemble"]
+        reference_filter = [] if config["reference_filter"] == "none" else config["reference_filter"],
+        skip_qc = config["skip_qc"]
     threads:
         min(config["max_threads"], 16)
     resources:
         mem_mb = lambda wildcards, attempt: min(int(config["max_memory"])*1024, 128*1024*attempt),
         runtime = lambda wildcards, attempt: 12*60*attempt,
     log:
-        "logs/filtlong.log"
+        "logs/qc_long_reads.log"
     benchmark:
-        "benchmarks/filtlong.benchmark.txt"
+        "benchmarks/qc_long_reads.benchmark.txt"
     conda:
-        'envs/filtlong.yaml'
-    shell:
-        '''
-        for long_reads in {input.long}
-        do
-            filtlong --min_length {params.min_length} --min_mean_q {params.min_mean_q} $long_reads 2> {log} | pigz -p {threads} >> {output.long} 2>> {log}
-            if ! [ {params.coassemble} ]
-            then
-                break
-            fi
-        done
-        '''
-
-
-# rule filtlong_reference:
-#     input:
-#         reference = config['reference_filter'],
-#         long = config['long_reads'],
-#     output:
-#         long = "data/long_reads.fastq.gz",
-#     params:
-#         min_length = config['min_long_read_length'],
-#         keep_percent = config['keep_percent'],
-#         min_mean_q = config['min_mean_q']
-#     threads:
-#         config['max_threads']
-#     conda:
-#         'envs/filtlong.yaml'
-#     shell:
-#         'filtlong -a {input.reference} --min_length {params.min_length} --min_mean_q {params.min_mean_q} -p {params.keep_percent} {input.long} '
-#         '| pigz -p {threads} > {output.long}'
-
-# rule filtlong_single:
-#     input:
-#         pe1 = config['short_reads_1'],
-#         long = config['long_reads'],
-#     output:
-#         long = "data/long_reads.fastq.gz",
-#     params:
-#         min_length = config['min_long_read_length'],
-#         keep_percent = config['keep_percent'],
-#         min_mean_q = config['min_mean_q']
-#     threads:
-#         config['max_threads']
-#     conda:
-#         'envs/filtlong.yaml'
-#     shell:
-#         'filtlong -1 {input.pe1} --min_length {params.min_length} --min_mean_q {params.min_mean_q} -p {params.keep_percent} {input.long} \ '
-#         '| pigz -p {threads} > {output.long}'
-
-# rule filtlong_paired:
-#     input:
-#         pe1 = config['short_reads_1'],
-#         pe2 = config['short_reads_2'],
-#         long = config['long_reads'],
-#     output:
-#         long = "data/long_reads.fastq.gz",
-#     params:
-#         min_length = config['min_long_read_length'],
-#         keep_percent = config['keep_percent'],
-#         min_mean_q = config['min_mean_q']
-#     threads:
-#         config['max_threads']
-#     conda:
-#         'envs/filtlong.yaml'
-#     shell:
-#         'filtlong -1 {input.pe1} -2 {input.pe2} --min_length {params.min_length} --min_mean_q {params.min_mean_q} -p {params.keep_percent} {input.long} '
-#         '| pigz -p {threads} > {output.long}'
+        'envs/chopper.yaml'
+    script:
+        "scripts/qc_long_reads.py"
 
 
 rule fastqc:

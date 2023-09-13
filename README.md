@@ -10,13 +10,11 @@ that can seamlessly communicate with each other. Each module can be run independ
 
 # Quick Installation
 
-Your conda channels should be configured ideally in this order with strict channel priority order
-turned on:
+Your conda channels should be configured ideally in this order:
 ```
 conda config --add channels defaults
 conda config --add channels bioconda
 conda config --add channels conda-forge
-conda config --set channel_priority strict
 ```
 
 Your resulting `.condarc` file should look something like:
@@ -25,7 +23,6 @@ channels:
   - conda-forge
   - bioconda
   - defaults
-channel_priority: strict
 ```
 
 #### Option 1) Install from Bioconda

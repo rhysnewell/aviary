@@ -177,6 +177,7 @@ rule vamb:
     resources:
         mem_mb = lambda wildcards, attempt: min(int(config["max_memory"])*1024, 128*1024*attempt),
         runtime = lambda wildcards, attempt: 12*60*attempt,
+        gpus = 1 if config["request_gpu"] else 0
     output:
         "data/vamb_bins/done"
     conda:
@@ -376,6 +377,7 @@ rule semibin:
     resources:
         mem_mb = lambda wildcards, attempt: min(int(config["max_memory"])*1024, 128*1024*attempt),
         runtime = lambda wildcards, attempt: 24*60 + 48*60*(attempt-1),
+        gpus = 1 if config["request_gpu"] else 0
     conda:
         "envs/semibin.yaml"
     log:
@@ -408,6 +410,7 @@ rule checkm_rosella:
     resources:
         mem_mb = lambda wildcards, attempt: min(int(config["max_memory"])*1024, 128*1024*attempt),
         runtime = lambda wildcards, attempt: 8*60*attempt,
+        gpus = 1 if config["request_gpu"] else 0
     log:
         "logs/checkm_rosella.log"
     script:
@@ -432,6 +435,7 @@ rule checkm_metabat2:
     resources:
         mem_mb = lambda wildcards, attempt: min(int(config["max_memory"])*1024, 128*1024*attempt),
         runtime = lambda wildcards, attempt: 8*60*attempt,
+        gpus = 1 if config["request_gpu"] else 0
     log:
         "logs/checkm_metabat2.log"
     script:
@@ -456,6 +460,7 @@ rule checkm_semibin:
     resources:
         mem_mb = lambda wildcards, attempt: min(int(config["max_memory"])*1024, 128*1024*attempt),
         runtime = lambda wildcards, attempt: 8*60*attempt,
+        gpus = 1 if config["request_gpu"] else 0
     log:
         "logs/checkm_semibin.log"
     script:

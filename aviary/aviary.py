@@ -165,6 +165,16 @@ def main():
     )
 
     base_group.add_argument(
+        '--request-gpu', '--request_gpu',
+        help='Request a GPU for use with the pipeline. This will only work if the pipeline is run on a cluster',
+        type=str2bool,
+        nargs='?',
+        const=True,
+        dest='request_gpu',
+        default=False,
+    )
+
+    base_group.add_argument(
         '-o', '--output',
         help='Output directory',
         dest='output',
@@ -303,30 +313,41 @@ def main():
 
     qc_group.add_argument(
         '-r', '--reference-filter', '--reference_filter',
-        help='Reference filter file to aid in the assembly',
+        help='One or more reference filter files to aid in the assembly. Remove contaminant reads from the assembly.',
         dest="reference_filter",
-        default='none'
+        nargs='*',
+        default=['none']
     )
 
     qc_group.add_argument(
         '--min-read-size', '--min_read_size',
         help='Minimum long read size when filtering using Filtlong',
         dest="min_read_size",
-        default=250
+        default=100
     )
 
     qc_group.add_argument(
         '--min-mean-q', '--min_mean_q',
         help='Minimum mean quality threshold',
         dest="min_mean_q",
-        default=50
+        default=10
     )
 
     qc_group.add_argument(
         '--keep-percent', '--keep_percent',
-        help='Percentage of reads passing quality thresholds kept by filtlong',
+        help='DEPRECATED: Percentage of reads passing quality thresholds kept by filtlong',
         dest="keep_percent",
         default=100
+    )
+
+    qc_group.add_argument(
+        '--skip-qc', '--skip_qc',
+        help='Skip quality control steps',
+        type=str2bool,
+        nargs='?',
+        const=True,
+        dest="skip_qc",
+        default=False
     )
 
 
@@ -339,10 +360,9 @@ def main():
     read_group_exclusive.add_argument(
         '-1', '--pe-1', '--paired-reads-1', '--paired_reads_1', '--pe1',
         help='A space separated list of forwards read files \n'
-             'NOTE: If performing assembly and multiple files and longreads \n'
-             '      are provided then only the first file will be used for assembly. \n'
+             'NOTE: If performing assembly and multiple files are provided then only the first file will be used for assembly. \n'
              '      If no longreads are provided then all samples will be co-assembled \n'
-             '      with megahit or metaspades depending on the --coassemble parameter\n',
+             '      with megahit or metaspades depending on the --coassemble parameter',
         dest='pe1',
         nargs='*',
         default="none"
@@ -351,8 +371,7 @@ def main():
     short_read_group.add_argument(
         '-2', '--pe-2', '--paired-reads-2', '--paired_reads_2', '--pe2',
         help='A space separated list of reverse read files \n'
-             'NOTE: If performing assembly and multiple files and longreads \n'
-             '      are provided then only the first file will be used for assembly. \n'
+             'NOTE: If performing assembly and multiple files are provided then only the first file will be used for assembly. \n'
              '      If no longreads are provided then all samples will be co-assembled \n'
              '      with megahit or metaspades depending on the --coassemble parameter',
         dest='pe2',
@@ -363,8 +382,7 @@ def main():
     read_group_exclusive.add_argument(
         '-i','--interleaved',
         help='A space separated list of interleaved read files \n'
-             'NOTE: If performing assembly and multiple files and longreads \n'
-             '      are provided then only the first file will be used for assembly. \n'
+             'NOTE: If performing assembly and multiple files are provided then only the first file will be used for assembly. \n'
              '      If no longreads are provided then all samples will be co-assembled \n'
              '      with megahit or metaspades depending on the --coassemble parameter',
         dest='interleaved',
@@ -375,8 +393,7 @@ def main():
     read_group_exclusive.add_argument(
         '-c', '--coupled',
         help='Forward and reverse read files in a coupled space separated list. \n'
-             'NOTE: If performing assembly and multiple files and longreads \n'
-             '      are provided then only the first file will be used for assembly. \n'
+             'NOTE: If performing assembly and multiple files are provided then only the first file will be used for assembly. \n'
              '      If no longreads are provided then all samples will be co-assembled \n'
              '      with megahit or metaspades depending on the --coassemble parameter',
         dest='coupled',
@@ -399,8 +416,7 @@ def main():
     long_read_group.add_argument(
         '-l', '--longreads', '--long-reads', '--long_reads',
         help='A space separated list of long-read read files. '
-             'NOTE: If performing assembly and multiple long read files are provided, \n'
-             '      then only the first file is used for assembly. This behaviour might change in future.',
+             'NOTE: The first file will be used for assembly unless --coassemble is set to True. Then all files will be used.',
         dest='longreads',
         nargs='*',
         default="none"
@@ -694,7 +710,7 @@ def main():
         nargs='?',
         const=True,
         dest='coassemble',
-        default=True,
+        default=False,
     )
 
     assemble_group.add_argument(

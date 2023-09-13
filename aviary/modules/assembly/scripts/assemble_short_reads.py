@@ -8,6 +8,7 @@ from typing import List
 
 def assemble_short_reads(
         read_set1, read_set2,
+        reference_filter: str,
         max_memory: int,
         use_megahit: bool,
         coassemble: bool,
@@ -36,7 +37,7 @@ def assemble_short_reads(
             if read_set2 != 'none':
                 read_set2 = read_set2[0]
 
-        elif not use_megahit:
+        elif not use_megahit and reference_filter == 'none':
             if read_set2 != 'none':
                 for reads1, reads2 in zip(read_set1, read_set2):
                     with open(log, 'a') as logf:
@@ -77,6 +78,9 @@ def assemble_short_reads(
     read_string = f"--12 {read_set1}"
     if read_set2 != 'none':
         read_string = f"-1 {read_set1} -2 {read_set2}"
+    
+    if reference_filter != 'none':
+        read_string = f"--12 data/short_reads.fastq.gz"
 
 
     # Run chosen assembler
@@ -109,6 +113,7 @@ if __name__ == '__main__':
     assemble_short_reads(
         read_set1,
         read_set2,
+        snakemake.config['reference_filter'],
         snakemake.config['max_memory'],
         snakemake.params.use_megahit,
         snakemake.params.coassemble,

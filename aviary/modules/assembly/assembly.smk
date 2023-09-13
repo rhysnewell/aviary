@@ -1,12 +1,8 @@
-localrules: get_umapped_reads_ref, no_ref_filter, get_high_cov_contigs, skip_long_assembly, short_only, move_spades_assembly, pool_reads, skip_unicycler, skip_unicycler_with_qc, complete_assembly, complete_assembly_with_qc, reset_to_spades_assembly, remove_final_contigs, combine_assemblies, combine_long_only
+localrules: get_high_cov_contigs, short_only, move_spades_assembly, pool_reads, skip_unicycler, skip_unicycler_with_qc, complete_assembly, complete_assembly_with_qc, reset_to_spades_assembly, remove_final_contigs, combine_assemblies, combine_long_only
 
-ruleorder: filter_illumina_assembly > short_only
-# ruleorder: fastqc > fastqc_long
-ruleorder: skip_unicycler_with_qc > skip_unicycler > combine_assemblies > combine_long_only
-ruleorder: skip_long_assembly > get_high_cov_contigs > short_only
-ruleorder: skip_long_assembly > filter_illumina_assembly
-ruleorder: filter_illumina_ref > no_ref_filter
-ruleorder: skip_unicycler_with_qc > skip_unicycler > combine_assemblies > combine_long_only > assemble_short_reads
+ruleorder: filter_illumina_assembly > short_only > combine_long_only
+ruleorder: get_high_cov_contigs > short_only
+ruleorder: skip_unicycler_with_qc > skip_unicycler > combine_assemblies > move_spades_assembly > combine_long_only
 ruleorder: skip_unicycler_with_qc > skip_unicycler > complete_assembly_with_qc > complete_assembly
 ruleorder: skip_unicycler_with_qc > skip_unicycler > combine_assemblies > move_spades_assembly
 
@@ -43,76 +39,6 @@ onstart:
     if short_reads_2 != "none" and not os.path.exists(short_reads_2[0]):
         sys.exit("short_reads_2 does not point to a file")
     
-# Filter reads against a reference, i.e. for removing host contamination from the metagenome
-rule map_reads_ref:
-    input:
-        fastq = config["long_reads"],
-        reference_filter = config["reference_filter"]
-    output:
-        temp("data/raw_mapped_ref.bam"),
-        temp("data/raw_mapped_ref.bai")
-    conda:
-        "../../envs/coverm.yaml"
-    benchmark:
-        "benchmarks/map_reads_ref.benchmark.txt"
-    params:
-        mapper = "map-ont" if config["long_read_type"] in ["ont", "ont-hq"] else "map-pb"
-    threads:
-        min(config["max_threads"], 64)
-    resources:
-        mem_mb = lambda wildcards, attempt: min(int(config["max_memory"])*1024, 512*1024*attempt),
-        runtime = lambda wildcards, attempt: 12*60*attempt,
-    log:
-        "logs/map_reads_ref.log"
-    shell:
-        "minimap2 -ax {params.mapper} --split-prefix=tmp -t {threads} {input.reference_filter} {input.fastq} 2> {log} | "
-        "samtools view -@ {threads} -b > {output} 2>> {log} && "
-        "samtools index {output} 2> {log}"
-
-
-# Get a list of reads that don't map to genome you want to filter
-rule get_umapped_reads_ref:
-    input:
-        "data/raw_mapped_ref.bam"
-    output:
-        temp("data/unmapped_to_ref.list")
-    params:
-        "no_full"
-    conda:
-        "envs/pysam.yaml"
-    benchmark:
-        "benchmarks/get_unmapped_reads_ref.benchmark.txt"
-    script:
-        "scripts/filter_read_list.py"
-
-
-# Create new read file with filtered reads
-rule get_reads_list_ref:
-    input:
-        fastq = config["long_reads"],
-        unmapped_list = "data/unmapped_to_ref.list"
-    output:
-        temp("data/long_reads.fastq.gz")
-    threads:
-        min(config["max_threads"], 64)
-    resources:
-        mem_mb = lambda wildcards, attempt: min(int(config["max_memory"])*1024, 512*1024*attempt),
-        runtime = lambda wildcards, attempt: 12*60*attempt,
-    log:
-        "logs/get_reads_list_ref.log"
-    conda:
-        "envs/seqtk.yaml"
-    benchmark:
-        "benchmarks/get_reads_list_ref.benchmark.txt"
-    shell:
-        "seqtk subseq {input.fastq} {input.unmapped_list} 2> {log} | pigz -p {threads} > {output} 2>> {log}"
-
-# if no reference filter output this done file just to keep the DAG happy
-rule no_ref_filter:
-    output:
-        filtered = temp("data/short_filter.done")
-    shell:
-        "touch {output.filtered}"
 
 # Assembly long reads with metaflye
 rule flye_assembly:
@@ -162,6 +88,7 @@ rule polish_metagenome_flye:
     resources:
         mem_mb = lambda wildcards, attempt: min(int(config["max_memory"])*1024, 512*1024*attempt),
         runtime = lambda wildcards, attempt: 24*60*attempt,
+        gpus = 1 if config["request_gpu"] else 0
     log:
         "logs/polish_metagenome_flye.log"
     output:
@@ -170,31 +97,6 @@ rule polish_metagenome_flye:
         "benchmarks/polish_metagenome_flye.benchmark.txt"
     script:
         "scripts/polish.py"
-
-
-### Filter illumina reads against provided reference
-rule filter_illumina_ref:
-    input:
-        reference_filter = config["reference_filter"]
-    output:
-        bam = "data/short_unmapped_ref.bam",
-        fastq = "data/short_reads.fastq.gz",
-        filtered = "data/short_filter.done"
-    params:
-        coassemble = config["coassemble"]
-    conda:
-        "../../envs/minimap2.yaml"
-    threads:
-        min(config["max_threads"], 64)
-    resources:
-        mem_mb = lambda wildcards, attempt: min(int(config["max_memory"])*1024, 512*1024*attempt),
-        runtime = lambda wildcards, attempt: 8*60*attempt,
-    log:
-        "logs/filter_illumina_ref.log"
-    benchmark:
-        "benchmarks/filter_illumina_ref.benchmark.txt"
-    script:
-        "scripts/filter_illumina_reference.py"
 
 
 # Generate BAM file for pilon, discard unmapped reads
@@ -389,7 +291,7 @@ rule get_high_cov_contigs:
 # Specifically, short reads that do not map to the high coverage long contigs are collected
 rule filter_illumina_assembly:
     input:
-        fastq = config['short_reads_1'], # check short reads were supplied
+        fastq = "data/short_reads.fastq.gz" if config["reference_filter"] != ["none"] else config['short_reads_1'], # check short reads were supplied
         fasta = "data/flye_high_cov.fasta"
     output:
         bam = temp("data/sr_vs_long.sort.bam"),
@@ -412,25 +314,25 @@ rule filter_illumina_assembly:
         "scripts/filter_illumina_assembly.py"
 
 
-# If unassembled long reads are provided, skip the long read assembly
-rule skip_long_assembly:
-    input:
-        unassembled_long = config["unassembled_long"]
-    output:
-        # fastq = "data/short_reads.filt.fastq.gz",
-        fasta = "data/flye_high_cov.fasta",
-        long_reads = temp("data/long_reads.fastq.gz")
-    shell:
-        """
-        touch {output.fasta} && \
-        ln {input.unassembled_long} {output.long_reads}
-        """
+# # If unassembled long reads are provided, skip the long read assembly
+# rule skip_long_assembly:
+#     input:
+#         unassembled_long = [] if "none" in config["unassembled_long"] else config["unassembled_long"]
+#     output:
+#         # fastq = "data/short_reads.filt.fastq.gz",
+#         fasta = "data/flye_high_cov.fasta",
+#         long_reads = temp("data/long_reads.fastq.gz")
+#     shell:
+#         """
+#         touch {output.fasta} && \
+#         ln {input.unassembled_long} {output.long_reads}
+#         """
 
 
 # If only short reads are provided
 rule short_only:
     input:
-        fastq = config["short_reads_1"]
+        fastq = "data/short_reads.fastq.gz"
     output:
         fasta = "data/flye_high_cov.fasta",
         # long_reads = temp("data/long_reads.fastq.gz")
@@ -487,7 +389,7 @@ rule spades_assembly:
                 cp data/spades_assembly/scaffolds.fasta data/spades_assembly.fasta
             fi
         else
-            touch {output.fasta}
+            mkdir -p {output.spades_folder} && touch {output.fasta}
         fi 
         """
 
@@ -495,7 +397,7 @@ rule spades_assembly:
 # Perform short read assembly only with no other steps
 rule assemble_short_reads:
     input:
-        fastq = config["short_reads_1"]
+        fastq = "data/short_reads.fastq.gz"
     output:
         fasta = "data/short_read_assembly/scaffolds.fasta",
         # We cannot mark the output_folder as temp as then it gets deleted,
@@ -533,6 +435,7 @@ rule move_spades_assembly:
         assembly = "data/short_read_assembly/scaffolds.fasta"
     output:
         out = "data/final_contigs.fasta"
+    priority: 1
     shell:
         "cp {input.assembly} {output.out} && rm -rf data/short_read_assembly"
 
@@ -701,6 +604,7 @@ rule combine_long_only:
     priority: 1
     script:
         "scripts/combine_assemblies.py"
+
 
 
 rule skip_unicycler:
