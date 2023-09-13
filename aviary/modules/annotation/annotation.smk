@@ -1,3 +1,4 @@
+localrules: download_databases, download_eggnog_db, download_gtdb, download_checkm2, annotate
 
 onstart:
     import os
@@ -133,15 +134,22 @@ rule checkm2:
         mag_extension = config['mag_extension'],
         checkm2_db_path = config["checkm2_db_folder"]
     threads:
-        config["max_threads"]
+        min(config["max_threads"], 16)
+    resources:
+        mem_mb = lambda wildcards, attempt: min(int(config["max_memory"])*1024, 128*1024*attempt),
+        runtime = lambda wildcards, attempt: 8*60*attempt,
+        gpus = 1 if config["request_gpu"] else 0
+    log:
+        'logs/checkm2.log'
     benchmark:
         'benchmarks/checkm2.benchmark.txt'
     conda:
         "../../envs/checkm2.yaml"
     shell:
         'export CHECKM2DB={params.checkm2_db_path}/uniref100.KO.1.dmnd; '
-        'echo "Using CheckM2 database $CHECKM2DB"; '
+        'echo "Using CheckM2 database $CHECKM2DB" > {log}; '
         'checkm2 predict -i {input.mag_folder}/ -x {params.mag_extension} -o {output.checkm2_folder} -t {threads} --force'
+        '>> {log} 2>&1 '
 
 rule eggnog:
     input:
@@ -151,13 +159,15 @@ rule eggnog:
         mag_extension = config['mag_extension'],
         eggnog_db = config['eggnog_folder'],
         tmpdir = config["tmpdir"]
-    resources:
-        mem_mb=int(config["max_memory"])*512
-    group: 'annotation'
     output:
         done = 'data/eggnog/done'
     threads:
-        config['max_threads']
+        min(config["max_threads"], 64)
+    resources:
+        mem_mb = lambda wildcards, attempt: min(int(config["max_memory"])*1024, 512*1024*attempt),
+        runtime = lambda wildcards, attempt: 24*60*attempt,
+    log:
+        'logs/eggnog.log'
     benchmark:
         'benchmarks/eggnog.benchmark.txt'
     conda:
@@ -167,31 +177,36 @@ rule eggnog:
         'mkdir -p data/eggnog/; '
         'find {input.mag_folder}/*.{params.mag_extension} | parallel -j1 \'emapper.py --data_dir {params.eggnog_db} '
         '--dmnd_db {params.eggnog_db}/*dmnd --cpu {threads} -m diamond --itype genome --genepred prodigal -i {{}} '
-        '--output_dir data/eggnog/ --temp_dir {params.tmpdir} -o {{/.}} || echo "Genome already annotated"\'; '
+        '--output_dir data/eggnog/ --temp_dir {params.tmpdir} -o {{/.}} || echo "Genome already annotated"\' '
+        '> {log} 2>&1; '
         'touch data/eggnog/done; '
 
 rule gtdbtk:
     input:
         mag_folder = config['mag_directory']
-    group: 'annotation'
     output:
         done = "data/gtdbtk/done"
     params:
         gtdbtk_folder = config['gtdbtk_folder'],
         pplacer_threads = config["pplacer_threads"],
         extension = config['mag_extension']
-    resources:
-        mem_mb=int(config["max_memory"])*1024
     conda:
         "../../envs/gtdbtk.yaml"
     threads:
-        config["max_threads"]
+        min(config["max_threads"], 32)
+    resources:
+        mem_mb = lambda wildcards, attempt: min(int(config["max_memory"])*1024, 256*1024*attempt),
+        runtime = lambda wildcards, attempt: 12*60*attempt,
+    log:
+        'logs/gtdbtk.log'
     benchmark:
         'benchmarks/gtdbtk.benchmark.txt'
     shell:
         "export GTDBTK_DATA_PATH={params.gtdbtk_folder} && "
         "gtdbtk classify_wf --skip_ani_screen --cpus {threads} --pplacer_cpus {params.pplacer_threads} --extension {params.extension} "
-        "--genome_dir {input.mag_folder} --out_dir data/gtdbtk && touch data/gtdbtk/done"
+        "--genome_dir {input.mag_folder} --out_dir data/gtdbtk "
+        "> {log} 2>&1 "
+        "&& touch data/gtdbtk/done"
 
 rule annotate:
     input:

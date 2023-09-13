@@ -4,6 +4,8 @@ channels:
 dependencies:
   - coverm >= 0.6
   - galah >= 0.3
+  - chopper >= 0.6
+  - pigz
   - parallel
   - dashing
   - fastani

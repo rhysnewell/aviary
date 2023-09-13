@@ -32,8 +32,8 @@ class Tests(unittest.TestCase):
             self.assertTrue("complete_qc_short" in output)
             self.assertTrue("assemble_short_reads" in output)
             self.assertTrue("complete_assembly_with_qc" in output)
+            self.assertTrue("qc_short_reads" in output)
 
-            self.assertTrue("filter_illumina_ref" not in output)
             self.assertTrue("flye_assembly" not in output)
 
 if __name__ == '__main__':

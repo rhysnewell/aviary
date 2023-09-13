@@ -22,117 +22,148 @@
 #=======================================================================
 
 import unittest
-import tempfile
 import os.path
 import subprocess
+import shutil
 
 data = os.path.join(os.path.dirname(__file__), 'data')
 path_to_conda = os.path.join(data,'.conda')
 
 class Tests(unittest.TestCase):
-    def test_short_read_assembly(self):
-        with tempfile.TemporaryDirectory() as tmpdir:
-            cmd = (
-                f"aviary assemble "
-                f"-o {tmpdir}/aviary_out "
-                f"-1 {data}/wgsim.1.fq.gz "
-                f"-2 {data}/wgsim.2.fq.gz "
-                f"--conda-prefix {path_to_conda} "
-                f"-n 32 -t 32 --tmpdir {tmpdir} "
-            )
-            subprocess.run(cmd, shell=True, check=True)
+    def setup_output_dir(self, output_dir):
+        try:
+            shutil.rmtree(output_dir)
+        except FileNotFoundError:
+            pass
+        os.makedirs(output_dir)
 
-            self.assertTrue(os.path.isdir(f"{tmpdir}/aviary_out"))
-            self.assertTrue(os.path.isfile(f"{tmpdir}/aviary_out/data/final_contigs.fasta"))
-            self.assertTrue(os.path.islink(f"{tmpdir}/aviary_out/assembly/final_contigs.fasta"))
+    def test_short_read_assembly(self):
+        output_dir = os.path.join("example", "test_short_read_assembly")
+        self.setup_output_dir(output_dir)
+        cmd = (
+            f"aviary assemble "
+            f"-o {output_dir}/aviary_out "
+            f"-1 {data}/wgsim.1.fq.gz "
+            f"-2 {data}/wgsim.2.fq.gz "
+            f"--conda-prefix {path_to_conda} "
+            f"-n 32 -t 32 "
+        )
+        subprocess.run(cmd, shell=True, check=True)
+
+        self.assertTrue(os.path.isdir(f"{output_dir}/aviary_out"))
+        self.assertTrue(os.path.isfile(f"{output_dir}/aviary_out/data/final_contigs.fasta"))
+        self.assertTrue(os.path.islink(f"{output_dir}/aviary_out/assembly/final_contigs.fasta"))
 
     def test_long_read_assembly(self):
-        with tempfile.TemporaryDirectory() as tmpdir:
-            cmd = (
-                f"aviary assemble "
-                f"-o {tmpdir}/aviary_out "
-                f"-1 {data}/wgsim.1.fq.gz "
-                f"-2 {data}/wgsim.2.fq.gz "
-                f"-l {data}/pbsim.fq.gz "
-                f"--longread-type ont "
-                f"--conda-prefix {path_to_conda} "
-                f"-n 32 -t 32 --tmpdir {tmpdir} "
-            )
-            subprocess.run(cmd, shell=True, check=True)
+        output_dir = os.path.join("example", "test_long_read_assembly")
+        self.setup_output_dir(output_dir)
+        cmd = (
+            f"aviary assemble "
+            f"-o {output_dir}/aviary_out "
+            f"-1 {data}/wgsim.1.fq.gz "
+            f"-2 {data}/wgsim.2.fq.gz "
+            f"-l {data}/pbsim.fq.gz "
+            f"--longread-type ont "
+            f"--min-read-size 10 --min-mean-q 1 "
+            f"--conda-prefix {path_to_conda} "
+            f"-n 32 -t 32 "
+        )
+        subprocess.run(cmd, shell=True, check=True)
 
-            self.assertTrue(os.path.isdir(f"{tmpdir}/aviary_out"))
-            self.assertTrue(os.path.isfile(f"{tmpdir}/aviary_out/data/final_contigs.fasta"))
-            self.assertTrue(os.path.islink(f"{tmpdir}/aviary_out/assembly/final_contigs.fasta"))
-
+        self.assertTrue(os.path.isdir(f"{output_dir}/aviary_out"))
+        self.assertTrue(os.path.isfile(f"{output_dir}/aviary_out/data/final_contigs.fasta"))
+        self.assertTrue(os.path.islink(f"{output_dir}/aviary_out/assembly/final_contigs.fasta"))
 
     def test_short_read_recovery(self):
-        with tempfile.TemporaryDirectory() as tmpdir:
-            cmd = (
-                f"aviary recover "
-                f"-o {tmpdir}/aviary_out "
-                f"-1 {data}/wgsim.1.fq.gz "
-                f"-2 {data}/wgsim.2.fq.gz "
-                f"--conda-prefix {path_to_conda} "
-                f"-n 32 -t 32 --tmpdir {tmpdir} "
-            )
-            subprocess.run(cmd, shell=True, check=True)
+        output_dir = os.path.join("example", "test_short_read_recovery")
+        self.setup_output_dir(output_dir)
+        cmd = (
+            f"aviary recover "
+            f"-o {output_dir}/aviary_out "
+            f"-1 {data}/wgsim.1.fq.gz "
+            f"-2 {data}/wgsim.2.fq.gz "
+            f"--conda-prefix {path_to_conda} "
+            f"-n 32 -t 32 "
+        )
+        subprocess.run(cmd, shell=True, check=True)
 
-            bin_info_path = f"{tmpdir}/aviary_out/bins/bin_info.tsv"
-            self.assertTrue(os.path.isfile(bin_info_path))
-            with open(bin_info_path) as f:
-                num_lines = sum(1 for _ in f)
-            self.assertTrue(num_lines > 1)
+        bin_info_path = f"{output_dir}/aviary_out/bins/bin_info.tsv"
+        self.assertTrue(os.path.isfile(bin_info_path))
+        with open(bin_info_path) as f:
+            num_lines = sum(1 for _ in f)
+        self.assertTrue(num_lines > 1)
 
-            self.assertTrue(os.path.isfile(f"{tmpdir}/aviary_out/data/final_contigs.fasta"))
-            self.assertTrue(os.path.islink(f"{tmpdir}/aviary_out/assembly/final_contigs.fasta"))
+        self.assertTrue(os.path.isfile(f"{output_dir}/aviary_out/data/final_contigs.fasta"))
+        self.assertTrue(os.path.islink(f"{output_dir}/aviary_out/assembly/final_contigs.fasta"))
 
+    def test_long_read_recovery(self):
+        output_dir = os.path.join("example", "test_long_read_recovery")
+        self.setup_output_dir(output_dir)
+        cmd = (
+            f"aviary recover "
+            f"-o {output_dir}/aviary_out "
+            f"-1 {data}/wgsim.1.fq.gz "
+            f"-2 {data}/wgsim.2.fq.gz "
+            f"-l {data}/pbsim.fq.gz "
+            f"--longread-type ont "
+            f"--min-read-size 10 --min-mean-q 1 "
+            f"--conda-prefix {path_to_conda} "
+            f"-n 32 -t 32 "
+        )
+        subprocess.run(cmd, shell=True, check=True)
 
-    def test_short_read_recovery_skip_binners(self):
-        with tempfile.TemporaryDirectory() as tmpdir:
-            cmd = (
-                f"aviary recover "
-                f"--assembly {data}/assembly.fasta "
-                f"-o {tmpdir}/aviary_out "
-                f"-1 {data}/wgsim.1.fq.gz "
-                f"-2 {data}/wgsim.2.fq.gz "
-                f"--skip-binners concoct rosella vamb metabat maxbin "
-                f"--refinery-max-iterations 1 "
-                f"--conda-prefix {path_to_conda} "
-                f"-n 32 -t 32 --tmpdir {tmpdir} "
-            )
-            subprocess.run(cmd, shell=True, check=True)
+        self.assertTrue(os.path.isdir(f"{output_dir}/aviary_out"))
+        self.assertTrue(os.path.isfile(f"{output_dir}/aviary_out/data/final_contigs.fasta"))
+        self.assertTrue(os.path.islink(f"{output_dir}/aviary_out/assembly/final_contigs.fasta"))
 
-            bin_info_path = f"{tmpdir}/aviary_out/bins/bin_info.tsv"
-            self.assertTrue(os.path.isfile(bin_info_path))
-            with open(bin_info_path) as f:
-                num_lines = sum(1 for _ in f)
-            self.assertTrue(num_lines > 1)
-            self.assertFalse(os.path.isfile(f"{tmpdir}/aviary_out/data/final_contigs.fasta"))
+    def test_short_read_recovery_fast(self):
+        output_dir = os.path.join("example", "test_short_read_recovery_fast")
+        self.setup_output_dir(output_dir)
+        cmd = (
+            f"aviary recover "
+            f"--assembly {data}/assembly.fasta "
+            f"-o {output_dir}/aviary_out "
+            f"-1 {data}/wgsim.1.fq.gz "
+            f"-2 {data}/wgsim.2.fq.gz "
+            f"--skip-abundances "
+            f"--skip-binners concoct rosella vamb metabat maxbin "
+            f"--refinery-max-iterations 0 "
+            f"--conda-prefix {path_to_conda} "
+            f"-n 32 -t 32 "
+        )
+        subprocess.run(cmd, shell=True, check=True)
 
+        bin_info_path = f"{output_dir}/aviary_out/bins/bin_info.tsv"
+        self.assertTrue(os.path.isfile(bin_info_path))
+        with open(bin_info_path) as f:
+            num_lines = sum(1 for _ in f)
+        self.assertEqual(num_lines, 3)
 
-    def test_short_read_recovery_skip_abundances(self):
-        with tempfile.TemporaryDirectory() as tmpdir:
-            cmd = (
-                f"aviary recover "
-                f"--assembly {data}/assembly.fasta "
-                f"-o {tmpdir}/aviary_out "
-                f"-1 {data}/wgsim.1.fq.gz "
-                f"-2 {data}/wgsim.2.fq.gz "
-                f"--skip-abundances "
-                f"--skip-binners concoct rosella vamb metabat maxbin "
-                f"--refinery-max-iterations 1 "
-                f"--conda-prefix {path_to_conda} "
-                f"-n 32 -t 32 --tmpdir {tmpdir} "
-            )
-            subprocess.run(cmd, shell=True, check=True)
+        self.assertFalse(os.path.isfile(f"{output_dir}/aviary_out/data/final_contigs.fasta"))
 
-            bin_info_path = f"{tmpdir}/aviary_out/bins/bin_info.tsv"
-            self.assertTrue(os.path.isfile(bin_info_path))
-            with open(bin_info_path) as f:
-                num_lines = sum(1 for _ in f)
-            self.assertEqual(num_lines, 3)
+    def test_short_read_recovery_queue_submission(self):
+        output_dir = os.path.join("example", "test_short_read_recovery_queue_submission")
+        self.setup_output_dir(output_dir)
 
-            self.assertFalse(os.path.isfile(f"{tmpdir}/aviary_out/data/final_contigs.fasta"))
+        cmd = (
+            f"aviary recover "
+            f"--output {output_dir} "
+            f"-o {output_dir}/aviary_out "
+            f"-1 {data}/wgsim.1.fq.gz "
+            f"-2 {data}/wgsim.2.fq.gz "
+            f"--conda-prefix {path_to_conda} "
+            f"-n 32 -t 32 "
+            f"--snakemake-profile mqsub --cluster-retries 3 "
+        )
+        subprocess.run(cmd, shell=True, check=True)
+
+        self.assertTrue(os.path.isfile(f"{output_dir}/aviary_out/data/final_contigs.fasta"))
+
+        bin_info_path = f"{output_dir}/aviary_out/bins/bin_info.tsv"
+        self.assertTrue(os.path.isfile(bin_info_path))
+        with open(bin_info_path) as f:
+            num_lines = sum(1 for _ in f)
+        self.assertEqual(num_lines, 3)
 
 
 if __name__ == "__main__":

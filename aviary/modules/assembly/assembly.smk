@@ -1,10 +1,8 @@
-ruleorder: filter_illumina_assembly > short_only
-# ruleorder: fastqc > fastqc_long
-ruleorder: skip_unicycler_with_qc > skip_unicycler > combine_assemblies > combine_long_only
-ruleorder: skip_long_assembly > get_high_cov_contigs > short_only
-ruleorder: skip_long_assembly > filter_illumina_assembly
-ruleorder: filter_illumina_ref > no_ref_filter
-ruleorder: skip_unicycler_with_qc > skip_unicycler > combine_assemblies > combine_long_only > assemble_short_reads
+localrules: get_high_cov_contigs, short_only, move_spades_assembly, pool_reads, skip_unicycler, skip_unicycler_with_qc, complete_assembly, complete_assembly_with_qc, reset_to_spades_assembly, remove_final_contigs, combine_assemblies, combine_long_only
+
+ruleorder: filter_illumina_assembly > short_only > combine_long_only
+ruleorder: get_high_cov_contigs > short_only
+ruleorder: skip_unicycler_with_qc > skip_unicycler > combine_assemblies > move_spades_assembly > combine_long_only
 ruleorder: skip_unicycler_with_qc > skip_unicycler > complete_assembly_with_qc > complete_assembly
 ruleorder: skip_unicycler_with_qc > skip_unicycler > combine_assemblies > move_spades_assembly
 
@@ -41,74 +39,11 @@ onstart:
     if short_reads_2 != "none" and not os.path.exists(short_reads_2[0]):
         sys.exit("short_reads_2 does not point to a file")
     
-# Filter reads against a reference, i.e. for removing host contamination from the metagenome
-rule map_reads_ref:
-    input:
-        fastq = config["long_reads"],
-        reference_filter = config["reference_filter"]
-    group: 'assembly'
-    output:
-        temp("data/raw_mapped_ref.bam"),
-        temp("data/raw_mapped_ref.bai")
-    conda:
-        "../../envs/coverm.yaml"
-    benchmark:
-        "benchmarks/map_reads_ref.benchmark.txt"
-    params:
-        mapper = "map-ont" if config["long_read_type"] in ["ont", "ont-hq"] else "map-pb"
-    threads:
-         config["max_threads"]
-    shell:
-        "minimap2 -ax {params.mapper} --split-prefix=tmp -t {threads} {input.reference_filter} {input.fastq} | samtools view -@ {threads} -b > {output} && samtools index {output}"
-
-
-# Get a list of reads that don't map to genome you want to filter
-rule get_umapped_reads_ref:
-    input:
-        "data/raw_mapped_ref.bam"
-    group: 'assembly'
-    output:
-        temp("data/unmapped_to_ref.list")
-    params:
-        "no_full"
-    conda:
-        "envs/pysam.yaml"
-    benchmark:
-        "benchmarks/get_unmapped_reads_ref.benchmark.txt"
-    script:
-        "scripts/filter_read_list.py"
-
-
-# Create new read file with filtered reads
-rule get_reads_list_ref:
-    input:
-        fastq = config["long_reads"],
-        unmapped_list = "data/unmapped_to_ref.list"
-    group: 'assembly'
-    output:
-        temp("data/long_reads.fastq.gz")
-    threads:
-        config['max_threads']
-    conda:
-        "envs/seqtk.yaml"
-    benchmark:
-        "benchmarks/get_reads_list_ref.benchmark.txt"
-    shell:
-        "seqtk subseq {input.fastq} {input.unmapped_list} | pigz -p {threads} > {output}"
-
-# if no reference filter output this done file just to keep the DAG happy
-rule no_ref_filter:
-    group: 'assembly'
-    output:
-        filtered = temp("data/short_filter.done")
-    shell:
-        "touch {output.filtered}"
 
 # Assembly long reads with metaflye
 rule flye_assembly:
     input:
         fastq = "data/long_reads.fastq.gz"
-    group: 'assembly'
     output:
         fasta = "data/flye/assembly.fasta",
         graph = "data/flye/assembly_graph.gfa",
@@ -120,14 +55,17 @@ rule flye_assembly:
         junk5 = temp(directory("data/flye/40-polishing/"))
     params:
         long_read_type = config["long_read_type"]
+    threads:
+        min(config["max_threads"], 64)
     resources:
-        mem_mb=int(config["max_memory"])*1024
+        mem_mb = lambda wildcards, attempt: min(int(config["max_memory"])*1024, 512*1024*attempt),
+        runtime = lambda wildcards, attempt: 24*60 + 24*60*attempt,
+    log:
+        "logs/flye_assembly.log"
     conda:
         "envs/flye.yaml"
     benchmark:
         "benchmarks/flye_assembly.benchmark.txt"
-    threads:
-        config["max_threads"]
     script:
         "scripts/run_flye.py"
 
@@ -139,44 +77,26 @@ rule polish_metagenome_flye:
         fasta = "data/flye/assembly.fasta",
     conda:
         "envs/polishing.yaml"
-    threads:
-        config["max_threads"]
     params:
         prefix = "polished",
         maxcov = 200,
         rounds = 3,
         illumina = False,
         coassemble = config["coassemble"]
+    threads:
+        min(config["max_threads"], 64)
     resources:
-        mem_mb=int(config["max_memory"])*1024
-    group: 'assembly'
+        mem_mb = lambda wildcards, attempt: min(int(config["max_memory"])*1024, 512*1024*attempt),
+        runtime = lambda wildcards, attempt: 24*60*attempt,
+        gpus = 1 if config["request_gpu"] else 0
+    log:
+        "logs/polish_metagenome_flye.log"
     output:
         fasta = "data/assembly.pol.rac.fasta"
     benchmark:
         "benchmarks/polish_metagenome_flye.benchmark.txt"
     script:
         "scripts/polish.py"
-
-
-### Filter illumina reads against provided reference
-rule filter_illumina_ref:
-    input:
-        reference_filter = config["reference_filter"]
-    group: 'assembly'
-    output:
-        bam = "data/short_unmapped_ref.bam",
-        fastq = "data/short_reads.fastq.gz",
-        filtered = "data/short_filter.done"
-    params:
-        coassemble = config["coassemble"]
-    conda:
-        "../../envs/minimap2.yaml"
-    threads:
-         config["max_threads"]
-    benchmark:
-        "benchmarks/filter_illumina_ref.benchmark.txt"
-    script:
-        "scripts/filter_illumina_reference.py"
 
 
 # Generate BAM file for pilon, discard unmapped reads
@@ -187,14 +107,16 @@ rule generate_pilon_sort:
         fasta = "data/assembly.pol.rac.fasta"
     params:
         coassemble = config["coassemble"]
-    group: 'assembly'
     output:
         bam = temp("data/pilon.sort.bam"),
         bai = temp("data/pilon.sort.bam.bai")
     threads:
-        config["max_threads"]
+        min(config["max_threads"], 64)
     resources:
-        mem_mb=int(config["max_memory"])*1024
+        mem_mb = lambda wildcards, attempt: min(int(config["max_memory"])*1024, 512*1024*attempt),
+        runtime = lambda wildcards, attempt: 24*60*attempt,
+    log:
+        "logs/generate_pilon_sort.log"
     conda:
         "envs/pilon.yaml"
     benchmark:
@@ -208,13 +130,15 @@ rule polish_meta_pilon:
         fasta = "data/assembly.pol.rac.fasta",
         bam = "data/pilon.sort.bam",
         bai = "data/pilon.sort.bam.bai"
-    group: 'assembly'
     output:
         fasta = "data/assembly.pol.pil.fasta"
-    resources:
-        mem_mb=int(config["max_memory"])*512
-    # threads: # Threads no longer supported for pilon
+    threads: 1 # Threads no longer supported for pilon
     #     config["max_threads"]
+    resources:
+        mem_mb = lambda wildcards, attempt: min(int(config["max_memory"])*1024, 512*1024*attempt),
+        runtime = lambda wildcards, attempt: 24*60*attempt,
+    log:
+        "logs/polish_meta_pilon.log"
     params:
         pilon_memory = int(config["max_memory"])*512
     conda:
@@ -223,7 +147,7 @@ rule polish_meta_pilon:
         "benchmarks/polish_meta_pilon.benchmark.txt"
     shell:
         """
-        pilon -Xmx{params.pilon_memory}m --genome {input.fasta} --frags data/pilon.sort.bam --output data/assembly.pol.pil --fix bases >data/pilon.err
+        pilon -Xmx{params.pilon_memory}m --genome {input.fasta} --frags data/pilon.sort.bam --output data/assembly.pol.pil --fix bases >data/pilon.err 2> {log}
         """
 
 
@@ -232,14 +156,16 @@ rule polish_meta_racon_ill:
     input:
         fastq = config['short_reads_1'], # check short reads are here
         fasta = "data/assembly.pol.pil.fasta"
-    group: 'assembly'
     output:
         fasta = "data/assembly.pol.fin.fasta",
         paf = temp("data/polishing/alignment.racon_ill.0.paf")
-    resources:
-        mem_mb=int(config["max_memory"])*1024
     threads:
-        config["max_threads"]
+        min(config["max_threads"], 64)
+    resources:
+        mem_mb = lambda wildcards, attempt: min(int(config["max_memory"])*1024, 512*1024*attempt),
+        runtime = lambda wildcards, attempt: 24*60*attempt,
+    log:
+        "logs/polish_meta_racon_ill.log"
     conda:
         "envs/polishing.yaml"
     params:
@@ -261,7 +187,6 @@ rule get_high_cov_contigs:
         fasta = "data/assembly.pol.fin.fasta",
         graph = "data/flye/assembly_graph.gfa",
         paf = "data/polishing/alignment.racon_ill.0.paf"
-    group: 'assembly'
     output:
         fasta = "data/flye_high_cov.fasta"
     benchmark:
@@ -366,9 +291,8 @@ rule get_high_cov_contigs:
 # Specifically, short reads that do not map to the high coverage long contigs are collected
 rule filter_illumina_assembly:
     input:
-        fastq = config['short_reads_1'], # check short reads were supplied
+        fastq = "data/short_reads.fastq.gz" if config["reference_filter"] != ["none"] else config['short_reads_1'], # check short reads were supplied
         fasta = "data/flye_high_cov.fasta"
-    group: 'assembly'
     output:
         bam = temp("data/sr_vs_long.sort.bam"),
         bai = temp("data/sr_vs_long.sort.bam.bai"),
@@ -378,34 +302,37 @@ rule filter_illumina_assembly:
     conda:
         "../../envs/minimap2.yaml"
     threads:
-         config["max_threads"]
+        min(config["max_threads"], 64)
+    resources:
+        mem_mb = lambda wildcards, attempt: min(int(config["max_memory"])*1024, 512*1024*attempt),
+        runtime = lambda wildcards, attempt: 24*60*attempt,
+    log:
+        "logs/filter_illumina_assembly.log"
     benchmark:
         "benchmarks/filter_illumina_assembly.benchmark.txt"
     script:
         "scripts/filter_illumina_assembly.py"
 
 
-# If unassembled long reads are provided, skip the long read assembly
-rule skip_long_assembly:
-    input:
-        unassembled_long = config["unassembled_long"]
-    group: 'assembly'
-    output:
-        # fastq = "data/short_reads.filt.fastq.gz",
-        fasta = "data/flye_high_cov.fasta",
-        long_reads = temp("data/long_reads.fastq.gz")
-    shell:
-        """
-        touch {output.fasta} && \
-        ln {input.unassembled_long} {output.long_reads}
-        """
+# # If unassembled long reads are provided, skip the long read assembly
+# rule skip_long_assembly:
+#     input:
+#         unassembled_long = [] if "none" in config["unassembled_long"] else config["unassembled_long"]
+#     output:
+#         # fastq = "data/short_reads.filt.fastq.gz",
+#         fasta = "data/flye_high_cov.fasta",
+#         long_reads = temp("data/long_reads.fastq.gz")
+#     shell:
+#         """
+#         touch {output.fasta} && \
+#         ln {input.unassembled_long} {output.long_reads}
+#         """
 
 
 # If only short reads are provided
 rule short_only:
     input:
-        fastq = config["short_reads_1"]
-    group: 'assembly'
+        fastq = "data/short_reads.fastq.gz"
     output:
         fasta = "data/flye_high_cov.fasta",
         # long_reads = temp("data/long_reads.fastq.gz")
@@ -421,14 +348,16 @@ rule spades_assembly:
     input:
         fastq = "data/short_reads.filt.fastq.gz",
         long_reads = "data/long_reads.fastq.gz"
-    group: 'assembly'
     output:
         fasta = "data/spades_assembly.fasta",
         spades_folder = temp(directory("data/spades_assembly/"))
     threads:
-        config["max_threads"]
+        min(config["max_threads"], 64)
     resources:
-        mem_mb=int(config["max_memory"])*1024
+        mem_mb = lambda wildcards, attempt: min(int(config["max_memory"])*1024, 256*1024*attempt),
+        runtime = lambda wildcards, attempt: 72*60 + 24*60*attempt,
+    log:
+        "logs/spades_assembly.log"
     params:
         max_memory = config["max_memory"],
         long_read_type = config["long_read_type"],
@@ -445,31 +374,30 @@ rule spades_assembly:
         actualsize=$(stat -c%s data/short_reads.filt.fastq.gz);
         if [ -d "data/spades_assembly/" ]
         then
-            spades.py --restart-from last --memory {params.max_memory} -t {threads} -o data/spades_assembly -k {params.kmer_sizes} --tmp-dir {params.tmpdir} && \
+            spades.py --restart-from last --memory {params.max_memory} -t {threads} -o data/spades_assembly -k {params.kmer_sizes} --tmp-dir {params.tmpdir} > {log} 2>&1 && \
             cp data/spades_assembly/scaffolds.fasta data/spades_assembly.fasta
         elif [ $actualsize -ge $minimumsize ]
         then
             if [ {params.long_read_type} = "ont" ] || [ {params.long_read_type} = "ont_hq" ]
             then
                 spades.py --checkpoints all --memory {params.max_memory} --meta --nanopore {input.long_reads} --12 {input.fastq} \
-                -o data/spades_assembly -t {threads}  -k {params.kmer_sizes} --tmp-dir {params.tmpdir} 2>data/spades.err && \
+                -o data/spades_assembly -t {threads}  -k {params.kmer_sizes} --tmp-dir {params.tmpdir} >> {log} 2>&1 && \
                 cp data/spades_assembly/scaffolds.fasta data/spades_assembly.fasta
             else
                 spades.py --checkpoints all --memory {params.max_memory} --meta --pacbio {input.long_reads} --12 {input.fastq} \
-                -o data/spades_assembly -t {threads}  -k {params.kmer_sizes} --tmp-dir {params.tmpdir} 2>data/spades.err && \
+                -o data/spades_assembly -t {threads}  -k {params.kmer_sizes} --tmp-dir {params.tmpdir} >> {log} 2>&1 && \
                 cp data/spades_assembly/scaffolds.fasta data/spades_assembly.fasta
             fi
         else
-            touch {output.fasta}
+            mkdir -p {output.spades_folder} && touch {output.fasta}
         fi 
         """
 
 
-# Perform shrot read assembly only with no other steps
+# Perform short read assembly only with no other steps
 rule assemble_short_reads:
     input:
-        fastq = config["short_reads_1"]
-    group: 'assembly'
+        fastq = "data/short_reads.fastq.gz"
     output:
         fasta = "data/short_read_assembly/scaffolds.fasta",
         # We cannot mark the output_folder as temp as then it gets deleted,
@@ -478,8 +406,6 @@ rule assemble_short_reads:
         output_folder = directory("data/short_read_assembly/")
         # reads1 = temporary("data/short_reads.1.fastq.gz"),
         # reads2 = temporary("data/short_reads.2.fastq.gz")
-    threads:
-         config["max_threads"]
     params:
          max_memory = config["max_memory"],
          kmer_sizes = config["kmer_sizes"],
@@ -487,10 +413,17 @@ rule assemble_short_reads:
          coassemble = config["coassemble"],
          tmpdir = config["tmpdir"],
          final_assembly = True
+    threads:
+        min(config["max_threads"], 64)
     resources:
-        mem_mb=int(config["max_memory"])*1024
+        mem_mb = lambda wildcards, attempt: min(int(config["max_memory"])*1024, 512*1024*attempt),
+        runtime = lambda wildcards, attempt: 72*60 + 24*60*attempt,
+    log:
+        "logs/short_read_assembly.log"
     conda:
         "envs/spades.yaml"
+    log:
+        "logs/short_read_assembly.log"
     benchmark:
         "benchmarks/short_read_assembly_short.benchmark.txt"
     script:
@@ -500,9 +433,9 @@ rule assemble_short_reads:
 rule move_spades_assembly:
     input:
         assembly = "data/short_read_assembly/scaffolds.fasta"
-    group: 'assembly'
     output:
         out = "data/final_contigs.fasta"
+    priority: 1
     shell:
         "cp {input.assembly} {output.out} && rm -rf data/short_read_assembly"
 
@@ -513,45 +446,51 @@ rule spades_assembly_coverage:
     input:
          fastq = "data/short_reads.filt.fastq.gz",
          fasta = "data/spades_assembly.fasta"
-    group: 'assembly'
     output:
          assembly_cov = temp("data/short_read_assembly.cov"),
          bam = temp("data/short_vs_mega.bam"),
          bai = temp("data/short_vs_mega.bam.bai")
+    threads:
+        min(config["max_threads"], 64)
     resources:
-        mem_mb=int(config["max_memory"])*1024
+        mem_mb = lambda wildcards, attempt: min(int(config["max_memory"])*1024, 512*1024*attempt),
+        runtime = lambda wildcards, attempt: 24*60*attempt,
+    log:
+        "logs/spades_assembly_coverage.log"
     params:
          tmpdir = config["tmpdir"]
     conda:
          "../../envs/coverm.yaml"
-    threads:
-         config["max_threads"]
     benchmark:
         "benchmarks/spades_assembly_coverage.benchmark.txt"
     shell:
         """
-        TMPDIR={params.tmpdir} coverm contig -m metabat -t {threads} -r {input.fasta} --interleaved {input.fastq} --bam-file-cache-directory data/cached_bams/ > {output.assembly_cov};
-        mv data/cached_bams/*.bam {output.bam} && samtools index -@ {threads} {output.bam}
+        TMPDIR={params.tmpdir} coverm contig -m metabat -t {threads} -r {input.fasta} --interleaved {input.fastq} --bam-file-cache-directory data/cached_bams/ > {output.assembly_cov} 2> {log};
+        mv data/cached_bams/*.bam {output.bam} && samtools index -@ {threads} {output.bam} 2>> {log}
         """
 
 rule metabat_binning_short:
     input:
          assembly_cov = "data/short_read_assembly.cov",
          fasta = "data/spades_assembly.fasta"
-    group: 'assembly'
     output:
          metabat_done = "data/metabat_bins/done"
     conda:
          "../binning/envs/metabat2.yaml"
     threads:
-         config["max_threads"]
+        min(config["max_threads"], 64)
+    resources:
+        mem_mb = lambda wildcards, attempt: min(int(config["max_memory"])*1024, 512*1024*attempt),
+        runtime = lambda wildcards, attempt: 24*60*attempt,
+    log:
+        "logs/metabat_binning_short.log"
     benchmark:
         "benchmarks/metabat_binning_short.benchmark.txt"
     shell:
          """
          mkdir -p data/metabat_bins && \
          metabat --seed 89 --unbinned -m 1500 -l -i {input.fasta} -t {threads} -a {input.assembly_cov} \
-         -o data/metabat_bins/binned_contigs && \
+         -o data/metabat_bins/binned_contigs > {log} 2>&1 && \
          touch data/metabat_bins/done
          """
 
@@ -560,23 +499,25 @@ rule map_long_mega:
     input:
         fastq = "data/long_reads.fastq.gz",
         fasta = "data/spades_assembly.fasta"
-    group: 'assembly'
     output:
         bam = temp("data/long_vs_mega.bam"),
         bai = temp("data/long_vs_mega.bam.bai")
-    resources:
-        mem_mb=int(config["max_memory"])*1024
     threads:
-        config["max_threads"]
+        min(config["max_threads"], 64)
+    resources:
+        mem_mb = lambda wildcards, attempt: min(int(config["max_memory"])*1024, 512*1024*attempt),
+        runtime = lambda wildcards, attempt: 24*60*attempt,
+    log:
+        "logs/map_long_mega.log"
     conda:
         "../../envs/minimap2.yaml"
     benchmark:
         "benchmarks/map_long_mega.benchmark.txt"
     shell:
         """
-        minimap2 -t {threads} --split-prefix=tmp -ax map-ont -a {input.fasta} {input.fastq} |  samtools view -@ {threads} -b |
-        samtools sort -@ {threads} -o {output.bam} - && \
-        samtools index -@ {threads} {output.bam}
+        minimap2 -t {threads} --split-prefix=tmp -ax map-ont -a {input.fasta} {input.fastq} 2> {log} | samtools view -@ {threads} -b 2>> {log} |
+        samtools sort -@ {threads} -o {output.bam} - 2>> {log} && \
+        samtools index -@ {threads} {output.bam} 2>> {log}
         """
 
 # Long and short reads that mapped to the spades assembly are pooled (binned) together
@@ -587,7 +528,6 @@ rule pool_reads:
         short_bam = "data/short_vs_mega.bam",
         short_bai = "data/short_vs_mega.bam.bai",
         metabat_done = "data/metabat_bins/done",
-    group: 'assembly'
     output:
         list = "data/list_of_lists.txt"
     conda:
@@ -601,13 +541,17 @@ rule pool_reads:
 rule get_read_pools:
     input:
         list = "data/list_of_lists.txt"
-    group: 'assembly'
     output:
         "data/binned_reads/done"
     conda:
          "envs/mfqe.yaml"
     threads:
-         config['max_threads']
+        min(config["max_threads"], 64)
+    resources:
+        mem_mb = lambda wildcards, attempt: min(int(config["max_memory"])*1024, 512*1024*attempt),
+        runtime = lambda wildcards, attempt: 12*60*attempt,
+    log:
+        "logs/get_read_pools.log"
     benchmark:
         "benchmarks/get_read_pools.benchmark.txt"
     script:
@@ -621,10 +565,12 @@ rule assemble_pools:
         fasta = "data/spades_assembly.fasta",
         metabat_done = "data/metabat_bins/done"
     threads:
-        config["max_threads"]
-    group: 'assembly'
+        min(config["max_threads"], 64)
     resources:
-        mem_mb=int(config["max_memory"])*1024
+        mem_mb = lambda wildcards, attempt: min(int(config["max_memory"])*1024, 512*1024*attempt),
+        runtime = lambda wildcards, attempt: 72*60 + 24*60*attempt,
+    log:
+        "logs/assemble_pools.log"
     output:
         fasta = "data/unicycler_combined.fa"
     conda:
@@ -640,12 +586,9 @@ rule combine_assemblies:
     input:
         short_fasta = "data/unicycler_combined.fa",
         flye_fasta = "data/flye_high_cov.fasta"
-    group: 'assembly'
     output:
         output_fasta = "data/final_contigs.fasta",
     priority: 1
-    threads:
-        config["max_threads"]
     script:
         "scripts/combine_assemblies.py"
 
@@ -655,22 +598,19 @@ rule combine_long_only:
     input:
         long_reads = "data/long_reads.fastq.gz",
         flye_fasta = "data/assembly.pol.rac.fasta"
-    group: 'assembly'
     output:
         output_fasta = "data/final_contigs.fasta",
         # long_bam = "data/final_long.sort.bam"
     priority: 1
-    threads:
-        config["max_threads"]
     script:
         "scripts/combine_assemblies.py"
+
 
 
 rule skip_unicycler:
     input:
         short_fasta = "data/spades_assembly.fasta",
         flye_fasta = "data/flye_high_cov.fasta"
-    group: 'assembly'
     output:
         fasta = "data/final_contigs.fasta",
         final_link = 'assembly/final_contigs.fasta',
@@ -693,7 +633,6 @@ rule skip_unicycler_with_qc:
         short_fasta = "data/spades_assembly.fasta",
         flye_fasta = "data/flye_high_cov.fasta",
         qc_done = 'data/qc_done'
-    group: 'assembly'
     output:
         fasta = "data/final_contigs.fasta",
         final_link = 'assembly/final_contigs.fasta',
@@ -714,7 +653,6 @@ rule skip_unicycler_with_qc:
 rule complete_assembly:
     input:
         fasta = 'data/final_contigs.fasta'
-    group: 'assembly'
     output:
         final_link = 'assembly/final_contigs.fasta',
         sizes = "www/assembly_stats.txt"
@@ -735,7 +673,6 @@ rule complete_assembly_with_qc:
     input:
         fasta = 'data/final_contigs.fasta',
         qc_done = 'data/qc_done'
-    group: 'assembly'
     output:
         final_link = 'assembly/final_contigs.fasta',
         sizes = "www/assembly_stats.txt"

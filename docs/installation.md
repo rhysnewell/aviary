@@ -7,13 +7,11 @@ Installation
 
 ## Requirements
 
-Your conda channels should be configured ideally in this order with strict channel priority order
-turned on:
+Your conda channels should be configured ideally in this:
 ```
 conda config --add channels defaults
 conda config --add channels bioconda
 conda config --add channels conda-forge
-conda config --set channel_priority strict
 ```
 
 Your resulting `.condarc` file should look something like:
@@ -22,7 +20,6 @@ channels:
   - conda-forge
   - bioconda
   - defaults
-channel_priority: strict
 ```
 
 #### Option 1) Install from Bioconda

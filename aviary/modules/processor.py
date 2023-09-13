@@ -97,6 +97,7 @@ class Processor:
         self.max_memory = args.max_memory
         self.pplacer_threads = min(int(self.threads), 48)
         self.workflows = args.workflow
+        self.request_gpu = args.request_gpu
 
         try:
             self.strain_analysis = args.strain_analysis
@@ -137,14 +138,23 @@ class Processor:
             self.assembly = 'none'
 
         try:
-            self.reference_filter = os.path.abspath(args.reference_filter) if args.reference_filter != 'none' else 'none'
+            self.reference_filter = [os.path.abspath(ref_fil) for ref_fil in args.reference_filter if ref_fil != 'none']
             if args.gold_standard is not None:
                 self.gold_standard = [os.path.abspath(p) for p in args.gold_standard]
             else:
                 self.gold_standard = 'none'
+            
+            self.min_read_size = args.min_read_size
+            self.min_mean_q = args.min_mean_q
+            self.keep_percent = args.keep_percent
+            self.skip_qc = args.skip_qc
         except AttributeError:
             self.reference_filter = 'none'
             self.gold_standard = 'none'
+            self.min_read_size = args.min_read_size
+            self.min_mean_q = args.min_mean_q
+            self.keep_percent = args.keep_percent
+            self.skip_qc = args.skip_qc
 
         try:
             self.gsa_mappings = args.gsa_mappings
@@ -308,6 +318,10 @@ class Processor:
 
         conf["fasta"] = self.assembly
         conf["reference_filter"] = self.reference_filter
+        conf["min_read_size"] = self.min_read_size
+        conf["min_mean_q"] = self.min_mean_q
+        conf["keep_percent"] = self.keep_percent
+        conf["skip_qc"] = self.skip_qc
         conf["gsa"] = self.gold_standard
         conf["gsa_mappings"] = self.gsa_mappings
         conf["skip_binners"] = self.skip_binners
@@ -317,6 +331,7 @@ class Processor:
         conf["max_threads"] = int(self.threads)
         conf["pplacer_threads"] = int(self.pplacer_threads)
         conf["max_memory"] = int(self.max_memory)
+        conf["request_gpu"] = self.request_gpu
         conf["short_reads_1"] = self.pe1
         conf["short_reads_2"] = self.pe2
         conf["long_reads"] = self.longreads
@@ -357,7 +372,7 @@ class Processor:
     def _validate_config(self):
         load_configfile(self.config)
 
-    def run_workflow(self, cores=16, profile=None,
+    def run_workflow(self, cores=16, profile=None, cluster_retries=None,
                      dryrun=False, clean=True, conda_frontend="mamba",
                      snakemake_args="", write_to_script=None, rerun_triggers=None):
         """
@@ -378,9 +393,9 @@ class Processor:
         for workflow in self.workflows:
             cmd = (
                 "snakemake --snakefile {snakefile} --directory {working_dir} "
-                "{jobs} --rerun-incomplete {args} {rerun_triggers} "
+                "{jobs} --rerun-incomplete --keep-going {args} {rerun_triggers} "
                 "--configfile {config_file} --nolock "
-                "{profile} {conda_frontend} {resources} --use-conda {conda_prefix} "
+                "{profile} {retries} {conda_frontend} {resources} --use-conda {conda_prefix} "
                 "{dryrun} {notemp} "
                 "{target_rule}"
             ).format(
@@ -388,7 +403,8 @@ class Processor:
                 working_dir=self.output,
                 jobs="--cores {}".format(cores) if cores is not None else "--jobs 1",
                 config_file=self.config,
-                profile="" if (profile is None) else "--profile {}".format(profile),
+                profile="" if not profile else "--profile {}".format(profile),
+                retries="" if (cluster_retries is None) else "--retries {}".format(cluster_retries),
                 dryrun="--dryrun" if dryrun else "",
                 notemp="--notemp" if not clean else "",
                 rerun_triggers="" if (rerun_triggers is None) else "--rerun-triggers {}".format(" ".join(rerun_triggers)),
@@ -499,6 +515,9 @@ def process_batch(args, prefix):
                                clean=args.clean,
                                conda_frontend=args.conda_frontend,
                                snakemake_args=args.cmds,
+                               rerun_triggers=args.rerun_triggers,
+                               profile=args.snakemake_profile,
+                               cluster_retries=args.cluster_retries,
                                write_to_script=write_to_script)
 
     if args.cluster:
@@ -520,6 +539,9 @@ def process_batch(args, prefix):
                                    clean=args.clean,
                                    conda_frontend=args.conda_frontend,
                                    snakemake_args=args.cmds,
+                                   rerun_triggers=args.rerun_triggers,
+                                   profile=args.snakemake_profile,
+                                   cluster_retries=args.cluster_retries,
                                    write_to_script=write_to_script)
 
     if script_file is not None:

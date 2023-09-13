@@ -32,16 +32,22 @@ input reads.
 If at any point the Aviary workflow is interrupted, the pipeline can be restarted and pick up from the last completed
 step.
 
-## Advanced Usage
+## HPC cluster submission
 
 Often users are required to send long running jobs off on to high performance clusters. Aviary and snakemake are
 perfectly compatible with clusters and can be sent off as either a single pipeline via PBS script or equivalent.
-Alternatively, snakemake can send individual jobs in a pipeline off into a cluster to share the load across nodes. 
-You can make use of this feature in Aviary via the `--snakemake-cmds` parameter, E.g.
+Alternatively, snakemake can send individual jobs in a pipeline off into a cluster to share the load across nodes.
+You can make use of this feature in Aviary by providing a `--snakemake-profile cluster`, where `cluster` refers to
+a Snakemake profile at `~/.config/snakemake/cluster/config.yaml`. An example `config.yaml` is provided below.
+Additionally, `--cluster-retries` can be used to set the # of retries per job, with automatically increasing time
+and memory requirements. CPU and memory bounds provided to Aviary are used as a hard-cap for job submission.
+
+```yaml
+cluster: qsub
+cluster-status: qstat
+jobs: 10000
+cluster-cancel: qdel
 ```
-aviary assemble -1 *.1.fq.gz -2 *.2.fq.gz --longreads *.nanopore.fastq.gz --long_read_type ont -t 24 -p 24 -n 24 --snakemake-cmds '--cluster qsub '
-```
-NOTE: The space after `--cluster qsub ` is required due to a strange quirk in how python's `argparse` module works.
 
 ## Helpful parameters and commands
 
@@ -66,4 +72,5 @@ can also be kind of memory intensive when given extra threads.
 
 ### RAM control
 
-When performing assembly, users are required to estimate how much RAM they will need to use via `-m, --max-memory, --max_memory`
+When performing assembly, users are required to estimate how much RAM they will need to use via `-m, --max-memory, --max_memory`.
+With HPC cluster submission (see above), requested job memory is increased with each rerun and capped at `max_memory`.
