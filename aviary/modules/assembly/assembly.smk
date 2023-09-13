@@ -1,12 +1,8 @@
-localrules: get_high_cov_contigs, skip_long_assembly, short_only, move_spades_assembly, pool_reads, skip_unicycler, skip_unicycler_with_qc, complete_assembly, complete_assembly_with_qc, reset_to_spades_assembly, remove_final_contigs, combine_assemblies, combine_long_only
+localrules: get_high_cov_contigs, short_only, move_spades_assembly, pool_reads, skip_unicycler, skip_unicycler_with_qc, complete_assembly, complete_assembly_with_qc, reset_to_spades_assembly, remove_final_contigs, combine_assemblies, combine_long_only
 
-ruleorder: filter_illumina_assembly > short_only
-# ruleorder: fastqc > fastqc_long
-ruleorder: skip_unicycler_with_qc > skip_unicycler > combine_assemblies > combine_long_only
-ruleorder: skip_long_assembly > get_high_cov_contigs > short_only
-ruleorder: filter_illumina_assembly > skip_long_assembly
-ruleorder: filter_illumina_ref
-ruleorder: skip_unicycler_with_qc > skip_unicycler > combine_assemblies > combine_long_only > assemble_short_reads
+ruleorder: filter_illumina_assembly > short_only > combine_long_only
+ruleorder: get_high_cov_contigs > short_only
+ruleorder: skip_unicycler_with_qc > skip_unicycler > combine_assemblies > move_spades_assembly > combine_long_only
 ruleorder: skip_unicycler_with_qc > skip_unicycler > complete_assembly_with_qc > complete_assembly
 ruleorder: skip_unicycler_with_qc > skip_unicycler > combine_assemblies > move_spades_assembly
 
@@ -92,6 +88,7 @@ rule polish_metagenome_flye:
     resources:
         mem_mb = lambda wildcards, attempt: min(int(config["max_memory"])*1024, 512*1024*attempt),
         runtime = lambda wildcards, attempt: 24*60*attempt,
+        gpus = 1 if config["request_gpu"] else 0
     log:
         "logs/polish_metagenome_flye.log"
     output:
@@ -294,7 +291,7 @@ rule get_high_cov_contigs:
 # Specifically, short reads that do not map to the high coverage long contigs are collected
 rule filter_illumina_assembly:
     input:
-        fastq = "data/short_reads.fastq.gz" if config["reference_filter"] != "none" else config['short_reads_1'], # check short reads were supplied
+        fastq = "data/short_reads.fastq.gz" if config["reference_filter"] != ["none"] else config['short_reads_1'], # check short reads were supplied
         fasta = "data/flye_high_cov.fasta"
     output:
         bam = temp("data/sr_vs_long.sort.bam"),
@@ -317,25 +314,25 @@ rule filter_illumina_assembly:
         "scripts/filter_illumina_assembly.py"
 
 
-# If unassembled long reads are provided, skip the long read assembly
-rule skip_long_assembly:
-    input:
-        unassembled_long = config["unassembled_long"]
-    output:
-        # fastq = "data/short_reads.filt.fastq.gz",
-        fasta = "data/flye_high_cov.fasta",
-        long_reads = temp("data/long_reads.fastq.gz")
-    shell:
-        """
-        touch {output.fasta} && \
-        ln {input.unassembled_long} {output.long_reads}
-        """
+# # If unassembled long reads are provided, skip the long read assembly
+# rule skip_long_assembly:
+#     input:
+#         unassembled_long = [] if "none" in config["unassembled_long"] else config["unassembled_long"]
+#     output:
+#         # fastq = "data/short_reads.filt.fastq.gz",
+#         fasta = "data/flye_high_cov.fasta",
+#         long_reads = temp("data/long_reads.fastq.gz")
+#     shell:
+#         """
+#         touch {output.fasta} && \
+#         ln {input.unassembled_long} {output.long_reads}
+#         """
 
 
 # If only short reads are provided
 rule short_only:
     input:
-        fastq = "data/short_reads.fastq.gz" if config["reference_filter"] != "none" else config["short_reads_1"]
+        fastq = "data/short_reads.fastq.gz"
     output:
         fasta = "data/flye_high_cov.fasta",
         # long_reads = temp("data/long_reads.fastq.gz")
@@ -392,7 +389,7 @@ rule spades_assembly:
                 cp data/spades_assembly/scaffolds.fasta data/spades_assembly.fasta
             fi
         else
-            touch {output.fasta}
+            mkdir -p {output.spades_folder} && touch {output.fasta}
         fi 
         """
 
@@ -400,7 +397,7 @@ rule spades_assembly:
 # Perform short read assembly only with no other steps
 rule assemble_short_reads:
     input:
-        fastq = "data/short_reads.fastq.gz" if config["reference_filter"] != "none" else config["short_reads_1"]
+        fastq = "data/short_reads.fastq.gz"
     output:
         fasta = "data/short_read_assembly/scaffolds.fasta",
         # We cannot mark the output_folder as temp as then it gets deleted,
@@ -438,6 +435,7 @@ rule move_spades_assembly:
         assembly = "data/short_read_assembly/scaffolds.fasta"
     output:
         out = "data/final_contigs.fasta"
+    priority: 1
     shell:
         "cp {input.assembly} {output.out} && rm -rf data/short_read_assembly"
 
@@ -606,6 +604,7 @@ rule combine_long_only:
     priority: 1
     script:
         "scripts/combine_assemblies.py"
+
 
 
 rule skip_unicycler:

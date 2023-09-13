@@ -7,16 +7,18 @@ if config['fasta'] == 'none':
 
 
 ### Filter illumina reads against provided reference
-rule filter_illumina_ref:
+rule qc_short_reads:
     input:
         short_reads_1 = config["short_reads_1"],
-        reference_filter = config["reference_filter"]
+        short_reads_2 = config["short_reads_2"],
     output:
-        bam = "data/short_unmapped_ref.bam",
+        bam = temp("data/short_unmapped_ref.bam"),
         fastq = "data/short_reads.fastq.gz",
         filtered = "data/short_filter.done"
     params:
-        coassemble = config["coassemble"]
+        coassemble = config["coassemble"],
+        reference_filter = [] if "none" in config["reference_filter"] else config["reference_filter"],
+        skip_qc = config["skip_qc"]
     conda:
         "../../envs/minimap2.yaml"
     threads:
@@ -25,11 +27,11 @@ rule filter_illumina_ref:
         mem_mb = lambda wildcards, attempt: min(int(config["max_memory"])*1024, 512*1024*attempt),
         runtime = lambda wildcards, attempt: 8*60*attempt,
     log:
-        "logs/filter_illumina_ref.log"
+        "logs/qc_short_reads.log"
     benchmark:
-        "benchmarks/filter_illumina_ref.benchmark.txt"
+        "benchmarks/qc_short_reads.benchmark.txt"
     script:
-        "scripts/filter_illumina_reference.py"
+        "scripts/qc_short_reads.py"
 
 
 rule qc_long_reads:

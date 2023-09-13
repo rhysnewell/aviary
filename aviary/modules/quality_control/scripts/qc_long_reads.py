@@ -1,6 +1,6 @@
 import os
 from subprocess import Popen, PIPE
-
+from pathlib import Path
 from typing import List
 
 def run_skip_qc(
@@ -42,7 +42,7 @@ def run_skip_qc(
                     logf.write(f"pigz return: {pigz_p2.returncode}\n")
 
 
-        else:
+        elif len(long_reads) > 0:
             # sym link the first file as the output file
             logf.write(f"Symlinking {long_reads[0]} to {output_long_reads}\n")
             if not os.path.exists(long_reads[0]):
@@ -50,6 +50,9 @@ def run_skip_qc(
                 exit(1)
 
             os.symlink(long_reads[0], output_long_reads)
+        else:
+            logf.write(f"No long reads to quality control\n")
+            Path(output_long_reads).touch()
 
 def qc_long_reads(
     long_reads: List[str], # long reads to quality control
@@ -76,7 +79,7 @@ def qc_long_reads(
     :return:
     """
 
-    if skip_qc:
+    if skip_qc or len(long_reads) == 0:
         run_skip_qc(long_reads, output_long_reads, coassemble, log_file)
         return
 
@@ -109,20 +112,20 @@ def qc_long_reads(
             pigz_p1.wait()
             logf.write(f"pigz return: {pigz_p1.returncode}\n")
 
-            reference_filter_file = f'-c {output_long_reads}.reference_filter.fasta.gz'
-        else:
+            reference_filter_file_string = f'-c {output_long_reads}.reference_filter.fasta.gz'
+        elif len(reference_filter) == 1:
             # make sure file exists
             if not os.path.exists(reference_filter[0]):
                 logf.write(f"Reference filter file {reference_filter[0]} does not exist\n")
                 exit(1)
 
-            reference_filter_file = f'-c {reference_filter[0]}'
+            reference_filter_file_string = f'-c {reference_filter[0]}'
 
 
         # run chopper    
         # chopper reads on stdin and write to stdout
         logf.write(f"Running chopper on {len(long_reads)} files\n")
-        logf.write(f"Reference filter: {reference_filter_file}\n")
+        logf.write(f"Reference filter: {reference_filter_file_string}\n")
         with open(output_long_reads, 'w') as out:
             for long_read in long_reads:
                 # make sure file exists
@@ -132,7 +135,7 @@ def qc_long_reads(
 
                 cat_or_zcat = 'zcat' if long_read.endswith('.gz') else 'cat'
                 cat_cmd = f'{cat_or_zcat} {long_read}'.split()
-                chopper_cmd = f'chopper -l {min_length} -q {min_quality} -t {threads} {reference_filter_file}'.split()
+                chopper_cmd = f'chopper -l {min_length} -q {min_quality} -t {threads} {reference_filter_file_string}'.split()
                 pigz_cmd = f'pigz -p {threads}'.split()
 
                 logf.write(f"Shell style : {' '.join(cat_cmd)} | {' '.join(chopper_cmd)} | {' '.join(pigz_cmd)} > {output_long_reads}\n")
@@ -152,7 +155,7 @@ def qc_long_reads(
                     break
         
         # clean up reference filter if we concatenated
-        if len(reference_filter) > 1:
+        if os.path.exists(f'{output_long_reads}.reference_filter.fasta.gz'):
             os.remove(f'{output_long_reads}.reference_filter.fasta.gz')
 
 

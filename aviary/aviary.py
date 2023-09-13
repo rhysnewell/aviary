@@ -165,6 +165,17 @@ def main():
     )
 
     base_group.add_argument(
+        '--request-gpu', '--request_gpu',
+        help='Request a GPU for use with the pipeline. This will only work if the pipeline is run on a cluster',
+        dest='request_gpu',
+        type=str2bool,
+        nargs='?',
+        const=True,
+        dest='request_gpu',
+        default=False,
+    )
+
+    base_group.add_argument(
         '-o', '--output',
         help='Output directory',
         dest='output',
@@ -306,7 +317,7 @@ def main():
         help='One or more reference filter files to aid in the assembly. Remove contaminant reads from the assembly.',
         dest="reference_filter",
         nargs='*',
-        default='none'
+        default=['none']
     )
 
     qc_group.add_argument(

@@ -97,6 +97,7 @@ class Processor:
         self.max_memory = args.max_memory
         self.pplacer_threads = min(int(self.threads), 48)
         self.workflows = args.workflow
+        self.request_gpu = args.request_gpu
 
         try:
             self.strain_analysis = args.strain_analysis
@@ -330,6 +331,7 @@ class Processor:
         conf["max_threads"] = int(self.threads)
         conf["pplacer_threads"] = int(self.pplacer_threads)
         conf["max_memory"] = int(self.max_memory)
+        conf["request_gpu"] = self.request_gpu
         conf["short_reads_1"] = self.pe1
         conf["short_reads_2"] = self.pe2
         conf["long_reads"] = self.longreads
