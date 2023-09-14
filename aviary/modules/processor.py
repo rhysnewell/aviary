@@ -151,10 +151,10 @@ class Processor:
         except AttributeError:
             self.reference_filter = 'none'
             self.gold_standard = 'none'
-            self.min_read_size = args.min_read_size
-            self.min_mean_q = args.min_mean_q
-            self.keep_percent = args.keep_percent
-            self.skip_qc = args.skip_qc
+            self.min_read_size = 0
+            self.min_mean_q = 0
+            self.keep_percent = 100
+            self.skip_qc = False
 
         try:
             self.gsa_mappings = args.gsa_mappings
