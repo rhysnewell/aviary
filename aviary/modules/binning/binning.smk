@@ -176,7 +176,7 @@ rule vamb:
         min(config["max_threads"], 16)
     resources:
         mem_mb = lambda wildcards, attempt: min(int(config["max_memory"])*1024, 128*1024*attempt),
-        runtime = lambda wildcards, attempt: 12*60*attempt,
+        runtime = lambda wildcards, attempt: 24*60*attempt,
         gpus = 1 if config["request_gpu"] else 0
     output:
         "data/vamb_bins/done"
