@@ -328,7 +328,7 @@ def main():
 
     qc_group.add_argument(
         '--min-mean-q', '--min_mean_q',
-        help='Minimum mean quality threshold',
+        help='Minimum long read mean quality threshold',
         dest="min_mean_q",
         default=10
     )
@@ -338,6 +338,51 @@ def main():
         help='DEPRECATED: Percentage of reads passing quality thresholds kept by filtlong',
         dest="keep_percent",
         default=100
+    )
+
+    qc_group.add_argument(
+        '--min-short-read-length', '--min_short_read_length',
+        help='Minimum length of short reads to be kept',
+        dest="min_short_read_length",
+        default=15
+    )
+
+    qc_group.add_argument(
+        '--max-short-read-length', '--max_short_read_length',
+        help='Maximum length of short reads to be kept, 0 = no maximum',
+        dest="max_short_read_length",
+        default=0
+    )
+
+    qc_group.add_argument(
+        '--disable-adpater-trimming', '--disable_adpater_trimming',
+        help='Disable adapter trimming of short reads',
+        type=str2bool,
+        nargs='?',
+        const=True,
+        dest="disable_adapter_trimming",
+        default=False
+    )
+
+    qc_group.add_argument(
+        '--unqualified-percent-limit', '--unqualified_percent_limit',
+        help='how many percents of bases are allowed to be unqualified (0~100). Default 40 means 40%',
+        dest="unqualified_percent_limit",
+        default=40
+    )
+
+    qc_group.add_argument(
+        '--quality-cutoff', '--quality_cutoff',
+        help='The short read quality value that a base is qualified. Default 15 means phred quality >=Q15 is qualified.',
+        dest="quality_cutoff",
+        default=15
+    )
+
+    qc_group.add_argument(
+        '--extra-fastp-params', '--extra_fastp_params',
+        help='Extra parameters to pass to fastp, supply as a single string e.g. "--extra-fastp-params \'--cut_right --cut_right_window_size 5\'"',
+        dest="extra_fastp_params",
+        default=''
     )
 
     qc_group.add_argument(
