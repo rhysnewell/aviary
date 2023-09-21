@@ -366,7 +366,7 @@ def main():
 
     qc_group.add_argument(
         '--unqualified-percent-limit', '--unqualified_percent_limit',
-        help='how many percents of bases are allowed to be unqualified (0~100). Default 40 means 40%',
+        help='how many percents of bases are allowed to be unqualified. Default 40 means 40 percent',
         dest="unqualified_percent_limit",
         default=40
     )
@@ -380,7 +380,7 @@ def main():
 
     qc_group.add_argument(
         '--extra-fastp-params', '--extra_fastp_params',
-        help='Extra parameters to pass to fastp, supply as a single string e.g. "--extra-fastp-params \'--cut_right --cut_right_window_size 5\'"',
+        help='Extra parameters to pass to fastp, supply as a single string e.g. --extra-fastp-params "-V -e 10"',
         dest="extra_fastp_params",
         default=''
     )

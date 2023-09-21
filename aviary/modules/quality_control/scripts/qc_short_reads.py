@@ -268,6 +268,14 @@ def filter_illumina_reference(
         log=log,
     )
 
+    # Move fastp.json and fastp.html to www/
+    if os.path.exists("fastp.json") and os.path.exists("fastp.html"):
+        # make sure www/ exists
+        if not os.path.exists("www/"):
+            os.mkdir("www/")
+        os.rename("fastp.html", "www/fastp.html")
+        os.rename("fastp.json", "www/fastp.json")
+
     # remove the pre qc files
     if os.path.exists("data/short_reads.pre_qc.1.fastq.gz"):
         os.remove("data/short_reads.pre_qc.1.fastq.gz")

@@ -49,6 +49,37 @@ jobs: 10000
 cluster-cancel: qdel
 ```
 
+## Expected output
+
+Aviary will produce a variety of different outputs depending on the parameters provided. The following is a list of the expected outputs from the different subcommands.
+
+In general, you will find rule benchmarks in the `benchmarks/` folder. Logs and error messages will be found in the `logs/` folder.
+
+The `data/` folder contains various output from the different programs that have run. Aviary attempts to keep this folder clean, but there can be a lot of superfluous content in here. The `data/` folder is also where the final outputs from the pipeline will be found, they will be symlinked out of this folder into their respective output folders.
+
+#### 1. Assemble
+
+- `assembly/final_contigs.fasta` - The assembled genome in FASTA format
+- `www/assembly_stats.txt` - A summary of the assembly statistics
+- `www/fastqc` - A folder containing the output from fastqc
+- `www/nanoplot` - A folder containing the output from NanoPlot
+
+#### 2. Recover
+
+If assembly is performed during the recover process, then the outputs from the assembly step will also be present.
+- `bins/bin_info.tsv` - A file containing all of the information about the recovered MAGs. Taxonomy, QC, size, N50, etc.
+- `bins/checkm_minimal.tsv` - A minimal version of the `bin_info.tsv` file.
+- `bins/coverm_abundances.tsv` - The abundance of each MAG in each sample.
+- `bins/final_bins` - A folder containing the final MAGs in FASTA format.
+- `diversity/singlem_out` - A folder containing the output from singlem.
+- `taxonomy/` - A folder containing the output from GTDB-tk
+
+#### 3. Annotate
+
+- `annotation/` - A folder containing the output from EggNOG-mapper.
+
+
+
 ## Helpful parameters and commands
 
 ### Thread control
