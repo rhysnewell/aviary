@@ -133,11 +133,10 @@ def run_mapping_process(
         samtools_view_cmd = f"samtools view -b -f 12 -@ {threads} -o {output_bam}".split()
         logf.write(f"Shell style : {' '.join(minimap_cmd)} | {' '.join(samtools_view_cmd)}\n")
 
-        minimap_p1 = Popen(minimap_cmd, stdout=PIPE, stderr=logf) # stderr=PIPE optional, dd is chatty
+        minimap_p1 = Popen(minimap_cmd, stdout=PIPE, stderr=logf)
         samtools_view_p2 = Popen(samtools_view_cmd, stdin=minimap_p1.stdout, stderr=logf)
         samtools_view_p2.wait()
 
-        # thoretically p1 and p2 may still be running, this ensures we are collecting their return codes
         minimap_p1.wait()
         logf.write(f"minimap return: {minimap_p1.returncode}\n")
         logf.write(f"samtools view return: {samtools_view_p2.returncode}\n")
@@ -155,7 +154,6 @@ def run_mapping_process(
             samtools_bam2fq_p1 = Popen(samtools_bam2fq_cmd, stdout=PIPE, stderr=logf)
             pigz_p2 = Popen(pigz_cmd, stdin=samtools_bam2fq_p1.stdout, stdout=output_fq, stderr=logf)
 
-            # thoretically p1 and p2 may still be running, this ensures we are collecting their return codes
             samtools_bam2fq_p1.wait()
             pigz_p2.wait()
             logf.write(f"samtools bam2fq return: {samtools_bam2fq_p1.returncode}\n")
@@ -211,7 +209,6 @@ def run_fastp(
             pigz_p2 = Popen(pigz_cmd, stdin=fastp_p1.stdout, stdout=output_fq, stderr=logf)
 
             pigz_p2.wait()
-            # thoretically p1 may still be running, this ensures we are collecting their return codes
             fastp_p1.wait()
             logf.write(f"fastp return: {fastp_p1.returncode}\n")
             logf.write(f"pigz return: {pigz_p2.returncode}\n")
