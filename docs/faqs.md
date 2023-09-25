@@ -27,7 +27,7 @@ Yes! Aviary supports the use of GPUs for the assembly process. If the GPU is on 
 
 If you are using a cluster, you can supply the `--request-gpu` flag and Aviary will attempt to place rules that use GPUs on to a machine that has GPUs available.
 
-### Error in perpare_binning_files
+### Error in prepare_binning_files
 
 This error is almost always caused by the user running out of storage in their `/tmp` folder when `coverm` performs the mapping process. To fix this, you can either increase the amount of storage available to the `/tmp` folder or you can change the location of the temporary folder by setting the `TMPDIR` environment variable to a folder with more storage. Aviary also allows the user to specify the location of the temporary folder by using the `--tmpdir` parameter.
 
