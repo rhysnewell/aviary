@@ -35,14 +35,14 @@ def combine_reads(
     log_file: str
 ):
     """
-    Skip quality control
+    Combine reads before QC
     :param long_reads: list of long reads
     :param output_long_reads: output long reads
     :param coassemble: coassemble or not, if true we will filter all reads into the same file
     :return:
     """
     with open(log_file, 'a') as logf:
-        logf.write(f"Skipping quality control\n")
+        logf.write(f"Combining reads before quality control\n")
         logf.write(f"Coassemble: {coassemble}\n")
 
         if "none" in short_reads_1 and "none" in short_reads_2:
@@ -236,6 +236,8 @@ def filter_illumina_reference(
     
     if skip_qc or ("none" in short_reads_1 and "none" in short_reads_2):
         combine_reads(short_reads_1, short_reads_2, output_fastq, coassemble, log)
+        with open(log, 'a') as logf:
+            logf.write(f"Skipping quality control\n")
         Path(filtered).touch()
         Path(output_bam).touch()
         return
