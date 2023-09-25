@@ -52,28 +52,27 @@ def run_skip_qc(
 
         # we've got to concatenate the files together
         if coassemble:
-            with open(output_fastq, 'w') as out:
-                # reads 1 first
-                for reads in short_reads_1:
-                    if reads == "none":
-                        continue
-                    
-                    if not os.path.exists(reads):
-                        logf.write(f"Short read file {reads} does not exist\n")
-                        exit(1)
+            # reads 1 first
+            for reads in short_reads_1:
+                if reads == "none":
+                    continue
+                
+                if not os.path.exists(reads):
+                    logf.write(f"Short read file {reads} does not exist\n")
+                    exit(1)
 
-                    cat_reads(reads, out, threads, log)
+                cat_reads(reads, output_fastq, threads, log)
 
-                # reads 2 second
-                for reads in short_reads_2:
-                    if reads == "none":
-                        continue
+            # reads 2 second
+            for reads in short_reads_2:
+                if reads == "none":
+                    continue
 
-                    if not os.path.exists(reads):
-                        logf.write(f"Short read file {reads} does not exist\n")
-                        exit(1)
+                if not os.path.exists(reads):
+                    logf.write(f"Short read file {reads} does not exist\n")
+                    exit(1)
 
-                    cat_reads(reads, out, threads, log)
+                cat_reads(reads, output_fastq, threads, log)
         
         else:
             # if we have paired reads, we need to concatenate them together
