@@ -30,7 +30,7 @@ def run_lorikeet(
     else:
         short_reads = ""
 
-    lorikeet_cmd = f"lorikeet call -t {threads} -d {mag_directory} -x {mag_extension} -p {parallel_genomes} {short_reads} {long_reads} -o {output_directory} --calculate-dnds --calculate-fst".split()
+    lorikeet_cmd = f"lorikeet call -t {threads} -d {mag_directory} -x {mag_extension} -p {parallel_genomes} {short_reads} {long_reads} -o {output_directory} --do-not-call-svs --calculate-dnds --calculate-fst".split()
 
     run(lorikeet_cmd)
 

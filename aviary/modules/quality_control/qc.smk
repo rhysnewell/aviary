@@ -16,6 +16,12 @@ rule qc_short_reads:
         fastq = "data/short_reads.fastq.gz",
         filtered = "data/short_filter.done"
     params:
+        disable_adapter_trimming = config["disable_adapter_trimming"],
+        min_length = config['min_short_read_size'],
+        max_length = config['max_short_read_size'],
+        quality_cutoff = config['quality_cutoff'],
+        unqualified_percent_limit = config['unqualified_percent_limit'],
+        extra_fastp_params = config['extra_fastp_params'],
         coassemble = config["coassemble"],
         reference_filter = [] if "none" in config["reference_filter"] else config["reference_filter"],
         skip_qc = config["skip_qc"]
