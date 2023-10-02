@@ -769,12 +769,12 @@ rule singlem_appraise:
     log:
         "data/singlem_out/singlem_log.txt"
     shell:
-        "singlem pipe --threads {threads} --sequences bins/final_bins/*.fna --otu_table data/singlem_out/genomes.otu_table.csv > {log} 2>&1; "
-        "singlem pipe --threads {threads} --sequences {params.fasta} --otu_table data/singlem_out/assembly.otu_table.csv >> {log} 2>&1; "
-        "singlem appraise --metagenome_otu_tables {input.metagenome} --genome_otu_tables data/singlem_out/genomes.otu_table.csv "
-        "--assembly_otu_table data/singlem_out/assembly.otu_table.csv "
-        "--plot data/singlem_out/singlem_appraise.svg --output_binned_otu_table data/singlem_out/binned.otu_table.csv "
-        "--output_unbinned_otu_table data/singlem_out/unbinned.otu_table.csv > data/singlem_out/singlem_appraisal.tsv 2>> {log} || "
+        "singlem pipe --threads {threads} --genome-fasta-file bins/final_bins/*.fna --otu-table data/singlem_out/genomes.otu_table.csv > {log} 2>&1; "
+        "singlem pipe --threads {threads} --genome-fasta-file {params.fasta} --otu-table data/singlem_out/assembly.otu_table.csv >> {log} 2>&1; "
+        "singlem appraise --metagenome-otu-tables {input.metagenome} --genome-otu-tables data/singlem_out/genomes.otu_table.csv "
+        "--assembly-otu-table data/singlem_out/assembly.otu_table.csv "
+        "--plot data/singlem_out/singlem_appraise.svg --output-binned-otu-table data/singlem_out/binned.otu_table.csv "
+        "--output-unbinned-otu-table data/singlem_out/unbinned.otu_table.csv > data/singlem_out/singlem_appraisal.tsv 2>> {log} || "
         "echo 'SingleM Errored, please check data/singlem_out/singlem_log.txt' && touch data/singlem_out/singlem_appraisal.tsv"
 
 

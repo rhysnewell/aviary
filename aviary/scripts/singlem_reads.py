@@ -18,17 +18,17 @@ def run_singlem(
 
     singlem_output_list = []
     if long_reads != "none":
-        singlem_pipe_cmd = f"singlem pipe --threads {pplacer_threads} --sequences {' '.join(long_reads)} --otu_table data/singlem_out/metagenome.longread_otu_table.csv".split()
+        singlem_pipe_cmd = f"singlem pipe --threads {pplacer_threads} --sequences {' '.join(long_reads)} --otu-table data/singlem_out/metagenome.longread_otu_table.csv".split()
         with open(log, "a") as logf:
             run(singlem_pipe_cmd, stdout=logf, stderr=STDOUT)
 
     if short_reads_2 != "none":
-        singlem_pipe_cmd = f"singlem pipe --threads {pplacer_threads} --forward {' '.join(short_reads_1)} --reverse {' '.join(short_reads_2)} --otu_table data/singlem_out/metagenome.shortread_otu_table.csv".split()
+        singlem_pipe_cmd = f"singlem pipe --threads {pplacer_threads} --forward {' '.join(short_reads_1)} --reverse {' '.join(short_reads_2)} --otu-table data/singlem_out/metagenome.shortread_otu_table.csv".split()
         with open(log, "a") as logf:
             run(singlem_pipe_cmd, stdout=logf, stderr=STDOUT)
 
     elif short_reads_1 != "none":
-        singlem_pipe_cmd = f"singlem pipe --threads {pplacer_threads} --sequences {' '.join(short_reads_1)} --otu_table data/singlem_out/metagenome.shortread_otu_table.csv".split()
+        singlem_pipe_cmd = f"singlem pipe --threads {pplacer_threads} --sequences {' '.join(short_reads_1)} --otu-table data/singlem_out/metagenome.shortread_otu_table.csv".split()
         with open(log, "a") as logf:
             run(singlem_pipe_cmd, stdout=logf, stderr=STDOUT)
 
@@ -40,7 +40,7 @@ def run_singlem(
     if os.path.exists("data/singlem_out/metagenome.shortread_otu_table.csv"):
         singlem_output_list.append("data/singlem_out/metagenome.shortread_otu_table.csv")
 
-    summarise_cmd = f"singlem summarise --input_otu_tables {' '.join(singlem_output_list)} --output_otu_table data/singlem_out/metagenome.combined_otu_table.csv".split()
+    summarise_cmd = f"singlem summarise --input-otu-tables {' '.join(singlem_output_list)} --output-otu-table data/singlem_out/metagenome.combined_otu_table.csv".split()
     
     try:
         with open(log, "a") as logf:
