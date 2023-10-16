@@ -6,9 +6,7 @@ colors:
   main: "#8CD58C"
 navigation:
   - path: docs/installation.md
-  - path: docs/usage
-    children: "*"
-  - path: docs/concepts.md
-  - path: docs/citations.md
   - path: docs/examples.md
   - path: docs/faqs.md
+  - path: docs/concepts.md
+  - path: docs/citations.md

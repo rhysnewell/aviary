@@ -148,6 +148,12 @@ class Processor:
             self.min_mean_q = args.min_mean_q
             self.keep_percent = args.keep_percent
             self.skip_qc = args.skip_qc
+            self.min_short_read_size = args.min_short_read_length
+            self.max_short_read_size = args.max_short_read_length
+            self.disable_adapter_trimming = args.disable_adapter_trimming
+            self.unqualified_percent_limit = args.unqualified_percent_limit
+            self.quality_cutoff = args.quality_cutoff
+            self.extra_fastp_params = args.extra_fastp_params
         except AttributeError:
             self.reference_filter = 'none'
             self.gold_standard = 'none'
@@ -155,6 +161,13 @@ class Processor:
             self.min_mean_q = 0
             self.keep_percent = 100
             self.skip_qc = False
+            self.min_short_read_size = 0
+            self.max_short_read_size = 0
+            self.disable_adapter_trimming = False
+            self.unqualified_percent_limit = 0
+            self.quality_cutoff = 0
+            self.extra_fastp_params = 'none'
+
 
         try:
             self.gsa_mappings = args.gsa_mappings
@@ -321,6 +334,12 @@ class Processor:
         conf["min_read_size"] = self.min_read_size
         conf["min_mean_q"] = self.min_mean_q
         conf["keep_percent"] = self.keep_percent
+        conf["min_short_read_size"] = self.min_short_read_size
+        conf["max_short_read_size"] = self.max_short_read_size
+        conf["disable_adapter_trimming"] = self.disable_adapter_trimming
+        conf["unqualified_percent_limit"] = self.unqualified_percent_limit
+        conf["quality_cutoff"] = self.quality_cutoff
+        conf["extra_fastp_params"] = self.extra_fastp_params
         conf["skip_qc"] = self.skip_qc
         conf["gsa"] = self.gold_standard
         conf["gsa_mappings"] = self.gsa_mappings

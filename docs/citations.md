@@ -12,10 +12,12 @@ modules are added to aviary.
 
 ## QC
 - **NanoPack**: De Coster, W., D’Hert, S., Schultz, D. T., Cruts, M. & Van Broeckhoven, C. NanoPack: visualizing and processing long-read sequencing data. Bioinformatics 34, 2666–2669 (2018). https://doi.org/10.1093/bioinformatics/bty149
+- **NanoPack2**: De Coster, W. & Rademakers, R. NanoPack2: population-scale evaluation of long-read sequencing data. Bioinformatics 39, (2023). https://doi.org/10.1093/bioinformatics/btad311
+- **fastp**: Chen, S., Zhou, Y., Chen, Y. & Gu, J. fastp: an ultra-fast all-in-one FASTQ preprocessor. Bioinformatics 34, i884–i890 (2018). https://doi.org/10.1093/bioinformatics/bty560
 
 ## Assembly
 - **Flye**: Kolmogorov, M., Yuan, J., Lin, Y. & Pevzner, P. A. Assembly of long, error-prone reads using repeat graphs. Nature Biotechnology 37, 540–546 (2019). https://doi.org/10.1038/s41587-019-0072-8
-- **Circlator**: Hunt, M. et al. Circlator: automated circularization of genome assemblies using long sequencing reads. Genome Biology 16, 294 (2015). https://doi.org/10.1186/s13059-015-0849-0
+- **Medaka**: https://github.com/nanoporetech/medaka
 - **Racon**: Vaser, R., Sović, I., Nagarajan, N. & Šikić, M. Fast and accurate de novo genome assembly from long uncorrected reads. Genome Res 27, 737–746 (2017). https://doi.org/10.1101/gr.214270.116 
 - **Pilon**: Walker, B. J. et al. Pilon: An Integrated Tool for Comprehensive Microbial Variant Detection and Genome Assembly Improvement. PLOS ONE 9, e112963 (2014). https://doi.org/10.1371/journal.pone.0112963
 - **metaSPAdes**: Nurk, S., Meleshko, D., Korobeynikov, A., & Pevzner, P. A. (2017). metaSPAdes: a new versatile metagenomic assembler. Genome research, 27(5), 824-834. https://doi.org/10.1101/gr.213959.116
@@ -35,6 +37,7 @@ modules are added to aviary.
 https://doi.org/10.1038/s41564-018-0171-1
 - **SemiBin2**: Pan, S., Zhao, X. M., & Coelho, L. P. (2023). SemiBin2: self-supervised contrastive learning leads to better MAGs for short-and long-read sequencing, Bioinformatics, Volume 39, Issue Supplement_1, June 2023, Pages i21–i29. https://doi.org/10.1093/bioinformatics/btad209
 - **MaxBin 2.0**: Wu, Y.-W., Simmons, B. A. & Singer, S. W. MaxBin 2.0: an automated binning algorithm to recover genomes from multiple metagenomic datasets. Bioinformatics 32, 605–607 (2016). https://doi.org/10.1093/bioinformatics/btv638
+- **Rosella**: https://github.com/rhysnewell/rosella
 
 ## Annotation
 - **CheckM2**: Chklovski, A., Parks, D. H., Woodcroft, B. J., & Tyson, G. W. (2023). CheckM2: a rapid, scalable and accurate tool for assessing microbial genome quality using machine learning. Nature Methods, 1-10. https://doi.org/10.1038/s41592-023-01940-w
@@ -42,3 +45,6 @@ https://doi.org/10.1038/s41564-018-0171-1
 - **eggNOG mapper 2**: Cantalapiedra, C. P., Hernández-Plaza, A., Letunic, I., Bork, P., & Huerta-Cepas, J. (2021). eggNOG-mapper v2: functional annotation, orthology assignments, and domain prediction at the metagenomic scale. Molecular biology and evolution, 38(12), 5825-5829. https://doi.org/10.1093/molbev/msab293
 - **GTDB-Tk 2**: Chaumeil, P. A., Mussig, A. J., Hugenholtz, P., & Parks, D. H. (2022). GTDB-Tk v2: memory friendly classification with the genome taxonomy database. Bioinformatics, 38(23), 5315-5316. https://doi.org/10.1093/bioinformatics/btac672
 - **GraftM**: Boyd, J. A., Woodcroft, B. J. & Tyson, G. W. GraftM: a tool for scalable, phylogenetically informed classification of genes within metagenomes. Nucleic Acids Research 46, e59 (2018). https://doi.org/10.1093/nar/gky174
+
+## Variant calling
+- **Lorikeet**: https://github.com/rhysnewell/Lorikeet
