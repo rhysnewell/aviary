@@ -775,7 +775,7 @@ rule singlem_appraise:
         "singlem appraise --metagenome-otu-tables {input.metagenome} --genome-otu-tables data/singlem_out/genomes.otu_table.csv "
         "--assembly-otu-table data/singlem_out/assembly.otu_table.csv "
         "--plot data/singlem_out/singlem_appraise.svg --output-binned-otu-table data/singlem_out/binned.otu_table.csv "
-        "--output-unbinned-otu-table data/singlem_out/unbinned.otu_table.csv > data/singlem_out/singlem_appraisal.tsv 2> {log}' || "
+        "--output-unbinned-otu-table data/singlem_out/unbinned.otu_table.csv > data/singlem_out/singlem_appraisal.tsv' 2> {log} || "
         "echo 'SingleM Errored, please check data/singlem_out/singlem_log.txt'; touch data/singlem_out/singlem_appraisal.tsv"
 
 
