@@ -2,6 +2,36 @@ from subprocess import Popen, PIPE, run, STDOUT
 from pathlib import Path
 import os
 from typing import List
+import gzip
+
+def interleave(f1, f2, output_fastq:str):
+    """Interleaves two (open) fastq files.
+    """
+    with open(output_fastq, 'a') as output_fastq:
+        while True:
+            line = f1.readline()
+            if line.strip() == "":
+                break
+            output_fastq.write(line)
+            for _ in range(3):
+                output_fastq.write(f1.readline())
+            for _ in range(4):
+                output_fastq.write(f2.readline())
+
+def setup_interleave(reads_1: str, reads_2: str, output_fastq: str, log: str):
+    with open(log, "a") as logf:
+        logf.write(f"Interleaving reads\n")
+        logf.write(f"Reads 1: {reads_1}\n")
+        logf.write(f"Reads 2: {reads_2}\n")
+        logf.write(f"Output: {output_fastq}\n")
+        if reads_1[-2:] == "gz":
+            with gzip.open(reads_1) as f1:
+                with gzip.open(reads_2) as f2:
+                    interleave(f1, f2, output_fastq)
+        else:
+            with open(reads_1) as f1:
+                with open(reads_2) as f2:
+                        interleave(f1, f2, output_fastq)
 
 def cat_reads(read_path: str, output_path: str, threads: int, log: str):
     """
@@ -53,26 +83,20 @@ def combine_reads(
         # we've got to concatenate the files together
         if coassemble:
             # reads 1 first
-            for reads in short_reads_1:
-                if reads == "none":
+            for reads_1, reads_2 in zip(short_reads_1, short_reads_2):
+                if reads_1 == "none" or reads_2 == "none":
                     continue
                 
-                if not os.path.exists(reads):
-                    logf.write(f"Short read file {reads} does not exist\n")
+                if not os.path.exists(reads_1):
+                    logf.write(f"Short read file {reads_1} does not exist\n")
                     exit(1)
-
-                cat_reads(reads, output_fastq, threads, log)
-
-            # reads 2 second
-            for reads in short_reads_2:
-                if reads == "none":
-                    continue
-
-                if not os.path.exists(reads):
-                    logf.write(f"Short read file {reads} does not exist\n")
+                
+                if not os.path.exists(reads_2):
+                    logf.write(f"Short read file {reads_2} does not exist\n")
                     exit(1)
+                
+                setup_interleave(reads_1, reads_2, output_fastq, log_file)
 
-                cat_reads(reads, output_fastq, threads, log)
         
         else:
             # if we have paired reads, we need to concatenate them together
@@ -86,8 +110,7 @@ def combine_reads(
                         logf.write(f"Short read file {reads2} does not exist\n")
                         exit(1)
 
-                    cat_reads(reads1, output_fastq, threads, log)
-                    cat_reads(reads2, output_fastq, threads, log)
+                    setup_interleave(reads1, reads2, output_fastq, log_file)
                     break
             elif "none" not in short_reads_1:
                 # otherwise we just need to symlink the first file
