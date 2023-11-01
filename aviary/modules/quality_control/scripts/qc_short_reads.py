@@ -10,7 +10,7 @@ def interleave(f1, f2, output_fastq:str):
     with open(output_fastq, 'ab') as output_f:
         while True:
             line = f1.readline()
-            if line.strip() == "":
+            if line.strip() == b"":
                 break
             output_f.write(line)
             for _ in range(3):
