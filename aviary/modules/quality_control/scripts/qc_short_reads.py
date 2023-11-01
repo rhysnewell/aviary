@@ -23,20 +23,19 @@ def interleave(f1, f2, output_fastq:str):
             for _ in range(4):
                 output_f.write(f2.readline())
 
-def setup_interleave(reads_1: str, reads_2: str, output_fastq: str, log: str):
-    with open(log, "a") as logf:
-        logf.write(f"Interleaving reads\n")
-        logf.write(f"Reads 1: {reads_1}\n")
-        logf.write(f"Reads 2: {reads_2}\n")
-        logf.write(f"Output: {output_fastq}\n")
-        if reads_1[-2:] == "gz":
-            with gzip.open(reads_1) as f1:
-                with gzip.open(reads_2) as f2:
+def setup_interleave(reads_1: str, reads_2: str, output_fastq: str, logf):
+    logf.write(f"Interleaving reads\n")
+    logf.write(f"Reads 1: {reads_1}\n")
+    logf.write(f"Reads 2: {reads_2}\n")
+    logf.write(f"Output: {output_fastq}\n")
+    if reads_1[-2:] == "gz":
+        with gzip.open(reads_1) as f1:
+            with gzip.open(reads_2) as f2:
+                interleave(f1, f2, output_fastq)
+    else:
+        with open(reads_1) as f1:
+            with open(reads_2) as f2:
                     interleave(f1, f2, output_fastq)
-        else:
-            with open(reads_1) as f1:
-                with open(reads_2) as f2:
-                        interleave(f1, f2, output_fastq)
 
 def cat_reads(read_path: str, output_path: str, threads: int, log: str):
     """
@@ -100,7 +99,7 @@ def combine_reads(
                     logf.write(f"Short read file {reads_2} does not exist\n")
                     exit(1)
                 
-                setup_interleave(reads_1, reads_2, output_fastq, log_file)
+                setup_interleave(reads_1, reads_2, output_fastq, logf)
 
         
         else:
@@ -115,7 +114,7 @@ def combine_reads(
                         logf.write(f"Short read file {reads2} does not exist\n")
                         exit(1)
 
-                    setup_interleave(reads1, reads2, output_fastq, log_file)
+                    setup_interleave(reads1, reads2, output_fastq, logf)
                     break
             elif "none" not in short_reads_1:
                 # otherwise we just need to symlink the first file
