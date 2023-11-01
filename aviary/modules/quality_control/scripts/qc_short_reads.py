@@ -7,12 +7,7 @@ import gzip
 def interleave(f1, f2, output_fastq:str):
     """Interleaves two (open) fastq files.
     """
-    if output_fastq.endswith(".gz"):
-        open_func = gzip.open
-    else:
-        open_func = open
-
-    with open_func(output_fastq, 'ab') as output_f:
+    with open(output_fastq, 'ab') as output_f:
         while True:
             line = f1.readline()
             if line.strip() == "":
@@ -66,7 +61,8 @@ def combine_reads(
     short_reads_2,
     output_fastq: str,
     coassemble: bool,
-    log_file: str
+    log_file: str,
+    threads: int,
 ):
     """
     Combine reads before QC
@@ -78,6 +74,11 @@ def combine_reads(
     with open(log_file, 'a') as logf:
         logf.write(f"Combining reads before quality control\n")
         logf.write(f"Coassemble: {coassemble}\n")
+
+        gzip_output = False
+        if output_fastq.endswith(".gz"):
+            output_fastq = output_fastq[:-3]
+            gzip_output = True
 
         if "none" in short_reads_1 and "none" in short_reads_2:
             logf.write(f"Creating dummy files")
@@ -135,6 +136,11 @@ def combine_reads(
             else:
                 logf.write(f"Both reads_1 and reads_2 are None, Error has occured in read concatenation.\n")
                 exit(1)
+
+        if gzip_output:
+            logf.write(f"Gzipping {output_fastq}\n")
+            pigz_cmd = f"pigz -p {threads} {output_fastq}".split()
+            run(pigz_cmd, stderr=logf)
 
 
 
@@ -261,7 +267,7 @@ def filter_illumina_reference(
 ):
     
     if skip_qc or ("none" in short_reads_1 and "none" in short_reads_2):
-        combine_reads(short_reads_1, short_reads_2, output_fastq, coassemble, log)
+        combine_reads(short_reads_1, short_reads_2, output_fastq, coassemble, log, threads)
         with open(log, 'a') as logf:
             logf.write(f"Skipping quality control\n")
         Path(filtered).touch()
@@ -271,12 +277,12 @@ def filter_illumina_reference(
     # run fastp for quality control of reads
     se1_string = None
     if "none" not in short_reads_1:
-        combine_reads(short_reads_1, ["none"], "data/short_reads.pre_qc.1.fastq.gz", coassemble, log)
+        combine_reads(short_reads_1, ["none"], "data/short_reads.pre_qc.1.fastq.gz", coassemble, log, threads)
         se1_string = "data/short_reads.pre_qc.1.fastq.gz"
     
     se2_string = None
     if "none" not in short_reads_2:
-        combine_reads(["none"], short_reads_2, "data/short_reads.pre_qc.2.fastq.gz", coassemble, log)
+        combine_reads(["none"], short_reads_2, "data/short_reads.pre_qc.2.fastq.gz", coassemble, log, threads)
         se2_string = "data/short_reads.pre_qc.2.fastq.gz"
     
     run_fastp(
