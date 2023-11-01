@@ -7,16 +7,21 @@ import gzip
 def interleave(f1, f2, output_fastq:str):
     """Interleaves two (open) fastq files.
     """
-    with open(output_fastq, 'a') as output_fastq:
+    if output_fastq.endswith(".gz"):
+        open_func = gzip.open
+    else:
+        open_func = open
+
+    with open_func(output_fastq, 'ab') as output_f:
         while True:
-            line = f1.readline().decode("utf-8")
+            line = f1.readline()
             if line.strip() == "":
                 break
-            output_fastq.write(line)
+            output_f.write(line)
             for _ in range(3):
-                output_fastq.write(f1.readline().decode("utf-8"))
+                output_f.write(f1.readline())
             for _ in range(4):
-                output_fastq.write(f2.readline().decode("utf-8"))
+                output_f.write(f2.readline())
 
 def setup_interleave(reads_1: str, reads_2: str, output_fastq: str, log: str):
     with open(log, "a") as logf:
