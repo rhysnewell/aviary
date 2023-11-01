@@ -9,14 +9,14 @@ def interleave(f1, f2, output_fastq:str):
     """
     with open(output_fastq, 'a') as output_fastq:
         while True:
-            line = f1.readline()
+            line = f1.readline().decode("utf-8")
             if line.strip() == "":
                 break
             output_fastq.write(line)
             for _ in range(3):
-                output_fastq.write(f1.readline())
+                output_fastq.write(f1.readline().decode("utf-8"))
             for _ in range(4):
-                output_fastq.write(f2.readline())
+                output_fastq.write(f2.readline().decode("utf-8"))
 
 def setup_interleave(reads_1: str, reads_2: str, output_fastq: str, log: str):
     with open(log, "a") as logf:
