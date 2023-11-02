@@ -28,8 +28,8 @@ def setup_interleave(reads_1: str, reads_2: str, output_fastq: str, logf):
             with gzip.open(reads_2) as f2:
                 interleave(f1, f2, output_fastq)
     else:
-        with open(reads_1) as f1:
-            with open(reads_2) as f2:
+        with open(reads_1, 'rb') as f1:
+            with open(reads_2, 'rb') as f2:
                     interleave(f1, f2, output_fastq)
 
 def cat_reads(read_path: str, output_path: str, threads: int, log: str):
