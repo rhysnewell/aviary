@@ -69,6 +69,7 @@ def refinery():
 
     final_checkm = current_checkm.copy().loc[current_checkm["Contamination"] <= snakemake.params.max_contamination].copy()
     final_checkm = move_finished_bins(final_checkm, bin_folder, extension, final_bins)
+    previous_checkm_path = None
     unchanged_bins = None
 
     while current_iteration < max_iterations:
@@ -116,14 +117,28 @@ def refinery():
             # also handle unchanged bins
             if os.path.exists(unchanged_bins):
                 # list the bins in unchanged_bins
+                if previous_checkm_path is None:
+                    previous_checkm_path = snakemake.input.checkm
+                
+                bin_id_accessor_str = "Bin Id"
+
+                previous_checkm = pd.read_csv(previous_checkm_path, sep='\t', comment='[')
+                if "Bin Id" not in previous_checkm.columns:
+                    # checkm2 input
+                    bin_id_accessor_str = "Name"
+
+                bin_ids = []
                 for bin_path in os.listdir(unchanged_bins):
                     # copy the bin to the final bins folder
                     bin_id = os.path.splitext(bin_path)[0]
+                    bin_ids.append(bin_id)
                     shutil.copy(f"{unchanged_bins}/{bin}", f"{final_bins}/{bin_id}.fna")
                     # add the bin to the final checkm
-                    row = current_checkm.copy().loc[current_checkm["Bin Id"] == bin_id]
-                    final_checkm = pd.concat([final_checkm, row])
+                    # row = previous_checkm.copy().loc[previous_checkm["Bin Id"] == bin_id]
+                    # final_checkm = pd.concat([final_checkm, row])
+                final_checkm = pd.concat([final_checkm, previous_checkm.copy().loc[previous_checkm[bin_id_accessor_str].isin(bin_ids)]])
 
+            previous_checkm_path = checkm_path
             current_iteration += 1
         except FileNotFoundError:
             with open(log, "a") as logf:
