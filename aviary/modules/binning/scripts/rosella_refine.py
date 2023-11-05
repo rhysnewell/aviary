@@ -24,8 +24,8 @@ def refinery():
     with open(log, "w") as logf: pass
 
     # kmers = snakemake.input.kmers
-    if os.path.isfile("data/rosella_bins/rosella_kmer_table.tsv"):
-        kmers = "data/rosella_bins/rosella_kmer_table.tsv"
+    if os.path.isfile("data/rosella_bins/kmer_frequencies.tsv"):
+        kmers = "data/rosella_bins/kmer_frequencies.tsv"
     else:
         kmers = None
     min_bin_size = snakemake.params.min_bin_size
@@ -83,17 +83,23 @@ def refinery():
                 current_checkm, max_contamination, bin_folder, extension, contaminated_bin_folder):
             break
 
-        output_folder = f"{snakemake.params.output_folder}/rosella_refined_{current_iteration}"
+        output_folder = f"{snakemake.params.output_folder}/rosella_refined_{current_iteration + 1}"
 
         if os.path.exists(output_folder):
             shutil.rmtree(output_folder)
         # Refine the contaminated bins
         kmers = refine(assembly, coverage, kmers, checkm_path,
                    contaminated_bin_folder, extension, min_bin_size,
-                   threads, output_folder, max_contamination, log)
+                   threads, output_folder, max_contamination, f"refined_{current_iteration + 1}", log)
 
         # update the bin folder variable to the current refined folder
-        bin_folder = output_folder
+        bin_folder = f"{output_folder}/refined_bins/"
+        unchanged_bins = f"{output_folder}/unchanged_bins/"
+
+        # move the unchanged bins to the final bins folder
+        if os.path.exists(unchanged_bins):
+            for mag in os.listdir(unchanged_bins):
+                shutil.move(f"{unchanged_bins}/{mag}", f"{final_bins}/{os.path.splitext(mag)[0]}.fna")
 
         # retrieve the checkm results for the refined bins
         try:
@@ -103,7 +109,7 @@ def refinery():
             current_checkm = pd.read_csv(checkm_path, sep='\t', comment='[')
 
             bins_to_keep = current_checkm.copy().loc[current_checkm["Contamination"] <= max_contamination]
-            bins_to_keep = move_finished_bins(bins_to_keep, bin_folder, "fna", final_bins, current_iteration)
+            bins_to_keep = move_finished_bins(bins_to_keep, bin_folder, "fna", final_bins, None) # None because bin tag handles refined bin name
             final_checkm = pd.concat([final_checkm, bins_to_keep])
             current_iteration += 1
         except FileNotFoundError:
@@ -130,6 +136,12 @@ def refinery():
             logf.write("No bins to refine\n")
             logf.write("Skipping refinement\n")
         open(f"{snakemake.params.output_folder}/done", "a").close()
+    
+    # in output folder, we then delete directories starting with rosella_refined_
+    for folder in os.listdir(snakemake.params.output_folder):
+        if folder.startswith("rosella_refined_"):
+            shutil.rmtree(f"{snakemake.params.output_folder}/{folder}")
+
 
 
 def move_finished_bins(
@@ -197,21 +209,29 @@ def collect_contaminated_bins(
 
 
 def refine(
-        assembly, coverage, kmers, checkm,
-        bin_folder, extension, min_bin_size,
-        threads, output_folder, max_contamination,
-        log,
+    assembly,
+    coverage,
+    kmers,
+    checkm,
+    bin_folder,
+    extension,
+    min_bin_size,
+    threads,
+    output_folder,
+    max_contamination,
+    bin_tag,
+    log,
 ):
     if kmers is None:
-        rosella_cmd = f"rosella refine -a {assembly} --coverage-values {coverage} -d {bin_folder} -x {extension} --checkm-file {checkm} --max-contamination {max_contamination} --min-bin-size {min_bin_size} -t {threads} -o {output_folder}".split()
+        rosella_cmd = f"rosella refine -r {assembly} -C {coverage} -d {bin_folder} -x {extension} --checkm-results {checkm} --max-contamination {max_contamination} --min-bin-size {min_bin_size} -t {threads} -o {output_folder} --bin-tag {bin_tag}".split()
         with open(log, "a") as logf:
             run(rosella_cmd, stdout=logf, stderr=STDOUT)
 
         os.makedirs("data/rosella_bins/", exist_ok=True)
-        shutil.copyfile(f"{output_folder}/rosella_kmer_table.tsv", f"data/rosella_bins/rosella_kmer_table.tsv")
-        kmers = "data/rosella_bins/rosella_kmer_table.tsv"
+        shutil.copyfile(f"{output_folder}/kmer_frequencies.tsv", f"data/rosella_bins/kmer_frequencies.tsv")
+        kmers = "data/rosella_bins/kmer_frequencies.tsv"
     else:
-        rosella_cmd = f"rosella refine -a {assembly} --coverage-values {coverage} --kmer-frequencies {kmers} -d {bin_folder} -x {extension} --checkm-file {checkm} --max-contamination {max_contamination} --min-bin-size {min_bin_size} -t {threads} -o {output_folder}".split()
+        rosella_cmd = f"rosella refine -r {assembly} -C {coverage} --kmer-frequency-file {kmers} -d {bin_folder} -x {extension} --checkm-results {checkm} --max-contamination {max_contamination} --min-bin-size {min_bin_size} -t {threads} -o {output_folder} --bin-tag {bin_tag}".split()
 
         with open(log, "a") as logf:
             run(rosella_cmd, stdout=logf, stderr=STDOUT)
