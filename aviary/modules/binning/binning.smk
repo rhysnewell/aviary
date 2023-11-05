@@ -485,7 +485,8 @@ rule refine_rosella:
         max_iterations = config["refinery_max_iterations"],
         pplacer_threads = config["pplacer_threads"],
         max_contamination = 15,
-        final_refining = False
+        final_refining = False,
+        bin_prefix = "rosella"
     threads:
         min(config["max_threads"], 16)
     resources:
@@ -522,7 +523,8 @@ rule refine_metabat2:
         max_iterations = config["refinery_max_iterations"],
         pplacer_threads = config["pplacer_threads"],
         max_contamination = 15,
-        final_refining = False
+        final_refining = False,
+        bin_prefix = "metabat2"
     log:
         "logs/refine_metabat2.log"
     conda:
@@ -554,7 +556,8 @@ rule refine_semibin:
         max_iterations = config["refinery_max_iterations"],
         pplacer_threads = config["pplacer_threads"],
         max_contamination = 15,
-        final_refining = False
+        final_refining = False,
+        bin_prefix = "semibin2"
     log:
         "logs/refine_semibin.log"
     conda:
@@ -673,7 +676,8 @@ rule refine_dastool:
         max_iterations = config["refinery_max_iterations"],
         pplacer_threads = config["pplacer_threads"],
         max_contamination = 15,
-        final_refining = True
+        final_refining = True,
+        bin_prefix = "dastool"
     log:
         "logs/refine_dastool.log"
     conda:

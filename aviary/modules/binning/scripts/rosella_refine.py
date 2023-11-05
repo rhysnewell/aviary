@@ -37,6 +37,7 @@ def refinery():
     final_bins = snakemake.params.output_folder + "/final_bins"
     bin_folder = snakemake.params.bin_folder
     extension = snakemake.params.extension
+    bin_prefix = snakemake.params.bin_prefix
 
 
     try:
@@ -68,7 +69,7 @@ def refinery():
 
     final_checkm = current_checkm.copy().loc[current_checkm["Contamination"] <= snakemake.params.max_contamination].copy()
     final_checkm = move_finished_bins(final_checkm, bin_folder, extension, final_bins)
-
+    unchanged_bins = None
 
     while current_iteration < max_iterations:
 
@@ -90,7 +91,7 @@ def refinery():
         # Refine the contaminated bins
         kmers = refine(assembly, coverage, kmers, checkm_path,
                    contaminated_bin_folder, extension, min_bin_size,
-                   threads, output_folder, max_contamination, f"refined_{current_iteration + 1}", log)
+                   threads, output_folder, max_contamination, f"{bin_prefix}_refined_{current_iteration + 1}", log)
 
         # update the bin folder variable to the current refined folder
         bin_folder = f"{output_folder}/refined_bins/"
@@ -111,6 +112,18 @@ def refinery():
             bins_to_keep = current_checkm.copy().loc[current_checkm["Contamination"] <= max_contamination]
             bins_to_keep = move_finished_bins(bins_to_keep, bin_folder, "fna", final_bins, None) # None because bin tag handles refined bin name
             final_checkm = pd.concat([final_checkm, bins_to_keep])
+
+            # also handle unchanged bins
+            if os.path.exists(unchanged_bins):
+                # list the bins in unchanged_bins
+                for bin_path in os.listdir(unchanged_bins):
+                    # copy the bin to the final bins folder
+                    bin_id = os.path.splitext(bin_path)[0]
+                    shutil.copy(f"{unchanged_bins}/{bin}", f"{final_bins}/{bin_id}.fna")
+                    # add the bin to the final checkm
+                    row = current_checkm.copy().loc[current_checkm["Bin Id"] == bin_id]
+                    final_checkm = pd.concat([final_checkm, row])
+
             current_iteration += 1
         except FileNotFoundError:
             with open(log, "a") as logf:
@@ -118,6 +131,7 @@ def refinery():
                 logf.write("Skipping refinement\n")
             # No bins to refine, break out and move on
             break
+    
 
     if final_refining:
         final_checkm.to_csv("data/checkm.out", sep='\t', index=False)
@@ -133,8 +147,9 @@ def refinery():
         final_checkm.to_csv("bins/checkm.out", sep='\t', index=False)
     else:
         with open(log, "a") as logf:
-            logf.write("No bins to refine\n")
-            logf.write("Skipping refinement\n")
+            logf.write("Refinery finished.\n")
+        
+        # final_checkm.to_csv(f"{snakemake.params.output_folder}/intermediate_checkm.out", sep='\t', index=False)
         open(f"{snakemake.params.output_folder}/done", "a").close()
     
     # in output folder, we then delete directories starting with rosella_refined_
