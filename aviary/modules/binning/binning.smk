@@ -37,6 +37,8 @@ onstart:
         sys.stderr.write("gtdbtk_folder does not point to a folder\n")
     if busco_folder != "none" and not os.path.exists(busco_folder):
         sys.stderr.write("busco_folder does not point to a folder\n")
+    if singlem_metapackage != "none" and not os.path.exists(singlem_metapackage):
+        sys.stderr.write("singlem_metapackage does not point to a folder\n")
 
 if config['fasta'] == 'none':
     config['fasta'] = 'assembly/final_contigs.fasta'

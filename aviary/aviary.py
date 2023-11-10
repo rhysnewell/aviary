@@ -538,6 +538,13 @@ def main():
     )
 
     annotation_group.add_argument(
+        '--singlem-metapackage-path', '--singlem_metapackage_path',
+        help='Path to the local SingleM metapackage',
+        dest='singlem_metapackage_path',
+        default=None,
+    )
+
+    annotation_group.add_argument(
         '--checkm2-db-path', '--checkm2_db_path',
         help='Path to Checkm2 Database',
         dest='checkm2_db_path',
