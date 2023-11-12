@@ -96,6 +96,13 @@ class Tests(unittest.TestCase):
         self.assertTrue(os.path.isfile(f"{output_dir}/aviary_out/data/final_contigs.fasta"))
         self.assertTrue(os.path.islink(f"{output_dir}/aviary_out/assembly/final_contigs.fasta"))
 
+        self.assertTrue(os.path.islink(f"{output_dir}/aviary_out/diversity/singlem_out"))
+        self.assertTrue(os.path.isfile(f"{output_dir}/aviary_out/diversity/singlem_out/metagenome.combined_otu_table.csv"))
+        self.assertTrue(os.path.getsize(f"{output_dir}/aviary_out/diversity/singlem_out/metagenome.combined_otu_table.csv") > 0)
+        self.assertTrue(os.path.isfile(f"{output_dir}/aviary_out/diversity/singlem_out/singlem_appraisal.tsv"))
+        self.assertTrue(os.path.getsize(f"{output_dir}/aviary_out/diversity/singlem_out/singlem_appraisal.tsv") > 0)
+        self.assertTrue(os.path.isfile(f"{output_dir}/aviary_out/diversity/singlem_out/singlem_appraise.svg"))
+
     def test_long_read_recovery(self):
         output_dir = os.path.join("example", "test_long_read_recovery")
         self.setup_output_dir(output_dir)
@@ -115,6 +122,13 @@ class Tests(unittest.TestCase):
         self.assertTrue(os.path.isdir(f"{output_dir}/aviary_out"))
         self.assertTrue(os.path.isfile(f"{output_dir}/aviary_out/data/final_contigs.fasta"))
         self.assertTrue(os.path.islink(f"{output_dir}/aviary_out/assembly/final_contigs.fasta"))
+
+        self.assertTrue(os.path.islink(f"{output_dir}/aviary_out/diversity/singlem_out"))
+        self.assertTrue(os.path.isfile(f"{output_dir}/aviary_out/diversity/singlem_out/metagenome.combined_otu_table.csv"))
+        self.assertTrue(os.path.getsize(f"{output_dir}/aviary_out/diversity/singlem_out/metagenome.combined_otu_table.csv") > 0)
+        self.assertTrue(os.path.isfile(f"{output_dir}/aviary_out/diversity/singlem_out/singlem_appraisal.tsv"))
+        self.assertTrue(os.path.getsize(f"{output_dir}/aviary_out/diversity/singlem_out/singlem_appraisal.tsv") > 0)
+        self.assertTrue(os.path.isfile(f"{output_dir}/aviary_out/diversity/singlem_out/singlem_appraise.svg"))
 
     def test_short_read_recovery_fast(self):
         output_dir = os.path.join("example", "test_short_read_recovery_fast")
