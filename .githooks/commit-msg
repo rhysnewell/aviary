@@ -1,6 +1,6 @@
 #!/usr/bin/env bash
 
-commit_re="^(build|chore|ci|docs|feat|fix|perf|refactor|revert|style|test)(\([a-zA-Z 0-9 \-]+\))?!?: .+$"
+commit_re="^(build|chore|ci|docs|feat|fix|perf|refactor|revert|style|test)(\([a-zA-Z 0-9 \-_]+\))?!?: .+$"
 commit_message=$(cat "$1")
 
 if [[ "$commit_message" =~ $commit_re ]]; then
