@@ -118,6 +118,11 @@ def combine_reads(
                     setup_interleave(reads1, reads2, output_fastq, logf)
                     break
             elif "none" not in short_reads_1:
+                
+                if gzip_output and short_reads_1[0].endswith(".gz"):
+                    gzip_output = False
+                    output_fastq = output_fastq + '.gz'
+
                 # otherwise we just need to symlink the first file
                 logf.write(f"Symlinking {short_reads_1[0]} to {output_fastq}\n")
                 if not os.path.exists(short_reads_1[0]):
@@ -126,6 +131,11 @@ def combine_reads(
 
                 os.symlink(short_reads_1[0], output_fastq)
             elif "none" not in short_reads_2:
+
+                if gzip_output and short_reads_2[0].endswith(".gz"):
+                    gzip_output = False
+                    output_fastq = output_fastq + '.gz'
+
                 # otherwise we just need to symlink the first file
                 logf.write(f"Symlinking {short_reads_2[0]} to {output_fastq}\n")
                 if not os.path.exists(short_reads_2[0]):
@@ -139,7 +149,7 @@ def combine_reads(
 
         if gzip_output:
             logf.write(f"Gzipping {output_fastq}\n")
-            pigz_cmd = f"pigz -p {threads} {output_fastq}".split()
+            pigz_cmd = f"pigz -fp {threads} {output_fastq}".split()
             run(pigz_cmd, stderr=logf)
 
 
