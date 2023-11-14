@@ -50,4 +50,4 @@ modules are added to aviary.
 - **CoverM**: Woodcroft B.J., Nissen J., Carmago A., Tyson G.W., Newell. R.J.P., Aroney S. Available at https://github.com/wwood/CoverM
 
 ## Variant calling
-- **Lorikeet**: McMaster E.S., Craig P., Boden M., Tyson G.W., Woodcroft B.J. Available at https://github.com/rhysnewell/Lorikeet
+- **Lorikeet**: Newell R.J.P., McMaster E.S., Craig P., Boden M., Tyson G.W., Woodcroft B.J. Available at https://github.com/rhysnewell/Lorikeet
