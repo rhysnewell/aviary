@@ -5,6 +5,6 @@ channels:
 dependencies:
   - pip
   - python
-  - singlem >= 0.14.0
+  - singlem >= 0.15.1
   - pip:
       - bird-tool-utils
