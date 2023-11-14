@@ -11,7 +11,7 @@ we have provided the following list of citations for you to use in alphabetical 
 modules are added to aviary.
 
 ## Aviary
-- **Aviary**: Newell. R.J.P., Tyson G.W., Woodcroft B.J. Available at https://github.com/rhysnewell/aviary
+- **Aviary**: Newell R.J.P., Aroney S.T.N., Zaugg J., Sternes P., Tyson G.W., Woodcroft B.J. Available at https://github.com/rhysnewell/aviary
 
 ## QC
 - **NanoPack**: De Coster, W., D’Hert, S., Schultz, D. T., Cruts, M. & Van Broeckhoven, C. NanoPack: visualizing and processing long-read sequencing data. Bioinformatics 34, 2666–2669 (2018). https://doi.org/10.1093/bioinformatics/bty149
