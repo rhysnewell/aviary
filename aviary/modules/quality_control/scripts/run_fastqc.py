@@ -26,10 +26,11 @@ def run_fastqc(
     elif short_reads_2 != 'none': # paired end
         pool = mp.Pool(threads)
         if isinstance(short_reads_1, str):
-            reads = [short_reads_2, short_reads_2]
+            reads = [short_reads_1, short_reads_2]
         else:
             threads = max(len(short_reads_1 + short_reads_2) // threads, 1)
             reads = short_reads_1 + short_reads_2
+
         mp_results = [pool.apply_async(spawn_fastqc, args=(read, log, threads))
                     for read in
                     reads]
