@@ -395,7 +395,7 @@ rule checkm_rosella:
     input:
         done = ancient("data/rosella_bins/done")
     params:
-        pplacer_threads = config["pplacer_threads"],
+        pplacer_threads = lambda wildcards, threads: min(threads, config["pplacer_threads"]),
         checkm2_db_path = config["checkm2_db_folder"],
         bin_folder = "data/rosella_bins/",
         extension = "fna",
@@ -420,7 +420,7 @@ rule checkm_metabat2:
     input:
         done = ancient("data/metabat_bins_2/done")
     params:
-        pplacer_threads = config["pplacer_threads"],
+        pplacer_threads = lambda wildcards, threads: min(threads, config["pplacer_threads"]),
         checkm2_db_path = config["checkm2_db_folder"],
         bin_folder = "data/metabat_bins_2/",
         extension = "fa",
@@ -445,7 +445,7 @@ rule checkm_semibin:
     input:
         done = ancient("data/semibin_bins/done")
     params:
-        pplacer_threads = config["pplacer_threads"],
+        pplacer_threads = lambda wildcards, threads: min(threads, config["pplacer_threads"]),
         checkm2_db_path = config["checkm2_db_folder"],
         bin_folder = "data/semibin_bins/output_recluster_bins/",
         extension = "fa",
@@ -483,7 +483,7 @@ rule refine_rosella:
         output_folder = "data/rosella_refined/",
         min_bin_size = config["min_bin_size"],
         max_iterations = config["refinery_max_iterations"],
-        pplacer_threads = config["pplacer_threads"],
+        pplacer_threads = lambda wildcards, threads: min(threads, config["pplacer_threads"]),
         max_contamination = 15,
         final_refining = False
     threads:
@@ -520,7 +520,7 @@ rule refine_metabat2:
         output_folder = "data/metabat2_refined/",
         min_bin_size = config["min_bin_size"],
         max_iterations = config["refinery_max_iterations"],
-        pplacer_threads = config["pplacer_threads"],
+        pplacer_threads = lambda wildcards, threads: min(threads, config["pplacer_threads"]),
         max_contamination = 15,
         final_refining = False
     log:
@@ -552,7 +552,7 @@ rule refine_semibin:
         output_folder = "data/semibin_refined/",
         min_bin_size = config["min_bin_size"],
         max_iterations = config["refinery_max_iterations"],
-        pplacer_threads = config["pplacer_threads"],
+        pplacer_threads = lambda wildcards, threads: min(threads, config["pplacer_threads"]),
         max_contamination = 15,
         final_refining = False
     log:
@@ -671,7 +671,7 @@ rule refine_dastool:
         output_folder = "data/refined_bins/",
         min_bin_size = config["min_bin_size"],
         max_iterations = config["refinery_max_iterations"],
-        pplacer_threads = config["pplacer_threads"],
+        pplacer_threads = lambda wildcards, threads: min(threads, config["pplacer_threads"]),
         max_contamination = 15,
         final_refining = True
     log:
