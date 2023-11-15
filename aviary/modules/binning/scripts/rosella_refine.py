@@ -4,6 +4,7 @@ import shutil
 import glob
 import os
 import pandas.errors as e
+import datetime
 
 def refinery():
     """
@@ -78,7 +79,7 @@ def refinery():
             logf.write("\n")
             logf.write("\n")
 
-            logf.write(f"Refining iteration {current_iteration}\n")
+            logf.write(f"INFO: {datetime.datetime.now().strftime('%H:%M:%S')} - Refining iteration {current_iteration}\n")
 
         # delete previous contaminated set
         if current_iteration != 0:
@@ -99,7 +100,7 @@ def refinery():
         with open(log, "a") as logf:
             # write white space for legibility
             logf.write("\n")
-            logf.write(f"Rosella refine iteration {current_iteration}\n")
+            logf.write(f"INFO: {datetime.datetime.now().strftime('%H:%M:%S')} - Rosella refine iteration {current_iteration}\n")
         
         # Refine the contaminated bins
         kmers = refine(assembly, coverage, kmers, checkm_path,
@@ -120,7 +121,7 @@ def refinery():
             with open(log, "a") as logf:
                 # write white space for legibility
                 logf.write("\n")
-                logf.write(f"CheckM iteration {current_iteration}\n")
+                logf.write(f"INFO: {datetime.datetime.now().strftime('%H:%M:%S')} - CheckM iteration {current_iteration}\n")
             # count how many bins in bin_folder, bins end in 'fna'
             bin_count = 0
             for bin_file in os.listdir(bin_folder):
@@ -171,6 +172,10 @@ def refinery():
                 final_checkm = pd.concat([final_checkm, previous_checkm.copy().loc[previous_checkm[bin_id_accessor_str].isin(bin_ids)]])
 
             previous_checkm_path = checkm_path
+
+            with open(log, "a") as logf:
+                logf.write(f"INFO: {datetime.datetime.now().strftime('%H:%M:%S')} - Ending iteration: {current_iteration}\n")
+
             current_iteration += 1
         except FileNotFoundError:
             with open(log, "a") as logf:
