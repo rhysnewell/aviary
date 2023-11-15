@@ -105,6 +105,19 @@ def refinery():
 
         # retrieve the checkm results for the refined bins
         try:
+            # count how many bins in bin_folder, bins end in 'fna'
+            bin_count = 0
+            for bin_file in os.listdir(bin_folder):
+                if bin_file.endswith("fna"):
+                    bin_count += 1
+            
+            if bin_count == 0:
+                with open(log, "a") as logf:
+                    logf.write("No bins to refine\n")
+                    logf.write("Skipping refinement\n")
+                # No bins to refine, break out and move on
+                break
+
             get_checkm_results(bin_folder, threads, pplacer_threads, log, final_refining)
             # update the checkm results and counter
             checkm_path = f"{bin_folder}/checkm.out"
