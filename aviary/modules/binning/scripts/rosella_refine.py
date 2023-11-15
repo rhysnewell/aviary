@@ -136,7 +136,7 @@ def refinery():
                 break
             else:
                 with open(log, "a") as logf:
-                    logf.write(f"Refining {bin_count} bins\n")
+                    logf.write(f"Running CheckM on {bin_count} bins\n")
 
             get_checkm_results(bin_folder, threads, pplacer_threads, log, final_refining)
             # update the checkm results and counter
