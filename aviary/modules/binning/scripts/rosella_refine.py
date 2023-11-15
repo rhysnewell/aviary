@@ -73,6 +73,12 @@ def refinery():
     unchanged_bins = None
 
     while current_iteration < max_iterations:
+        with open(log, "a") as logf:
+            # write white space for legibility
+            logf.write("\n")
+            logf.write("\n")
+
+            logf.write(f"Refining iteration {current_iteration}\n")
 
         # delete previous contaminated set
         if current_iteration != 0:
@@ -89,6 +95,12 @@ def refinery():
 
         if os.path.exists(output_folder):
             shutil.rmtree(output_folder)
+
+        with open(log, "a") as logf:
+            # write white space for legibility
+            logf.write("\n")
+            logf.write(f"Rosella refine iteration {current_iteration}\n")
+        
         # Refine the contaminated bins
         kmers = refine(assembly, coverage, kmers, checkm_path,
                    contaminated_bin_folder, extension, min_bin_size,
@@ -105,6 +117,10 @@ def refinery():
 
         # retrieve the checkm results for the refined bins
         try:
+            with open(log, "a") as logf:
+                # write white space for legibility
+                logf.write("\n")
+                logf.write(f"CheckM iteration {current_iteration}\n")
             # count how many bins in bin_folder, bins end in 'fna'
             bin_count = 0
             for bin_file in os.listdir(bin_folder):
@@ -117,6 +133,9 @@ def refinery():
                     logf.write("Skipping refinement\n")
                 # No bins to refine, break out and move on
                 break
+            else:
+                with open(log, "a") as logf:
+                    logf.write(f"Refining {bin_count} bins\n")
 
             get_checkm_results(bin_folder, threads, pplacer_threads, log, final_refining)
             # update the checkm results and counter
@@ -156,7 +175,7 @@ def refinery():
         except FileNotFoundError:
             with open(log, "a") as logf:
                 logf.write("No bins to refine\n")
-                logf.write("Skipping refinement\n")
+                logf.write(f"Ending refine on iteration: {current_iteration}\n")
             # No bins to refine, break out and move on
             break
     
