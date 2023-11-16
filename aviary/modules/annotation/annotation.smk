@@ -188,7 +188,7 @@ rule gtdbtk:
         done = "data/gtdbtk/done"
     params:
         gtdbtk_folder = config['gtdbtk_folder'],
-        pplacer_threads = config["pplacer_threads"],
+        pplacer_threads = lambda wildcards, threads: min(threads, config["pplacer_threads"]),
         extension = config['mag_extension']
     conda:
         "../../envs/gtdbtk.yaml"

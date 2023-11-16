@@ -244,9 +244,14 @@ class Processor:
                 self.eggnog = args.eggnog_db_path
             else:
                 self.eggnog = Config.get_software_db_path('EGGNOG_DATA_DIR', '--eggnog-db-path')
+            if args.singlem_metapackage_path is not None:
+                self.singlem = args.singlem_metapackage_path
+            else:
+                self.singlem = Config.get_software_db_path('SINGLEM_METAPACKAGE_PATH', '--singlem-metapackage-path')
         except AttributeError:
             self.gtdbtk = Config.get_software_db_path('GTDBTK_DATA_PATH', '--gtdb-path')
             self.eggnog = Config.get_software_db_path('EGGNOG_DATA_DIR', '--eggnog-db-path')
+            self.singlem = Config.get_software_db_path('SINGLEM_METAPACKAGE_PATH', '--singlem-metapackage-path')
             # self.enrichm = Config.get_software_db_path('ENRICHM_DB', '--enrichm-db-path')
 
         try:
@@ -371,6 +376,7 @@ class Processor:
         conf["min_bin_size"] = int(self.min_bin_size)
         conf["gtdbtk_folder"] = self.gtdbtk
         conf["eggnog_folder"] = self.eggnog
+        conf["singlem_metapackage"] = self.singlem
         conf["strain_analysis"] = self.strain_analysis
         conf["checkm2_db_folder"] = self.checkm2_db
         conf["use_checkm2_scores"] = self.use_checkm2_scores

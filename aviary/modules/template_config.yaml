@@ -54,6 +54,8 @@ checkm2_db_folder:
     none
 eggnog_folder:
     none
+singlem_metapackage:
+    none
 virsorter_data:
     none
 email:
