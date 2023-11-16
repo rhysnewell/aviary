@@ -31,6 +31,7 @@ def refinery():
         kmers = None
     min_bin_size = snakemake.params.min_bin_size
     max_iterations = int(snakemake.params.max_iterations)
+    max_retries = int(snakemake.params.max_retries)
     pplacer_threads = int(snakemake.params.pplacer_threads)
     threads = int(snakemake.threads)
     max_contamination = int(snakemake.params.max_contamination)
@@ -105,7 +106,7 @@ def refinery():
         # Refine the contaminated bins
         kmers = refine(assembly, coverage, kmers, checkm_path,
                    contaminated_bin_folder, extension, min_bin_size,
-                   threads, output_folder, max_contamination, f"{bin_prefix}_refined_{current_iteration + 1}", log)
+                   threads, output_folder, max_contamination, max_retries, f"{bin_prefix}_refined_{current_iteration + 1}", log)
 
         # update the bin folder variable to the current refined folder
         bin_folder = f"{output_folder}/refined_bins/"
@@ -286,11 +287,12 @@ def refine(
     threads,
     output_folder,
     max_contamination,
+    max_retries,
     bin_tag,
     log,
 ):
     if kmers is None:
-        rosella_cmd = f"rosella refine -r {assembly} -C {coverage} -d {bin_folder} -x {extension} --checkm-results {checkm} --max-contamination {max_contamination} --min-bin-size {min_bin_size} -t {threads} -o {output_folder} --bin-tag {bin_tag}".split()
+        rosella_cmd = f"rosella refine -r {assembly} -C {coverage} -d {bin_folder} -x {extension} --checkm-results {checkm} --max-contamination {max_contamination} --max-retries {max_retries} --min-bin-size {min_bin_size} -t {threads} -o {output_folder} --bin-tag {bin_tag}".split()
         with open(log, "a") as logf:
             run(rosella_cmd, stdout=logf, stderr=STDOUT)
 
@@ -298,7 +300,7 @@ def refine(
         shutil.copyfile(f"{output_folder}/kmer_frequencies.tsv", f"data/rosella_bins/kmer_frequencies.tsv")
         kmers = "data/rosella_bins/kmer_frequencies.tsv"
     else:
-        rosella_cmd = f"rosella refine -r {assembly} -C {coverage} --kmer-frequency-file {kmers} -d {bin_folder} -x {extension} --checkm-results {checkm} --max-contamination {max_contamination} --min-bin-size {min_bin_size} -t {threads} -o {output_folder} --bin-tag {bin_tag}".split()
+        rosella_cmd = f"rosella refine -r {assembly} -C {coverage} --kmer-frequency-file {kmers} -d {bin_folder} -x {extension} --checkm-results {checkm} --max-contamination {max_contamination} --max-retries {max_retries} --min-bin-size {min_bin_size} -t {threads} -o {output_folder} --bin-tag {bin_tag}".split()
 
         with open(log, "a") as logf:
             run(rosella_cmd, stdout=logf, stderr=STDOUT)

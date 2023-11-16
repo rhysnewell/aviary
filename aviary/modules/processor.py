@@ -110,6 +110,7 @@ class Processor:
             self.min_bin_size = args.min_bin_size
             self.semibin_model = args.semibin_model
             self.refinery_max_iterations = args.refinery_max_iterations
+            self.refinery_max_retries = args.refinery_max_retries
             self.skip_abundances = args.skip_abundances
 
             self.skip_binners = []
@@ -129,6 +130,7 @@ class Processor:
             self.min_bin_size = 200000
             self.semibin_model = 'global'
             self.refinery_max_iterations = 5
+            self.refinery_max_retries = 3
             self.skip_binners = ["none"]
             self.skip_abundances = False
 
@@ -347,6 +349,7 @@ class Processor:
         conf["skip_abundances"] = self.skip_abundances
         conf["semibin_model"] = self.semibin_model
         conf["refinery_max_iterations"] = self.refinery_max_iterations
+        conf["refinery_max_retries"] = self.refinery_max_retries
         conf["max_threads"] = int(self.threads)
         conf["pplacer_threads"] = int(self.pplacer_threads)
         conf["max_memory"] = int(self.max_memory)

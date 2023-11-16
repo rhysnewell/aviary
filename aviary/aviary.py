@@ -580,6 +580,14 @@ def main():
     )
 
     binning_group.add_argument(
+        '--refinery-max-retries', '--refinery_max_retries',
+        help='Maximum number of retries rosella uses to generate valid reclustering within a refinery iteration.',
+        dest='refinery_max_retries',
+        type=int,
+        default=3
+    )
+
+    binning_group.add_argument(
         '--skip-binners', '--skip_binners', '--skip_binner', '--skip-binner',
         help='Optional list of binning algorithms to skip. Can be any combination of: \n'
              'rosella, semibin, metabat1, metabat2, metabat, vamb, concoct, maxbin2, maxbin \n'
