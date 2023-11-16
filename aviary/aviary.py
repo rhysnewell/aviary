@@ -573,7 +573,7 @@ def main():
 
     binning_group.add_argument(
         '--refinery-max-iterations', '--refinery_max_iterations',
-        help='Maximum number of iterations for Rosella refinery. Set to 0 to skip refinery.',
+        help='Maximum number of iterations for Rosella refinery. Set to 0 to skip refinery. Lower values will run faster but may result in lower quality MAGs.',
         dest='refinery_max_iterations',
         type=int,
         default=5
@@ -581,7 +581,7 @@ def main():
 
     binning_group.add_argument(
         '--refinery-max-retries', '--refinery_max_retries',
-        help='Maximum number of retries rosella uses to generate valid reclustering within a refinery iteration.',
+        help='Maximum number of retries rosella uses to generate valid reclustering within a refinery iteration. Lower values will run faster but may result in lower quality MAGs.',
         dest='refinery_max_retries',
         type=int,
         default=3
