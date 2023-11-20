@@ -39,7 +39,7 @@ modules are added to aviary.
 - **DAS Tool**: Sieber, C.M.K. et al. Recovery of genomes from metagenomes via a dereplication, aggregation and scoring strategy. Nature Microbiology 3, 836–843 (2018). https://doi.org/10.1038/s41564-018-0171-1
 - **SemiBin2**: Pan, S., Zhao, X.M., & Coelho, L.P. (2023). SemiBin2: self-supervised contrastive learning leads to better MAGs for short-and long-read sequencing, Bioinformatics, Volume 39, Issue Supplement_1, June 2023, Pages i21–i29. https://doi.org/10.1093/bioinformatics/btad209
 - **MaxBin 2.0**: Wu, Y.-W., Simmons, B.A. & Singer, S.W. MaxBin 2.0: an automated binning algorithm to recover genomes from multiple metagenomic datasets. Bioinformatics 32, 605–607 (2016). https://doi.org/10.1093/bioinformatics/btv638
-- **Rosella**: https://github.com/rhysnewell/rosella
+- **Rosella**: Newell, R. J. P., Tyson, G. W., & Woodcroft, B. J. (2023). Rosella: Metagenomic binning using UMAP and HDBSCAN. Available at https://github.com/rhysnewell/rosella
 
 ## Annotation
 - **CheckM2**: Chklovski, A., Parks, D.H., Woodcroft, B.J., & Tyson, G.W. (2023). CheckM2: a rapid, scalable and accurate tool for assessing microbial genome quality using machine learning. Nature Methods, 1-10. https://doi.org/10.1038/s41592-023-01940-w
