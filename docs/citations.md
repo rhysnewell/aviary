@@ -47,7 +47,7 @@ modules are added to aviary.
 - **eggNOG mapper 2**: Cantalapiedra, C. P., Hernández-Plaza, A., Letunic, I., Bork, P., & Huerta-Cepas, J. (2021). eggNOG-mapper v2: functional annotation, orthology assignments, and domain prediction at the metagenomic scale. Molecular biology and evolution, 38(12), 5825-5829. https://doi.org/10.1093/molbev/msab293
 - **GTDB-Tk 2**: Chaumeil, P. A., Mussig, A. J., Hugenholtz, P., & Parks, D. H. (2022). GTDB-Tk v2: memory friendly classification with the genome taxonomy database. Bioinformatics, 38(23), 5315-5316. https://doi.org/10.1093/bioinformatics/btac672
 - **GraftM**: Boyd, J. A., Woodcroft, B. J. & Tyson, G. W. GraftM: a tool for scalable, phylogenetically informed classification of genes within metagenomes. Nucleic Acids Research 46, e59 (2018). https://doi.org/10.1093/nar/gky174
-- **CoverM**: Woodcroft B.J., Nissen J., Carmago A., Tyson G.W., Newell. R.J.P., Aroney S. CoverM: Read mapping statistics for metagenomics. Available at https://github.com/wwood/CoverM
+- **CoverM**: Woodcroft B.J., Newell. R.J.P., Aroney S. T. N., Nissen J., Carmago A., Tyson G.W. CoverM: Read mapping statistics for metagenomics. Available at https://github.com/wwood/CoverM
 
 ## Variant calling
 - **Lorikeet**: Newell R.J.P., McMaster E.S., Craig P., Boden M., Tyson G.W., Woodcroft B.J. Available at https://github.com/rhysnewell/Lorikeet
