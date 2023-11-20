@@ -15,8 +15,8 @@ rule rerun_rosella:
         "benchmarks/rosella_rerun.benchmark.txt"
     shell:
         "rm -f data/rosella_bins/*.fna; rm -f data/rosella_bins/checkm.out; rm -rf data/rosella_bins/checkm/; "
-        "rosella bin -r {input.fasta} -i {input.coverage} -t {threads} -o data/rosella_bins "
-        "--min-contig-size {params.min_contig_size} --min-bin-size {params.min_bin_size} --n-neighbors 200 && "
+        "rosella recover -r {input.fasta} -C {input.coverage} -t {threads} -o data/rosella_bins "
+        "--min-contig-size {params.min_contig_size} --min-bin-size {params.min_bin_size} --n-neighbors 100 && "
         "touch data/rosella_bins/rerun"
 
 
@@ -188,9 +188,11 @@ rule rosella_refine_benchmark_1:
         output_folder = "data/rosella_refine_rosella/",
         min_bin_size = config["min_bin_size"],
         max_iterations = 1,
+        max_retries = config["refinery_max_retries"],
         pplacer_threads = config["pplacer_threads"],
         max_contamination = 10,
-        final_refining = False
+        final_refining = False,
+        bin_prefix = "rosella"
     threads:
         config["max_threads"]
     conda:
@@ -213,9 +215,11 @@ rule rosella_refine_benchmark_2:
         output_folder = "data/rosella_refine_metabat2/",
         min_bin_size = config["min_bin_size"],
         max_iterations = 1,
+        max_retries = config["refinery_max_retries"],
         pplacer_threads = config["pplacer_threads"],
         max_contamination = 10,
-        final_refining = False
+        final_refining = False,
+        bin_prefix = "metabat2"
     threads:
         config["max_threads"]
     conda:
@@ -238,9 +242,11 @@ rule rosella_refine_benchmark_3:
         output_folder = "data/rosella_refine_semibin/",
         min_bin_size = config["min_bin_size"],
         max_iterations = 1,
+        max_retries = config["refinery_max_retries"],
         pplacer_threads = config["pplacer_threads"],
         max_contamination = 10,
-        final_refining = False
+        final_refining = False,
+        bin_prefix = "semibin2"
     threads:
         config["max_threads"]
     conda:
@@ -264,9 +270,11 @@ rule rosella_refine_benchmark_4:
         output_folder = "data/rosella_refine_das_tool/",
         min_bin_size = config["min_bin_size"],
         max_iterations = 1,
+        max_retries = config["refinery_max_retries"],
         pplacer_threads = config["pplacer_threads"],
         max_contamination = 10,
-        final_refining = True
+        final_refining = True,
+        bin_prefix = "dastool"
     threads:
         config["max_threads"]
     conda:
@@ -644,51 +652,6 @@ rule das_tool_no_refine:
          -o data/das_tool_bins_no_refine/das_tool && \
         touch data/das_tool_bins_no_refine/done
         """
-
-# rule das_tool_no_refine_with_semibin:
-#     """
-#     Runs dasTool on the output of all binning algorithms. If a binner failed to produce bins then their output is ignored
-#     """
-#     input:
-#         fasta = config["fasta"],
-#         metabat2_done = "data/metabat_bins_2/done",
-#         semibin_done = "data/semibin_bins/done",
-#         rosella_done = "data/rosella_bins/done",
-#         concoct_done = "data/concoct_bins/done",
-#         maxbin_done = "data/maxbin2_bins/done",
-#         metabat_sspec = "data/metabat_bins_sspec/done",
-#         metabat_spec = "data/metabat_bins_spec/done",
-#         metabat_ssens = "data/metabat_bins_ssens/done",
-#         metabat_sense = "data/metabat_bins_sens/done",
-#         # rosella_done = "data/rosella_refined/done",
-#         vamb_done = "data/vamb_bins/done",
-#     output:
-#         das_tool_done = "data/das_tool_bins_wr_and_sb/done"
-#     threads:
-#         config["max_threads"]
-#     conda:
-#         "../binning/envs/das_tool.yaml"
-#     benchmark:
-#         "benchmarks/das_tool.benchmark.txt"
-#     shell:
-#         """
-#         Fasta_to_Scaffolds2Bin.sh -i data/metabat_bins_sspec -e fa > data/metabat_bins_sspec.tsv;
-#         Fasta_to_Scaffolds2Bin.sh -i data/metabat_bins_ssens -e fa > data/metabat_bins_ssens.tsv;
-#         Fasta_to_Scaffolds2Bin.sh -i data/metabat_bins_sens -e fa > data/metabat_bins_sens.tsv;
-#         Fasta_to_Scaffolds2Bin.sh -i data/metabat_bins_spec -e fa > data/metabat_bins_spec.tsv;
-#         Fasta_to_Scaffolds2Bin.sh -i data/concoct_bins -e fa > data/concoct_bins.tsv;
-#         Fasta_to_Scaffolds2Bin.sh -i data/maxbin2_bins -e fasta > data/maxbin_bins.tsv;
-#         Fasta_to_Scaffolds2Bin.sh -i data/vamb_bins/bins -e fna > data/vamb_bins.tsv;
-#         Fasta_to_Scaffolds2Bin.sh -i data/rosella_bins/ -e fna > data/rosella_bins.tsv;
-#         Fasta_to_Scaffolds2Bin.sh -i data/metabat_bins_2/ -e fa > data/metabat2_bins.tsv;
-#         Fasta_to_Scaffolds2Bin.sh -i data/semibin_bins/output_recluster_bins/ -e fa > data/semibin_bins.tsv;
-#         scaffold2bin_files=$(find data/*bins*.tsv -not -empty -exec ls {{}} \; | tr "\n" ',' | sed "s/,$//g");
-#         DAS_Tool --search_engine diamond --write_bin_evals 1 --write_bins 1 -t {threads} --score_threshold -42 \
-#          -i $scaffold2bin_files \
-#          -c {input.fasta} \
-#          -o data/das_tool_bins_wr_and_sb/das_tool && \
-#         touch data/das_tool_bins_wr_and_sb/done
-#         """
 
 rule checkm_das_tool_no_refine:
     input:

@@ -25,7 +25,7 @@ channels:
   - defaults
 ```
 
-#### Option 1) Install from Bioconda
+#### Option 1: Install from Bioconda
 
 Conda can handle the creation of the environment for you directly:
 
@@ -38,7 +38,7 @@ Or install into existing environment:
 conda install -c bioconda aviary
 ```
 
-#### Option 2) Install from pip
+#### Option 2: Install from pip
 
 Create the environment using the `aviary.yml` file then install from pip:
 ```
@@ -47,7 +47,7 @@ conda activate aviary
 pip install aviary-genome
 ```
 
-#### Option 3) Install from source
+#### Option 3: Install from source
 
 Initial requirements for aviary can be downloaded using the `aviary.yml`:
 ```
