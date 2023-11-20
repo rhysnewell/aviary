@@ -2,6 +2,35 @@ from subprocess import Popen, PIPE, run, STDOUT
 from pathlib import Path
 import os
 from typing import List
+import gzip
+
+def interleave(f1, f2, output_fastq:str):
+    """Interleaves two (open) fastq files.
+    """
+    with open(output_fastq, 'ab') as output_f:
+        while True:
+            line = f1.readline()
+            if line.strip() == b"":
+                break
+            output_f.write(line)
+            for _ in range(3):
+                output_f.write(f1.readline())
+            for _ in range(4):
+                output_f.write(f2.readline())
+
+def setup_interleave(reads_1: str, reads_2: str, output_fastq: str, logf):
+    logf.write(f"Interleaving reads\n")
+    logf.write(f"Reads 1: {reads_1}\n")
+    logf.write(f"Reads 2: {reads_2}\n")
+    logf.write(f"Output: {output_fastq}\n")
+    if reads_1[-2:] == "gz":
+        with gzip.open(reads_1) as f1:
+            with gzip.open(reads_2) as f2:
+                interleave(f1, f2, output_fastq)
+    else:
+        with open(reads_1, 'rb') as f1:
+            with open(reads_2, 'rb') as f2:
+                    interleave(f1, f2, output_fastq)
 
 def cat_reads(read_path: str, output_path: str, threads: int, log: str):
     """
@@ -32,7 +61,8 @@ def combine_reads(
     short_reads_2,
     output_fastq: str,
     coassemble: bool,
-    log_file: str
+    log_file: str,
+    threads: int,
 ):
     """
     Combine reads before QC
@@ -45,6 +75,11 @@ def combine_reads(
         logf.write(f"Combining reads before quality control\n")
         logf.write(f"Coassemble: {coassemble}\n")
 
+        gzip_output = False
+        if output_fastq.endswith(".gz"):
+            output_fastq = output_fastq[:-3]
+            gzip_output = True
+
         if "none" in short_reads_1 and "none" in short_reads_2:
             logf.write(f"Creating dummy files")
             Path(output_fastq).touch()
@@ -53,26 +88,20 @@ def combine_reads(
         # we've got to concatenate the files together
         if coassemble:
             # reads 1 first
-            for reads in short_reads_1:
-                if reads == "none":
+            for reads_1, reads_2 in zip(short_reads_1, short_reads_2):
+                if reads_1 == "none" or reads_2 == "none":
                     continue
                 
-                if not os.path.exists(reads):
-                    logf.write(f"Short read file {reads} does not exist\n")
+                if not os.path.exists(reads_1):
+                    logf.write(f"Short read file {reads_1} does not exist\n")
                     exit(1)
-
-                cat_reads(reads, output_fastq, threads, log)
-
-            # reads 2 second
-            for reads in short_reads_2:
-                if reads == "none":
-                    continue
-
-                if not os.path.exists(reads):
-                    logf.write(f"Short read file {reads} does not exist\n")
+                
+                if not os.path.exists(reads_2):
+                    logf.write(f"Short read file {reads_2} does not exist\n")
                     exit(1)
+                
+                setup_interleave(reads_1, reads_2, output_fastq, logf)
 
-                cat_reads(reads, output_fastq, threads, log)
         
         else:
             # if we have paired reads, we need to concatenate them together
@@ -86,10 +115,14 @@ def combine_reads(
                         logf.write(f"Short read file {reads2} does not exist\n")
                         exit(1)
 
-                    cat_reads(reads1, output_fastq, threads, log)
-                    cat_reads(reads2, output_fastq, threads, log)
+                    setup_interleave(reads1, reads2, output_fastq, logf)
                     break
             elif "none" not in short_reads_1:
+                
+                if gzip_output and short_reads_1[0].endswith(".gz"):
+                    gzip_output = False
+                    output_fastq = output_fastq + '.gz'
+
                 # otherwise we just need to symlink the first file
                 logf.write(f"Symlinking {short_reads_1[0]} to {output_fastq}\n")
                 if not os.path.exists(short_reads_1[0]):
@@ -98,6 +131,11 @@ def combine_reads(
 
                 os.symlink(short_reads_1[0], output_fastq)
             elif "none" not in short_reads_2:
+
+                if gzip_output and short_reads_2[0].endswith(".gz"):
+                    gzip_output = False
+                    output_fastq = output_fastq + '.gz'
+
                 # otherwise we just need to symlink the first file
                 logf.write(f"Symlinking {short_reads_2[0]} to {output_fastq}\n")
                 if not os.path.exists(short_reads_2[0]):
@@ -108,6 +146,11 @@ def combine_reads(
             else:
                 logf.write(f"Both reads_1 and reads_2 are None, Error has occured in read concatenation.\n")
                 exit(1)
+
+        if gzip_output:
+            logf.write(f"Gzipping {output_fastq}\n")
+            pigz_cmd = f"pigz -fp {threads} {output_fastq}".split()
+            run(pigz_cmd, stderr=logf)
 
 
 
@@ -234,7 +277,7 @@ def filter_illumina_reference(
 ):
     
     if skip_qc or ("none" in short_reads_1 and "none" in short_reads_2):
-        combine_reads(short_reads_1, short_reads_2, output_fastq, coassemble, log)
+        combine_reads(short_reads_1, short_reads_2, output_fastq, coassemble, log, threads)
         with open(log, 'a') as logf:
             logf.write(f"Skipping quality control\n")
         Path(filtered).touch()
@@ -244,12 +287,12 @@ def filter_illumina_reference(
     # run fastp for quality control of reads
     se1_string = None
     if "none" not in short_reads_1:
-        combine_reads(short_reads_1, ["none"], "data/short_reads.pre_qc.1.fastq.gz", coassemble, log)
+        combine_reads(short_reads_1, ["none"], "data/short_reads.pre_qc.1.fastq.gz", coassemble, log, threads)
         se1_string = "data/short_reads.pre_qc.1.fastq.gz"
     
     se2_string = None
     if "none" not in short_reads_2:
-        combine_reads(["none"], short_reads_2, "data/short_reads.pre_qc.2.fastq.gz", coassemble, log)
+        combine_reads(["none"], short_reads_2, "data/short_reads.pre_qc.2.fastq.gz", coassemble, log, threads)
         se2_string = "data/short_reads.pre_qc.2.fastq.gz"
     
     run_fastp(

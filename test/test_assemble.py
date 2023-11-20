@@ -18,6 +18,7 @@ class Tests(unittest.TestCase):
                 f"GTDBTK_DATA_PATH=. "
                 f"CHECKM2DB=. "
                 f"EGGNOG_DATA_DIR=. "
+                f"SINGLEM_METAPACKAGE_PATH=. "
                 f"aviary assemble "
                 f"-1 {FORWARD_READS} "
                 f"-2 {REVERSE_READS} "

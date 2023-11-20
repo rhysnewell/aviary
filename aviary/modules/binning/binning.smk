@@ -37,6 +37,8 @@ onstart:
         sys.stderr.write("gtdbtk_folder does not point to a folder\n")
     if busco_folder != "none" and not os.path.exists(busco_folder):
         sys.stderr.write("busco_folder does not point to a folder\n")
+    if singlem_metapackage != "none" and not os.path.exists(singlem_metapackage):
+        sys.stderr.write("singlem_metapackage does not point to a folder\n")
 
 if config['fasta'] == 'none':
     config['fasta'] = 'assembly/final_contigs.fasta'
@@ -343,7 +345,7 @@ rule rosella:
         min_contig_size = config["min_contig_size"],
         min_bin_size = config["min_bin_size"]
     output:
-        # kmers = "data/rosella_bins/rosella_kmer_table.tsv",
+        # kmers = "data/rosella_bins/kmer_frequencies.tsv",
         done = "data/rosella_bins/done"
     conda:
         "envs/rosella.yaml"
@@ -358,8 +360,8 @@ rule rosella:
         "benchmarks/rosella.benchmark.txt"
     shell:
         "rm -rf data/rosella_bins/; "
-        "rosella recover -r {input.fasta} -i {input.coverage} -t {threads} -o data/rosella_bins "
-        "--min-contig-size {params.min_contig_size} --min-bin-size {params.min_bin_size} --n-neighbors 200 > {log} 2>&1 && "
+        "rosella recover -r {input.fasta} -C {input.coverage} -t {threads} -o data/rosella_bins "
+        "--min-contig-size {params.min_contig_size} --min-bin-size {params.min_bin_size} --n-neighbors 100 > {log} 2>&1 && "
         "touch {output.done} || touch {output.done}"
 
 
@@ -395,7 +397,7 @@ rule checkm_rosella:
     input:
         done = ancient("data/rosella_bins/done")
     params:
-        pplacer_threads = config["pplacer_threads"],
+        pplacer_threads = lambda wildcards, threads: min(threads, config["pplacer_threads"]),
         checkm2_db_path = config["checkm2_db_folder"],
         bin_folder = "data/rosella_bins/",
         extension = "fna",
@@ -420,7 +422,7 @@ rule checkm_metabat2:
     input:
         done = ancient("data/metabat_bins_2/done")
     params:
-        pplacer_threads = config["pplacer_threads"],
+        pplacer_threads = lambda wildcards, threads: min(threads, config["pplacer_threads"]),
         checkm2_db_path = config["checkm2_db_folder"],
         bin_folder = "data/metabat_bins_2/",
         extension = "fa",
@@ -445,7 +447,7 @@ rule checkm_semibin:
     input:
         done = ancient("data/semibin_bins/done")
     params:
-        pplacer_threads = config["pplacer_threads"],
+        pplacer_threads = lambda wildcards, threads: min(threads, config["pplacer_threads"]),
         checkm2_db_path = config["checkm2_db_folder"],
         bin_folder = "data/semibin_bins/output_recluster_bins/",
         extension = "fa",
@@ -472,7 +474,7 @@ rule refine_rosella:
         rosella = ancient('data/rosella_bins/done'),
         coverage = ancient("data/coverm.cov"),
         fasta = ancient(config["fasta"]),
-        # kmers = "data/rosella_bins/rosella_kmer_table.tsv"
+        # kmers = "data/rosella_bins/kmer_frequencies.tsv"
     output:
         'data/rosella_refined/done'
     benchmark:
@@ -483,9 +485,11 @@ rule refine_rosella:
         output_folder = "data/rosella_refined/",
         min_bin_size = config["min_bin_size"],
         max_iterations = config["refinery_max_iterations"],
-        pplacer_threads = config["pplacer_threads"],
+        max_retries = config["refinery_max_retries"],
+        pplacer_threads = lambda wildcards, threads: min(threads, config["pplacer_threads"]),
         max_contamination = 15,
-        final_refining = False
+        final_refining = False,
+        bin_prefix = "rosella"
     threads:
         min(config["max_threads"], 16)
     resources:
@@ -504,7 +508,7 @@ rule refine_metabat2:
         rosella = ancient('data/metabat_bins_2/done'),
         coverage = ancient("data/coverm.cov"),
         fasta = ancient(config["fasta"]),
-        # kmers = "data/rosella_bins/rosella_kmer_table.tsv"
+        # kmers = "data/rosella_bins/kmer_frequencies.tsv"
     output:
         'data/metabat2_refined/done'
     threads:
@@ -520,9 +524,11 @@ rule refine_metabat2:
         output_folder = "data/metabat2_refined/",
         min_bin_size = config["min_bin_size"],
         max_iterations = config["refinery_max_iterations"],
-        pplacer_threads = config["pplacer_threads"],
+        max_retries = config["refinery_max_retries"],
+        pplacer_threads = lambda wildcards, threads: min(threads, config["pplacer_threads"]),
         max_contamination = 15,
-        final_refining = False
+        final_refining = False,
+        bin_prefix = "metabat2"
     log:
         "logs/refine_metabat2.log"
     conda:
@@ -536,7 +542,7 @@ rule refine_semibin:
         rosella = ancient('data/semibin_bins/done'),
         coverage = ancient("data/coverm.cov"),
         fasta = ancient(config["fasta"]),
-        # kmers = "data/rosella_bins/rosella_kmer_table.tsv"
+        # kmers = "data/rosella_bins/kmer_frequencies.tsv"
     threads:
         min(config["max_threads"], 16)
     resources:
@@ -552,9 +558,11 @@ rule refine_semibin:
         output_folder = "data/semibin_refined/",
         min_bin_size = config["min_bin_size"],
         max_iterations = config["refinery_max_iterations"],
-        pplacer_threads = config["pplacer_threads"],
+        max_retries = config["refinery_max_retries"],
+        pplacer_threads = lambda wildcards, threads: min(threads, config["pplacer_threads"]),
         max_contamination = 15,
-        final_refining = False
+        final_refining = False,
+        bin_prefix = "semibin2"
     log:
         "logs/refine_semibin.log"
     conda:
@@ -654,7 +662,7 @@ rule refine_dastool:
         das_tool = 'data/das_tool_bins_pre_refine/done',
         coverage = ancient("data/coverm.cov"),
         fasta = ancient(config["fasta"]),
-        # kmers = "data/rosella_bins/rosella_kmer_table.tsv"
+        # kmers = "data/rosella_bins/kmer_frequencies.tsv"
     threads:
         min(config["max_threads"], 16)
     resources:
@@ -671,9 +679,11 @@ rule refine_dastool:
         output_folder = "data/refined_bins/",
         min_bin_size = config["min_bin_size"],
         max_iterations = config["refinery_max_iterations"],
-        pplacer_threads = config["pplacer_threads"],
+        max_retries = config["refinery_max_retries"],
+        pplacer_threads = lambda wildcards, threads: min(threads, config["pplacer_threads"]),
         max_contamination = 15,
-        final_refining = True
+        final_refining = True,
+        bin_prefix = "dastool"
     log:
         "logs/refine_dastool.log"
     conda:
@@ -769,13 +779,14 @@ rule singlem_appraise:
     log:
         "data/singlem_out/singlem_log.txt"
     shell:
-        "singlem pipe --threads {threads} --genome-fasta-file bins/final_bins/*.fna --otu-table data/singlem_out/genomes.otu_table.csv > {log} 2>&1; "
-        "singlem pipe --threads {threads} --genome-fasta-file {params.fasta} --otu-table data/singlem_out/assembly.otu_table.csv >> {log} 2>&1; "
+        # We use bash -c so that a non-zero exitstatus of the non-final commands doesn't cause the rule (and therefore aviary) to fail
+        "bash -c 'singlem pipe --threads {threads} --genome-fasta-file bins/final_bins/*.fna --otu-table data/singlem_out/genomes.otu_table.csv && "
+        "singlem pipe --threads {threads} --genome-fasta-file {params.fasta} --otu-table data/singlem_out/assembly.otu_table.csv && "
         "singlem appraise --metagenome-otu-tables {input.metagenome} --genome-otu-tables data/singlem_out/genomes.otu_table.csv "
         "--assembly-otu-table data/singlem_out/assembly.otu_table.csv "
         "--plot data/singlem_out/singlem_appraise.svg --output-binned-otu-table data/singlem_out/binned.otu_table.csv "
-        "--output-unbinned-otu-table data/singlem_out/unbinned.otu_table.csv > data/singlem_out/singlem_appraisal.tsv 2>> {log} || "
-        "echo 'SingleM Errored, please check data/singlem_out/singlem_log.txt' && touch data/singlem_out/singlem_appraisal.tsv"
+        "--output-unbinned-otu-table data/singlem_out/unbinned.otu_table.csv > data/singlem_out/singlem_appraisal.tsv' 2> {log} || "
+        "echo 'SingleM Errored, please check data/singlem_out/singlem_log.txt'; touch data/singlem_out/singlem_appraisal.tsv"
 
 
 rule recover_mags:

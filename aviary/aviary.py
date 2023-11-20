@@ -538,6 +538,13 @@ def main():
     )
 
     annotation_group.add_argument(
+        '--singlem-metapackage-path', '--singlem_metapackage_path',
+        help='Path to the local SingleM metapackage',
+        dest='singlem_metapackage_path',
+        default=None,
+    )
+
+    annotation_group.add_argument(
         '--checkm2-db-path', '--checkm2_db_path',
         help='Path to Checkm2 Database',
         dest='checkm2_db_path',
@@ -573,10 +580,18 @@ def main():
 
     binning_group.add_argument(
         '--refinery-max-iterations', '--refinery_max_iterations',
-        help='Maximum number of iterations for Rosella refinery. Set to 0 to skip refinery.',
+        help='Maximum number of iterations for Rosella refinery. Set to 0 to skip refinery. Lower values will run faster but may result in lower quality MAGs.',
         dest='refinery_max_iterations',
         type=int,
         default=5
+    )
+
+    binning_group.add_argument(
+        '--refinery-max-retries', '--refinery_max_retries',
+        help='Maximum number of retries rosella uses to generate valid reclustering within a refinery iteration. Lower values will run faster but may result in lower quality MAGs.',
+        dest='refinery_max_retries',
+        type=int,
+        default=3
     )
 
     binning_group.add_argument(
@@ -1174,6 +1189,13 @@ def main():
     )
 
     configure_options.add_argument(
+        '--singlem-metapackage-path', '--singlem_metapackage_path',
+        help='Path to the local SingleM metapackage',
+        dest='singlem_metapackage_path',
+        required=False,
+    )
+
+    configure_options.add_argument(
         '-w', '--workflow',
         help=argparse.SUPPRESS,
         dest='workflow',
@@ -1223,14 +1245,18 @@ def main():
         if args.eggnog_db_path is not None:
             Config.set_db_path(args.eggnog_db_path, db_name='EGGNOG_DATA_DIR')
 
+        if args.singlem_metapackage_path is not None:
+            Config.set_db_path(args.singlem_metapackage_path, db_name='SINGLEM_METAPACKAGE_PATH')
+
         logging.info("The current aviary environment variables are:")
         logging.info(f"CONDA_ENV_PATH: {Config.get_software_db_path('CONDA_ENV_PATH', '--conda-prefix')}")
         logging.info(f"TMPDIR: {Config.get_software_db_path('TMPDIR', '--tmpdir')}")
         logging.info(f"GTDBTK_DATA_PATH: {Config.get_software_db_path('GTDBTK_DATA_PATH', '--gtdb-path')}")
         logging.info(f"EGGNOG_DATA_DIR: {Config.get_software_db_path('EGGNOG_DATA_DIR', '--eggnog-db-path')}")
         logging.info(f"CHECKM2DB: {Config.get_software_db_path('CHECKM2DB', '--checkm2-db-path')}")
+        logging.info(f"SINGLEM_METAPACKAGE_PATH: {Config.get_software_db_path('SINGLEM_METAPACKAGE_PATH', '--singlem-metapackage-path')}")
         if not args.download:
-            logging.info("All paths set. Exitting without downloading databases. If you wish to download databases use --download")
+            logging.info("All paths set. Exiting without downloading databases. If you wish to download databases use --download")
             sys.exit(0)
 
     # else:
