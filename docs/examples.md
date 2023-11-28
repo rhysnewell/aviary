@@ -106,6 +106,9 @@ use the the `aviary configure` module to update the environment variables used b
 These environment variables can also be configured manually, just set the following variables in your `.bashrc` file:
 ```
 GTDBTK_DATA_PATH
+EGGNOG_DATA_DIR
+SINGLEM_METAPACKAGE_PATH
+CHECKM2DB
 CONDA_ENV_PATH
 ```
 
