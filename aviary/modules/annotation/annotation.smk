@@ -42,7 +42,8 @@ rule download_databases:
     input:
         'logs/download_gtdb.log',
         'logs/download_eggnog.log',
-        'logs/download_checkm2.log'
+        'logs/download_singlem.log',
+        'logs/download_checkm2.log',
     threads: 1
     log:
         temp("logs/download.log")
@@ -110,6 +111,18 @@ rule download_gtdb:
         'else '
         '  echo "[INFO] - Conda not found in PATH, please be sure to set the TARGET_DIR envrionment variable"; '
         'fi; '
+
+rule download_singlem_metapackage:
+    params:
+        metapackage_folder = os.path.expanduser(config['singlem_metapackage'])
+    conda:
+        "../../envs/singlem.yaml"
+    threads: 1
+    log:
+        'logs/download_singlem.log'
+    shell:
+        'singlem data --output-directory {params.metapackage_folder}_tmp 2> {log} && '
+        'mv {params.metapackage_folder}_tmp/*.smpkg.zb/payload_directory {params.metapackage_folder}'
 
 rule download_checkm2:
     params:

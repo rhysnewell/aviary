@@ -266,7 +266,7 @@ def main():
 
     base_group.add_argument(
         '--download', '--download',
-        help='Downloads the required GTDB, EggNOG, & CheckM2 databases if required',
+        help='Downloads the required GTDB, EggNOG, SingleM, & CheckM2 databases if required',
         type=str2bool,
         nargs='?',
         const=True,
