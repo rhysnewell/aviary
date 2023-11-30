@@ -235,6 +235,8 @@ class Processor:
         except AttributeError:
             self.mag_directory = 'none'
 
+        self.download = args.download
+
         try:
             if args.gtdb_path is not None:
                 self.gtdbtk = args.gtdb_path
@@ -374,6 +376,7 @@ class Processor:
         conf["long_contig_size"] = self.long_contig_size
         conf["min_contig_size"] = int(self.min_contig_size)
         conf["min_bin_size"] = int(self.min_bin_size)
+        conf["download"] = self.download
         conf["gtdbtk_folder"] = self.gtdbtk
         conf["eggnog_folder"] = self.eggnog
         conf["singlem_metapackage"] = self.singlem

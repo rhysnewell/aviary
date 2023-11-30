@@ -40,10 +40,10 @@ if config['mag_extension'] == 'none':
 
 rule download_databases:
     input:
-        'logs/download_gtdb.log',
-        'logs/download_eggnog.log',
-        'logs/download_singlem.log',
-        'logs/download_checkm2.log',
+        'logs/download_gtdb.log' if "gtdb" in config["download"] else [],
+        'logs/download_eggnog.log' if "eggnog" in config["download"] else [],
+        'logs/download_singlem.log' if "singlem" in config["download"] else [],
+        'logs/download_checkm2.log' if "checkm2" in config["download"] else [],
     threads: 1
     log:
         temp("logs/download.log")
