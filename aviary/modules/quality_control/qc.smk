@@ -28,7 +28,7 @@ rule qc_short_reads:
     conda:
         "../../envs/minimap2.yaml"
     threads:
-        min(config["max_threads"], 64)
+        config["max_threads"]
     resources:
         mem_mb = lambda wildcards, attempt: min(int(config["max_memory"])*1024, 512*1024*attempt),
         runtime = lambda wildcards, attempt: 8*60*attempt,
@@ -53,7 +53,7 @@ rule qc_long_reads:
         reference_filter = [] if config["reference_filter"] == "none" else config["reference_filter"],
         skip_qc = config["skip_qc"]
     threads:
-        min(config["max_threads"], 16)
+        config["max_threads"]
     resources:
         mem_mb = lambda wildcards, attempt: min(int(config["max_memory"])*1024, 128*1024*attempt),
         runtime = lambda wildcards, attempt: 12*60*attempt,
@@ -77,7 +77,7 @@ rule fastqc:
     benchmark:
         "benchmarks/fastqc_short.benchmark.txt"
     threads:
-        min(config["max_threads"], 16)
+        config["max_threads"]
     resources:
         mem_mb = lambda wildcards, attempt: min(int(config["max_memory"])*1024, 128*1024*attempt),
         runtime = lambda wildcards, attempt: 12*60*attempt,
@@ -96,7 +96,7 @@ rule fastqc_long:
     benchmark:
         "benchmarks/fastqc_long.benchmark.txt"
     threads:
-        min(config["max_threads"], 16)
+        config["max_threads"]
     resources:
         mem_mb = lambda wildcards, attempt: min(int(config["max_memory"])*1024, 128*1024*attempt),
         runtime = lambda wildcards, attempt: 12*60*attempt,
@@ -116,7 +116,7 @@ rule nanoplot:
     benchmark:
         "benchmarks/nanoplot.benchmark.txt"
     threads:
-        min(config["max_threads"], 16)
+        config["max_threads"]
     resources:
         mem_mb = lambda wildcards, attempt: min(int(config["max_memory"])*1024, 128*1024*attempt),
         runtime = lambda wildcards, attempt: 12*60*attempt,
@@ -136,7 +136,7 @@ rule metaquast:
     output:
         "www/metaquast/report.html"
     threads:
-        min(config["max_threads"], 16)
+        config["max_threads"]
     resources:
         mem_mb = lambda wildcards, attempt: min(int(config["max_memory"])*1024, 128*1024*attempt),
         runtime = lambda wildcards, attempt: 12*60*attempt,
@@ -158,7 +158,7 @@ rule read_fraction_recovered:
     conda:
         "../../envs/coverm.yaml"
     threads:
-        min(config["max_threads"], 64)
+        config["max_threads"]
     resources:
         mem_mb = lambda wildcards, attempt: min(int(config["max_memory"])*1024, 512*1024*attempt),
         runtime = lambda wildcards, attempt: 24*60 + 24*60*attempt,

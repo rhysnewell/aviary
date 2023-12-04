@@ -138,21 +138,21 @@ def main():
 
     base_group.add_argument(
         '-t', '--max-threads', '--max_threads',
-        help='Maximum number of threads given to any particular process',
+        help='Maximum number of threads given to any particular process. If max_threads > n_cores then n_cores will be bumped up to max_threads. Useful if you want more fine grain control over the number of threads used by each process.',
         dest='max_threads',
         default=8,
     )
 
-    base_group.add_argument(
-        '-p', '--pplacer-threads', '--pplacer_threads',
-        help=argparse.SUPPRESS,
-        dest='pplacer_threads',
-        default=8,
-    )
+    # base_group.add_argument(
+    #     '-p', '--pplacer-threads', '--pplacer_threads',
+    #     help=argparse.SUPPRESS,
+    #     dest='pplacer_threads',
+    #     default=8,
+    # )
 
     base_group.add_argument(
         '-n', '--n-cores', '--n_cores',
-        help='Maximum number of cores available for use. Must be >= to max_threads',
+        help='Maximum number of cores available for use. Setting to multiples of max_threads will allow for multiple processes to be run in parallel.',
         dest='n_cores',
         default=16,
     )
@@ -1261,6 +1261,9 @@ def main():
 
     # else:
     args = manage_env_vars(args)
+    if int(args.max_threads) > int(args.n_cores):
+        args.n_cores = args.max_threads
+
     prefix = args.output
     if not os.path.exists(prefix):
         os.makedirs(prefix)
