@@ -143,13 +143,6 @@ def main():
         default=8,
     )
 
-    # base_group.add_argument(
-    #     '-p', '--pplacer-threads', '--pplacer_threads',
-    #     help=argparse.SUPPRESS,
-    #     dest='pplacer_threads',
-    #     default=8,
-    # )
-
     base_group.add_argument(
         '-n', '--n-cores', '--n_cores',
         help='Maximum number of cores available for use. Setting to multiples of max_threads will allow for multiple processes to be run in parallel.',
