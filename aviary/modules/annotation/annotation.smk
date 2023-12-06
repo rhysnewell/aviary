@@ -147,7 +147,7 @@ rule checkm2:
         mag_extension = config['mag_extension'],
         checkm2_db_path = config["checkm2_db_folder"]
     threads:
-        min(config["max_threads"], 16)
+        config["max_threads"]
     resources:
         mem_mb = lambda wildcards, attempt: min(int(config["max_memory"])*1024, 128*1024*attempt),
         runtime = lambda wildcards, attempt: 8*60*attempt,
@@ -175,7 +175,7 @@ rule eggnog:
     output:
         done = 'data/eggnog/done'
     threads:
-        min(config["max_threads"], 64)
+        config["max_threads"]
     resources:
         mem_mb = lambda wildcards, attempt: min(int(config["max_memory"])*1024, 512*1024*attempt),
         runtime = lambda wildcards, attempt: 24*60*attempt,
@@ -206,7 +206,7 @@ rule gtdbtk:
     conda:
         "../../envs/gtdbtk.yaml"
     threads:
-        min(config["max_threads"], 32)
+        config["max_threads"]
     resources:
         mem_mb = lambda wildcards, attempt: min(int(config["max_memory"])*1024, 256*1024*attempt),
         runtime = lambda wildcards, attempt: 12*60*attempt,

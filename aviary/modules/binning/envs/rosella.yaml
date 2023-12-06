@@ -7,7 +7,7 @@ dependencies:
   - python >= 3.8, <= 3.10
   - gcc
   - cxx-compiler
-  - rosella >= 0.5.1
+  - rosella >= 0.5.2
   - numba >= 0.53, <= 0.57
   - numpy <= 1.24
   - joblib >= 1.1.0, <= 1.3

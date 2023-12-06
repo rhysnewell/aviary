@@ -7,7 +7,7 @@ def run_singlem(
     long_reads,
     short_reads_1,
     short_reads_2,
-    pplacer_threads: int,
+    threads: int,
     log: str,
 ):
     try:
@@ -18,17 +18,17 @@ def run_singlem(
 
     singlem_output_list = []
     if long_reads != "none":
-        singlem_pipe_cmd = f"singlem pipe --threads {pplacer_threads} --sequences {' '.join(long_reads)} --otu-table data/singlem_out/metagenome.longread_otu_table.csv".split()
+        singlem_pipe_cmd = f"singlem pipe --threads {threads} --sequences {' '.join(long_reads)} --otu-table data/singlem_out/metagenome.longread_otu_table.csv".split()
         with open(log, "a") as logf:
             run(singlem_pipe_cmd, stdout=logf, stderr=STDOUT)
 
     if short_reads_2 != "none":
-        singlem_pipe_cmd = f"singlem pipe --threads {pplacer_threads} --forward {' '.join(short_reads_1)} --reverse {' '.join(short_reads_2)} --otu-table data/singlem_out/metagenome.shortread_otu_table.csv".split()
+        singlem_pipe_cmd = f"singlem pipe --threads {threads} --forward {' '.join(short_reads_1)} --reverse {' '.join(short_reads_2)} --otu-table data/singlem_out/metagenome.shortread_otu_table.csv".split()
         with open(log, "a") as logf:
             run(singlem_pipe_cmd, stdout=logf, stderr=STDOUT)
 
     elif short_reads_1 != "none":
-        singlem_pipe_cmd = f"singlem pipe --threads {pplacer_threads} --sequences {' '.join(short_reads_1)} --otu-table data/singlem_out/metagenome.shortread_otu_table.csv".split()
+        singlem_pipe_cmd = f"singlem pipe --threads {threads} --sequences {' '.join(short_reads_1)} --otu-table data/singlem_out/metagenome.shortread_otu_table.csv".split()
         with open(log, "a") as logf:
             run(singlem_pipe_cmd, stdout=logf, stderr=STDOUT)
 
@@ -57,7 +57,7 @@ if __name__ == '__main__':
     long_reads = snakemake.config['long_reads']
     short_reads_1 = snakemake.config['short_reads_1']
     short_reads_2 = snakemake.config['short_reads_2']
-    pplacer_threads = snakemake.config["pplacer_threads"]
+    pplacer_threads = snakemake.threads
     log = snakemake.log[0]
 
     with open(log, "w") as logf: pass
