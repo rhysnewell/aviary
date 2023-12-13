@@ -629,32 +629,15 @@ rule das_tool:
         mem_mb = lambda wildcards, attempt: min(int(config["max_memory"])*1024, 512*1024*attempt),
         runtime = lambda wildcards, attempt: 12*60*attempt,
     output:
-        das_tool_done = "data/das_tool_bins_pre_refine/done"
+        touch("data/das_tool_bins_pre_refine/done")
     conda:
         "envs/das_tool.yaml"
     log:
         "logs/das_tool.log"
     benchmark:
         "benchmarks/das_tool.benchmark.txt"
-    shell:
-        """
-        Fasta_to_Scaffolds2Bin.sh -i data/metabat_bins_sspec -e fa > data/metabat_bins_sspec.tsv 2> {log}; 
-        Fasta_to_Scaffolds2Bin.sh -i data/metabat_bins_ssens -e fa > data/metabat_bins_ssens.tsv 2>> {log}; 
-        Fasta_to_Scaffolds2Bin.sh -i data/metabat_bins_sens -e fa > data/metabat_bins_sens.tsv 2>> {log}; 
-        Fasta_to_Scaffolds2Bin.sh -i data/metabat_bins_spec -e fa > data/metabat_bins_spec.tsv 2>> {log}; 
-        Fasta_to_Scaffolds2Bin.sh -i data/concoct_bins -e fa > data/concoct_bins.tsv 2>> {log}; 
-        Fasta_to_Scaffolds2Bin.sh -i data/maxbin2_bins -e fasta > data/maxbin_bins.tsv 2>> {log}; 
-        Fasta_to_Scaffolds2Bin.sh -i data/vamb_bins/bins -e fna > data/vamb_bins.tsv 2>> {log}; 
-        Fasta_to_Scaffolds2Bin.sh -i data/rosella_refined/final_bins/ -e fna > data/rosella_refined_bins.tsv 2>> {log}; 
-        Fasta_to_Scaffolds2Bin.sh -i data/metabat2_refined/final_bins/ -e fna > data/metabat2_refined_bins.tsv 2>> {log}; 
-        Fasta_to_Scaffolds2Bin.sh -i data/semibin_refined/final_bins/ -e fna > data/semibin_refined_bins.tsv 2>> {log}; 
-        scaffold2bin_files=$(find data/*bins*.tsv -not -empty -exec ls {{}} \; | tr "\n" ',' | sed "s/,$//g"); 
-        DAS_Tool --search_engine diamond --write_bin_evals 1 --write_bins 1 -t {threads} --score_threshold -42 \
-         -i $scaffold2bin_files \
-         -c {input.fasta} \
-         -o data/das_tool_bins_pre_refine/das_tool >> {log} 2>&1 && \
-        touch data/das_tool_bins_pre_refine/done
-        """
+    script:
+        "scripts/das_tool.py"
 
 rule refine_dastool:
     input:
