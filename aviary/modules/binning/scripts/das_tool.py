@@ -38,9 +38,6 @@ if __name__ == '__main__':
     if len(binners) == 0:
         logging.error("All binners have been skipped, so DAS_tool cannot be run.")
         sys.exit(1)
-    if len(binners) == 1:
-        logging.error("Only one binner has been specified, so DAS_tool cannot be run. Please specify at least two binners.")
-        sys.exit(1)
 
     bin_definition_files = []
     for binner, extension, bin_definition_file in binners:

@@ -140,7 +140,7 @@ class Tests(unittest.TestCase):
             f"-1 {data}/wgsim.1.fq.gz "
             f"-2 {data}/wgsim.2.fq.gz "
             f"--skip-abundances "
-            f"--skip-binners concoct rosella vamb maxbin2 semibin "
+            f"--skip-binners concoct rosella vamb maxbin2 metabat "
             f"--skip-qc "
             f"--refinery-max-iterations 0 "
             f"--conda-prefix {path_to_conda} "
