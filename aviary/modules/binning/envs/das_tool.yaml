@@ -3,3 +3,4 @@ channels:
   - bioconda
 dependencies:
   - das_tool = 1.1.2
+  - extern = 0.4.1
