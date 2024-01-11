@@ -2,9 +2,11 @@
 # ruleorder: filtlong_no_reference > link_reads
 
 onsuccess:
+    shell("chmod g+w {log}")
     print("Aviary finished, no error")
 
 onerror:
+    shell("chmod g+w {log}")
     print("An error occurred")
 
 onstart:
@@ -44,6 +46,7 @@ onstart:
 from snakemake.utils import min_version
 import os
 min_version("6.0")
+os.umask(0o002)
 
 module qc:
     snakefile: "quality_control/qc.smk"

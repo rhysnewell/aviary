@@ -100,6 +100,17 @@ def str2bool(v):
     else:
         raise argparse.ArgumentTypeError('Boolean value expected.')
 
+def add_workflow_arg(parser, default, help=None):
+    if help is None:
+        help = 'Main workflow to run. This is the snakemake target rule to run.'
+    parser.add_argument(
+        '-w', '--workflow',
+        help=help,
+        dest='workflow',
+        nargs="+",
+        default=default,
+    )
+
 def main():
     if len(sys.argv) == 1 or sys.argv[1] == '-h' or sys.argv[1] == '--help':
         phelp()
@@ -874,13 +885,7 @@ def main():
 
 
 
-    assemble_options.add_argument(
-        '-w', '--workflow',
-        help='Main workflow to run',
-        dest='workflow',
-        nargs="+",
-        default=['complete_assembly_with_qc'],
-    )
+    add_workflow_arg(assemble_options, ['complete_assembly_with_qc'])
 
     ##########################  ~ RECOVER ~   ###########################
 
@@ -904,13 +909,7 @@ def main():
         required=False,
     )
 
-    recover_options.add_argument(
-        '-w', '--workflow',
-        help='Main workflow to run',
-        dest='workflow',
-        nargs="+",
-        default=['recover_mags'],
-    )
+    add_workflow_arg(recover_options, ['recover_mags'])
 
     recover_options.add_argument(
         '--perform-strain-analysis', '--perform_strain_analysis',
@@ -944,13 +943,7 @@ def main():
         required=False,
     )
 
-    annotate_options.add_argument(
-        '-w', '--workflow',
-        help='Main workflow to run',
-        dest='workflow',
-        nargs="+",
-        default=['annotate'],
-    )
+    add_workflow_arg(annotate_options, ['annotate'])
 
     ##########################  ~ diversity ~   ###########################
 
@@ -975,13 +968,7 @@ def main():
         required=False,
     )
 
-    diversity_options.add_argument(
-        '-w', '--workflow',
-        help='Main workflow to run',
-        dest='workflow',
-        nargs="+",
-        default=['lorikeet'],
-    )
+    add_workflow_arg(diversity_options, ['lorikeet'])
 
     diversity_options.add_argument(
         '--perform-strain-analysis', '--perform_strain_analysis',
@@ -1017,13 +1004,7 @@ def main():
         required=True,
     )
 
-    cluster_options.add_argument(
-        '-w', '--workflow',
-        help='Main workflow to run',
-        dest='workflow',
-        nargs="+",
-        default=['complete_cluster'],
-    )
+    add_workflow_arg(cluster_options, ['complete_cluster'])
 
     ##########################  ~ VIRAL ~   ###########################
 
@@ -1039,13 +1020,7 @@ def main():
  
                                           ''')
 
-    viral_options.add_argument(
-        '-w', '--workflow',
-        help='Main workflow to run',
-        dest='workflow',
-        nargs="+",
-        default=['create_webpage_genotype'],
-    )
+    add_workflow_arg(viral_options, ['create_webpage_genotype'])
 
     ##########################   ~ COMPLETE ~  ###########################
 
@@ -1070,13 +1045,7 @@ def main():
         required=False,
     )
 
-    complete_options.add_argument(
-        '-w', '--workflow',
-        help='Main workflow to run',
-        dest='workflow',
-        nargs="+",
-        default=['get_bam_indices', 'recover_mags', 'annotate', 'lorikeet'],
-    )
+    add_workflow_arg(complete_options, ['get_bam_indices', 'recover_mags', 'annotate', 'lorikeet'])
 
     ##########################  ~ ISOLATE ~  ###########################
 
@@ -1092,13 +1061,7 @@ def main():
                                  
                                              ''')
 
-    isolate_options.add_argument(
-        '-w', '--workflow',
-        help='Main workflows to run',
-        dest='workflow',
-        nargs="+",
-        default=['circlator'],
-    )
+    add_workflow_arg(isolate_options, ['circlator'])
 
     ##########################   ~ BATCH ~  ###########################
 
@@ -1173,12 +1136,10 @@ def main():
         default='95'
     )
 
-    batch_options.add_argument(
-        '-w', '--workflow',
-        help='Main workflow to run for each sample',
-        dest='workflow',
-        nargs="+",
-        default=['get_bam_indices', 'recover_mags', 'annotate', 'lorikeet'],
+    add_workflow_arg(
+        batch_options,
+        ['get_bam_indices', 'recover_mags', 'annotate', 'lorikeet'],
+        help='Main workflow (snakemake target rule) to run for each sample'
     )
 
     ##########################   ~ configure ~  ###########################
@@ -1230,13 +1191,7 @@ def main():
         required=False,
     )
 
-    configure_options.add_argument(
-        '-w', '--workflow',
-        help=argparse.SUPPRESS,
-        dest='workflow',
-        nargs="+",
-        default=['download_databases'],
-    )
+    add_workflow_arg(configure_options, ['download_databases'], help=argparse.SUPPRESS)
 
     ###########################################################################
     # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ #
@@ -1345,6 +1300,8 @@ def manage_env_vars(args):
             args.eggnog_db_path = Config.get_software_db_path('EGGNOG_DATA_DIR', '--eggnog-db-path')
         if args.checkm2_db_path is None:
             args.checkm2_db_path = Config.get_software_db_path('CHECKM2DB', '--checkm2-db-path')
+        if args.singlem_metapackage_path is None:
+            args.singlem_db_path = Config.get_software_db_path('SINGLEM_METAPACKAGE_PATH', '--singlem-metapackage-path')
     except AttributeError:
         pass
 
