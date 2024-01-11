@@ -3,7 +3,6 @@ import os
 from pathlib import Path
 import logging
 import gzip
-from itertools import izip
 import subprocess
 import tempfile
 import glob
@@ -109,7 +108,7 @@ class ReadContainer:
                     read_pattern.append(0)
         
         
-        for r1, r2 in izip(read_pattern[::2], read_pattern[1::2]):
+        for r1, r2 in zip(read_pattern[::2], read_pattern[1::2]):
             if r1 == 0 or r2 == 0:
                 return False
             if r1 == r2:
