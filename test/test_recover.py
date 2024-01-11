@@ -82,7 +82,7 @@ class Tests(unittest.TestCase):
                 f"-2 {REVERSE_READS} "
                 f"--output {tmpdir}/test "
                 f"--conda-prefix {path_to_conda} "
-                f"--skip-binners metabat concoct "
+                f"--skip-binners metabat "
                 f"--dryrun --tmpdir {tmpdir} "
                 f"--snakemake-cmds \" --quiet\" "
             )
@@ -96,7 +96,7 @@ class Tests(unittest.TestCase):
             self.assertTrue("metabat_ssens" not in output)
             self.assertTrue("metabat_sspec" not in output)
             self.assertTrue("metabat2" not in output)
-            self.assertTrue("maxbin2" in output)
+            self.assertTrue("maxbin2" not in output)
             self.assertTrue("rosella" in output)
             self.assertTrue("semibin" in output)
             self.assertTrue("vamb" in output)
@@ -133,7 +133,7 @@ class Tests(unittest.TestCase):
                 f"EGGNOG_DATA_DIR=. "
                 f"SINGLEM_METAPACKAGE_PATH=. "
                 f"aviary recover "
-                f"--workflow recover_mags_no_singlem "
+                f"--skip-singlem "
                 f"--assembly {ASSEMBLY} "
                 f"-1 {FORWARD_READS} "
                 f"-2 {REVERSE_READS} "
@@ -152,11 +152,11 @@ class Tests(unittest.TestCase):
             self.assertTrue("metabat_ssens" in output)
             self.assertTrue("metabat_sspec" in output)
             self.assertTrue("metabat2" in output)
-            self.assertTrue("maxbin2" in output)
+            self.assertTrue("maxbin2" not in output)
             self.assertTrue("rosella" in output)
             self.assertTrue("semibin" in output)
             self.assertTrue("vamb" in output)
-            self.assertTrue("concoct" in output)
+            self.assertTrue("concoct" not in output)
             self.assertTrue("das_tool" in output)
 
             # Refinery
@@ -176,7 +176,7 @@ class Tests(unittest.TestCase):
             self.assertTrue("singlem_pipe_reads" not in output)
             self.assertTrue("singlem_appraise" not in output)
             self.assertTrue("finalise_stats" in output)
-            self.assertTrue("recover_mags_no_singlem" in output)
+            self.assertTrue("recover_mags" in output)
 
             # Unnecessary
             self.assertTrue("complete_assembly_with_qc" not in output)
@@ -208,11 +208,11 @@ class Tests(unittest.TestCase):
             self.assertTrue("metabat_ssens" in output)
             self.assertTrue("metabat_sspec" in output)
             self.assertTrue("metabat2" in output)
-            self.assertTrue("maxbin2" in output)
+            self.assertTrue("maxbin2" not in output)
             self.assertTrue("rosella" in output)
             self.assertTrue("semibin" in output)
             self.assertTrue("vamb" in output)
-            self.assertTrue("concoct" in output)
+            self.assertTrue("concoct" not in output)
             self.assertTrue("das_tool" in output)
 
             # Refinery
@@ -231,6 +231,119 @@ class Tests(unittest.TestCase):
             self.assertTrue("get_abundances" not in output)
             self.assertTrue("singlem_pipe_reads" in output)
             self.assertTrue("singlem_appraise" in output)
+            self.assertTrue("finalise_stats" in output)
+            self.assertTrue("recover_mags" in output)
+
+            # Unnecessary
+            self.assertTrue("complete_assembly_with_qc" not in output)
+
+    def test_recover_no_taxonomy(self):
+        with tempfile.TemporaryDirectory() as tmpdir:
+            cmd = (
+                f"GTDBTK_DATA_PATH=. "
+                f"CHECKM2DB=. "
+                f"EGGNOG_DATA_DIR=. "
+                f"SINGLEM_METAPACKAGE_PATH=. "
+                f"aviary recover "
+                f"--skip-taxonomy "
+                f"--assembly {ASSEMBLY} "
+                f"-1 {FORWARD_READS} "
+                f"-2 {REVERSE_READS} "
+                f"--output {tmpdir}/test "
+                f"--conda-prefix {path_to_conda} "
+                f"--dryrun --tmpdir {tmpdir} "
+                f"--snakemake-cmds \" --quiet\" "
+            )
+            output = extern.run(cmd)
+
+            # Binners
+            self.assertTrue("prepare_binning_files" in output)
+            self.assertTrue("get_bam_indices" in output)
+            self.assertTrue("metabat_sens" in output)
+            self.assertTrue("metabat_spec" in output)
+            self.assertTrue("metabat_ssens" in output)
+            self.assertTrue("metabat_sspec" in output)
+            self.assertTrue("metabat2" in output)
+            self.assertTrue("maxbin2" not in output)
+            self.assertTrue("rosella" in output)
+            self.assertTrue("semibin" in output)
+            self.assertTrue("vamb" in output)
+            self.assertTrue("concoct" not in output)
+            self.assertTrue("das_tool" in output)
+
+            # Refinery
+            self.assertTrue("checkm_metabat2" in output)
+            self.assertTrue("refine_metabat2" in output)
+            self.assertTrue("checkm_rosella" in output)
+            self.assertTrue("refine_rosella" in output)
+            self.assertTrue("checkm_semibin" in output)
+            self.assertTrue("refine_semibin" in output)
+            self.assertTrue("checkm_das_tool" in output)
+            self.assertTrue("refine_dastool" in output)
+
+            # Extras
+            self.assertTrue("checkm2" in output)
+            self.assertTrue("gtdbtk" not in output)
+            self.assertTrue("get_abundances" in output)
+            self.assertTrue("singlem_pipe_reads" in output)
+            self.assertTrue("singlem_appraise" in output)
+            self.assertTrue("finalise_stats" in output)
+            self.assertTrue("recover_mags" in output)
+
+            # Unnecessary
+            self.assertTrue("complete_assembly_with_qc" not in output)
+
+    def test_recover_binning_only(self):
+        with tempfile.TemporaryDirectory() as tmpdir:
+            cmd = (
+                f"GTDBTK_DATA_PATH=. "
+                f"CHECKM2DB=. "
+                f"EGGNOG_DATA_DIR=. "
+                f"SINGLEM_METAPACKAGE_PATH=. "
+                f"aviary recover "
+                f"--binning-only "
+                f"--assembly {ASSEMBLY} "
+                f"-1 {FORWARD_READS} "
+                f"-2 {REVERSE_READS} "
+                f"--output {tmpdir}/test "
+                f"--conda-prefix {path_to_conda} "
+                f"--dryrun --tmpdir {tmpdir} "
+                f"--extra-binners maxbin concoct "
+                f"--snakemake-cmds \" --quiet\" "
+            )
+            output = extern.run(cmd)
+
+            # Binners
+            self.assertTrue("prepare_binning_files" in output)
+            self.assertTrue("get_bam_indices" in output)
+            self.assertTrue("metabat_sens" in output)
+            self.assertTrue("metabat_spec" in output)
+            self.assertTrue("metabat_ssens" in output)
+            self.assertTrue("metabat_sspec" in output)
+            self.assertTrue("metabat2" in output)
+            self.assertTrue("maxbin2" not in output)
+            self.assertTrue("rosella" in output)
+            self.assertTrue("semibin" in output)
+            self.assertTrue("vamb" in output)
+            self.assertTrue("concoct" not in output)
+            self.assertTrue("das_tool" in output)
+
+            # Refinery
+            self.assertTrue("checkm_metabat2" in output)
+            self.assertTrue("refine_metabat2" in output)
+            self.assertTrue("checkm_rosella" in output)
+            self.assertTrue("refine_rosella" in output)
+            self.assertTrue("checkm_semibin" in output)
+            self.assertTrue("refine_semibin" in output)
+            self.assertTrue("checkm_das_tool" in output)
+            self.assertTrue("refine_dastool" in output)
+
+            # Extras
+            self.assertTrue("checkm2" in output)
+            self.assertTrue("gtdbtk" not in output)
+            self.assertTrue("get_abundances" not in output)
+            self.assertTrue("singlem_pipe_reads" not in output)
+            self.assertTrue("singlem_appraise" not in output)
             self.assertTrue("finalise_stats" in output)
             self.assertTrue("recover_mags" in output)
 
