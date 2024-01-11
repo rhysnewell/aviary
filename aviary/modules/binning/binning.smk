@@ -712,8 +712,8 @@ rule finalise_stats:
     input:
         checkm1_done = "bins/checkm.out",
         checkm2_done = "bins/checkm2_output/quality_report.tsv",
-        coverage_file = "data/coverm_abundances.tsv" if not (config["skip_abundances"] or config["binning_only"]) else [],
-        gtdbtk_done = "data/gtdbtk/done" if not (config["binning_only"] or config["skip_taxonomy"]) else []
+        coverage_file = "data/coverm_abundances.tsv" if not config["skip_abundances"] else [],
+        gtdbtk_done = "data/gtdbtk/done" if not config["skip_taxonomy"] else []
     output:
         bin_stats = "bins/bin_info.tsv",
         checkm_minimal = "bins/checkm_minimal.tsv"
@@ -792,10 +792,10 @@ rule singlem_appraise:
 rule recover_mags:
     input:
         final_bins = "bins/bin_info.tsv",
-        gtdbtk = "data/gtdbtk/done" if not (config["binning_only"] or config["skip_taxonomy"]) else [],
-        coverm = "data/coverm_abundances.tsv" if not (config["skip_abundances"] or config["binning_only"]) else [],
+        gtdbtk = "data/gtdbtk/done" if not config["skip_taxonomy"] else [],
+        coverm = "data/coverm_abundances.tsv" if not config["skip_abundances"] else [],
         contig_coverage = "data/coverm.cov",
-        singlem = "data/singlem_out/singlem_appraisal.tsv" if not (config["skip_singlem"] or config["binning_only"]) else [],
+        singlem = "data/singlem_out/singlem_appraisal.tsv" if not config["skip_singlem"] else [],
     conda:
         "../../envs/coverm.yaml"
     output:
@@ -809,7 +809,7 @@ rule recover_mags_no_singlem:
     input:
         final_bins = "bins/bin_info.tsv",
         gtdbtk = [],
-        coverm = "data/coverm_abundances.tsv" if not (config["skip_abundances"] or config["binning_only"]) else [],
+        coverm = "data/coverm_abundances.tsv" if not config["skip_abundances"] else [],
         contig_coverage = "data/coverm.cov",
         singlem = [],
     conda:

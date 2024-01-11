@@ -591,8 +591,8 @@ def main():
         '--extra-binners', '--extra_binners', '--extra-binner', '--extra_binner',
         help='Optional list of extra binning algorithms to run. Can be any combination of: \n'
              'maxbin, maxbin2, concoct \n'
-             'These binners are skipped by default as they can have long runtimes'
-             'Capitals will be auto-corrected. N.B. specifying "maxbin" and "maxbin2" are equivalent \n',
+             'These binners are skipped by default as they can have long runtimes \n'
+             'N.B. specifying "maxbin" and "maxbin2" are equivalent \n',
         dest='extra_binners',
         nargs='*',
         choices=["maxbin", "maxbin2", "concoct"]
@@ -602,8 +602,7 @@ def main():
         '--skip-binners', '--skip_binners', '--skip_binner', '--skip-binner',
         help='Optional list of binning algorithms to skip. Can be any combination of: \n'
              'rosella, semibin, metabat1, metabat2, metabat, vamb \n'
-             'Capitals will be auto-corrected. N.B. specifying "metabat" will skip both \n'
-             'MetaBAT1 and MetaBAT2.',
+             'N.B. specifying "metabat" will skip both MetaBAT1 and MetaBAT2. \n',
         dest='skip_binners',
         nargs='*',
         choices=["rosella", "semibin", "metabat1", "metabat2", "metabat", "vamb"]
