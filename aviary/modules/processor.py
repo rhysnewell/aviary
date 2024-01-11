@@ -112,16 +112,30 @@ class Processor:
             self.refinery_max_iterations = args.refinery_max_iterations
             self.refinery_max_retries = args.refinery_max_retries
             self.skip_abundances = args.skip_abundances
+            self.skip_taxonomy = args.skip_taxonomy
+            self.skip_singlem = args.skip_singlem
+            if args.binning_only:
+                self.skip_abundances = True
+                self.skip_taxonomy = True
+                self.skip_singlem = True
+            self.binning_only = args.binning_only
 
-            self.skip_binners = []
+            self.skip_binners = ["maxbin2", "concoct"]
+            if args.extra_binners:
+                for binner in args.extra_binners:
+                    if binner == "maxbin" or binner == "maxbin2":
+                        self.skip_binners.remove("maxbin2")
+                    elif binner == "concoct":
+                        self.skip_binners.remove("concoct")
+                    else:
+                        logging.warning(f"Unknown extra binner {binner} specified. Skipping...")
+
             if args.skip_binners:
                 for binner in args.skip_binners:
                     if binner == "metabat":
                         self.skip_binners.extend(["metabat_sens", "metabat_ssens", "metabat_spec", "metabat_sspec", "metabat2"])
                     elif binner == "metabat1":
                         self.skip_binners.extend(["metabat_sens", "metabat_ssens", "metabat_spec", "metabat_sspec"])
-                    elif binner == "maxbin":
-                        self.skip_binners.append("maxbin2")
                     else:
                         self.skip_binners.append(binner)
 
@@ -133,6 +147,7 @@ class Processor:
             self.refinery_max_retries = 3
             self.skip_binners = ["none"]
             self.skip_abundances = False
+            self.binning_only = False
 
         try:
             self.assembly = args.assembly
@@ -354,6 +369,9 @@ class Processor:
         conf["gsa_mappings"] = self.gsa_mappings
         conf["skip_binners"] = self.skip_binners
         conf["skip_abundances"] = self.skip_abundances
+        conf["skip_taxonomy"] = self.skip_taxonomy
+        conf["skip_singlem"] = self.skip_singlem
+        conf["binning_only"] = self.binning_only
         conf["semibin_model"] = self.semibin_model
         conf["refinery_max_iterations"] = self.refinery_max_iterations
         conf["refinery_max_retries"] = self.refinery_max_retries

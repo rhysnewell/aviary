@@ -588,22 +588,65 @@ def main():
     )
 
     binning_group.add_argument(
+        '--extra-binners', '--extra_binners', '--extra-binner', '--extra_binner',
+        help='Optional list of extra binning algorithms to run. Can be any combination of: \n'
+             'maxbin, maxbin2, concoct \n'
+             'These binners are skipped by default as they can have long runtimes'
+             'Capitals will be auto-corrected. N.B. specifying "maxbin" and "maxbin2" are equivalent \n',
+        dest='extra_binners',
+        nargs='*',
+        choices=["maxbin", "maxbin2", "concoct"]
+    )
+
+    binning_group.add_argument(
         '--skip-binners', '--skip_binners', '--skip_binner', '--skip-binner',
         help='Optional list of binning algorithms to skip. Can be any combination of: \n'
-             'rosella, semibin, metabat1, metabat2, metabat, vamb, concoct, maxbin2, maxbin \n'
+             'rosella, semibin, metabat1, metabat2, metabat, vamb \n'
              'Capitals will be auto-corrected. N.B. specifying "metabat" will skip both \n'
              'MetaBAT1 and MetaBAT2.',
         dest='skip_binners',
-        nargs='*'
-        # default=["maxbin2"]
+        nargs='*',
+        choices=["rosella", "semibin", "metabat1", "metabat2", "metabat", "vamb"]
+    )
+
+    binning_group.add_argument(
+        '--binning-only', '--binning_only',
+        help='Only run up to the binning stage. Do not run SingleM, GTDB-tk, or CoverM',
+        type=str2bool,
+        nargs='?',
+        const=True,
+        dest='binning_only',
+        default=False,
     )
 
     binning_group.add_argument(
         '--skip-abundances', '--skip_abundances',
         help='Skip CoverM post-binning abundance calculations.',
         dest='skip_abundances',
+        type=str2bool,
+        nargs='?',
+        const=True,
         default=False,
-        action="store_true",
+    )
+
+    binning_group.add_argument(
+        '--skip-taxonomy', '--skip_taxonomy',
+        help='Skip GTDB-tk post-binning taxonomy assignment.',
+        dest='skip_taxonomy',
+        type=str2bool,
+        nargs='?',
+        const=True,
+        default=False,
+    )
+
+    binning_group.add_argument(
+        '--skip-singlem', '--skip_singlem',
+        help='Skip SingleM post-binning recovery assessment.',
+        dest='skip_singlem',
+        type=str2bool,
+        nargs='?',
+        const=True,
+        default=False,
     )
 
     ####################################################################

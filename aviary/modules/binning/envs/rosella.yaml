@@ -3,6 +3,7 @@ channels:
   - numba
   - bioconda
 dependencies:
-  - rosella >= 0.5.2
+  - rosella >= 0.5.3
+  - flight-genome >= 1.6.3
   - coverm >= 0.6.1
   - checkm-genome==1.1.3

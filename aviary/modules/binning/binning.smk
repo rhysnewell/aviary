@@ -712,8 +712,8 @@ rule finalise_stats:
     input:
         checkm1_done = "bins/checkm.out",
         checkm2_done = "bins/checkm2_output/quality_report.tsv",
-        coverage_file = "data/coverm_abundances.tsv" if not config["skip_abundances"] else [],
-        gtdbtk_done = "data/gtdbtk/done"
+        coverage_file = "data/coverm_abundances.tsv" if not (config["skip_abundances"] or config["binning_only"]) else [],
+        gtdbtk_done = "data/gtdbtk/done" if not (config["binning_only"] or config["skip_taxonomy"]) else []
     output:
         bin_stats = "bins/bin_info.tsv",
         checkm_minimal = "bins/checkm_minimal.tsv"
@@ -763,7 +763,7 @@ rule singlem_pipe_reads:
 rule singlem_appraise:
     input:
         metagenome = "data/singlem_out/metagenome.combined_otu_table.csv",
-        gtdbtk_done = "data/gtdbtk/done",
+        # gtdbtk_done = "data/gtdbtk/done",
         bins_complete = "bins/checkm.out"
     output:
         "data/singlem_out/singlem_appraisal.tsv"
@@ -792,46 +792,34 @@ rule singlem_appraise:
 rule recover_mags:
     input:
         final_bins = "bins/bin_info.tsv",
-        gtdbtk = "data/gtdbtk/done",
-        coverm = "data/coverm_abundances.tsv" if not config["skip_abundances"] else [],
-        singlem = "data/singlem_out/singlem_appraisal.tsv"
+        gtdbtk = "data/gtdbtk/done" if not (config["binning_only"] or config["skip_taxonomy"]) else [],
+        coverm = "data/coverm_abundances.tsv" if not (config["skip_abundances"] or config["binning_only"]) else [],
+        contig_coverage = "data/coverm.cov",
+        singlem = "data/singlem_out/singlem_appraisal.tsv" if not (config["skip_singlem"] or config["binning_only"]) else [],
     conda:
         "../../envs/coverm.yaml"
     output:
-        bins = "bins/done",
-        diversity = 'diversity/done'
+        bins = "bins/done"
     threads:
         config["max_threads"]
-    shell:
-        "cd bins/; "
-        "ln -s ../data/coverm_abundances.tsv ./; "
-        "ln -s ../data/coverm.cov ./; "
-        "cd ../; "
-        "ln -sr data/singlem_out/ diversity || echo 'SingleM linked'; "
-        "ln -sr data/gtdbtk taxonomy || echo 'GTDB-tk linked'; "
-        "touch bins/done; "
-        "touch diversity/done; "
-        "rm -f data/binning_bams/*bam; "
-        "rm -f data/binning_bams/*bai; "
+    script:
+        "scripts/finalise_recover.py"
 
 rule recover_mags_no_singlem:
     input:
         final_bins = "bins/bin_info.tsv",
-        coverm = "data/coverm_abundances.tsv" if not config["skip_abundances"] else [],
+        gtdbtk = [],
+        coverm = "data/coverm_abundances.tsv" if not (config["skip_abundances"] or config["binning_only"]) else [],
+        contig_coverage = "data/coverm.cov",
+        singlem = [],
     conda:
         "../../envs/coverm.yaml"
     output:
         bins = "bins/done",
     threads:
         config["max_threads"]
-    shell:
-        "cd bins/; "
-        "ln -s ../data/coverm_abundances.tsv ./; "
-        "ln -s ../data/coverm.cov ./; "
-        "cd ../; "
-        "touch bins/done; "
-        "rm -f data/binning_bams/*bam; "
-        "rm -f data/binning_bams/*bai; "
+    script:
+        "scripts/finalise_stats.py"
 
 # Special rule to help out with a buggy output
 rule dereplicate_and_get_abundances_paired:
