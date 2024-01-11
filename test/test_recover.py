@@ -40,11 +40,11 @@ class Tests(unittest.TestCase):
             self.assertTrue("metabat_ssens" in output)
             self.assertTrue("metabat_sspec" in output)
             self.assertTrue("metabat2" in output)
-            self.assertTrue("maxbin2" in output)
+            self.assertTrue("maxbin2" not in output)
             self.assertTrue("rosella" in output)
             self.assertTrue("semibin" in output)
             self.assertTrue("vamb" in output)
-            self.assertTrue("concoct" in output)
+            self.assertTrue("concoct" not in output)
             self.assertTrue("das_tool" in output)
 
             # Refinery
@@ -308,7 +308,6 @@ class Tests(unittest.TestCase):
                 f"--output {tmpdir}/test "
                 f"--conda-prefix {path_to_conda} "
                 f"--dryrun --tmpdir {tmpdir} "
-                f"--extra-binners maxbin concoct "
                 f"--snakemake-cmds \" --quiet\" "
             )
             output = extern.run(cmd)
