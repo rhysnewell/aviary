@@ -177,8 +177,8 @@ class SingleMContainer:
         while len(self.process_queue) > max_processes:
             for i, (p, f) in enumerate(self.process_queue):
                 if p.poll() is not None:
-                    f.seek(0)
-                    logf.write(f.read())
+                    for line in f:
+                        logf.write(line)
                     f.close()
                     self.process_queue.pop(i)
                     break
