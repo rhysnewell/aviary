@@ -123,6 +123,7 @@ class Processor:
             self.skip_binners = ["maxbin2", "concoct"]
             if args.extra_binners:
                 for binner in args.extra_binners:
+                    binner = binner.lower()   
                     if binner == "maxbin" or binner == "maxbin2":
                         self.skip_binners.remove("maxbin2")
                     elif binner == "concoct":
@@ -132,6 +133,7 @@ class Processor:
 
             if args.skip_binners:
                 for binner in args.skip_binners:
+                    binner = binner.lower()   
                     if binner == "metabat":
                         self.skip_binners.extend(["metabat_sens", "metabat_ssens", "metabat_spec", "metabat_sspec", "metabat2"])
                     elif binner == "metabat1":
