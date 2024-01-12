@@ -786,7 +786,7 @@ rule recover_mags:
     threads:
         config["max_threads"]
     script:
-        "scripts/finalise_recover.py"
+        "scripts/finalise_recovery.py"
 
 rule recover_mags_no_singlem:
     input:
@@ -802,7 +802,7 @@ rule recover_mags_no_singlem:
     threads:
         config["max_threads"]
     script:
-        "scripts/finalise_stats.py"
+        "scripts/finalise_recovery.py"
 
 # Special rule to help out with a buggy output
 rule dereplicate_and_get_abundances_paired:

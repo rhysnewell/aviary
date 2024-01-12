@@ -2,10 +2,12 @@ import os
 from pathlib import Path
 import glob
 
-def check_and_remove_base_file(file_path):
-    file_name = os.path.basename(coverage_file)
+def check_and_remove_base_file(file_path) -> str:
+    file_name = os.path.basename(file_path)
     if os.path.exists(file_name):
         os.remove(file_name)
+    
+    return file_name
 
 if __name__ == '__main__':
     final_bins = snakemake.input.final_bins
@@ -20,12 +22,12 @@ if __name__ == '__main__':
     os.chdir('bins/')
 
     if len(coverage_file) > 0:
-        check_and_remove_base_file(coverage_file)
-        os.symlink(f"../{coverage_file}", "./")
+        file_name = check_and_remove_base_file(coverage_file)
+        os.symlink(f"../{coverage_file}", f"{file_name}")
     
     if len(contig_coverage) > 0:
-        check_and_remove_base_file(contig_coverage)
-        os.symlink(f"../{contig_coverage}", "./")
+        file_name = check_and_remove_base_file(contig_coverage)
+        os.symlink(f"../{contig_coverage}", f"{file_name}")
     
     os.chdir('..')
     if len(gtdbtk) > 0:
