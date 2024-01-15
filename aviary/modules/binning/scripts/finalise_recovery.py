@@ -6,8 +6,9 @@ def check_and_remove_base_file(file_path) -> str:
     file_name = os.path.basename(file_path)
     if os.path.exists(file_name):
         os.remove(file_name)
-    
+
     return file_name
+
 
 if __name__ == '__main__':
     final_bins = snakemake.input.final_bins
@@ -32,10 +33,10 @@ if __name__ == '__main__':
     os.chdir('..')
     if len(gtdbtk) > 0:
         check_and_remove_base_file(output_taxonomy)
-        os.symlink(f"{gtdbtk}", output_taxonomy)
+        os.symlink(f"{os.path.dirname(gtdbtk)}", output_taxonomy)
     if len(singlem) > 0:
         check_and_remove_base_file(output_singlem)
-        os.symlink(f"{singlem}", output_singlem)
+        os.symlink(f"{os.path.dirname(singlem)}", output_singlem)
     
     for f in glob.glob('data/binning_bams/*.ba*'):
         os.remove(f)
