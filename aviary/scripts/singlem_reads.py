@@ -75,7 +75,7 @@ class ReadContainer:
     def _check_interleaved(self):
         if self._check_paired_reads():
             return False
-        if len(self.short_reads_1) == 0 and len(self.long_reads) == 0:
+        if len(self.short_reads_1) == 0 and len(self.short_reads_2) == 0:
             return False
 
         short_reads = self.short_reads_1 if len(self.short_reads_1) > 0 else self.short_reads_2
