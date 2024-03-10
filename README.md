@@ -118,7 +118,7 @@ ask you to set these environment variables upon first running and if they are no
 the `aviary configure` subcommand to reset the environment variables:
 
 ```commandline
-aviary configure -o logs/ --eggnog-db-path /shared/db/eggnog/ --gtdb-path /shared/db/gtdb/ --checkm2-db-path /shared/db/checkm2db/ --download
+aviary configure -o logs/ --eggnog-db-path /shared/db/eggnog/ --gtdb-path /shared/db/gtdb/ --checkm2-db-path /shared/db/checkm2db/ --singlem-metapackage-path /shared/db/singlem/ --download
 ```
 
 This command will check if the databases exist at those given locations, if they don't then aviary will download and change

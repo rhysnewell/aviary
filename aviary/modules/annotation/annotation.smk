@@ -99,7 +99,7 @@ rule download_gtdb:
 
         # Uncompress and pipe output to TQDM
         'echo "[INFO] - Extracting archive..."; '
-        'tar xvzf "$TARGET_TAR" -C "${{TARGET_DIR}}" --strip 1; '
+        'tar -xvzf "$TARGET_TAR" -C "${{TARGET_DIR}}" --strip 1; '
 
         # Remove the file after successful extraction
         'rm "$TARGET_TAR"; '

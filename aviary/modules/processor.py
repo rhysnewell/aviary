@@ -150,6 +150,8 @@ class Processor:
             self.skip_binners = ["none"]
             self.skip_abundances = False
             self.binning_only = False
+            self.skip_taxonomy = False
+            self.skip_singlem = False
 
         try:
             self.assembly = args.assembly

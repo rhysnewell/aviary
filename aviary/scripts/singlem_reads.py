@@ -137,13 +137,16 @@ class SingleMContainer:
     
     def run(self):
         with open(self.logf, "a") as logf:
-            logf.write("generating SingleM commands")
+            logf.write("generating SingleM commands\n")
             self.create_commands()
+            for command in self.commands:
+                logf.write(" ".join(command) + "\n")
+            logf.write("running SingleM commands\n")
             self.run_commands(logf)
             self.combine_otu_tables(logf)
     
     def combine_otu_tables(self, logf):
-        logf.write("combining SingleM otu tables")
+        logf.write("combining SingleM otu tables\n")
         intermidate_otu_tables = glob.glob(os.path.join(self.intermediate_dir, "*.csv"))
         summarise_cmd = f"singlem summarise --input-otu-tables {' '.join(intermidate_otu_tables)} --output-otu-table {os.path.join(self.output_dir, 'metagenome.combined_otu_table.csv')}".split()
         try:
@@ -160,16 +163,19 @@ class SingleMContainer:
         self._create_longread_commands()
         self._create_shortread_commands()
 
+
     def run_commands(self, logf):
         process_index = 0
         for command in self.commands:
             f = tempfile.TemporaryFile()
-            p = subprocess.Popen(command, stdout=f, stderr=STDOUT)
+            p = subprocess.Popen(command, stdout=f, stderr=logf)
             self.process_queue.append((p, f))
             process_index += 1
             if len(self.process_queue) >= self.threads:
                 self._check_processes(self.threads + 1, logf)
         
+        # write how many processes are left
+        logf.write(f"waiting for {len(self.process_queue)} processes to finish\n")
         while len(self.process_queue) > 0:
             self._check_processes(0, logf)
 
@@ -215,8 +221,16 @@ def run_singlem(
     singlem_container = SingleMContainer(threads, output_dir, read_container, log)
     singlem_container.run()
 
+def valid_path(path: str) -> bool:
+    return os.path.exists(path)
 
 if __name__ == '__main__':
+    # check if SINGLEM_METAPACKAGE_PATH environment variable is set and path is valid
+    # if not then, error and exit
+    os.environ["SINGLEM_METAPACKAGE_PATH"] = snakemake.params.package_path
+    if "SINGLEM_METAPACKAGE_PATH" not in os.environ or not valid_path(os.environ["SINGLEM_METAPACKAGE_PATH"]):
+        raise ValueError("SINGLEM_METAPACKAGE_PATH environment variable not set. Please set using 'aviary configure' or manually. Exiting.")
+
     long_reads = snakemake.config['long_reads']
     short_reads_1 = snakemake.config['short_reads_1']
     short_reads_2 = snakemake.config['short_reads_2']

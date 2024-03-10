@@ -732,6 +732,8 @@ rule checkm_das_tool:
 rule singlem_pipe_reads:
     output:
         "data/singlem_out/metagenome.combined_otu_table.csv"
+    params:
+        package_path = os.environ["SINGLEM_METAPACKAGE_PATH"]
     threads: min(config["max_threads"], 48)
     resources:
         mem_mb = lambda wildcards, attempt: min(int(config["max_memory"])*1024, 8*1024*attempt),
