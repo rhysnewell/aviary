@@ -147,8 +147,8 @@ class SingleMContainer:
     
     def combine_otu_tables(self, logf):
         logf.write("combining SingleM otu tables\n")
-        intermidate_otu_tables = glob.glob(os.path.join(self.intermediate_dir, "*.csv"))
-        summarise_cmd = f"singlem summarise --input-otu-tables {' '.join(intermidate_otu_tables)} --output-otu-table {os.path.join(self.output_dir, 'metagenome.combined_otu_table.csv')}".split()
+        intermediate_otu_tables = glob.glob(os.path.join(self.intermediate_dir, "*.csv"))
+        summarise_cmd = f"singlem summarise --input-otu-tables {' '.join(intermediate_otu_tables)} --output-otu-table {os.path.join(self.output_dir, 'metagenome.combined_otu_table.csv')}".split()
         try:
             with open(self.logf, "a") as logf:
                 run(summarise_cmd, stdout=logf, stderr=STDOUT)
