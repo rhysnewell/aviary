@@ -3,7 +3,7 @@
 ![](https://anaconda.org/bioconda/aviary/badges/version.svg)
 ![](https://anaconda.org/bioconda/aviary/badges/latest_release_relative_date.svg)
 ![](https://anaconda.org/bioconda/aviary/badges/platforms.svg)
-[![DOI](https://zenodo.org/badge/271448699.svg)](https://zenodo.org/doi/10.5281/zenodo.10158086)
+[![DOI](https://zenodo.org/badge/DOI/10.5281/zenodo.10806928.svg)](https://doi.org/10.5281/zenodo.10806928)
 
 
 ![](docs/_include/images/aviary_logo.png)
