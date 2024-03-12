@@ -85,8 +85,8 @@ def assemble_short_reads(
 
     # Run chosen assembler
     if use_megahit:
-
-        command = f"megahit {read_string} -t {threads} -m {max_memory} -o data/megahit_assembly --tmp-dir {tmp_dir}"
+        max_memory_in_bytes = max_memory * 1024*1024*1024
+        command = f"megahit {read_string} -t {threads} -m {max_memory_in_bytes} -o data/megahit_assembly --tmp-dir {tmp_dir}"
 
         with open(log, 'a') as logf:
             logf.write(f"Queueing command {command}\n")

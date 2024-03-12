@@ -56,7 +56,7 @@ rule flye_assembly:
     params:
         long_read_type = config["long_read_type"]
     threads:
-        min(config["max_threads"], 64)
+        config["max_threads"]
     resources:
         mem_mb = lambda wildcards, attempt: min(int(config["max_memory"])*1024, 512*1024*attempt),
         runtime = lambda wildcards, attempt: 24*60 + 24*60*attempt,
@@ -84,7 +84,7 @@ rule polish_metagenome_flye:
         illumina = False,
         coassemble = config["coassemble"]
     threads:
-        min(config["max_threads"], 64)
+        config["max_threads"]
     resources:
         mem_mb = lambda wildcards, attempt: min(int(config["max_memory"])*1024, 512*1024*attempt),
         runtime = lambda wildcards, attempt: 24*60*attempt,
@@ -111,7 +111,7 @@ rule generate_pilon_sort:
         bam = temp("data/pilon.sort.bam"),
         bai = temp("data/pilon.sort.bam.bai")
     threads:
-        min(config["max_threads"], 64)
+        config["max_threads"]
     resources:
         mem_mb = lambda wildcards, attempt: min(int(config["max_memory"])*1024, 512*1024*attempt),
         runtime = lambda wildcards, attempt: 24*60*attempt,
@@ -160,7 +160,7 @@ rule polish_meta_racon_ill:
         fasta = "data/assembly.pol.fin.fasta",
         paf = temp("data/polishing/alignment.racon_ill.0.paf")
     threads:
-        min(config["max_threads"], 64)
+        config["max_threads"]
     resources:
         mem_mb = lambda wildcards, attempt: min(int(config["max_memory"])*1024, 512*1024*attempt),
         runtime = lambda wildcards, attempt: 24*60*attempt,
@@ -302,7 +302,7 @@ rule filter_illumina_assembly:
     conda:
         "../../envs/minimap2.yaml"
     threads:
-        min(config["max_threads"], 64)
+        config["max_threads"]
     resources:
         mem_mb = lambda wildcards, attempt: min(int(config["max_memory"])*1024, 512*1024*attempt),
         runtime = lambda wildcards, attempt: 24*60*attempt,
@@ -352,7 +352,7 @@ rule spades_assembly:
         fasta = "data/spades_assembly.fasta",
         spades_folder = temp(directory("data/spades_assembly/"))
     threads:
-        min(config["max_threads"], 64)
+        config["max_threads"]
     resources:
         mem_mb = lambda wildcards, attempt: min(int(config["max_memory"])*1024, 256*1024*attempt),
         runtime = lambda wildcards, attempt: 72*60 + 24*60*attempt,
@@ -414,7 +414,7 @@ rule assemble_short_reads:
          tmpdir = config["tmpdir"],
          final_assembly = True
     threads:
-        min(config["max_threads"], 64)
+        config["max_threads"]
     resources:
         mem_mb = lambda wildcards, attempt: min(int(config["max_memory"])*1024, 512*1024*attempt),
         runtime = lambda wildcards, attempt: 72*60 + 24*60*attempt,
@@ -451,7 +451,7 @@ rule spades_assembly_coverage:
          bam = temp("data/short_vs_mega.bam"),
          bai = temp("data/short_vs_mega.bam.bai")
     threads:
-        min(config["max_threads"], 64)
+        config["max_threads"]
     resources:
         mem_mb = lambda wildcards, attempt: min(int(config["max_memory"])*1024, 512*1024*attempt),
         runtime = lambda wildcards, attempt: 24*60*attempt,
@@ -478,7 +478,7 @@ rule metabat_binning_short:
     conda:
          "../binning/envs/metabat2.yaml"
     threads:
-        min(config["max_threads"], 64)
+        config["max_threads"]
     resources:
         mem_mb = lambda wildcards, attempt: min(int(config["max_memory"])*1024, 512*1024*attempt),
         runtime = lambda wildcards, attempt: 24*60*attempt,
@@ -503,7 +503,7 @@ rule map_long_mega:
         bam = temp("data/long_vs_mega.bam"),
         bai = temp("data/long_vs_mega.bam.bai")
     threads:
-        min(config["max_threads"], 64)
+        config["max_threads"]
     resources:
         mem_mb = lambda wildcards, attempt: min(int(config["max_memory"])*1024, 512*1024*attempt),
         runtime = lambda wildcards, attempt: 24*60*attempt,
@@ -546,7 +546,7 @@ rule get_read_pools:
     conda:
          "envs/mfqe.yaml"
     threads:
-        min(config["max_threads"], 64)
+        config["max_threads"]
     resources:
         mem_mb = lambda wildcards, attempt: min(int(config["max_memory"])*1024, 512*1024*attempt),
         runtime = lambda wildcards, attempt: 12*60*attempt,
@@ -565,7 +565,7 @@ rule assemble_pools:
         fasta = "data/spades_assembly.fasta",
         metabat_done = "data/metabat_bins/done"
     threads:
-        min(config["max_threads"], 64)
+        config["max_threads"]
     resources:
         mem_mb = lambda wildcards, attempt: min(int(config["max_memory"])*1024, 512*1024*attempt),
         runtime = lambda wildcards, attempt: 72*60 + 24*60*attempt,

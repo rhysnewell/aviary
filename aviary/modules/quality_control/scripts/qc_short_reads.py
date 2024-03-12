@@ -87,20 +87,49 @@ def combine_reads(
 
         # we've got to concatenate the files together
         if coassemble:
-            # reads 1 first
-            for reads_1, reads_2 in zip(short_reads_1, short_reads_2):
-                if reads_1 == "none" or reads_2 == "none":
-                    continue
+            if "none" not in short_reads_2 and "none" not in short_reads_1:
+                for reads_1, reads_2 in zip(short_reads_1, short_reads_2):
+                    if reads_1 == "none" or reads_2 == "none":
+                        continue
+                    
+                    if not os.path.exists(reads_1):
+                        logf.write(f"Short read file {reads_1} does not exist\n")
+                        exit(1)
+                    
+                    if not os.path.exists(reads_2):
+                        logf.write(f"Short read file {reads_2} does not exist\n")
+                        exit(1)
+                    
+                    setup_interleave(reads_1, reads_2, output_fastq, logf)
+            elif "none" not in short_reads_1:
                 
-                if not os.path.exists(reads_1):
-                    logf.write(f"Short read file {reads_1} does not exist\n")
-                    exit(1)
-                
-                if not os.path.exists(reads_2):
-                    logf.write(f"Short read file {reads_2} does not exist\n")
-                    exit(1)
-                
-                setup_interleave(reads_1, reads_2, output_fastq, logf)
+                gzip_output = False
+                if not output_fastq.endswith(".gz"):
+                    output_fastq = output_fastq + '.gz'
+
+                for reads_1 in short_reads_1:
+                    if reads_1 == "none":
+                        continue
+
+                    if not os.path.exists(reads_1):
+                        logf.write(f"Short read file {reads_1} does not exist\n")
+                        exit(1)
+
+                    cat_reads(reads_1, output_fastq, threads, log_file)
+            elif "none" not in short_reads_2:
+                gzip_output = False
+                if not output_fastq.endswith(".gz"):
+                    output_fastq = output_fastq + '.gz'
+
+                for reads_2 in short_reads_2:
+                    if reads_2 == "none":
+                        continue
+
+                    if not os.path.exists(reads_2):
+                        logf.write(f"Short read file {reads_2} does not exist\n")
+                        exit(1)
+
+                    cat_reads(reads_2, output_fastq, threads, log_file)
 
         
         else:
@@ -287,13 +316,13 @@ def filter_illumina_reference(
     # run fastp for quality control of reads
     se1_string = None
     if "none" not in short_reads_1:
-        combine_reads(short_reads_1, ["none"], "data/short_reads.pre_qc.1.fastq.gz", coassemble, log, threads)
         se1_string = "data/short_reads.pre_qc.1.fastq.gz"
+        combine_reads(short_reads_1, ["none"], se1_string, coassemble, log, threads)
     
     se2_string = None
     if "none" not in short_reads_2:
-        combine_reads(["none"], short_reads_2, "data/short_reads.pre_qc.2.fastq.gz", coassemble, log, threads)
         se2_string = "data/short_reads.pre_qc.2.fastq.gz"
+        combine_reads(["none"], short_reads_2, se2_string, coassemble, log, threads)
     
     run_fastp(
         reads_1=se1_string,

@@ -1,3 +1,11 @@
+[![install with bioconda](https://img.shields.io/badge/install%20with-bioconda-brightgreen.svg?style=flat)](http://bioconda.github.io/recipes/aviary/README.html)
+![](https://anaconda.org/bioconda/aviary/badges/license.svg)
+![](https://anaconda.org/bioconda/aviary/badges/version.svg)
+![](https://anaconda.org/bioconda/aviary/badges/latest_release_relative_date.svg)
+![](https://anaconda.org/bioconda/aviary/badges/platforms.svg)
+[![DOI](https://zenodo.org/badge/271448699.svg)](https://zenodo.org/doi/10.5281/zenodo.10158086)
+
+
 ![](docs/_include/images/aviary_logo.png)
 
 # Aviary
@@ -57,7 +65,12 @@ conda env create -n aviary -f aviary.yml
 conda activate aviary
 pip install -e .
 ```
+The `aviary` executable can then be run from any directory. Since the code in
+this directory is then used for running, any updates made there will be
+immediately available. We recommend this mode for developing and debugging
+aviary.
 
+## Checking installation
 Whatever option you choose, running `aviary --help` should return the following
 output:
 
@@ -86,22 +99,6 @@ Utility modules:
 
 ```
 
-Upon first running aviary you will be prompted to input the location for where you would like
-your conda environments to be stored, the GTDB release installed on your system, the location of your
-EnrichM database, and the location of your BUSCO database. These locations will be stored as environment
-variables, but for aviary to be able to use those environment variables you will have to either source your .bashrc
-or reactivate your conda environment depending on whether you installed aviary within a conda environment or not:
-
-```
-conda deactivate; conda activate aviary
-
-OR
-
-source ~/.bashrc
-```
-
-These environment variables can be reset using `aviary configure`
-
 ## Databases
 
 Aviary uses programs which require access to locally stored databases. 
@@ -111,7 +108,7 @@ The **required** databases are as follows:
 * [GTDB](https://gtdb.ecogenomic.org/downloads)
 * [EggNog](https://github.com/eggnogdb/eggnog-mapper/wiki/eggNOG-mapper-v2.1.5-to-v2.1.8#setup)
 * [CheckM2](https://github.com/chklovski/CheckM2)
-
+* [SingleM](https://wwood.github.io/singlem/)
 
 ### Installing databases
 
@@ -121,7 +118,7 @@ ask you to set these environment variables upon first running and if they are no
 the `aviary configure` subcommand to reset the environment variables:
 
 ```commandline
-aviary configure -o logs/ --eggnog-db-path /shared/db/eggnog/ --gtdb-path /shared/db/gtdb/ --checkm2-db-path /shared/db/checkm2db/ --download
+aviary configure -o logs/ --eggnog-db-path /shared/db/eggnog/ --gtdb-path /shared/db/gtdb/ --checkm2-db-path /shared/db/checkm2db/ --singlem-metapackage-path /shared/db/singlem/ --download
 ```
 
 This command will check if the databases exist at those given locations, if they don't then aviary will download and change
@@ -141,6 +138,7 @@ These environment variables can also be configured manually, just set the follow
 ```
 export GTDBTK_DATA_PATH=/path/to/gtdb/gtdb_release207/db/ # https://gtdb.ecogenomic.org/downloads
 export EGGNOG_DATA_DIR=/path/to/eggnog-mapper/2.1.8/ # https://github.com/eggnogdb/eggnog-mapper/wiki/eggNOG-mapper-v2.1.5-to-v2.1.8#setup
+export SINGLEM_METAPACKAGE_PATH=/path/to/singlem_metapackage.smpkg/
 export CHECKM2DB=/path/to/checkm2db/
 export CONDA_ENV_PATH=/path/to/conda/envs/
 ```

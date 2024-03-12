@@ -40,9 +40,10 @@ if config['mag_extension'] == 'none':
 
 rule download_databases:
     input:
-        'logs/download_gtdb.log',
-        'logs/download_eggnog.log',
-        'logs/download_checkm2.log'
+        'logs/download_gtdb.log' if "gtdb" in config["download"] else [],
+        'logs/download_eggnog.log' if "eggnog" in config["download"] else [],
+        'logs/download_singlem.log' if "singlem" in config["download"] else [],
+        'logs/download_checkm2.log' if "checkm2" in config["download"] else [],
     threads: 1
     log:
         temp("logs/download.log")
@@ -98,7 +99,7 @@ rule download_gtdb:
 
         # Uncompress and pipe output to TQDM
         'echo "[INFO] - Extracting archive..."; '
-        'tar xvzf "$TARGET_TAR" -C "${{TARGET_DIR}}" --strip 1; '
+        'tar -xvzf "$TARGET_TAR" -C "${{TARGET_DIR}}" --strip 1; '
 
         # Remove the file after successful extraction
         'rm "$TARGET_TAR"; '
@@ -110,6 +111,18 @@ rule download_gtdb:
         'else '
         '  echo "[INFO] - Conda not found in PATH, please be sure to set the TARGET_DIR envrionment variable"; '
         'fi; '
+
+rule download_singlem_metapackage:
+    params:
+        metapackage_folder = os.path.expanduser(config['singlem_metapackage'])
+    conda:
+        "../../envs/singlem.yaml"
+    threads: 1
+    log:
+        'logs/download_singlem.log'
+    shell:
+        'singlem data --output-directory {params.metapackage_folder}_tmp 2> {log} && '
+        'mv {params.metapackage_folder}_tmp/*.smpkg.zb {params.metapackage_folder}'
 
 rule download_checkm2:
     params:
@@ -134,7 +147,7 @@ rule checkm2:
         mag_extension = config['mag_extension'],
         checkm2_db_path = config["checkm2_db_folder"]
     threads:
-        min(config["max_threads"], 16)
+        config["max_threads"]
     resources:
         mem_mb = lambda wildcards, attempt: min(int(config["max_memory"])*1024, 128*1024*attempt),
         runtime = lambda wildcards, attempt: 8*60*attempt,
@@ -162,7 +175,7 @@ rule eggnog:
     output:
         done = 'data/eggnog/done'
     threads:
-        min(config["max_threads"], 64)
+        config["max_threads"]
     resources:
         mem_mb = lambda wildcards, attempt: min(int(config["max_memory"])*1024, 512*1024*attempt),
         runtime = lambda wildcards, attempt: 24*60*attempt,
@@ -193,7 +206,7 @@ rule gtdbtk:
     conda:
         "../../envs/gtdbtk.yaml"
     threads:
-        min(config["max_threads"], 32)
+        config["max_threads"]
     resources:
         mem_mb = lambda wildcards, attempt: min(int(config["max_memory"])*1024, 256*1024*attempt),
         runtime = lambda wildcards, attempt: 12*60*attempt,
