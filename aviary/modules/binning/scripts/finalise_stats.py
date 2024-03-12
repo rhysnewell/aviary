@@ -55,9 +55,12 @@ def get_taxonomy(rename_columns="Bin Id"):
         taxa.append(df_arc)
     except (FileNotFoundError, IndexError) as e:
         pass
-
-    taxa = pd.concat(taxa)
-    taxa.rename({'user_genome' : rename_columns}, inplace=True, axis=1)
+    
+    try:
+        taxa = pd.concat(taxa)
+        taxa.rename({'user_genome' : rename_columns}, inplace=True, axis=1)
+    except ValueError:
+        taxa = pd.DataFrame(columns=[rename_columns])
     return taxa
 
 

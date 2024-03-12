@@ -99,7 +99,7 @@ rule download_gtdb:
 
         # Uncompress and pipe output to TQDM
         'echo "[INFO] - Extracting archive..."; '
-        'tar xvzf "$TARGET_TAR" -C "${{TARGET_DIR}}" --strip 1; '
+        'tar -xvzf "$TARGET_TAR" -C "${{TARGET_DIR}}" --strip 1; '
 
         # Remove the file after successful extraction
         'rm "$TARGET_TAR"; '
@@ -122,7 +122,7 @@ rule download_singlem_metapackage:
         'logs/download_singlem.log'
     shell:
         'singlem data --output-directory {params.metapackage_folder}_tmp 2> {log} && '
-        'mv {params.metapackage_folder}_tmp/*.smpkg.zb/payload_directory {params.metapackage_folder}'
+        'mv {params.metapackage_folder}_tmp/*.smpkg.zb {params.metapackage_folder}'
 
 rule download_checkm2:
     params:

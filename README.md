@@ -1,3 +1,11 @@
+[![install with bioconda](https://img.shields.io/badge/install%20with-bioconda-brightgreen.svg?style=flat)](http://bioconda.github.io/recipes/aviary/README.html)
+![](https://anaconda.org/bioconda/aviary/badges/license.svg)
+![](https://anaconda.org/bioconda/aviary/badges/version.svg)
+![](https://anaconda.org/bioconda/aviary/badges/latest_release_relative_date.svg)
+![](https://anaconda.org/bioconda/aviary/badges/platforms.svg)
+[![DOI](https://zenodo.org/badge/271448699.svg)](https://zenodo.org/doi/10.5281/zenodo.10158086)
+
+
 ![](docs/_include/images/aviary_logo.png)
 
 # Aviary
@@ -110,7 +118,7 @@ ask you to set these environment variables upon first running and if they are no
 the `aviary configure` subcommand to reset the environment variables:
 
 ```commandline
-aviary configure -o logs/ --eggnog-db-path /shared/db/eggnog/ --gtdb-path /shared/db/gtdb/ --checkm2-db-path /shared/db/checkm2db/ --download
+aviary configure -o logs/ --eggnog-db-path /shared/db/eggnog/ --gtdb-path /shared/db/gtdb/ --checkm2-db-path /shared/db/checkm2db/ --singlem-metapackage-path /shared/db/singlem/ --download
 ```
 
 This command will check if the databases exist at those given locations, if they don't then aviary will download and change
