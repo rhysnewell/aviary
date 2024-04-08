@@ -43,6 +43,8 @@ from snakemake import utils
 from snakemake.io import load_configfile
 from ruamel.yaml import YAML  # used for yaml reading with comments
 
+BATCH_HEADER=['sample', 'short_reads_1', 'short_reads_2', 'long_reads', 'long_read_type', 'assembly', 'coassemble']
+
 # Debug
 debug={1:logging.CRITICAL,
        2:logging.ERROR,
@@ -505,7 +507,7 @@ def process_batch(args, prefix):
             for sep in ['\t', ',', ' ']:
                 separated = line.split(sep)
                 print(separated)
-                if separated == ['sample', 'short_reads_1', 'short_reads_2', 'long_reads', 'long_read_type', 'assembly', 'coassemble']:
+                if separated == BATCH_HEADER:
                     header=0
                     separator=sep
                     logging.debug("Inferred header")
@@ -521,7 +523,7 @@ def process_batch(args, prefix):
     if header is not None:
         batch = pd.read_csv(args.batch_file, sep=separator, engine='python', header=header)
     else:
-        batch = pd.read_csv(args.batch_file, sep=separator, engine='python', names=['sample', 'short_reads_1', 'short_reads_2', 'long_reads', 'long_read_type', 'assembly', 'coassemble'])
+        batch = pd.read_csv(args.batch_file, sep=separator, engine='python', names=BATCH_HEADER)
     if len(batch.columns) != 7:
         logging.critical(f"Batch file contains incorrect number of columns ({len(batch.columns)}). Should contain 7.")
         logging.critical(f"Current columns: {batch.columns}")
