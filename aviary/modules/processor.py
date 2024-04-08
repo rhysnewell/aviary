@@ -506,7 +506,6 @@ def process_batch(args, prefix):
             line = line.strip()
             for sep in ['\t', ',', ' ']:
                 separated = line.split(sep)
-                print(separated)
                 if separated == BATCH_HEADER:
                     header=0
                     separator=sep
@@ -520,10 +519,9 @@ def process_batch(args, prefix):
             if header is None:
                 logging.debug("No header found")
             break
-    if header is not None:
-        batch = pd.read_csv(args.batch_file, sep=separator, engine='python', header=header)
-    else:
-        batch = pd.read_csv(args.batch_file, sep=separator, engine='python', names=BATCH_HEADER)
+
+    batch = pd.read_csv(args.batch_file, sep=separator, engine='python', names=BATCH_HEADER, header=header)
+    print(batch)
     if len(batch.columns) != 7:
         logging.critical(f"Batch file contains incorrect number of columns ({len(batch.columns)}). Should contain 7.")
         logging.critical(f"Current columns: {batch.columns}")
@@ -547,8 +545,6 @@ def process_batch(args, prefix):
     if script_file is not None:
         write_to_script = []
 
-    print(script_file)
-    print(write_to_script)
     runs = []
     args.interleaved = "none" # hacky solution to skip attribute error
     args.coupled = "none"
