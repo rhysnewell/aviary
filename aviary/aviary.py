@@ -1078,14 +1078,14 @@ def main():
 
                                              aviary batch -f batch_file.tsv -t 32 -o batch_test
                                              
-                                             An example batch file can be found at: 
+                                             An example batch file can be found at: https://rhysnewell.github.io/aviary/examples
 
                                              ''')
 
     batch_options.add_argument(
         '-f', '--batch_file', '--batch-file',
         help='The tab or comma separated batch file containing the input samples to assemble and/or recover MAGs from. \n'
-             'An example batch file can be found at XXX. The heading line is required. \n'
+             'An example batch file can be found at https://rhysnewell.github.io/aviary/examples. The heading line is required. \n'
              'The number of reads provided to each sample is flexible as is the type of assembly being performed (if any). \n'
              'Multiple reads can be supplied by providing a comma-separated list (surrounded by double quotes \"\" if using a \n'
              'comma separated batch file) within the specific read column.',

@@ -468,6 +468,8 @@ class Processor:
                 resources=f"--resources mem_mb={int(self.max_memory)*1024} {self.resources}" if not dryrun else ""
             )
 
+            logging.debug(f"Command: {cmd}")
+
             if write_to_script is not None:
                 write_to_script.append(cmd)
                 continue
@@ -495,20 +497,31 @@ def process_batch(args, prefix):
 
     logging.info(f"Reading batch file: {args.batch_file}")
 
-    header=0
+    header=None
+    separator=' '
     with open(args.batch_file, mode='r') as check_batch:
         for line in check_batch.readlines():
-            if "sample\tshort_reads_1\tshort_reads_2\tlong_reads\tlong_read_type\tassembly\tcoassemble" in line \
-                or "sample,short_reads_1,short_reads_2,long_reads,long_read_type,assembly,coassemble" in line \
-                or "sample  short_reads_1   short_reads_2   long_reads      long_read_type  assembly        coassemble" in line \
-                or "sample short_reads_1 short_reads_2 long_reads long_read_type assembly coassemble" in line:
-               header=1
-               logging.debug("Inferred header")
-            else:
-                logging.debug("No heading inferred.")
+            line = line.strip()
+            for sep in ['\t', ',', ' ']:
+                separated = line.split(sep)
+                print(separated)
+                if separated == ['sample', 'short_reads_1', 'short_reads_2', 'long_reads', 'long_read_type', 'assembly', 'coassemble']:
+                    header=0
+                    separator=sep
+                    logging.debug("Inferred header")
+                    break
+                elif len(separated) >= 7:
+                    header=None
+                    separator=sep
+                    logging.debug("Inferred no header")
+                    break
+            if header is None:
+                logging.debug("No header found")
             break
-
-    batch = pd.read_csv(args.batch_file, sep=None, engine='python', skiprows=header)
+    if header is not None:
+        batch = pd.read_csv(args.batch_file, sep=separator, engine='python', header=header)
+    else:
+        batch = pd.read_csv(args.batch_file, sep=separator, engine='python', names=['sample', 'short_reads_1', 'short_reads_2', 'long_reads', 'long_read_type', 'assembly', 'coassemble'])
     if len(batch.columns) != 7:
         logging.critical(f"Batch file contains incorrect number of columns ({len(batch.columns)}). Should contain 7.")
         logging.critical(f"Current columns: {batch.columns}")
@@ -525,11 +538,15 @@ def process_batch(args, prefix):
 
     try:
         script_file = args.write_script
-        write_to_script = []
     except AttributeError:
         script_file = None
-        write_to_script = None
+    
+    write_to_script = None
+    if script_file is not None:
+        write_to_script = []
 
+    print(script_file)
+    print(write_to_script)
     runs = []
     args.interleaved = "none" # hacky solution to skip attribute error
     args.coupled = "none"
