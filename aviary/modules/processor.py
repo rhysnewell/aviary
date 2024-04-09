@@ -521,7 +521,6 @@ def process_batch(args, prefix):
             break
 
     batch = pd.read_csv(args.batch_file, sep=separator, engine='python', names=BATCH_HEADER, header=header)
-    print(batch)
     if len(batch.columns) != 7:
         logging.critical(f"Batch file contains incorrect number of columns ({len(batch.columns)}). Should contain 7.")
         logging.critical(f"Current columns: {batch.columns}")
