@@ -458,7 +458,7 @@ rule spades_assembly_coverage:
     log:
         "logs/spades_assembly_coverage.log"
     params:
-         tmpdir = f"TMPDIR={config["tmpdir"]}" if config["tmpdir"] else ""
+         tmpdir = f"TMPDIR={config['tmpdir']}" if config["tmpdir"] else ""
     conda:
          "../../envs/coverm.yaml"
     benchmark:
