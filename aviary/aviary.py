@@ -35,7 +35,6 @@ import argparse
 import logging
 import os
 from datetime import datetime
-import tempfile
 
 # Debug
 debug={1:logging.CRITICAL,
@@ -198,7 +197,7 @@ def main():
         help='Path to the location that will be treated used for temporary files. If none is specified, the TMPDIR \n'
              'environment variable will be used. Can be configured within the `configure` subcommand',
         dest='tmpdir',
-        default=tempfile.gettempdir(),
+        default=None,
     )
 
     base_group.add_argument(
@@ -1289,9 +1288,6 @@ def main():
 def manage_env_vars(args):
     if args.conda_prefix is None:
         args.conda_prefix = Config.get_software_db_path('CONDA_ENV_PATH', '--conda-prefix')
-
-    if args.tmpdir is None:
-        args.tmpdir = Config.get_software_db_path('TMPDIR', '--tmpdir')
 
     try:
         if args.gtdb_path is None:

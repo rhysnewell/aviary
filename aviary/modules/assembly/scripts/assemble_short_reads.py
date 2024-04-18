@@ -29,6 +29,15 @@ def assemble_short_reads(
     :return:
     '''
 
+    if not tmp_dir:
+        try:
+            tmp_dir = os.environ["TMPDIR"]
+        except KeyError:
+            tmp_dir_arg = ""
+
+    if tmp_dir:
+        tmp_dir_arg = f"--tmp-dir {tmp_dir}"
+
     # deal with read sets i.e. are we coassembling? Which assembler are we using?
     # Non co-assembled reads are handled the same for each assembler
     if read_set1 != 'none':
@@ -86,7 +95,7 @@ def assemble_short_reads(
     # Run chosen assembler
     if use_megahit:
         max_memory_in_bytes = max_memory * 1024*1024*1024
-        command = f"megahit {read_string} -t {threads} -m {max_memory_in_bytes} -o data/megahit_assembly --tmp-dir {tmp_dir}"
+        command = f"megahit {read_string} -t {threads} -m {max_memory_in_bytes} -o data/megahit_assembly {tmp_dir_arg}"
 
         with open(log, 'a') as logf:
             logf.write(f"Queueing command {command}\n")
@@ -97,7 +106,7 @@ def assemble_short_reads(
     else:
         kmers = " ".join(kmer_sizes)
         command = f"spades.py --memory {max_memory} --meta -t {threads} " \
-                f"-o data/short_read_assembly {read_string} -k {kmers} --tmp-dir {tmp_dir}"
+                f"-o data/short_read_assembly {read_string} -k {kmers} {tmp_dir_arg}"
         with open(log, 'a') as logf:
             logf.write(f"Queueing command {command}\n")
             subprocess.run(command.split(), stdout=logf, stderr=subprocess.STDOUT)

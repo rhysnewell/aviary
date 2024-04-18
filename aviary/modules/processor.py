@@ -92,7 +92,7 @@ class Processor:
 
 
         self.conda_prefix = args.conda_prefix
-        self.tmpdir = os.path.abspath(args.tmpdir)
+        self.tmpdir = os.path.abspath(args.tmpdir) if args.tmpdir else None
         self.resources = args.resources
         self.output = os.path.abspath(args.output)
         self.threads = args.max_threads
@@ -444,7 +444,8 @@ class Processor:
         self._validate_config()
 
         cores = max(int(self.threads), cores)
-        os.environ["TMPDIR"] = self.tmpdir
+        if self.tmpdir is not None:
+            os.environ["TMPDIR"] = self.tmpdir
         for workflow in self.workflows:
             cmd = (
                 "snakemake --snakefile {snakefile} --directory {working_dir} "

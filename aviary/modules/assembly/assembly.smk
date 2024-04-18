@@ -362,7 +362,7 @@ rule spades_assembly:
         max_memory = config["max_memory"],
         long_read_type = config["long_read_type"],
         kmer_sizes = " ".join(config["kmer_sizes"]),
-        tmpdir = config["tmpdir"]
+        tmpdir = config["tmpdir"] if config["tmpdir"] else "$TMPDIR"
     conda:
         "envs/spades.yaml"
     benchmark:
@@ -458,14 +458,14 @@ rule spades_assembly_coverage:
     log:
         "logs/spades_assembly_coverage.log"
     params:
-         tmpdir = config["tmpdir"]
+         tmpdir = f"TMPDIR={config["tmpdir"]}" if config["tmpdir"] else ""
     conda:
          "../../envs/coverm.yaml"
     benchmark:
         "benchmarks/spades_assembly_coverage.benchmark.txt"
     shell:
         """
-        TMPDIR={params.tmpdir} coverm contig -m metabat -t {threads} -r {input.fasta} --interleaved {input.fastq} --bam-file-cache-directory data/cached_bams/ > {output.assembly_cov} 2> {log};
+        {params.tmpdir} coverm contig -m metabat -t {threads} -r {input.fasta} --interleaved {input.fastq} --bam-file-cache-directory data/cached_bams/ > {output.assembly_cov} 2> {log};
         mv data/cached_bams/*.bam {output.bam} && samtools index -@ {threads} {output.bam} 2>> {log}
         """
 
