@@ -362,36 +362,13 @@ rule spades_assembly:
         max_memory = config["max_memory"],
         long_read_type = config["long_read_type"],
         kmer_sizes = " ".join(config["kmer_sizes"]),
-        tmpdir = config["tmpdir"] if config["tmpdir"] else "$TMPDIR"
+        tmpdir = config["tmpdir"]
     conda:
         "envs/spades.yaml"
     benchmark:
         "benchmarks/spades_assembly.benchmark.txt"
-    shell:
-        """
-        rm -rf data/spades_assembly/tmp; 
-        minimumsize=500000;
-        actualsize=$(stat -c%s data/short_reads.filt.fastq.gz);
-        if [ -d "data/spades_assembly/" ]
-        then
-            spades.py --restart-from last --memory {params.max_memory} -t {threads} -o data/spades_assembly -k {params.kmer_sizes} --tmp-dir {params.tmpdir} > {log} 2>&1 && \
-            cp data/spades_assembly/scaffolds.fasta data/spades_assembly.fasta
-        elif [ $actualsize -ge $minimumsize ]
-        then
-            if [ {params.long_read_type} = "ont" ] || [ {params.long_read_type} = "ont_hq" ]
-            then
-                spades.py --checkpoints all --memory {params.max_memory} --meta --nanopore {input.long_reads} --12 {input.fastq} \
-                -o data/spades_assembly -t {threads}  -k {params.kmer_sizes} --tmp-dir {params.tmpdir} >> {log} 2>&1 && \
-                cp data/spades_assembly/scaffolds.fasta data/spades_assembly.fasta
-            else
-                spades.py --checkpoints all --memory {params.max_memory} --meta --pacbio {input.long_reads} --12 {input.fastq} \
-                -o data/spades_assembly -t {threads}  -k {params.kmer_sizes} --tmp-dir {params.tmpdir} >> {log} 2>&1 && \
-                cp data/spades_assembly/scaffolds.fasta data/spades_assembly.fasta
-            fi
-        else
-            mkdir -p {output.spades_folder} && touch {output.fasta}
-        fi 
-        """
+    script:
+        "scripts/spades_assembly.py"        
 
 
 # Perform short read assembly only with no other steps
