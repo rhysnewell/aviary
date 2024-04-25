@@ -39,7 +39,8 @@ def spades_asssembly(
             tmp_dir_arg = ""
     
     if os.path.exists("data/spades_assembly/tmp"):
-        subprocess.call("rm -rf data/spades_assembly/tmp",shell=True)
+        with open(log, 'a') as logf:
+            subprocess.run("rm -rf data/spades_assembly/tmp".split(), stdout=logf, stderr=subprocess.STDOUT)   
     # remove existing temporary directory
     minimumsize=500000
     actualsize = int(subprocess.check_output('stat -c%s data/short_reads.filt.fastq.gz', shell=True))
@@ -51,25 +52,23 @@ def spades_asssembly(
         # run cmd
         with open(log, 'a') as logf:
             logf.write(f"Queueing command {command}\n")
-            subprocess.run(command.split(), stdout=logf, stderr=subprocess.STDOUT)        
-        subprocess.call("cp data/spades_assembly/scaffolds.fasta data/spades_assembly.fasta",shell=True)
+            subprocess.run(command.split(), stdout=logf, stderr=subprocess.STDOUT)
+            subprocess.run("cp data/spades_assembly/scaffolds.fasta data/spades_assembly.fasta".split(), stdout=logf, stderr=subprocess.STDOUT)
     elif actualsize >= minimumsize:
         if long_read_type in ["ont","ont_hq"]:
             command = f"spades.py --checkpoints all --memory {max_memory} --meta --nanopore {input_long_reads} --12 {input_fastq} "\
                 f"-o data/spades_assembly -t {threads}  -k {kmer_sizes} {tmp_dir_arg} "       
-        elif long_read_type == "pacbio":
+        else:
             command = f"spades.py --checkpoints all --memory {max_memory} --meta --pacbio {input_long_reads} --12 {input_fastq} "\
                 f"-o data/spades_assembly -t {threads}  -k {kmer_sizes} {tmp_dir_arg} "
-        else:
-            # raise error
-            raise ValueError(f"Invalid long read type: {long_read_type}")
         # run cmd
         with open(log, 'a') as logf:
             logf.write(f"Queueing command {command}\n")
             subprocess.run(command.split(), stdout=logf, stderr=subprocess.STDOUT)        
-        subprocess.call("cp data/spades_assembly/scaffolds.fasta data/spades_assembly.fasta" ,shell=True)
+            subprocess.run("cp data/spades_assembly/scaffolds.fasta data/spades_assembly.fasta".split(), stdout=logf, stderr=subprocess.STDOUT)
     else:
-        subprocess.call(f"mkdir -p {output.spades_folder} && touch {output.fasta}" ,shell=True)
+        with open(log, 'a') as logf:
+            subprocess.run(f"mkdir -p {output.spades_folder} && touch {output.fasta}".split(), stdout=logf, stderr=subprocess.STDOUT)
     
 
 if __name__ == '__main__':
@@ -88,4 +87,3 @@ if __name__ == '__main__':
         snakemake.params.long_read_type,
         log
     )
-
