@@ -35,6 +35,7 @@ import sys
 import logging
 import os
 import subprocess
+import copy
 from pathlib import Path
 from glob import glob
 
@@ -42,6 +43,7 @@ from glob import glob
 from snakemake import utils
 from snakemake.io import load_configfile
 from ruamel.yaml import YAML  # used for yaml reading with comments
+from aviary import LONG_READ_TYPES
 
 BATCH_HEADER=['sample', 'short_reads_1', 'short_reads_2', 'long_reads', 'long_read_type', 'assembly', 'coassemble']
 
@@ -555,36 +557,41 @@ def process_batch(args, prefix):
         s2 = check_batch_input(batch.iloc[i, 2], "none", split=True)
         l = check_batch_input(batch.iloc[i, 3], "none", split=True)
         l_type = check_batch_input(batch.iloc[i, 4], "ont", split=False)
+        if l_type not in LONG_READ_TYPES:
+            logging.error(f"Unknown long read type {l_type} specified.")
+            logging.error(f"Valid long read types: {LONG_READ_TYPES}")
+            sys.exit(1)
         assembly = check_batch_input(batch.iloc[i, 5], None, split=False)
         coassemble = check_batch_input(batch.iloc[i, 6], False, split=False)
-
+        
+        new_args = copy.deepcopy(args)
         # update the value of args
-        args.output = f"{prefix}/{sample}"
-        runs.append(args.output)
-        args.pe1 = s1
-        args.pe2 = s2
+        new_args.output = f"{prefix}/{sample}"
+        runs.append(new_args.output)
+        new_args.pe1 = s1
+        new_args.pe2 = s2
 
-        args.longreads = l
-        args.longread_type = l_type
-        args.assembly = assembly
-        args.coassemble = coassemble
+        new_args.longreads = l
+        new_args.longread_type = l_type
+        new_args.assembly = assembly
+        new_args.coassemble = coassemble
 
         # ensure output folder exists
-        if not os.path.exists(args.output):
-            os.makedirs(args.output)
+        if not os.path.exists(new_args.output):
+            os.makedirs(new_args.output)
 
         # setup processor for this line
-        processor = Processor(args)
+        processor = Processor(new_args)
         processor.make_config()
 
-        processor.run_workflow(cores=int(args.n_cores),
-                               dryrun=args.dryrun,
-                               clean=args.clean,
-                               conda_frontend=args.conda_frontend,
-                               snakemake_args=args.cmds,
-                               rerun_triggers=args.rerun_triggers,
-                               profile=args.snakemake_profile,
-                               cluster_retries=args.cluster_retries,
+        processor.run_workflow(cores=int(new_args.n_cores),
+                               dryrun=new_args.dryrun,
+                               clean=new_args.clean,
+                               conda_frontend=new_args.conda_frontend,
+                               snakemake_args=new_args.cmds,
+                               rerun_triggers=new_args.rerun_triggers,
+                               profile=new_args.snakemake_profile,
+                               cluster_retries=new_args.cluster_retries,
                                write_to_script=write_to_script)
 
     if args.cluster:
