@@ -171,7 +171,7 @@ rule eggnog:
     params:
         mag_extension = config['mag_extension'],
         eggnog_db = config['eggnog_folder'],
-        tmpdir = config["tmpdir"]
+        tmpdir = config["tmpdir"] if config["tmpdir"] else "$TMPDIR",
     output:
         done = 'data/eggnog/done'
     threads:

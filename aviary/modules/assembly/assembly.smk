@@ -367,31 +367,8 @@ rule spades_assembly:
         "envs/spades.yaml"
     benchmark:
         "benchmarks/spades_assembly.benchmark.txt"
-    shell:
-        """
-        rm -rf data/spades_assembly/tmp; 
-        minimumsize=500000;
-        actualsize=$(stat -c%s data/short_reads.filt.fastq.gz);
-        if [ -d "data/spades_assembly/" ]
-        then
-            spades.py --restart-from last --memory {params.max_memory} -t {threads} -o data/spades_assembly -k {params.kmer_sizes} --tmp-dir {params.tmpdir} > {log} 2>&1 && \
-            cp data/spades_assembly/scaffolds.fasta data/spades_assembly.fasta
-        elif [ $actualsize -ge $minimumsize ]
-        then
-            if [ {params.long_read_type} = "ont" ] || [ {params.long_read_type} = "ont_hq" ]
-            then
-                spades.py --checkpoints all --memory {params.max_memory} --meta --nanopore {input.long_reads} --12 {input.fastq} \
-                -o data/spades_assembly -t {threads}  -k {params.kmer_sizes} --tmp-dir {params.tmpdir} >> {log} 2>&1 && \
-                cp data/spades_assembly/scaffolds.fasta data/spades_assembly.fasta
-            else
-                spades.py --checkpoints all --memory {params.max_memory} --meta --pacbio {input.long_reads} --12 {input.fastq} \
-                -o data/spades_assembly -t {threads}  -k {params.kmer_sizes} --tmp-dir {params.tmpdir} >> {log} 2>&1 && \
-                cp data/spades_assembly/scaffolds.fasta data/spades_assembly.fasta
-            fi
-        else
-            mkdir -p {output.spades_folder} && touch {output.fasta}
-        fi 
-        """
+    script:
+        "scripts/spades_assembly.py"        
 
 
 # Perform short read assembly only with no other steps
@@ -458,14 +435,14 @@ rule spades_assembly_coverage:
     log:
         "logs/spades_assembly_coverage.log"
     params:
-         tmpdir = config["tmpdir"]
+         tmpdir = f"TMPDIR={config['tmpdir']}" if config["tmpdir"] else ""
     conda:
          "../../envs/coverm.yaml"
     benchmark:
         "benchmarks/spades_assembly_coverage.benchmark.txt"
     shell:
         """
-        TMPDIR={params.tmpdir} coverm contig -m metabat -t {threads} -r {input.fasta} --interleaved {input.fastq} --bam-file-cache-directory data/cached_bams/ > {output.assembly_cov} 2> {log};
+        {params.tmpdir} coverm contig -m metabat -t {threads} -r {input.fasta} --interleaved {input.fastq} --bam-file-cache-directory data/cached_bams/ > {output.assembly_cov} 2> {log};
         mv data/cached_bams/*.bam {output.bam} && samtools index -@ {threads} {output.bam} 2>> {log}
         """
 
