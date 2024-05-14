@@ -50,4 +50,4 @@ ani: none
 precluster_ani: none
 precluster_method: none
 pggb_params: none
-tmpdir: /tmp
+tmpdir: none

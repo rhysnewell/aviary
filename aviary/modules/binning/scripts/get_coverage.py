@@ -12,7 +12,8 @@ def get_coverage(
     threads: int,
     log: str,
 ):
-    os.environ["TMPDIR"] = tmpdir
+    if tmpdir: os.environ["TMPDIR"] = tmpdir
+
     if long_reads != "none" and not os.path.exists("data/long_cov.tsv"):
         if long_read_type in ["ont", "ont_hq"]:
             coverm_cmd = f"coverm contig -t {threads} -r {input_fasta} --single {' '.join(long_reads)} -p minimap2-ont -m length trimmed_mean variance --bam-file-cache-directory data/binning_bams/ --discard-unmapped --min-read-percent-identity 0.85 --output-file data/long_cov.tsv".split()

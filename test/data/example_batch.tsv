@@ -1,0 +1,3 @@
+sample short_reads_1 short_reads_2 long_reads long_read_type assembly coassemble
+sample_1 test/data/wgsim.1.fq.gz test/data/wgsim.2.fq.gz NA ont NA NA
+sample_2 test/data/wgsim.1.fq.gz test/data/wgsim.2.fq.gz test/data/pbsim.fq.gz ont NA NA
