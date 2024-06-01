@@ -74,7 +74,7 @@ rule download_gtdb:
         'GTDBTK_DATA_PATH={params.gtdbtk_folder}; '
         'mkdir -p {params.gtdbtk_folder}; '
         # Configuration
-        'DB_URL="https://data.gtdb.ecogenomic.org/releases/latest/auxillary_files/gtdbtk_data.tar.gz"; '
+        'DB_URL="https://data.gtdb.ecogenomic.org/releases/latest/auxillary_files/gtdbtk_package/full_package/gtdbtk_data.tar.gz"; '
         'TARGET_TAR_NAME="gtdbtk_data.tar.gz"; '
 
         # Script variables (no need to configure)
