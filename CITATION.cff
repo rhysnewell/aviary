@@ -20,6 +20,6 @@ authors:
     given-names: Ben J.
     orcid: https://orcid.org/0000-0003-0670-7480
 title: "Aviary: Hybrid assembly and genome recovery from metagenomes with Aviary"
-version: 0.8.3
-doi: 10.5281/zenodo.10158087
-date-released: 2023-11-20
+version: 0.9.0
+doi: 10.5281/zenodo.10806928
+date-released: 2024-03-12
