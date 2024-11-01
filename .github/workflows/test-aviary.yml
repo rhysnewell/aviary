@@ -19,7 +19,6 @@ jobs:
           activate-environment: test
           environment-file: aviary.yml
           python-version: ${{ matrix.python-version }}
-          miniforge-variant: latest
           auto-activate-base: false
           channels: conda-forge,bioconda
           channel-priority: true
