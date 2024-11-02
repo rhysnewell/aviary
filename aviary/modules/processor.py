@@ -233,7 +233,6 @@ class Processor:
             self.pe2 = 'none'
             self.short_percent_identity = 'none'
 
-
         try:
             self.kmer_sizes = args.kmer_sizes
             self.use_megahit = args.use_megahit
@@ -246,7 +245,7 @@ class Processor:
         except AttributeError:
             self.kmer_sizes = ['auto']
             self.use_megahit = False
-            self.coassemble = True
+            self.coassemble = False
             self.min_cov_long = 20
             self.min_cov_short = 3
             self.exclude_contig_cov = 100
@@ -346,6 +345,15 @@ class Processor:
 
         with open(template_conf_file) as template_config:
             conf = yaml.load(template_config)
+        
+        if self.assembly == 'none' or self.assembly is None:
+            # Check if coassembly or not needs to be specified by the user.
+            if self.coassemble is None:
+                if len(self.pe1) > 1 or len(self.longreads) > 1:
+                    logging.error("Multiple readsets detected. Either specify '--coassemble' for coassembly of or '--coassemble no'.")
+                    sys.exit(-1)
+        if self.coassemble is None:
+            self.coassemble = False  # ensure that something is specified so that the config file is well formed
 
         if self.assembly != "none" and self.assembly is not None:
             self.assembly = list(dict.fromkeys([os.path.abspath(p) for p in self.assembly]))

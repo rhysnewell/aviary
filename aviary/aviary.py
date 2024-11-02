@@ -796,7 +796,6 @@ def main():
         nargs='?',
         const=True,
         dest='coassemble',
-        default=False,
     )
 
     assemble_group.add_argument(
