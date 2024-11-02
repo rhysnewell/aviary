@@ -349,7 +349,8 @@ class Processor:
         if self.assembly == 'none' or self.assembly is None:
             # Check if coassembly or not needs to be specified by the user.
             if self.coassemble is None:
-                if len(self.pe1) > 1 or len(self.longreads) > 1:
+                if (self.pe1 != 'none' and len(self.pe1) > 1) or \
+                   (self.longreads != 'none' and len(self.longreads) > 1):
                     logging.error("Multiple readsets detected. Either specify '--coassemble' for coassembly of or '--coassemble no'.")
                     sys.exit(-1)
         if self.coassemble is None:
