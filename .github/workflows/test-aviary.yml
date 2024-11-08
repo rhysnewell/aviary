@@ -12,14 +12,13 @@ jobs:
         matrix:
             python-version: ["3.10"]
     steps:
-      - uses: actions/checkout@v2
+      - uses: actions/checkout@v4
       - name: Set up environment with Python ${{ matrix.python-version }}
-        uses: conda-incubator/setup-miniconda@v2
+        uses: conda-incubator/setup-miniconda@v3
         with:
           activate-environment: test
           environment-file: aviary.yml
           python-version: ${{ matrix.python-version }}
-          miniforge-variant: Mambaforge
           auto-activate-base: false
           channels: conda-forge,bioconda
           channel-priority: true
