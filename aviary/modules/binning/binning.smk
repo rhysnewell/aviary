@@ -60,7 +60,7 @@ rule prepare_binning_files:
     threads:
         config["max_threads"]
     resources:
-        mem_mb = lambda wildcards, attempt: min(int(config["max_memory"])*1024, 512*1024*attempt),
+        mem_mb = lambda wildcards, attempt: min(int(config["max_memory"])*1000, 512*1000*attempt),
         runtime = lambda wildcards, attempt: 24*60 + 24*60*attempt,
     log:
         "logs/coverm_prepare.log"
@@ -91,7 +91,7 @@ rule maxbin2:
     threads:
         config["max_threads"]
     resources:
-        mem_mb = lambda wildcards, attempt: min(int(config["max_memory"])*1024, 128*1024*attempt),
+        mem_mb = lambda wildcards, attempt: min(int(config["max_memory"])*1000, 128*1000*attempt),
         runtime = lambda wildcards, attempt: 72*60 + 24*60*attempt,
     output:
         "data/maxbin2_bins/done"
@@ -118,7 +118,7 @@ rule concoct:
     threads:
         config["max_threads"]
     resources:
-        mem_mb = lambda wildcards, attempt: min(int(config["max_memory"])*1024, 128*1024*attempt),
+        mem_mb = lambda wildcards, attempt: min(int(config["max_memory"])*1000, 128*1000*attempt),
         runtime = lambda wildcards, attempt: 72*60 + 24*60*attempt,
     output:
         "data/concoct_bins/done"
@@ -177,7 +177,7 @@ rule vamb:
     threads:
         config["max_threads"]
     resources:
-        mem_mb = lambda wildcards, attempt: min(int(config["max_memory"])*1024, 128*1024*attempt),
+        mem_mb = lambda wildcards, attempt: min(int(config["max_memory"])*1000, 128*1000*attempt),
         runtime = lambda wildcards, attempt: 24*60*attempt,
         gpus = 1 if config["request_gpu"] else 0
     output:
@@ -217,7 +217,7 @@ rule metabat2:
     threads:
         config["max_threads"]
     resources:
-        mem_mb = lambda wildcards, attempt: min(int(config["max_memory"])*1024, 128*1024*attempt),
+        mem_mb = lambda wildcards, attempt: min(int(config["max_memory"])*1000, 128*1000*attempt),
         runtime = lambda wildcards, attempt: 12*60*attempt,
     log:
         "logs/metabat2.log"
@@ -248,7 +248,7 @@ rule metabat_spec:
     threads:
         config["max_threads"]
     resources:
-        mem_mb = lambda wildcards, attempt: min(int(config["max_memory"])*1024, 128*1024*attempt),
+        mem_mb = lambda wildcards, attempt: min(int(config["max_memory"])*1000, 128*1000*attempt),
         runtime = lambda wildcards, attempt: 24*60*attempt,
     shell:
         "rm -rf data/metabat_bins_spec; "
@@ -274,7 +274,7 @@ rule metabat_sspec:
     threads:
         config["max_threads"]
     resources:
-        mem_mb = lambda wildcards, attempt: min(int(config["max_memory"])*1024, 128*1024*attempt),
+        mem_mb = lambda wildcards, attempt: min(int(config["max_memory"])*1000, 128*1000*attempt),
         runtime = lambda wildcards, attempt: 24*60*attempt,
     shell:
         "rm -rf data/metabat_bins_sspec; "
@@ -300,7 +300,7 @@ rule metabat_sens:
     threads:
         config["max_threads"]
     resources:
-        mem_mb = lambda wildcards, attempt: min(int(config["max_memory"])*1024, 128*1024*attempt),
+        mem_mb = lambda wildcards, attempt: min(int(config["max_memory"])*1000, 128*1000*attempt),
         runtime = lambda wildcards, attempt: 24*60*attempt,
     shell:
         "rm -rf data/metabat_bins_sens; "
@@ -326,7 +326,7 @@ rule metabat_ssens:
     threads:
         config["max_threads"]
     resources:
-        mem_mb = lambda wildcards, attempt: min(int(config["max_memory"])*1024, 128*1024*attempt),
+        mem_mb = lambda wildcards, attempt: min(int(config["max_memory"])*1000, 128*1000*attempt),
         runtime = lambda wildcards, attempt: 24*60*attempt,
     shell:
         "rm -rf data/metabat_bins_ssens; "
@@ -352,7 +352,7 @@ rule rosella:
     threads:
         config["max_threads"]
     resources:
-        mem_mb = lambda wildcards, attempt: min(int(config["max_memory"])*1024, 128*1024*attempt),
+        mem_mb = lambda wildcards, attempt: min(int(config["max_memory"])*1000, 128*1000*attempt),
         runtime = lambda wildcards, attempt: 24*60*attempt,
     log:
         "logs/rosella.log"
@@ -377,7 +377,7 @@ rule semibin:
     threads:
         config["max_threads"]
     resources:
-        mem_mb = lambda wildcards, attempt: min(int(config["max_memory"])*1024, 128*1024*attempt),
+        mem_mb = lambda wildcards, attempt: min(int(config["max_memory"])*1000, 128*1000*attempt),
         runtime = lambda wildcards, attempt: 24*60 + 48*60*(attempt-1),
         gpus = 1 if config["request_gpu"] else 0
     conda:
@@ -410,7 +410,7 @@ rule checkm_rosella:
     threads:
         config["max_threads"]
     resources:
-        mem_mb = lambda wildcards, attempt: min(int(config["max_memory"])*1024, 128*1024*attempt),
+        mem_mb = lambda wildcards, attempt: min(int(config["max_memory"])*1000, 128*1000*attempt),
         runtime = lambda wildcards, attempt: 8*60*attempt,
         gpus = 1 if config["request_gpu"] else 0
     log:
@@ -435,7 +435,7 @@ rule checkm_metabat2:
     threads:
         config["max_threads"]
     resources:
-        mem_mb = lambda wildcards, attempt: min(int(config["max_memory"])*1024, 128*1024*attempt),
+        mem_mb = lambda wildcards, attempt: min(int(config["max_memory"])*1000, 128*1000*attempt),
         runtime = lambda wildcards, attempt: 8*60*attempt,
         gpus = 1 if config["request_gpu"] else 0
     log:
@@ -460,7 +460,7 @@ rule checkm_semibin:
     threads:
         config["max_threads"]
     resources:
-        mem_mb = lambda wildcards, attempt: min(int(config["max_memory"])*1024, 128*1024*attempt),
+        mem_mb = lambda wildcards, attempt: min(int(config["max_memory"])*1000, 128*1000*attempt),
         runtime = lambda wildcards, attempt: 8*60*attempt,
         gpus = 1 if config["request_gpu"] else 0
     log:
@@ -493,7 +493,7 @@ rule refine_rosella:
     threads:
         config["max_threads"]
     resources:
-        mem_mb = lambda wildcards, attempt: min(int(config["max_memory"])*1024, 128*1024*attempt),
+        mem_mb = lambda wildcards, attempt: min(int(config["max_memory"])*1000, 128*1000*attempt),
         runtime = lambda wildcards, attempt: 48*60 + 24*60*attempt,
     log:
         "logs/refine_rosella.log"
@@ -514,7 +514,7 @@ rule refine_metabat2:
     threads:
         config["max_threads"]
     resources:
-        mem_mb = lambda wildcards, attempt: min(int(config["max_memory"])*1024, 128*1024*attempt),
+        mem_mb = lambda wildcards, attempt: min(int(config["max_memory"])*1000, 128*1000*attempt),
         runtime = lambda wildcards, attempt: 48*60 + 24*60*attempt,
     benchmark:
         'benchmarks/refine_metabat2.benchmark.txt'
@@ -546,7 +546,7 @@ rule refine_semibin:
     threads:
         config["max_threads"]
     resources:
-        mem_mb = lambda wildcards, attempt: min(int(config["max_memory"])*1024, 128*1024*attempt),
+        mem_mb = lambda wildcards, attempt: min(int(config["max_memory"])*1000, 128*1000*attempt),
         runtime = lambda wildcards, attempt: 48*60 + 24*60*attempt,
     output:
         'data/semibin_refined/done'
@@ -626,7 +626,7 @@ rule das_tool:
     threads:
         config["max_threads"]
     resources:
-        mem_mb = lambda wildcards, attempt: min(int(config["max_memory"])*1024, 512*1024*attempt),
+        mem_mb = lambda wildcards, attempt: min(int(config["max_memory"])*1000, 512*1000*attempt),
         runtime = lambda wildcards, attempt: 12*60*attempt,
     output:
         touch("data/das_tool_bins_pre_refine/done")
@@ -649,7 +649,7 @@ rule refine_dastool:
     threads:
         config["max_threads"]
     resources:
-        mem_mb = lambda wildcards, attempt: min(int(config["max_memory"])*1024, 128*1024*attempt),
+        mem_mb = lambda wildcards, attempt: min(int(config["max_memory"])*1000, 128*1000*attempt),
         runtime = lambda wildcards, attempt: 48*60 + 24*60*attempt,
     output:
         temporary('bins/checkm.out'),
@@ -680,7 +680,7 @@ rule get_abundances:
     threads:
         config["max_threads"]
     resources:
-        mem_mb = lambda wildcards, attempt: min(int(config["max_memory"])*1024, 512*1024*attempt),
+        mem_mb = lambda wildcards, attempt: min(int(config["max_memory"])*1000, 512*1000*attempt),
         runtime = lambda wildcards, attempt: 24*60 + 24*60*attempt,
     output:
         "data/coverm_abundances.tsv"
@@ -717,7 +717,7 @@ rule checkm_das_tool:
     threads:
         config["max_threads"]
     resources:
-        mem_mb = lambda wildcards, attempt: min(int(config["max_memory"])*1024, 128*1024*attempt),
+        mem_mb = lambda wildcards, attempt: min(int(config["max_memory"])*1000, 128*1000*attempt),
         runtime = lambda wildcards, attempt: 8*60*attempt,
     log:
         "logs/checkm_das_tool.log"
@@ -736,7 +736,7 @@ rule singlem_pipe_reads:
         package_path = os.environ["SINGLEM_METAPACKAGE_PATH"]
     threads: min(config["max_threads"], 48)
     resources:
-        mem_mb = lambda wildcards, attempt: min(int(config["max_memory"])*1024, 8*1024*attempt),
+        mem_mb = lambda wildcards, attempt: min(int(config["max_memory"])*1000, 8*1000*attempt),
         runtime = lambda wildcards, attempt: 12*60*attempt,
     log:
         "logs/singlem_pipe_reads_log.txt"
@@ -762,7 +762,7 @@ rule singlem_appraise:
         genomes_folder = "data/refined_bins/final_bins/"
     threads: min(config["max_threads"], 48)
     resources:
-        mem_mb = lambda wildcards, attempt: min(int(config["max_memory"])*1024, 8*1024*attempt),
+        mem_mb = lambda wildcards, attempt: min(int(config["max_memory"])*1000, 8*1000*attempt),
         runtime = lambda wildcards, attempt: 12*60*attempt,
     conda:
         "../../envs/singlem.yaml"
@@ -816,7 +816,7 @@ rule dereplicate_and_get_abundances_paired:
     threads:
         config["max_threads"]
     resources:
-        mem_mb = lambda wildcards, attempt: min(int(config["max_memory"])*1024, 512*1024*attempt),
+        mem_mb = lambda wildcards, attempt: min(int(config["max_memory"])*1000, 512*1000*attempt),
         runtime = lambda wildcards, attempt: 24*60 + 24*60*attempt,
     log:
         "logs/coverm_abundances_paired.log"
@@ -837,7 +837,7 @@ rule dereplicate_and_get_abundances_interleaved:
     threads:
         config["max_threads"]
     resources:
-        mem_mb = lambda wildcards, attempt: min(int(config["max_memory"])*1024, 512*1024*attempt),
+        mem_mb = lambda wildcards, attempt: min(int(config["max_memory"])*1000, 512*1000*attempt),
         runtime = lambda wildcards, attempt: 24*60 + 24*60*attempt,
     log:
         "logs/coverm_abundances_interleaved.log"

@@ -149,7 +149,7 @@ rule checkm2:
     threads:
         config["max_threads"]
     resources:
-        mem_mb = lambda wildcards, attempt: min(int(config["max_memory"])*1024, 128*1024*attempt),
+        mem_mb = lambda wildcards, attempt: min(int(config["max_memory"])*1000, 128*1000*attempt),
         runtime = lambda wildcards, attempt: 8*60*attempt,
         gpus = 1 if config["request_gpu"] else 0
     log:
@@ -177,7 +177,7 @@ rule eggnog:
     threads:
         config["max_threads"]
     resources:
-        mem_mb = lambda wildcards, attempt: min(int(config["max_memory"])*1024, 512*1024*attempt),
+        mem_mb = lambda wildcards, attempt: min(int(config["max_memory"])*1000, 512*1000*attempt),
         runtime = lambda wildcards, attempt: 24*60*attempt,
     log:
         'logs/eggnog.log'
@@ -208,7 +208,7 @@ rule gtdbtk:
     threads:
         config["max_threads"]
     resources:
-        mem_mb = lambda wildcards, attempt: min(int(config["max_memory"])*1024, 256*1024*attempt),
+        mem_mb = lambda wildcards, attempt: min(int(config["max_memory"])*1000, 256*1000*attempt),
         runtime = lambda wildcards, attempt: 12*60*attempt,
     log:
         'logs/gtdbtk.log'

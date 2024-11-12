@@ -30,7 +30,7 @@ rule qc_short_reads:
     threads:
         config["max_threads"]
     resources:
-        mem_mb = lambda wildcards, attempt: min(int(config["max_memory"])*1024, 512*1024*attempt),
+        mem_mb = lambda wildcards, attempt: min(int(config["max_memory"])*1000, 512*1000*attempt),
         runtime = lambda wildcards, attempt: 8*60*attempt,
     log:
         "logs/qc_short_reads.log"
@@ -55,7 +55,7 @@ rule qc_long_reads:
     threads:
         config["max_threads"]
     resources:
-        mem_mb = lambda wildcards, attempt: min(int(config["max_memory"])*1024, 128*1024*attempt),
+        mem_mb = lambda wildcards, attempt: min(int(config["max_memory"])*1000, 128*1000*attempt),
         runtime = lambda wildcards, attempt: 12*60*attempt,
     log:
         "logs/qc_long_reads.log"
@@ -79,7 +79,7 @@ rule fastqc:
     threads:
         config["max_threads"]
     resources:
-        mem_mb = lambda wildcards, attempt: min(int(config["max_memory"])*1024, 128*1024*attempt),
+        mem_mb = lambda wildcards, attempt: min(int(config["max_memory"])*1000, 128*1000*attempt),
         runtime = lambda wildcards, attempt: 12*60*attempt,
     log:
         "logs/fastqc.log"
@@ -98,7 +98,7 @@ rule fastqc_long:
     threads:
         config["max_threads"]
     resources:
-        mem_mb = lambda wildcards, attempt: min(int(config["max_memory"])*1024, 128*1024*attempt),
+        mem_mb = lambda wildcards, attempt: min(int(config["max_memory"])*1000, 128*1000*attempt),
         runtime = lambda wildcards, attempt: 12*60*attempt,
     log:
         "logs/fastqc_long.log"
@@ -118,7 +118,7 @@ rule nanoplot:
     threads:
         config["max_threads"]
     resources:
-        mem_mb = lambda wildcards, attempt: min(int(config["max_memory"])*1024, 128*1024*attempt),
+        mem_mb = lambda wildcards, attempt: min(int(config["max_memory"])*1000, 128*1000*attempt),
         runtime = lambda wildcards, attempt: 12*60*attempt,
     log:
         "logs/nanoplot.log"
@@ -138,7 +138,7 @@ rule metaquast:
     threads:
         config["max_threads"]
     resources:
-        mem_mb = lambda wildcards, attempt: min(int(config["max_memory"])*1024, 128*1024*attempt),
+        mem_mb = lambda wildcards, attempt: min(int(config["max_memory"])*1000, 128*1000*attempt),
         runtime = lambda wildcards, attempt: 12*60*attempt,
     log:
         "logs/metaquast.log"
@@ -160,7 +160,7 @@ rule read_fraction_recovered:
     threads:
         config["max_threads"]
     resources:
-        mem_mb = lambda wildcards, attempt: min(int(config["max_memory"])*1024, 512*1024*attempt),
+        mem_mb = lambda wildcards, attempt: min(int(config["max_memory"])*1000, 512*1000*attempt),
         runtime = lambda wildcards, attempt: 24*60 + 24*60*attempt,
     log:
         "logs/fraction_recovered.log"

@@ -58,7 +58,7 @@ rule flye_assembly:
     threads:
         config["max_threads"]
     resources:
-        mem_mb = lambda wildcards, attempt: min(int(config["max_memory"])*1024, 512*1024*attempt),
+        mem_mb = lambda wildcards, attempt: min(int(config["max_memory"])*1000, 512*1000*attempt),
         runtime = lambda wildcards, attempt: 24*60 + 24*60*attempt,
     log:
         "logs/flye_assembly.log"
@@ -86,7 +86,7 @@ rule polish_metagenome_flye:
     threads:
         config["max_threads"]
     resources:
-        mem_mb = lambda wildcards, attempt: min(int(config["max_memory"])*1024, 512*1024*attempt),
+        mem_mb = lambda wildcards, attempt: min(int(config["max_memory"])*1000, 512*1000*attempt),
         runtime = lambda wildcards, attempt: 24*60*attempt,
         gpus = 1 if config["request_gpu"] else 0
     log:
@@ -113,7 +113,7 @@ rule generate_pilon_sort:
     threads:
         config["max_threads"]
     resources:
-        mem_mb = lambda wildcards, attempt: min(int(config["max_memory"])*1024, 512*1024*attempt),
+        mem_mb = lambda wildcards, attempt: min(int(config["max_memory"])*1000, 512*1000*attempt),
         runtime = lambda wildcards, attempt: 24*60*attempt,
     log:
         "logs/generate_pilon_sort.log"
@@ -135,7 +135,7 @@ rule polish_meta_pilon:
     threads: 1 # Threads no longer supported for pilon
     #     config["max_threads"]
     resources:
-        mem_mb = lambda wildcards, attempt: min(int(config["max_memory"])*1024, 512*1024*attempt),
+        mem_mb = lambda wildcards, attempt: min(int(config["max_memory"])*1000, 512*1000*attempt),
         runtime = lambda wildcards, attempt: 24*60*attempt,
     log:
         "logs/polish_meta_pilon.log"
@@ -162,7 +162,7 @@ rule polish_meta_racon_ill:
     threads:
         config["max_threads"]
     resources:
-        mem_mb = lambda wildcards, attempt: min(int(config["max_memory"])*1024, 512*1024*attempt),
+        mem_mb = lambda wildcards, attempt: min(int(config["max_memory"])*1000, 512*1000*attempt),
         runtime = lambda wildcards, attempt: 24*60*attempt,
     log:
         "logs/polish_meta_racon_ill.log"
@@ -304,7 +304,7 @@ rule filter_illumina_assembly:
     threads:
         config["max_threads"]
     resources:
-        mem_mb = lambda wildcards, attempt: min(int(config["max_memory"])*1024, 512*1024*attempt),
+        mem_mb = lambda wildcards, attempt: min(int(config["max_memory"])*1000, 512*1000*attempt),
         runtime = lambda wildcards, attempt: 24*60*attempt,
     log:
         "logs/filter_illumina_assembly.log"
@@ -354,7 +354,7 @@ rule spades_assembly:
     threads:
         config["max_threads"]
     resources:
-        mem_mb = lambda wildcards, attempt: min(int(config["max_memory"])*1024, 256*1024*attempt),
+        mem_mb = lambda wildcards, attempt: min(int(config["max_memory"])*1000, 256*1000*attempt),
         runtime = lambda wildcards, attempt: 72*60 + 24*60*attempt,
     log:
         "logs/spades_assembly.log"
@@ -393,7 +393,7 @@ rule assemble_short_reads:
     threads:
         config["max_threads"]
     resources:
-        mem_mb = lambda wildcards, attempt: min(int(config["max_memory"])*1024, 512*1024*attempt),
+        mem_mb = lambda wildcards, attempt: min(int(config["max_memory"])*1000, 512*1000*attempt),
         runtime = lambda wildcards, attempt: 72*60 + 24*60*attempt,
     log:
         "logs/short_read_assembly.log"
@@ -430,7 +430,7 @@ rule spades_assembly_coverage:
     threads:
         config["max_threads"]
     resources:
-        mem_mb = lambda wildcards, attempt: min(int(config["max_memory"])*1024, 512*1024*attempt),
+        mem_mb = lambda wildcards, attempt: min(int(config["max_memory"])*1000, 512*1000*attempt),
         runtime = lambda wildcards, attempt: 24*60*attempt,
     log:
         "logs/spades_assembly_coverage.log"
@@ -457,7 +457,7 @@ rule metabat_binning_short:
     threads:
         config["max_threads"]
     resources:
-        mem_mb = lambda wildcards, attempt: min(int(config["max_memory"])*1024, 512*1024*attempt),
+        mem_mb = lambda wildcards, attempt: min(int(config["max_memory"])*1000, 512*1000*attempt),
         runtime = lambda wildcards, attempt: 24*60*attempt,
     log:
         "logs/metabat_binning_short.log"
@@ -482,7 +482,7 @@ rule map_long_mega:
     threads:
         config["max_threads"]
     resources:
-        mem_mb = lambda wildcards, attempt: min(int(config["max_memory"])*1024, 512*1024*attempt),
+        mem_mb = lambda wildcards, attempt: min(int(config["max_memory"])*1000, 512*1000*attempt),
         runtime = lambda wildcards, attempt: 24*60*attempt,
     log:
         "logs/map_long_mega.log"
@@ -525,7 +525,7 @@ rule get_read_pools:
     threads:
         config["max_threads"]
     resources:
-        mem_mb = lambda wildcards, attempt: min(int(config["max_memory"])*1024, 512*1024*attempt),
+        mem_mb = lambda wildcards, attempt: min(int(config["max_memory"])*1000, 512*1000*attempt),
         runtime = lambda wildcards, attempt: 12*60*attempt,
     log:
         "logs/get_read_pools.log"
@@ -544,7 +544,7 @@ rule assemble_pools:
     threads:
         config["max_threads"]
     resources:
-        mem_mb = lambda wildcards, attempt: min(int(config["max_memory"])*1024, 512*1024*attempt),
+        mem_mb = lambda wildcards, attempt: min(int(config["max_memory"])*1000, 512*1000*attempt),
         runtime = lambda wildcards, attempt: 72*60 + 24*60*attempt,
     log:
         "logs/assemble_pools.log"

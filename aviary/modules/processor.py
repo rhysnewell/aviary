@@ -470,7 +470,7 @@ class Processor:
                 target_rule=workflow if workflow != "None" else "",
                 conda_prefix="--conda-prefix " + self.conda_prefix,
                 conda_frontend="--conda-frontend " + conda_frontend,
-                resources=f"--resources mem_mb={int(self.max_memory)*1024} {self.resources}" if not dryrun else ""
+                resources=f"--resources mem_mb={int(self.max_memory)*1000} {self.resources}" if not dryrun else ""
             )
 
             logging.debug(f"Command: {cmd}")
