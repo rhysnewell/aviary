@@ -19,7 +19,8 @@ if __name__ == '__main__':
     binners = []
     for (binner, extension) in unrefined_binners_to_use:
         if binner not in snakemake.config['skip_binners']:
-            binners.append((f'{binner}_bins/', extension, f'data/{binner}_bins.tsv'))
+            extra = 'bins/' if binner == 'vamb' else ''
+            binners.append((f'{binner}_bins/'+extra, extension, f'data/{binner}_bins.tsv'))
 
     for (binner, extension) in refined_binners_to_use:
         if binner not in snakemake.config['skip_binners']:
