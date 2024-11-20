@@ -11,3 +11,6 @@ aviary_genome.egg-info
 example/
 test/data/.conda
 config.yaml
+benchmarks
+data
+logs
