@@ -792,13 +792,12 @@ def main():
     assemble_group.add_argument(
         '--coassemble', '--co-assemble', '--co_assemble',
         help='Specifies whether or not, when given multiple input reads, to coassemble them. \n'
-             'If False, Aviary will use the first set of short reads and first set of long reads to perform assembly \n'
+             'If False (no), Aviary will use the first set of short reads and first set of long reads to perform assembly \n'
              'All read files will still be used during the MAG recovery process for differential coverage.',
         type=str2bool,
         nargs='?',
         const=True,
-        dest='coassemble',
-        default=False,
+        metavar='yes|no',
     )
 
     assemble_group.add_argument(
