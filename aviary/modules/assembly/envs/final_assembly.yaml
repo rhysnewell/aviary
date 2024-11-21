@@ -2,5 +2,5 @@ channels:
   - conda-forge
   - bioconda
 dependencies:
-  - unicycler = 0.4.8
-  - samtools = 1.11
+  - unicycler = 0.5.1
+  - samtools = 1.21

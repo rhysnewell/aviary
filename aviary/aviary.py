@@ -260,11 +260,13 @@ def main():
 
     base_group.add_argument(
         '--build',
-        help='Build conda environments and then exits. Equivalent to \"--snakemake-cmds \'--conda-create-envs-only True \' \"',
+        help='Build conda environments necessary to run the pipeline, and then exit. Equivalent to "--snakemake-cmds \'--conda-create-envs-only True \' ". Other inputs should be specified as if running normally so that the right set of conda environments is built.',
         type=str2bool,
         nargs='?',
         const=True,
         dest='build',
+        metavar='yes|no',
+        default='no',
     )
 
     base_group.add_argument(
@@ -790,13 +792,12 @@ def main():
     assemble_group.add_argument(
         '--coassemble', '--co-assemble', '--co_assemble',
         help='Specifies whether or not, when given multiple input reads, to coassemble them. \n'
-             'If False, Aviary will use the first set of short reads and first set of long reads to perform assembly \n'
+             'If False (no), Aviary will use the first set of short reads and first set of long reads to perform assembly \n'
              'All read files will still be used during the MAG recovery process for differential coverage.',
         type=str2bool,
         nargs='?',
         const=True,
-        dest='coassemble',
-        default=False,
+        metavar='yes|no',
     )
 
     assemble_group.add_argument(
