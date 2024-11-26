@@ -99,7 +99,7 @@ class Processor:
         self.output = os.path.abspath(args.output)
         self.threads = args.max_threads
         self.max_memory = args.max_memory
-        self.pplacer_threads = min(int(self.threads), 48)
+        self.pplacer_threads = min(int(self.threads), 1)
         self.workflows = args.workflow
         self.request_gpu = args.request_gpu
 
