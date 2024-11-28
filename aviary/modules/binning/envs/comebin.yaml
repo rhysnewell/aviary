@@ -1,0 +1,9 @@
+channels:
+  - pytorch
+  - nvidia
+  - conda-forge
+  - bioconda
+dependencies:
+  - comebin=1.0.*
+  - pytorch
+  - pytorch-cuda=11.8
