@@ -211,6 +211,7 @@ class Tests(unittest.TestCase):
             f"-2 {data}/wgsim.2.fq.gz "
             f"--binning-only "
             f"--skip-binners rosella semibin metabat vamb "
+            f"--extra-binners comebin "
             f"--skip-qc "
             f"--refinery-max-iterations 0 "
             f"--conda-prefix {path_to_conda} "
