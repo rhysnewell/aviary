@@ -78,7 +78,7 @@ rule binner_result:
         "ln -s ../metabat_bins_spec/*.fa ./ && ls *.fa | parallel 'mv {{}} {{.}}.metabat_spec.fna'; "
         "ln -s ../metabat_bins_ssens/*.fa ./ && ls *.fa | parallel 'mv {{}} {{.}}.metabat_ssens.fna'; "
         "ln -s ../metabat_bins_sspec/*.fa ./ && ls *.fa | parallel 'mv {{}} {{.}}.metabat_sspec.fna'; "
-        "ln -s ../semibin_bins/output_recluster_bins/*.fa ./ && ls *.fa | parallel 'mv {{}} {{.}}.semibin.fna'; "
+        "ln -s ../semibin_bins/output_bins/*.fa ./ && ls *.fa | parallel 'mv {{}} {{.}}.semibin.fna'; "
         "ln -s ../concoct_bins/*.fa ./ && ls *.fa | parallel 'mv {{}} concoct_{{.}}.fna'; "
         "ln -s ../maxbin2_bins/*.fasta ./ && ls *.fasta | parallel 'mv {{}} maxbin2_{{.}}.fna'; "
         "ln -s ../rosella_bins/*.fna ./; "
@@ -237,7 +237,7 @@ rule rosella_refine_benchmark_3:
     output:
         'data/rosella_refine_semibin/done'
     params:
-        bin_folder = "data/semibin_bins/output_recluster_bins/",
+        bin_folder = "data/semibin_bins/output_bins/",
         extension = "fa",
         output_folder = "data/rosella_refine_semibin/",
         min_bin_size = config["min_bin_size"],
@@ -592,7 +592,7 @@ rule das_tool_without_rosella:
         """
         mkdir -p data/no_rosella/
         Fasta_to_Scaffolds2Bin.sh -i data/metabat_bins_2 -e fa > data/no_rosella/metabat_bins_2.tsv; 
-        Fasta_to_Scaffolds2Bin.sh -i data/semibin_bins/output_recluster_bins/ -e fa > data/no_rosella/semibin_bins.tsv; 
+        Fasta_to_Scaffolds2Bin.sh -i data/semibin_bins/output_bins/ -e fa > data/no_rosella/semibin_bins.tsv; 
         Fasta_to_Scaffolds2Bin.sh -i data/metabat_bins_sspec -e fa > data/no_rosella/metabat_bins_sspec.tsv; 
         Fasta_to_Scaffolds2Bin.sh -i data/metabat_bins_ssens -e fa > data/no_rosella/metabat_bins_ssens.tsv; 
         Fasta_to_Scaffolds2Bin.sh -i data/metabat_bins_sens -e fa > data/no_rosella/metabat_bins_sens.tsv; 
@@ -643,7 +643,7 @@ rule das_tool_no_refine:
         Fasta_to_Scaffolds2Bin.sh -i data/maxbin2_bins -e fasta > data/no_refine_input/maxbin_bins.tsv; 
         Fasta_to_Scaffolds2Bin.sh -i data/vamb_bins/bins -e fna > data/no_refine_input/vamb_bins.tsv; 
         Fasta_to_Scaffolds2Bin.sh -i data/rosella_bins/ -e fna > data/no_refine_input/rosella_bins.tsv; 
-        Fasta_to_Scaffolds2Bin.sh -i data/semibin_bins/output_recluster_bins/ -e fa > data/no_refine_input/semibin_bins.tsv; 
+        Fasta_to_Scaffolds2Bin.sh -i data/semibin_bins/output_bins/ -e fa > data/no_refine_input/semibin_bins.tsv; 
         Fasta_to_Scaffolds2Bin.sh -i data/metabat_bins_2/ -e fa > data/no_refine_input/metabat2_bins.tsv; 
         scaffold2bin_files=$(find data/no_refine_input/*bins*.tsv -not -empty -exec ls {{}} \; | tr "\n" ',' | sed "s/,$//g"); 
         DAS_Tool --search_engine diamond --write_bin_evals 1 --write_bins 1 -t {threads} --score_threshold -42 \
@@ -738,7 +738,7 @@ rule amber_for_refining:
         'mkdir -p data/amber_refine; '
         'convert_fasta_bins_to_biobox_format.py -o data/amber_refine/rosella_amber.tsv data/rosella_bins/*.fna || rm data/amber_refine/rosella_amber.tsv; '
         'convert_fasta_bins_to_biobox_format.py -o data/amber_refine/m2_amber.tsv data/metabat_bins_2/*.fa || rm data/amber_refine/m2_amber.tsv; '
-        'convert_fasta_bins_to_biobox_format.py -o data/amber_refine/semibin_amber.tsv data/semibin_bins/output_recluster_bins/*.fa || rm data/amber_refine/semibin_amber.tsv; '
+        'convert_fasta_bins_to_biobox_format.py -o data/amber_refine/semibin_amber.tsv data/semibin_bins/output_bins/*.fa || rm data/amber_refine/semibin_amber.tsv; '
         'sed -i "s/_SAMPLEID_/gsa/" data/amber_refine/*.tsv; '
         'amber.py -g {input.gsa_mappings} -o data/amber_refine/for_refine -x 90,80,70,60,50 -y 10,5 '
         'data/amber_refine/*.tsv'
@@ -777,7 +777,7 @@ rule setup_amber:
         'convert_fasta_bins_to_biobox_format.py -o data/amber_out/concoct_amber.tsv data/concoct_bins/*.fa || rm data/amber_out/concoct_amber.tsv; '
         'convert_fasta_bins_to_biobox_format.py -o data/amber_out/maxbin2_amber.tsv data/maxbin2_bins/*.fasta || rm data/amber_out/maxbin2_amber.tsv; '
         'convert_fasta_bins_to_biobox_format.py -o data/amber_out/vamb_amber.tsv data/vamb_bins/bins/*.fna || rm data/amber_out/vamb_amber.tsv; '
-        'convert_fasta_bins_to_biobox_format.py -o data/amber_out/semibin_amber.tsv data/semibin_bins/output_recluster_bins/*.fa || rm data/amber_out/semibin_amber.tsv; '
+        'convert_fasta_bins_to_biobox_format.py -o data/amber_out/semibin_amber.tsv data/semibin_bins/output_bins/*.fa || rm data/amber_out/semibin_amber.tsv; '
         'convert_fasta_bins_to_biobox_format.py -o data/amber_out/semibin_refined_amber.tsv data/rosella_refine_semibin/final_bins/*.fna || rm data/amber_out/semibin_refined_amber.tsv; '
         'convert_fasta_bins_to_biobox_format.py -o data/amber_out/rosella_refined_amber.tsv data/rosella_refine_rosella/final_bins/*.fna || rm data/amber_out/rosella_refined_amber.tsv; '
         'convert_fasta_bins_to_biobox_format.py -o data/amber_out/metabat2_refined_amber.tsv data/rosella_refine_metabat2/final_bins/*.fna || rm data/amber_out/metabat2_refined_amber.tsv; '

@@ -3,4 +3,4 @@ channels:
   - bioconda
   - defaults
 dependencies:
-  - SemiBin>=1.4
+  - SemiBin>=2.1.*
