@@ -8,10 +8,13 @@ if __name__ == '__main__':
     unrefined_binners_to_use = [
         ('concoct', 'fa'),
         ('maxbin2', 'fasta'),
-        ('vamb', 'fna')]
+        ('vamb', 'fna'),
+        ('comebin', 'fa'),
+        ]
     refined_binners_to_use = [
         ('rosella', 'fna'),
-        ('semibin', 'fna')]
+        ('semibin', 'fna'),
+        ]
 
     # N.B. specifying "metabat" will skip both MetaBAT1 and MetaBAT2.
     metabats = ['metabat_sspec', 'metabat_ssens', 'metabat_sens', 'metabat_spec']
@@ -19,7 +22,12 @@ if __name__ == '__main__':
     binners = []
     for (binner, extension) in unrefined_binners_to_use:
         if binner not in snakemake.config['skip_binners']:
-            extra = 'bins/' if binner == 'vamb' else ''
+            extra = ''
+            if binner == 'vamb':
+                extra = 'bins/'
+            elif binner == 'comebin':
+                extra = 'comebin_res/comebin_res_bins/'
+
             binners.append((f'{binner}_bins/'+extra, extension, f'data/{binner}_bins.tsv'))
 
     for (binner, extension) in refined_binners_to_use:

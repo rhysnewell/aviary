@@ -393,6 +393,31 @@ rule semibin:
         "touch {output.done} || SemiBin single_easy_bin -i {input.fasta} -b data/binning_bams/*.bam -o data/semibin_bins -p {threads} --self-supervised > {log} 2>&1 "
         "&& touch {output.done} || touch {output.done}"
 
+
+rule comebin:
+    input:
+        fasta = ancient(config["fasta"]),
+        bams_indexed = ancient("data/binning_bams/done")
+    output:
+        done = "data/comebin_bins/done"
+    threads:
+        config["max_threads"]
+    resources:
+        mem_mb = lambda wildcards, attempt: min(int(config["max_memory"])*1024, 128*1024*attempt),
+        runtime = lambda wildcards, attempt: 24*60*attempt,
+        gpus = 1 if config["request_gpu"] else 0
+    conda:
+        "envs/comebin.yaml"
+    log:
+        "logs/comebin.log"
+    benchmark:
+        "benchmarks/comebin.benchmark.txt"
+    shell:
+        "rm -rf data/comebin_bins/; "
+        "run_comebin.sh -a {input.fasta} -p data/binning_bams -t {threads} -o data/comebin_bins > {log} 2>&1 && "
+        "touch {output.done} || touch {output.done}"
+
+
 rule checkm_rosella:
     input:
         done = ancient("data/rosella_bins/done")
@@ -622,6 +647,7 @@ rule das_tool:
         metabat_sense = [] if "metabat_sens" in config["skip_binners"] else "data/metabat_bins_sens/done",
         rosella_done = [] if "rosella" in config["skip_binners"] else "data/rosella_refined/done",
         semibin_done = [] if "semibin" in config["skip_binners"] else "data/semibin_refined/done",
+        comebin_done = [] if "comebin" in config["skip_binners"] else "data/comebin_bins/done",
         vamb_done = [] if "vamb" in config["skip_binners"] else "data/vamb_bins/done",
     threads:
         config["max_threads"]
