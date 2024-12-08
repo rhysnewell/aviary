@@ -759,7 +759,7 @@ rule singlem_pipe_reads:
     output:
         "data/singlem_out/metagenome.combined_otu_table.csv"
     params:
-        package_path = os.environ["SINGLEM_METAPACKAGE_PATH"]
+        package_path = config['singlem_metapackage']
     threads: min(config["max_threads"], 48)
     resources:
         mem_mb = lambda wildcards, attempt: min(int(config["max_memory"])*1024, 8*1024*attempt),
@@ -784,7 +784,7 @@ rule singlem_appraise:
         assembled = "data/singlem_out/assembled.otu_table.csv",
         singlem = "data/singlem_out/singlem_appraisal.tsv"
     params:
-        package_path = os.environ["SINGLEM_METAPACKAGE_PATH"],
+        package_path = config['singlem_metapackage'],
         genomes_folder = "data/refined_bins/final_bins/"
     threads: min(config["max_threads"], 48)
     resources:
