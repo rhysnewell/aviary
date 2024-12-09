@@ -99,9 +99,13 @@ class Processor:
         self.output = os.path.abspath(args.output)
         self.threads = args.max_threads
         self.max_memory = args.max_memory
-        self.pplacer_threads = min(int(self.threads), 48)
         self.workflows = args.workflow
         self.request_gpu = args.request_gpu
+
+        try:
+            self.pplacer_threads = min(int(args.pplacer_threads), int(self.threads), 48)
+        except AttributeError:
+            self.pplacer_threads = min(int(self.threads), 48)
 
         try:
             self.strain_analysis = args.strain_analysis
