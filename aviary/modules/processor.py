@@ -124,7 +124,7 @@ class Processor:
                 self.skip_singlem = True
             self.binning_only = args.binning_only
 
-            self.skip_binners = ["maxbin2", "concoct", "comebin"]
+            self.skip_binners = ["maxbin2", "concoct", "comebin", "taxvamb"]
             if args.extra_binners:
                 for binner in args.extra_binners:
                     binner = binner.lower()   
@@ -134,6 +134,8 @@ class Processor:
                         self.skip_binners.remove("concoct")
                     elif binner == "comebin":
                         self.skip_binners.remove("comebin")
+                    elif binner == "taxvamb":
+                        self.skip_binners.remove("taxvamb")
                     else:
                         logging.warning(f"Unknown extra binner {binner} specified. Skipping...")
 

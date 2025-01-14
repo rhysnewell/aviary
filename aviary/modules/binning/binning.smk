@@ -203,6 +203,64 @@ rule vamb_skip:
         "touch data/vamb_bins/skipped"
 
 
+rule taxvamb_abundance_tsv:
+    """
+    vamb post v4 has to have a coverage file with the following format:
+    A TSV file with the header being "contigname" followed by one samplename per sample,
+    and the values in the TSV file being precomputed abundances.
+    """
+    input:
+        fasta = ancient(config["fasta"]),
+        done = ancient("data/coverm.filt.cov")
+    output:
+        vamb_bams_done = "data/coverm.vamb.cov"
+    threads:
+        config["max_threads"]
+    params:
+        min_contig_size = config['min_contig_size']
+    run:
+        # Short-only
+        # contigName	contigLen	totalAvgDepth	assembly.fasta/wgsim.1.fq.gz.bam	assembly.fasta/wgsim.1.fq.gz.bam-var
+        # Short + long
+        # contigName	contigLen	totalAvgDepth	assembly.fasta/wgsim.1.fq.gz.bam	assembly.fasta/wgsim.1.fq.gz.bam-var	assembly.fasta/wgsim.css.fastq.gz Trimmed Mean	assembly.fasta/wgsim.css.fastq.gz Variance
+        import pandas as pd
+        coverm_out = pd.read_csv("data/coverm.filt.cov", sep='\t')
+        coverm_out.drop(columns=["contigLen", "totalAvgDepth"], inplace=True)
+        coverm_out.rename(columns={"contigName": "contigname"}, inplace=True)
+        columns_to_drop = [col for col in coverm_out.columns if col.endswith('-var') or col.endswith(' Variance')]
+        coverm_out.drop(columns=columns_to_drop, inplace=True)
+        coverm_out.to_csv("data/coverm.vamb.cov", sep='\t', index=False)
+
+
+rule taxvamb:
+    input:
+        coverage = ancient("data/coverm.vamb.cov"),
+        fasta = ancient(config["fasta"]),
+    params:
+        min_bin_size = config["min_bin_size"],
+        min_contig_size = config["min_contig_size"],
+        vamb_threads = min(int(config["max_threads"]), 16) // 2 # vamb use double the threads you give it
+    threads:
+        config["max_threads"]
+    resources:
+        mem_mb = lambda wildcards, attempt: min(int(config["max_memory"])*1024, 128*1024*attempt),
+        runtime = lambda wildcards, attempt: 48*60*attempt,
+        gpus = 1 if config["request_gpu"] else 0
+    output:
+        "data/taxvamb_bins/done"
+    conda:
+        "envs/taxvamb.yaml"
+    log:
+        "logs/taxvamb.log"
+    benchmark:
+        "benchmarks/taxvamb.benchmark.txt"
+    shell:
+        "rm -rf data/taxvamb_bins/; "
+        "bash -c 'vamb bin taxvamb --outdir data/taxvamb_bins/ -p {params.vamb_threads} --abundance_tsv {input.coverage} --fasta {input.fasta} "
+        "--minfasta {params.min_bin_size} -m {params.min_contig_size} > {log} 2>&1 && touch {output[0]}' || "
+        "touch {output[0]} && mkdir -p data/taxvamb_bins/bins"
+
+
 rule metabat2:
     input:
         coverage = ancient("data/coverm.cov"),
@@ -649,6 +707,7 @@ rule das_tool:
         semibin_done = [] if "semibin" in config["skip_binners"] else "data/semibin_refined/done",
         comebin_done = [] if "comebin" in config["skip_binners"] else "data/comebin_bins/done",
         vamb_done = [] if "vamb" in config["skip_binners"] else "data/vamb_bins/done",
+        taxvamb_done = [] if "taxvamb" in config["skip_binners"] else "data/taxvamb_bins/done",
     threads:
         config["max_threads"]
     resources:

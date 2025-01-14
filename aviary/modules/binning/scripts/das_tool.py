@@ -10,6 +10,7 @@ if __name__ == '__main__':
         ('maxbin2', 'fasta'),
         ('vamb', 'fna'),
         ('comebin', 'fa'),
+        ('taxvamb', 'fna'),
         ]
     refined_binners_to_use = [
         ('rosella', 'fna'),
@@ -23,7 +24,7 @@ if __name__ == '__main__':
     for (binner, extension) in unrefined_binners_to_use:
         if binner not in snakemake.config['skip_binners']:
             extra = ''
-            if binner == 'vamb':
+            if binner == 'vamb' or binner == 'taxvamb':
                 extra = 'bins/'
             elif binner == 'comebin':
                 extra = 'comebin_res/comebin_res_bins/'
