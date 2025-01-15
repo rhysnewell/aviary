@@ -44,6 +44,7 @@ rule download_databases:
         'logs/download_eggnog.log' if "eggnog" in config["download"] else [],
         'logs/download_singlem.log' if "singlem" in config["download"] else [],
         'logs/download_checkm2.log' if "checkm2" in config["download"] else [],
+        'logs/download_metabuli.log' if "metabuli" in config["download"] else [],
     threads: 1
     log:
         temp("logs/download.log")
@@ -135,6 +136,17 @@ rule download_checkm2:
     shell:
         'checkm2 database --download --path {params.checkm2_folder} 2> {log}; '
         'mv {params.checkm2_folder}/CheckM2_database/*.dmnd {params.checkm2_folder}/; '
+
+rule download_metabuli:
+    params:
+        metabuli_folder = os.path.expanduser(config['metabuli_folder'])
+    conda:
+        '../../envs/metabuli.yaml'
+    threads: 1
+    log:
+        'logs/download_metabuli.log'
+    shell:
+        'metabuli databases GTDB {params.metabuli_folder} tmp 2> {log} 2&>1 '
 
 rule checkm2:
     input:
