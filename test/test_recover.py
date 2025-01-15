@@ -400,7 +400,7 @@ class Tests(unittest.TestCase):
             config = load_configfile(config_path)
 
             self.assertEqual(config["refinery_max_iterations"], 5)
-            self.assertEqual(config["pplacer_threads"], 48)
+            self.assertEqual(config["pplacer_threads"], 8)
 
     def test_recover_config_many_pplacer_threads(self):
         with tempfile.TemporaryDirectory() as tmpdir:
