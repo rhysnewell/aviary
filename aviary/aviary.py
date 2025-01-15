@@ -155,9 +155,9 @@ def main():
 
     base_group.add_argument(
         '-p', '--pplacer-threads', '--pplacer_threads',
-        help='The number of threads given to pplacer, values above 48 will be scaled down',
+        help='The number of threads given to pplacer, values above `--max-threads` will be scaled to equal `--max-threads`',
         dest='pplacer_threads',
-        default=48,
+        default=8,
     )
 
     base_group.add_argument(
