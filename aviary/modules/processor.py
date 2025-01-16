@@ -40,8 +40,8 @@ from pathlib import Path
 from glob import glob
 
 # Local imports
-from snakemake import utils
-from snakemake.io import load_configfile
+# from snakemake import utils
+from snakemake.common.configfile import load_configfile
 from ruamel.yaml import YAML  # used for yaml reading with comments
 from aviary import LONG_READ_TYPES
 
@@ -445,7 +445,7 @@ class Processor:
         load_configfile(self.config)
 
     def run_workflow(self, cores=16, profile=None, cluster_retries=None,
-                     dryrun=False, clean=True, conda_frontend="mamba",
+                     dryrun=False, clean=True, conda_frontend=None,
                      snakemake_args="", write_to_script=None, rerun_triggers=None):
         """
         Runs the aviary pipeline
@@ -484,7 +484,7 @@ class Processor:
                 args=snakemake_args,
                 target_rule=workflow if workflow != "None" else "",
                 conda_prefix="--conda-prefix " + self.conda_prefix,
-                conda_frontend="--conda-frontend " + conda_frontend,
+                conda_frontend="--conda-frontend " + conda_frontend if conda_frontend is not None else "",
                 resources=f"--resources mem_mb={int(self.max_memory)*1024} {self.resources}" if not dryrun else ""
             )
 
