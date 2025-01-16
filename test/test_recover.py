@@ -365,6 +365,7 @@ class Tests(unittest.TestCase):
                 f"SINGLEM_METAPACKAGE_PATH=. "
                 f"aviary recover "
                 f"--refinery-max-iterations 3 "
+                f"--max-threads 8 "
                 f"--assembly {ASSEMBLY} "
                 f"-1 {FORWARD_READS} "
                 f"-2 {REVERSE_READS} "
@@ -380,6 +381,60 @@ class Tests(unittest.TestCase):
             config = load_configfile(config_path)
 
             self.assertEqual(config["refinery_max_iterations"], 3)
+            self.assertEqual(config["pplacer_threads"], 8)
+
+    def test_recover_config_many_threads(self):
+        with tempfile.TemporaryDirectory() as tmpdir:
+            cmd = (
+                f"GTDBTK_DATA_PATH=. "
+                f"CHECKM2DB=. "
+                f"EGGNOG_DATA_DIR=. "
+                f"SINGLEM_METAPACKAGE_PATH=. "
+                f"aviary recover "
+                f"--max-threads 128 "
+                f"--assembly {ASSEMBLY} "
+                f"-1 {FORWARD_READS} "
+                f"-2 {REVERSE_READS} "
+                f"--output {tmpdir}/test --tmpdir {tmpdir} "
+                f"--conda-prefix {path_to_conda} "
+                f"--dryrun "
+                f"--snakemake-cmds \" --quiet\" "
+            )
+            extern.run(cmd)
+
+            config_path = os.path.join(tmpdir, "test", "config.yaml")
+            self.assertTrue(os.path.exists(config_path))
+            config = load_configfile(config_path)
+
+            self.assertEqual(config["refinery_max_iterations"], 5)
+            self.assertEqual(config["pplacer_threads"], 8)
+
+    def test_recover_config_many_pplacer_threads(self):
+        with tempfile.TemporaryDirectory() as tmpdir:
+            cmd = (
+                f"GTDBTK_DATA_PATH=. "
+                f"CHECKM2DB=. "
+                f"EGGNOG_DATA_DIR=. "
+                f"SINGLEM_METAPACKAGE_PATH=. "
+                f"aviary recover "
+                f"--max-threads 128 "
+                f"--pplacer-threads 32 "
+                f"--assembly {ASSEMBLY} "
+                f"-1 {FORWARD_READS} "
+                f"-2 {REVERSE_READS} "
+                f"--output {tmpdir}/test --tmpdir {tmpdir} "
+                f"--conda-prefix {path_to_conda} "
+                f"--dryrun "
+                f"--snakemake-cmds \" --quiet\" "
+            )
+            extern.run(cmd)
+
+            config_path = os.path.join(tmpdir, "test", "config.yaml")
+            self.assertTrue(os.path.exists(config_path))
+            config = load_configfile(config_path)
+
+            self.assertEqual(config["refinery_max_iterations"], 5)
+            self.assertEqual(config["pplacer_threads"], 32)
 
 if __name__ == '__main__':
     unittest.main()

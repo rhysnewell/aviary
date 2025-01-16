@@ -12,3 +12,6 @@ example/
 test/data/.conda
 test/data/wgsim.metaspades.assembly.fna.fai
 config.yaml
+benchmarks
+data
+logs
