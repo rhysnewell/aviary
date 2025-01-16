@@ -4,7 +4,7 @@ import unittest
 import os
 import tempfile
 import extern
-from snakemake import load_configfile
+from snakemake.common.configfile import load_configfile
 
 path_to_data = os.path.join(os.path.dirname(os.path.realpath(__file__)),'data')
 path_to_conda = os.path.join(path_to_data,'.conda')
