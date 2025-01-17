@@ -26,7 +26,7 @@ class Tests(unittest.TestCase):
                 f"--output {tmpdir}/test "
                 f"--conda-prefix {path_to_conda} "
                 f"--dryrun --tmpdir {tmpdir} "
-                f"--snakemake-cmds \" --quiet\" "
+                f"--snakemake-cmds \" --quiet rules\" "
             )
             output = extern.run(cmd)
 

@@ -4,7 +4,7 @@ import unittest
 import os
 import tempfile
 import extern
-from snakemake import load_configfile
+from snakemake.common.configfile import load_configfile
 
 path_to_data = os.path.join(os.path.dirname(os.path.realpath(__file__)),'data')
 path_to_conda = os.path.join(path_to_data,'.conda')
@@ -29,7 +29,7 @@ class Tests(unittest.TestCase):
                 f"--output {tmpdir}/test "
                 f"--conda-prefix {path_to_conda} "
                 f"--dryrun --tmpdir {tmpdir} "
-                f"--snakemake-cmds \" --quiet\" "
+                f"--snakemake-cmds \" --quiet rules\" "
             )
             output = extern.run(cmd)
 
@@ -86,7 +86,7 @@ class Tests(unittest.TestCase):
                 f"--conda-prefix {path_to_conda} "
                 f"--skip-binners metabat "
                 f"--dryrun --tmpdir {tmpdir} "
-                f"--snakemake-cmds \" --quiet\" "
+                f"--snakemake-cmds \" --quiet rules\" "
             )
             output = extern.run(cmd)
 
@@ -143,7 +143,7 @@ class Tests(unittest.TestCase):
                 f"--output {tmpdir}/test "
                 f"--conda-prefix {path_to_conda} "
                 f"--dryrun --tmpdir {tmpdir} "
-                f"--snakemake-cmds \" --quiet\" "
+                f"--snakemake-cmds \" --quiet rules\" "
             )
             output = extern.run(cmd)
 
@@ -200,7 +200,7 @@ class Tests(unittest.TestCase):
                 f"--output {tmpdir}/test "
                 f"--conda-prefix {path_to_conda} "
                 f"--dryrun --tmpdir {tmpdir} "
-                f"--snakemake-cmds \" --quiet\" "
+                f"--snakemake-cmds \" --quiet rules\" "
             )
             output = extern.run(cmd)
 
@@ -257,7 +257,7 @@ class Tests(unittest.TestCase):
                 f"--output {tmpdir}/test "
                 f"--conda-prefix {path_to_conda} "
                 f"--dryrun --tmpdir {tmpdir} "
-                f"--snakemake-cmds \" --quiet\" "
+                f"--snakemake-cmds \" --quiet rules\" "
             )
             output = extern.run(cmd)
 
@@ -314,7 +314,7 @@ class Tests(unittest.TestCase):
                 f"--output {tmpdir}/test "
                 f"--conda-prefix {path_to_conda} "
                 f"--dryrun --tmpdir {tmpdir} "
-                f"--snakemake-cmds \" --quiet\" "
+                f"--snakemake-cmds \" --quiet rules\" "
             )
             output = extern.run(cmd)
 
@@ -372,7 +372,7 @@ class Tests(unittest.TestCase):
                 f"--output {tmpdir}/test --tmpdir {tmpdir} "
                 f"--conda-prefix {path_to_conda} "
                 f"--dryrun "
-                f"--snakemake-cmds \" --quiet\" "
+                f"--snakemake-cmds \" --quiet rules\" "
             )
             extern.run(cmd)
 
@@ -399,7 +399,7 @@ class Tests(unittest.TestCase):
                 f"--output {tmpdir}/test --tmpdir {tmpdir} "
                 f"--conda-prefix {path_to_conda} "
                 f"--dryrun "
-                f"--snakemake-cmds \" --quiet\" "
+                f"--snakemake-cmds \" --quiet rules\" "
             )
             extern.run(cmd)
 
@@ -427,7 +427,7 @@ class Tests(unittest.TestCase):
                 f"--output {tmpdir}/test --tmpdir {tmpdir} "
                 f"--conda-prefix {path_to_conda} "
                 f"--dryrun "
-                f"--snakemake-cmds \" --quiet\" "
+                f"--snakemake-cmds \" --quiet rules\" "
             )
             extern.run(cmd)
 
