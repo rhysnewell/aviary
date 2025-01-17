@@ -243,15 +243,6 @@ def main():
     )
 
     base_group.add_argument(
-        '--conda-frontend', '--conda_frontend',
-        help='Which conda frontend to use, mamba is faster but harder to debug. Switch this to conda \n'
-             'If experiencing problems installing environments',
-        dest='conda_frontend',
-        default="mamba",
-        choices=["conda", "mamba"],
-    )
-
-    base_group.add_argument(
         '--clean',
         help='Clean up all temporary files. This will remove most BAM files and any FASTQ files \n'
              'generated from read filtering. Setting this to False is the equivalent of the --notemp \n'
@@ -1274,7 +1265,6 @@ def main():
         processor.run_workflow(cores=int(args.n_cores),
                                dryrun=args.dryrun,
                                clean=args.clean,
-                               conda_frontend=args.conda_frontend,
                                snakemake_args=args.cmds,
                                rerun_triggers=args.rerun_triggers,
                                profile=args.snakemake_profile,

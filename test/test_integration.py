@@ -227,7 +227,7 @@ class Tests(unittest.TestCase):
 
         self.assertFalse(os.path.isfile(f"{output_dir}/aviary_out/data/final_contigs.fasta"))
 
-    @unittest.skip("Skipping test due to queue submission")
+    # @unittest.skip("Skipping test due to queue submission")
     def test_short_read_recovery_queue_submission(self):
         output_dir = os.path.join("example", "test_short_read_recovery_queue_submission")
         self.setup_output_dir(output_dir)
