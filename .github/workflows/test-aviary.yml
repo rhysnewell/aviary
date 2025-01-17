@@ -35,3 +35,4 @@ jobs:
           python test/test_assemble.py
           python test/test_recover.py
           python test/test_run_checkm.py -b
+          python test/test_convert_metabuli.py

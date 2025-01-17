@@ -128,7 +128,7 @@ class Processor:
                 self.skip_singlem = True
             self.binning_only = args.binning_only
 
-            self.skip_binners = ["maxbin2", "concoct", "comebin"]
+            self.skip_binners = ["maxbin2", "concoct", "comebin", "taxvamb"]
             if args.extra_binners:
                 for binner in args.extra_binners:
                     binner = binner.lower()   
@@ -138,6 +138,8 @@ class Processor:
                         self.skip_binners.remove("concoct")
                     elif binner == "comebin":
                         self.skip_binners.remove("comebin")
+                    elif binner == "taxvamb":
+                        self.skip_binners.remove("taxvamb")
                     else:
                         logging.warning(f"Unknown extra binner {binner} specified. Skipping...")
 
@@ -278,10 +280,15 @@ class Processor:
                 self.singlem = args.singlem_metapackage_path
             else:
                 self.singlem = Config.get_software_db_path('SINGLEM_METAPACKAGE_PATH', '--singlem-metapackage-path')
+            if args.metabuli_db_path is not None:
+                self.metabuli = args.metabuli_db_path
+            else:
+                self.metabuli = Config.get_software_db_path('METABULI_DB_PATH', '--metabuli-db-path')
         except AttributeError:
             self.gtdbtk = Config.get_software_db_path('GTDBTK_DATA_PATH', '--gtdb-path')
             self.eggnog = Config.get_software_db_path('EGGNOG_DATA_DIR', '--eggnog-db-path')
             self.singlem = Config.get_software_db_path('SINGLEM_METAPACKAGE_PATH', '--singlem-metapackage-path')
+            self.metabuli = Config.get_software_db_path('METABULI_DB_PATH', '--metabuli-db-path')
             # self.enrichm = Config.get_software_db_path('ENRICHM_DB', '--enrichm-db-path')
 
         try:
@@ -421,6 +428,7 @@ class Processor:
         conf["gtdbtk_folder"] = self.gtdbtk
         conf["eggnog_folder"] = self.eggnog
         conf["singlem_metapackage"] = self.singlem
+        conf["metabuli_folder"] = self.metabuli
         conf["strain_analysis"] = self.strain_analysis
         conf["checkm2_db_folder"] = self.checkm2_db
         conf["use_checkm2_scores"] = self.use_checkm2_scores

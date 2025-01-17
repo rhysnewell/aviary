@@ -1,4 +1,4 @@
-localrules: get_bam_indices, vamb_jgi_filter, vamb_skip, amber_checkm_output, finalise_stats, recover_mags, recover_mags_no_singlem
+localrules: get_bam_indices, vamb_jgi_filter, vamb_skip, convert_metabuli, amber_checkm_output, finalise_stats, recover_mags, recover_mags_no_singlem
 
 ruleorder: dereplicate_and_get_abundances_paired > dereplicate_and_get_abundances_interleaved
 ruleorder: checkm_rosella > amber_checkm_output
@@ -201,6 +201,106 @@ rule vamb_skip:
     shell:
         "mkdir -p data/vamb_bins/;"
         "touch data/vamb_bins/skipped"
+
+
+rule taxvamb_abundance_tsv:
+    """
+    VAMB post v4 has to have a coverage file with the following format:
+    A TSV file with the header being "contigname" followed by one samplename per sample,
+    and the values in the TSV file being precomputed abundances.
+    """
+    input:
+        fasta = ancient(config["fasta"]),
+        done = ancient("data/coverm.filt.cov")
+    output:
+        vamb_bams_done = "data/coverm.vamb.cov"
+    threads:
+        config["max_threads"]
+    run:
+        # Short-only
+        # contigName	contigLen	totalAvgDepth	assembly.fasta/wgsim.1.fq.gz.bam	assembly.fasta/wgsim.1.fq.gz.bam-var
+        # Short + long
+        # contigName	contigLen	totalAvgDepth	assembly.fasta/wgsim.1.fq.gz.bam	assembly.fasta/wgsim.1.fq.gz.bam-var	assembly.fasta/wgsim.css.fastq.gz Trimmed Mean	assembly.fasta/wgsim.css.fastq.gz Variance
+        import pandas as pd
+        coverm_out = pd.read_csv("data/coverm.filt.cov", sep='\t')
+        coverm_out.drop(columns=["contigLen", "totalAvgDepth"], inplace=True)
+        coverm_out.rename(columns={"contigName": "contigname"}, inplace=True)
+        columns_to_drop = [col for col in coverm_out.columns if col.endswith('-var') or col.endswith(' Variance')]
+        coverm_out.drop(columns=columns_to_drop, inplace=True)
+        coverm_out.to_csv("data/coverm.vamb.cov", sep='\t', index=False)
+
+rule metabuli_taxonomy:
+    input:
+        fasta = ancient(config["fasta"]),
+    output:
+        "data/metabuli_taxonomy/done"
+    threads:
+        config["max_threads"]
+    resources:
+        mem_mb = lambda wildcards, attempt: min(int(config["max_memory"])*1024, 128*1024*attempt),
+        mem_gb = lambda wildcards, attempt: min(int(config["max_memory"]), 128*attempt),
+        runtime = lambda wildcards, attempt: 48*60*attempt,
+    params:
+        metabuli_db = config['metabuli_folder'],
+    conda:
+        "../../envs/metabuli.yaml"
+    log:
+        "logs/metabuli.log"
+    benchmark:
+        "benchmarks/metabuli.benchmark.txt"
+    shell:
+        "rm -rf data/metabuli_taxonomy/; "
+        "mkdir -p data/metabuli_taxonomy && "
+        "metabuli classify "
+        "{input.fasta} {params.metabuli_db}/gtdb data/metabuli_taxonomy tax > {log} 2>&1 "
+        "--seq-mode 1 --threads {threads} --max-ram {resources.mem_gb} "
+        "&& touch {output[0]}"
+
+rule convert_metabuli:
+    input:
+        "data/metabuli_taxonomy/done",
+        filt_cov = ancient("data/coverm.filt.cov")
+    output:
+        "data/metabuli_taxonomy/taxonomy.tsv"
+    threads:
+        config["max_threads"]
+    params:
+        report = "data/metabuli_taxonomy/tax_report.tsv",
+        classifications = "data/metabuli_taxonomy/tax_classifications.tsv",
+    log:
+        "logs/metabuli_convert.log"
+    script:
+        "scripts/convert_metabuli.py"
+
+rule taxvamb:
+    input:
+        coverage = ancient("data/coverm.vamb.cov"),
+        fasta = ancient(config["fasta"]),
+        taxonomy = "data/metabuli_taxonomy/taxonomy.tsv"
+    params:
+        min_bin_size = config["min_bin_size"],
+        min_contig_size = config["min_contig_size"],
+        vamb_threads = min(int(config["max_threads"]), 16) // 2 # vamb use double the threads you give it
+    threads:
+        config["max_threads"]
+    resources:
+        mem_mb = lambda wildcards, attempt: min(int(config["max_memory"])*1024, 128*1024*attempt),
+        runtime = lambda wildcards, attempt: 48*60*attempt,
+        gpus = 1 if config["request_gpu"] else 0
+    output:
+        "data/taxvamb_bins/done"
+    conda:
+        "envs/taxvamb.yaml"
+    log:
+        "logs/taxvamb.log"
+    benchmark:
+        "benchmarks/taxvamb.benchmark.txt"
+    shell:
+        "rm -rf data/taxvamb_bins/; "
+        "bash -c 'vamb bin taxvamb --outdir data/taxvamb_bins/ -p {params.vamb_threads} --fasta {input.fasta} "
+        "--abundance_tsv {input.coverage} --taxonomy {input.taxonomy} "
+        "--minfasta {params.min_bin_size} -m {params.min_contig_size} > {log} 2>&1 && touch {output[0]}' || "
+        "touch {output[0]} && mkdir -p data/taxvamb_bins/bins"
 
 
 rule metabat2:
@@ -649,6 +749,7 @@ rule das_tool:
         semibin_done = [] if "semibin" in config["skip_binners"] else "data/semibin_refined/done",
         comebin_done = [] if "comebin" in config["skip_binners"] else "data/comebin_bins/done",
         vamb_done = [] if "vamb" in config["skip_binners"] else "data/vamb_bins/done",
+        taxvamb_done = [] if "taxvamb" in config["skip_binners"] else "data/taxvamb_bins/done",
     threads:
         config["max_threads"]
     resources:

@@ -79,6 +79,7 @@ def get_software_db_path(db_name='CONDA_ENV_PATH', software_flag='--conda-prefix
                 print(f'Please set this variable to your default server/home directory containing {db_name}.'.center(100))
                 print(f'Alternatively, use {software_flag} flag.'.center(100))
                 print(f'Note: This variable must point to the DIRECTORY containing the files, not the files themselves'.center(100))
+                print('Note: This can be set to an arbitrary string if you do not need this database'.center(100))
                 print('=' * 100)
                 signal.alarm(120)
                 os.environ[db_name] = input(f'Input path to directory for {db_name} now:').strip()

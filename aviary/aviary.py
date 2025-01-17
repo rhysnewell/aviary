@@ -278,11 +278,11 @@ def main():
 
     base_group.add_argument(
         '--download', '--download',
-        help='Downloads the requested GTDB, EggNOG, SingleM, & CheckM2 databases',
+        help='Downloads the requested GTDB, EggNOG, SingleM, CheckM2, & Metabuli databases',
         dest='download',
         default=[],
         nargs="*",
-        choices=["gtdb", "eggnog", "singlem", "checkm2"]
+        choices=["gtdb", "eggnog", "singlem", "checkm2", "metabuli"]
     )
 
     base_group.add_argument(
@@ -590,12 +590,13 @@ def main():
     binning_group.add_argument(
         '--extra-binners', '--extra_binners', '--extra-binner', '--extra_binner',
         help='Optional list of extra binning algorithms to run. Can be any combination of: \n'
-             'maxbin, maxbin2, concoct, comebin \n'
+             'maxbin, maxbin2, concoct, comebin, taxvamb \n'
              'These binners are skipped by default as they can have long runtimes \n'
-             'N.B. specifying "maxbin" and "maxbin2" are equivalent \n',
+             'N.B. specifying "maxbin" and "maxbin2" are equivalent \n'
+             'N.B. specifying "taxvamb" will also run metabuli for contig taxonomic assignment \n',
         dest='extra_binners',
         nargs='*',
-        choices=["maxbin", "maxbin2", "concoct", "comebin"]
+        choices=["maxbin", "maxbin2", "concoct", "comebin", "taxvamb"]
     )
 
     binning_group.add_argument(
@@ -1187,6 +1188,13 @@ def main():
         required=False,
     )
 
+    configure_options.add_argument(
+        '--metabuli-db-path', '--metabuli_db_path',
+        help='Path to the local metabuli database',
+        dest='metabuli_db_path',
+        required=False,
+    )
+
     add_workflow_arg(configure_options, ['download_databases'], help=argparse.SUPPRESS)
 
     ###########################################################################
@@ -1234,6 +1242,9 @@ def main():
         if args.singlem_metapackage_path is not None:
             Config.set_db_path(args.singlem_metapackage_path, db_name='SINGLEM_METAPACKAGE_PATH')
 
+        if args.metabuli_db_path is not None:
+            Config.set_db_path(args.metabuli_db_path, db_name='METABULI_DB_PATH')
+
         logging.info("The current aviary environment variables are:")
         logging.info(f"CONDA_ENV_PATH: {Config.get_software_db_path('CONDA_ENV_PATH', '--conda-prefix')}")
         logging.info(f"TMPDIR: {Config.get_software_db_path('TMPDIR', '--tmpdir')}")
@@ -1241,6 +1252,7 @@ def main():
         logging.info(f"EGGNOG_DATA_DIR: {Config.get_software_db_path('EGGNOG_DATA_DIR', '--eggnog-db-path')}")
         logging.info(f"CHECKM2DB: {Config.get_software_db_path('CHECKM2DB', '--checkm2-db-path')}")
         logging.info(f"SINGLEM_METAPACKAGE_PATH: {Config.get_software_db_path('SINGLEM_METAPACKAGE_PATH', '--singlem-metapackage-path')}")
+        logging.info(f"METABULI_DB_PATH: {Config.get_software_db_path('METABULI_DB_PATH', '--metabuli-db-path')}")
         if not args.download:
             logging.info("All paths set. Exiting without downloading databases. If you wish to download databases use --download")
             sys.exit(0)
@@ -1295,6 +1307,8 @@ def manage_env_vars(args):
             args.checkm2_db_path = Config.get_software_db_path('CHECKM2DB', '--checkm2-db-path')
         if args.singlem_metapackage_path is None:
             args.singlem_db_path = Config.get_software_db_path('SINGLEM_METAPACKAGE_PATH', '--singlem-metapackage-path')
+        if args.metabuli_db_path is None:
+            args.metabuli_db_path = Config.get_software_db_path('METABULI_DB_PATH', '--metabuli-db-path')
     except AttributeError:
         pass
 
