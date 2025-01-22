@@ -154,6 +154,48 @@ class Tests(unittest.TestCase):
             num_lines = sum(1 for _ in f)
         self.assertEqual(num_lines, 3)
 
+        semibin_log_path = f"{output_dir}/aviary_out/logs/semibin.log"
+        self.assertTrue(os.path.isfile(semibin_log_path))
+        with open(semibin_log_path) as f:
+            log = f.read()
+        self.assertTrue("Training model..." not in log)
+
+        self.assertFalse(os.path.isfile(f"{output_dir}/aviary_out/data/final_contigs.fasta"))
+
+    def test_short_read_recovery_semibin(self):
+        output_dir = os.path.join("example", "test_short_read_recovery_semibin")
+        self.setup_output_dir(output_dir)
+
+        cmd = f"ln -sr {data}/wgsim.1.fq.gz {output_dir}/wgsim2.1.fq.gz && ln -sr {data}/wgsim.2.fq.gz {output_dir}/wgsim2.2.fq.gz"
+        subprocess.run(cmd, shell=True, check=True)
+
+        cmd = (
+            f"aviary recover "
+            f"--assembly {data}/assembly.fasta "
+            f"-o {output_dir}/aviary_out "
+            f"-1 {data}/wgsim.1.fq.gz {output_dir}/wgsim2.1.fq.gz "
+            f"-2 {data}/wgsim.2.fq.gz {output_dir}/wgsim2.2.fq.gz "
+            f"--binning-only "
+            f"--skip-binners rosella vamb metabat "
+            f"--skip-qc "
+            f"--refinery-max-iterations 0 "
+            f"--conda-prefix {path_to_conda} "
+            f"-n 32 -t 32 "
+        )
+        subprocess.run(cmd, shell=True, check=True)
+
+        bin_info_path = f"{output_dir}/aviary_out/bins/bin_info.tsv"
+        self.assertTrue(os.path.isfile(bin_info_path))
+        with open(bin_info_path) as f:
+            num_lines = sum(1 for _ in f)
+        self.assertEqual(num_lines, 3)
+
+        semibin_log_path = f"{output_dir}/aviary_out/logs/semibin.log"
+        self.assertTrue(os.path.isfile(semibin_log_path))
+        with open(semibin_log_path) as f:
+            log = f.read()
+        self.assertTrue("Training model..." in log)
+
         self.assertFalse(os.path.isfile(f"{output_dir}/aviary_out/data/final_contigs.fasta"))
 
     def test_short_read_recovery_vamb(self):

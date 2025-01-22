@@ -471,7 +471,7 @@ rule semibin:
         bams_indexed = ancient("data/binning_bams/done")
     params:
         # Can't use premade model with multiple samples, so disregard if provided
-        semibin_model = config['semibin_model']
+        semibin_model = f"--environment {config['semibin_model']} " if len(config["short_reads_1"]) == 1 else ""
     output:
         done = "data/semibin_bins/done"
     threads:
@@ -488,9 +488,16 @@ rule semibin:
         "benchmarks/semibin.benchmark.txt"
     shell:
         "rm -rf data/semibin_bins/; "
-        "mkdir -p data/semibin_bins/output_recluster_bins/; "
-        "SemiBin single_easy_bin -i {input.fasta} -b data/binning_bams/*.bam -o data/semibin_bins --environment {params.semibin_model} -p {threads} --self-supervised > {log} 2>&1 && "
-        "touch {output.done} || SemiBin single_easy_bin -i {input.fasta} -b data/binning_bams/*.bam -o data/semibin_bins -p {threads} --self-supervised > {log} 2>&1 "
+        "mkdir -p data/semibin_bins/output_bins/; "
+        "SemiBin2 single_easy_bin "
+        "-i {input.fasta} "
+        "-b data/binning_bams/*.bam "
+        "-o data/semibin_bins "
+        "{params.semibin_model} "
+        "-p {threads} "
+        "--self-supervised "
+        "--compression none "
+        "> {log} 2>&1 "
         "&& touch {output.done} || touch {output.done}"
 
 
@@ -574,7 +581,7 @@ rule checkm_semibin:
     params:
         pplacer_threads = lambda wildcards, threads: min(threads, config["pplacer_threads"]),
         checkm2_db_path = config["checkm2_db_folder"],
-        bin_folder = "data/semibin_bins/output_recluster_bins/",
+        bin_folder = "data/semibin_bins/output_bins/",
         extension = "fa",
         refinery_max_iterations = config["refinery_max_iterations"],
     output:
@@ -678,7 +685,7 @@ rule refine_semibin:
     benchmark:
         'benchmarks/refine_semibin.benchmark.txt'
     params:
-        bin_folder = "data/semibin_bins/output_recluster_bins/",
+        bin_folder = "data/semibin_bins/output_bins/",
         extension = "fa",
         output_folder = "data/semibin_refined/",
         min_bin_size = config["min_bin_size"],
@@ -727,7 +734,7 @@ rule amber_checkm_output:
 
         try:
             semibin_amber = pd.read_csv("data/amber_refine/for_refine/genome/semibin_amber.tsv/metrics_per_bin.tsv", sep='\t')
-            amber_to_checkm_like(semibin_amber, "data/semibin_bins/output_recluster_bins/", "data/semibin_bins/checkm.out", "fa")
+            amber_to_checkm_like(semibin_amber, "data/semibin_bins/output_bins/", "data/semibin_bins/checkm.out", "fa")
         except FileNotFoundError:
             pass
 
