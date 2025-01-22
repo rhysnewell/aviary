@@ -10,7 +10,7 @@ jobs:
         shell: bash -l {0}
     strategy:
         matrix:
-            python-version: ["3.10"]
+            python-version: ["3.11"]
     steps:
       - uses: actions/checkout@v4
       - name: Set up environment with Python ${{ matrix.python-version }}
