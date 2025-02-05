@@ -217,8 +217,10 @@ rule taxvamb_abundance_tsv:
         done = ancient("data/coverm.filt.cov")
     output:
         vamb_bams_done = "data/coverm.vamb.cov"
-    threads:
-        config["max_threads"]
+    threads: 1
+    resources:
+        mem_mb = lambda wildcards, attempt: min(int(config["max_memory"])*1024, 16*1024*attempt),
+        runtime = lambda wildcards, attempt: 24*60*attempt,
     run:
         # Short-only
         # contigName	contigLen	totalAvgDepth	assembly.fasta/wgsim.1.fq.gz.bam	assembly.fasta/wgsim.1.fq.gz.bam-var
