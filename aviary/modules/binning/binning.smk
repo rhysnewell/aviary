@@ -1,4 +1,4 @@
-localrules: get_bam_indices, vamb_jgi_filter, vamb_skip, convert_metabuli, amber_checkm_output, finalise_stats, recover_mags, recover_mags_no_singlem
+localrules: vamb_jgi_filter, vamb_skip, convert_metabuli, amber_checkm_output, finalise_stats, recover_mags, recover_mags_no_singlem
 
 ruleorder: dereplicate_and_get_abundances_paired > dereplicate_and_get_abundances_interleaved
 ruleorder: checkm_rosella > amber_checkm_output
@@ -77,6 +77,9 @@ rule get_bam_indices:
         "../../envs/coverm.yaml"
     threads:
         config["max_threads"]
+    resources:
+        mem_mb = lambda wildcards, attempt: min(int(config["max_memory"])*1024, 128*1024*attempt),
+        runtime = lambda wildcards, attempt: 24*60*attempt,
     shell:
         "ls data/binning_bams/*.bam | parallel -j 1 'samtools index -@ {threads} {{}} {{}}.bai' &&"
         "touch data/binning_bams/done"
