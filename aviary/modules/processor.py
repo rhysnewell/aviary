@@ -452,7 +452,7 @@ class Processor:
     def _validate_config(self):
         load_configfile(self.config)
 
-    def run_workflow(self, cores=16, profile=None, cluster_retries=None,
+    def run_workflow(self, cores=16, local_cores=None, profile=None, cluster_retries=None,
                      dryrun=False, clean=True, conda_frontend="mamba",
                      snakemake_args="", write_to_script=None, rerun_triggers=None):
         """
@@ -474,7 +474,7 @@ class Processor:
         for workflow in self.workflows:
             cmd = (
                 "snakemake --snakefile {snakefile} --directory {working_dir} "
-                "{jobs} --rerun-incomplete --keep-going {args} {rerun_triggers} "
+                "{jobs} {local_cores} --rerun-incomplete --keep-going {args} {rerun_triggers} "
                 "--configfile {config_file} --nolock "
                 "{profile} {retries} {conda_frontend} {resources} --use-conda {conda_prefix} "
                 "{dryrun} {notemp} "
@@ -483,6 +483,7 @@ class Processor:
                 snakefile=get_snakefile(),
                 working_dir=self.output,
                 jobs="--cores {}".format(cores) if cores is not None else "--jobs 1",
+                local_cores="--local-cores {}".format(local_cores) if local_cores is not None else "",
                 config_file=self.config,
                 profile="" if not profile else "--profile {}".format(profile),
                 retries="" if (cluster_retries is None) else "--retries {}".format(cluster_retries),

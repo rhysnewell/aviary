@@ -305,7 +305,7 @@ class Tests(unittest.TestCase):
 
         self.assertFalse(os.path.isfile(f"{output_dir}/aviary_out/data/final_contigs.fasta"))
 
-    @unittest.skip("Skipping test due to queue submission")
+    # @unittest.skip("Skipping test due to queue submission")
     def test_short_read_recovery_queue_submission(self):
         output_dir = os.path.join("example", "test_short_read_recovery_queue_submission")
         self.setup_output_dir(output_dir)
@@ -316,7 +316,7 @@ class Tests(unittest.TestCase):
             f"-1 {data}/wgsim.1.fq.gz "
             f"-2 {data}/wgsim.2.fq.gz "
             f"--conda-prefix {path_to_conda} "
-            f"-n 32 -t 32 "
+            f"-n 32 -t 32 --local-cores 1 "
             f"--snakemake-profile mqsub --cluster-retries 3 "
         )
         subprocess.run(cmd, shell=True, check=True)
