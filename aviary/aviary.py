@@ -226,6 +226,13 @@ def main():
     )
 
     base_group.add_argument(
+        '--local-cores', '--local_cores',
+        help='Maximum number of cores available for use locally. Only relevant if jobs are being submitted to a cluster (e.g. see `--snakemake-profile`), in which case `--n-cores` will restrict requested cores in submitted jobs.',
+        dest='local_cores',
+        default=16,
+    )
+
+    base_group.add_argument(
         '--cluster-retries',
         help='Number of times to retry a failed job when using cluster submission (see `--snakemake-profile`). ',
         dest='cluster_retries',
@@ -1284,6 +1291,7 @@ def main():
             pass
 
         processor.run_workflow(cores=int(args.n_cores),
+                               local_cores=int(args.local_cores),
                                dryrun=args.dryrun,
                                clean=args.clean,
                                conda_frontend=args.conda_frontend,
