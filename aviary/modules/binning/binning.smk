@@ -476,8 +476,8 @@ rule semibin:
         bams_indexed = ancient("data/binning_bams/done")
     params:
         # Can't use premade model with multiple samples, so disregard if provided
-        semibin_model = f"--environment {config['semibin_model']} " if len(config["short_reads_1"]) == 1 else ""
-        semibin_sequencing_type = "--sequencing-type=long_read" if config["long_reads"] != "none" else ""
+        semibin_model = f"--environment {config['semibin_model']} " if len(config["short_reads_1"]) == 1 else "",
+        semibin_sequencing_type = "--sequencing-type=long_read" if config["long_reads"] != "none" else "",
     output:
         done = "data/semibin_bins/done"
     threads:
