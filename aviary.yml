@@ -9,7 +9,7 @@ dependencies:
   - numpy
   - pandas
   - biopython
-  - mamba >=0.8.2
+  - conda =25.1.1
   - pigz =2.6
   - parallel
   - bbmap
