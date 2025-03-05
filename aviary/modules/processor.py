@@ -453,7 +453,7 @@ class Processor:
         load_configfile(self.config)
 
     def run_workflow(self, cores=16, local_cores=None, profile=None, cluster_retries=None,
-                     dryrun=False, clean=True, conda_frontend="mamba",
+                     dryrun=False, clean=True,
                      snakemake_args="", write_to_script=None, rerun_triggers=None):
         """
         Runs the aviary pipeline
@@ -493,7 +493,7 @@ class Processor:
                 args=snakemake_args,
                 target_rule=workflow if workflow != "None" else "",
                 conda_prefix="--conda-prefix " + self.conda_prefix,
-                conda_frontend="--conda-frontend " + conda_frontend,
+                conda_frontend="--conda-frontend " + "conda",
                 resources=f"--resources mem_mb={int(self.max_memory)*1024} {self.resources}" if not dryrun else ""
             )
 
@@ -612,7 +612,6 @@ def process_batch(args, prefix):
         processor.run_workflow(cores=int(new_args.n_cores),
                                dryrun=new_args.dryrun,
                                clean=new_args.clean,
-                               conda_frontend=new_args.conda_frontend,
                                snakemake_args=new_args.cmds,
                                rerun_triggers=new_args.rerun_triggers,
                                profile=new_args.snakemake_profile,
@@ -636,7 +635,6 @@ def process_batch(args, prefix):
             processor.run_workflow(cores=int(args.n_cores),
                                    dryrun=args.dryrun,
                                    clean=args.clean,
-                                   conda_frontend=args.conda_frontend,
                                    snakemake_args=args.cmds,
                                    rerun_triggers=args.rerun_triggers,
                                    profile=args.snakemake_profile,
