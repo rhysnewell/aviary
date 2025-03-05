@@ -469,6 +469,16 @@ rule rosella:
         "--min-contig-size {params.min_contig_size} --min-bin-size {params.min_bin_size} --n-neighbors 100 > {log} 2>&1 && "
         "touch {output.done} || touch {output.done}"
 
+def get_num_samples():
+    """
+    Get the number of samples in the config
+    """
+    num_samples = 0
+    if config["long_reads"] != "none":
+        num_samples += len(config["long_reads"])
+    if config["short_reads_1"] != "none":
+        num_samples += len(config["short_reads_1"])
+    return num_samples
 
 rule semibin:
     input:
@@ -476,7 +486,7 @@ rule semibin:
         bams_indexed = ancient("data/binning_bams/done")
     params:
         # Can't use premade model with multiple samples, so disregard if provided
-        semibin_model = f"--environment {config['semibin_model']} " if len(config["short_reads_1"]) == 1 else ""
+        semibin_model = f"--environment {config['semibin_model']} " if get_num_samples() == 1 else ""
     output:
         done = "data/semibin_bins/done"
     threads:
