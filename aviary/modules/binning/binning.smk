@@ -47,6 +47,17 @@ import os
 import sys
 import glob
 
+def get_num_samples():
+    """
+    Get the number of samples in the config
+    """
+    num_samples = 0
+    if config["long_reads"] != "none":
+        num_samples += len(config["long_reads"])
+    if config["short_reads_1"] != "none":
+        num_samples += len(config["short_reads_1"])
+    return num_samples
+
 rule prepare_binning_files:
     input:
         input_fasta = config["fasta"]
@@ -54,7 +65,11 @@ rule prepare_binning_files:
         maxbin_coverage = "data/maxbin.cov.list",
         metabat_coverage = "data/coverm.cov"
     params:
-        tmpdir = config['tmpdir']
+        tmpdir = config['tmpdir'],
+        long_reads = snakemake.config["long_reads"],
+        long_read_type = snakemake.config["long_read_type"][0],
+        short_reads_1 = snakemake.config["short_reads_1"],
+        short_reads_2 = snakemake.config["short_reads_2"],
     conda:
         "../../envs/coverm.yaml"
     threads:
@@ -468,17 +483,6 @@ rule rosella:
         "rosella recover -r {input.fasta} -C {input.coverage} -t {threads} -o data/rosella_bins "
         "--min-contig-size {params.min_contig_size} --min-bin-size {params.min_bin_size} --n-neighbors 100 > {log} 2>&1 && "
         "touch {output.done} || touch {output.done}"
-
-def get_num_samples():
-    """
-    Get the number of samples in the config
-    """
-    num_samples = 0
-    if config["long_reads"] != "none":
-        num_samples += len(config["long_reads"])
-    if config["short_reads_1"] != "none":
-        num_samples += len(config["short_reads_1"])
-    return num_samples
 
 rule semibin:
     input:

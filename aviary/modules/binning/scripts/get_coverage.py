@@ -170,10 +170,10 @@ def get_coverage(
 
 
 if __name__ == '__main__':
-    long_reads = snakemake.config["long_reads"]
-    short_reads_1 = snakemake.config["short_reads_1"]
-    short_reads_2 = snakemake.config["short_reads_2"]
-    long_read_type = snakemake.config["long_read_type"][0]
+    long_reads = snakemake.params.long_reads
+    short_reads_1 = snakemake.params.short_reads_1
+    short_reads_2 = snakemake.params.short_reads_2
+    long_read_type = snakemake.params.long_read_type
     input_fasta = snakemake.input.input_fasta
     tmpdir = snakemake.params.tmpdir
     threads = snakemake.threads
