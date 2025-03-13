@@ -66,10 +66,12 @@ rule prepare_binning_files:
         metabat_coverage = "data/coverm.cov"
     params:
         tmpdir = config['tmpdir'],
-        long_reads = snakemake.config["long_reads"],
-        long_read_type = snakemake.config["long_read_type"][0],
-        short_reads_1 = snakemake.config["short_reads_1"],
-        short_reads_2 = snakemake.config["short_reads_2"],
+        long_reads = config["long_reads"],
+        long_read_type = config["long_read_type"][0],
+        short_reads_1 = config["short_reads_1"],
+        short_reads_2 = config["short_reads_2"],
+        bam_cache = "data/binning_bams/",
+        working_dir = "data/binning_cov/",
     conda:
         "../../envs/coverm.yaml"
     threads:
