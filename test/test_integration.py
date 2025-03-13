@@ -130,6 +130,31 @@ class Tests(unittest.TestCase):
         self.assertTrue(os.path.getsize(f"{output_dir}/aviary_out/diversity/singlem_appraisal.tsv") > 0)
         self.assertTrue(os.path.isfile(f"{output_dir}/aviary_out/diversity/singlem_appraise.svg"))
 
+    def test_long_read_only_recovery(self):
+        output_dir = os.path.join("example", "test_long_read_only_recovery")
+        self.setup_output_dir(output_dir)
+        cmd = (
+            f"aviary recover "
+            f"-o {output_dir}/aviary_out "
+            f"-l {data}/pbsim.fq.gz "
+            f"--longread-type ont "
+            f"--min-read-size 10 --min-mean-q 1 "
+            f"--conda-prefix {path_to_conda} "
+            f"-n 32 -t 32 "
+        )
+        subprocess.run(cmd, shell=True, check=True)
+
+        self.assertTrue(os.path.isdir(f"{output_dir}/aviary_out"))
+        self.assertTrue(os.path.isfile(f"{output_dir}/aviary_out/data/final_contigs.fasta"))
+        self.assertTrue(os.path.islink(f"{output_dir}/aviary_out/assembly/final_contigs.fasta"))
+
+        self.assertTrue(os.path.islink(f"{output_dir}/aviary_out/diversity"))
+        self.assertTrue(os.path.isfile(f"{output_dir}/aviary_out/diversity/metagenome.combined_otu_table.csv"))
+        self.assertTrue(os.path.getsize(f"{output_dir}/aviary_out/diversity/metagenome.combined_otu_table.csv") > 0)
+        self.assertTrue(os.path.isfile(f"{output_dir}/aviary_out/diversity/singlem_appraisal.tsv"))
+        self.assertTrue(os.path.getsize(f"{output_dir}/aviary_out/diversity/singlem_appraisal.tsv") > 0)
+        self.assertTrue(os.path.isfile(f"{output_dir}/aviary_out/diversity/singlem_appraise.svg"))
+
     def test_short_read_recovery_fast(self):
         output_dir = os.path.join("example", "test_short_read_recovery_fast")
         self.setup_output_dir(output_dir)
