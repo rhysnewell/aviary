@@ -283,6 +283,7 @@ rule taxvamb:
     params:
         min_bin_size = config["min_bin_size"],
         min_contig_size = config["min_contig_size"],
+        gpu_flag = "--cuda" if config["request_gpu"] else "",
     threads:
         config["max_threads"]
     resources:
@@ -292,7 +293,7 @@ rule taxvamb:
     output:
         "data/taxvamb_bins/done"
     conda:
-        "envs/taxvamb.yaml"
+        "envs/taxvamb-gpu.yaml" if config["request_gpu"] else "envs/taxvamb.yaml"
     log:
         "logs/taxvamb.log"
     benchmark:
@@ -301,7 +302,7 @@ rule taxvamb:
         "rm -rf data/taxvamb_bins/; "
         "bash -c 'OPENBLAS_NUM_THREADS={threads} OMP_NUM_THREADS={threads} MKL_NUM_THREADS={threads} NUMEXPR_NUM_THREADS={threads} vamb bin taxvamb --outdir data/taxvamb_bins/ -p {params.threads} --fasta {input.fasta} "
         "--abundance_tsv {input.coverage} --taxonomy {input.taxonomy} "
-        "--minfasta {params.min_bin_size} -m {params.min_contig_size} > {log} 2>&1 && touch {output[0]}' || "
+        "--minfasta {params.min_bin_size} -m {params.min_contig_size} {params.gpu_flag} > {log} 2>&1 && touch {output[0]}' || "
         "touch {output[0]} && mkdir -p data/taxvamb_bins/bins"
 
 
