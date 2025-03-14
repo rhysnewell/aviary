@@ -19,7 +19,7 @@
 ###############################################################################
 import aviary.config.config as Config
 from aviary.modules.processor import Processor, process_batch
-from .__init__ import __version__, MEDAKA_MODELS, LONG_READ_TYPES
+from .__init__ import __version__, MEDAKA_MODELS, LONG_READ_TYPES, COVERAGE_JOB_STRATEGIES, COVERAGE_JOB_CUTOFF
 __author__ = "Rhys Newell"
 __copyright__ = "Copyright 2022"
 __credits__ = ["Rhys Newell"]
@@ -559,6 +559,23 @@ def main():
         help='Minimum bin size in base pairs for a MAG',
         dest='min_bin_size',
         default=200000
+    )
+
+    binning_group.add_argument(
+        '--coverage-job-strategy', '--coverage_job_strategy',
+        help=f'Strategy for splitting samples when calculating coverage for binning. Choices include: \n'
+             f'"default" for only splitting into separate jobs when more than {COVERAGE_JOB_CUTOFF} samples are provided, "never" and "always".',
+        dest='coverage_job_strategy',
+        choices=COVERAGE_JOB_STRATEGIES,
+        default=COVERAGE_JOB_STRATEGIES[0],
+    )
+
+    binning_group.add_argument(
+        '--coverage-samples-per-job', '--coverage_samples_per_job',
+        help='',
+        dest='coverage_samples_per_job',
+        type=int,
+        default=5,
     )
 
     binning_group.add_argument(

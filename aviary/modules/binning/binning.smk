@@ -1,5 +1,6 @@
 localrules: vamb_jgi_filter, vamb_skip, convert_metabuli, amber_checkm_output, finalise_stats, recover_mags, recover_mags_no_singlem
 
+ruleorder: prepare_binning_files_gather > prepare_binning_files
 ruleorder: dereplicate_and_get_abundances_paired > dereplicate_and_get_abundances_interleaved
 ruleorder: checkm_rosella > amber_checkm_output
 ruleorder: checkm_metabat2 > amber_checkm_output
@@ -84,6 +85,102 @@ rule prepare_binning_files:
     script:
         "scripts/get_coverage.py"
 
+def select_split_samples(wildcards, read_type):
+    short = config["short_reads_1"]
+    if read_type == "long":
+        read_data = config["long_reads"]
+    elif read_type == "short_1":
+        read_data = config["short_reads_1"]
+    elif read_type == "short_2":
+        read_data = config["short_reads_2"]
+        short = config["short_reads_2"]
+    else:
+        raise ValueError("Unknown read type")
+
+    reads = []
+    if config["short_reads_1"] != "none":
+        reads.extend(short)
+    if config["long_reads"] != "none":
+        reads.extend(config["long_reads"])
+
+    split = int(wildcards.split)
+    split_size = config["coverage_samples_per_split"]
+    start = split * split_size
+    end = (split + 1) * split_size
+    split_reads = reads[start:end]
+
+    output = list(set(split_reads) & set(read_data))
+
+    return output if output else "none"
+
+rule prepare_binning_files_split:
+    input:
+        input_fasta = config["fasta"]
+    output:
+        maxbin_coverage = "data/{split}/maxbin.cov.list",
+        metabat_coverage = "data/{split}/coverm.cov"
+    params:
+        tmpdir = config['tmpdir'],
+        long_reads = lambda wildcards: select_split_samples(wildcards, "long"),
+        long_read_type = config["long_read_type"][0],
+        short_reads_1 = lambda wildcards: select_split_samples(wildcards, "short_1"),
+        short_reads_2 = lambda wildcards: select_split_samples(wildcards, "short_2"),
+        bam_cache = "data/binning_bams/",
+        working_dir = "data/{split}/binning_cov/",
+    conda:
+        "../../envs/coverm.yaml"
+    threads:
+        config["max_threads"]
+    resources:
+        mem_mb = lambda wildcards, attempt: min(int(config["max_memory"])*1024, 512*1024*attempt),
+        runtime = lambda wildcards, attempt: 24*60 + 24*60*attempt,
+    log:
+        "logs/coverm_prepare_{split}.log"
+    script:
+        "scripts/get_coverage.py"
+
+def get_number_of_splits():
+    return (get_num_samples() + config["coverage_samples_per_split"] - 1) // config["coverage_samples_per_split"]
+
+rule prepare_binning_files_gather:
+    input:
+        maxbin_coverages = expand("data/{split}/maxbin.cov.list", split=range(get_number_of_splits())),
+        metabat_coverages = expand("data/{split}/coverm.cov", split=range(get_number_of_splits())),
+    output:
+        maxbin_coverage = "data/maxbin.cov.list" if config["coverage_split"] else [],
+        metabat_coverage = "data/coverm.cov" if config["coverage_split"] else [],
+    threads: 1
+    resources:
+        mem_mb = lambda wildcards, attempt: min(int(config["max_memory"])*1024, 16*1024*attempt),
+        runtime = lambda wildcards, attempt: 24*60*attempt,
+    run:
+        import pandas as pd
+
+        maxbin_cov = []
+        for maxbin in input.maxbin_coverages:
+            with open(maxbin) as f:
+                maxbin_cov.extend(f.readlines())
+        with open(output.maxbin_coverage, "w") as f:
+            f.writelines(maxbin_cov)
+
+        # Load csvs from input.metabat_coverages and merge them on the contigName and contigLen columns, removing the totalAvgDepth column from each
+        metabat_cov = []
+        for metabat in input.metabat_coverages:
+            cov = pd.read_csv(metabat, sep='\t')
+            cov.drop(columns=["totalAvgDepth"], inplace=True)
+            metabat_cov.append(cov)
+        metabat_cov = pd.concat(metabat_cov, axis=1)
+        metabat_cov = metabat_cov.loc[:, ~metabat_cov.columns.duplicated()]
+
+        # Calculate totalAvgDepth as the average of all columns that don't end in -var or Variance
+        depth_columns = [col for col in metabat_cov.columns if not col.endswith('-var') and not col.endswith(' Variance') and col not in ['contigName', 'contigLen']]
+        metabat_cov['totalAvgDepth'] = metabat_cov[depth_columns].mean(axis=1)
+
+        # Reorder columns to place totalAvgDepth as the third column
+        cols = metabat_cov.columns.tolist()
+        cols.insert(2, cols.pop(cols.index('totalAvgDepth')))
+        metabat_cov = metabat_cov[cols]
+        metabat_cov.to_csv(output.metabat_coverage, sep='\t', index=False)
 
 rule get_bam_indices:
     input:
