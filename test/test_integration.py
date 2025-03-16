@@ -372,7 +372,7 @@ class Tests(unittest.TestCase):
             f"-1 {data}/wgsim.1.fq.gz "
             f"-2 {data}/wgsim.2.fq.gz "
             f"--skip-binners rosella metabat vamb "
-            f"--extra-binners taxvamb "
+            f"--extra-binners taxvamb comebin "
             f"--request-gpu "
             f"--skip-qc "
             f"--refinery-max-iterations 0 "

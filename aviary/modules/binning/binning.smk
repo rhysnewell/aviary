@@ -529,7 +529,7 @@ rule comebin:
         runtime = lambda wildcards, attempt: 24*60*attempt,
         gpus = 1 if config["request_gpu"] else 0
     conda:
-        "envs/comebin.yaml"
+        "envs/comebin-gpu.yaml" if config["request_gpu"] else "envs/comebin.yaml"
     log:
         "logs/comebin.log"
     benchmark:
