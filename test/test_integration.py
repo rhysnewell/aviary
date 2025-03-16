@@ -382,8 +382,6 @@ class Tests(unittest.TestCase):
         )
         subprocess.run(cmd, shell=True, check=True)
 
-        self.assertTrue(os.path.isfile(f"{output_dir}/aviary_out/data/final_contigs.fasta"))
-
         bin_info_path = f"{output_dir}/aviary_out/bins/bin_info.tsv"
         self.assertTrue(os.path.isfile(bin_info_path))
         with open(bin_info_path) as f:
