@@ -495,7 +495,7 @@ rule semibin:
         runtime = lambda wildcards, attempt: 24*60 + 48*60*(attempt-1),
         gpus = 1 if config["request_gpu"] else 0
     conda:
-        "envs/semibin.yaml"
+        "envs/semibin-gpu.yaml" if config["request_gpu"] else "envs/semibin.yaml"
     log:
         "logs/semibin.log"
     benchmark:
