@@ -563,8 +563,10 @@ def main():
 
     binning_group.add_argument(
         '--coverage-job-strategy', '--coverage_job_strategy',
-        help=f'Strategy for splitting samples when calculating coverage for binning. Choices include: \n'
-             f'"default" for only splitting into separate jobs when more than {COVERAGE_JOB_CUTOFF} samples are provided, "never" and "always".',
+        help=f'When large numbers of samples are used for co-binning, it can be more computationally scalable to \n'
+             f'calculate coverage across multiple jobs. By default, if there are more than {COVERAGE_JOB_CUTOFF} samples,\n'
+             f'Aviary will calculate coverage in groups of N, where N is determined by `--coverage-samples-per-job`.\n'
+             f'Can be one of: "default" (as above), "never" and "always".',
         dest='coverage_job_strategy',
         choices=COVERAGE_JOB_STRATEGIES,
         default=COVERAGE_JOB_STRATEGIES[0],
