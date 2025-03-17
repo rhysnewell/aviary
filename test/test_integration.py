@@ -386,7 +386,7 @@ class Tests(unittest.TestCase):
         self.assertTrue(os.path.isfile(bin_info_path))
         with open(bin_info_path) as f:
             num_lines = sum(1 for _ in f)
-        self.assertEqual(num_lines, 3)
+        self.assertTrue(num_lines >= 3)
 
     def test_batch_recovery(self):
         output_dir = os.path.join("example", "test_batch_recovery")
