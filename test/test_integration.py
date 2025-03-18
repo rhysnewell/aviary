@@ -342,7 +342,7 @@ class Tests(unittest.TestCase):
             f"-2 {data}/wgsim.2.fq.gz "
             f"--conda-prefix {path_to_conda} "
             f"-n 32 -t 32 --local-cores 1 "
-            f"--snakemake-profile mqsub --cluster-retries 3 "
+            f"--snakemake-profile aqua --cluster-retries 3 "
         )
         subprocess.run(cmd, shell=True, check=True)
 
@@ -353,6 +353,40 @@ class Tests(unittest.TestCase):
         with open(bin_info_path) as f:
             num_lines = sum(1 for _ in f)
         self.assertEqual(num_lines, 3)
+
+    def test_short_read_recovery_queue_submission_gpus(self):
+        output_dir = os.path.join("example", "test_short_read_recovery_queue_submission_gpus")
+        self.setup_output_dir(output_dir)
+
+        # Create inflated assembly file
+        cmd = f"cat {data}/assembly.fasta > {output_dir}/assembly.fasta"
+        multiplier = 100
+        for i in range(multiplier):
+            cmd += f" && awk '/^>/ {{print $0 \"{i}\"}} !/^>/ {{print $0}}' {data}/assembly.fasta >> {output_dir}/assembly.fasta"
+        subprocess.run(cmd, shell=True, check=True)
+
+        cmd = (
+            f"aviary recover "
+            f"--assembly {output_dir}/assembly.fasta "
+            f"-o {output_dir}/aviary_out "
+            f"-1 {data}/wgsim.1.fq.gz "
+            f"-2 {data}/wgsim.2.fq.gz "
+            f"--skip-binners rosella metabat vamb "
+            f"--extra-binners taxvamb comebin "
+            f"--request-gpu "
+            f"--skip-qc "
+            f"--refinery-max-iterations 0 "
+            f"--conda-prefix {path_to_conda} "
+            f"-n 32 -t 32 --local-cores 1 "
+            f"--snakemake-profile aqua --cluster-retries 0 "
+        )
+        subprocess.run(cmd, shell=True, check=True)
+
+        bin_info_path = f"{output_dir}/aviary_out/bins/bin_info.tsv"
+        self.assertTrue(os.path.isfile(bin_info_path))
+        with open(bin_info_path) as f:
+            num_lines = sum(1 for _ in f)
+        self.assertTrue(num_lines >= 3)
 
     def test_batch_recovery(self):
         output_dir = os.path.join("example", "test_batch_recovery")

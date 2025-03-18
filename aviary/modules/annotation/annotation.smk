@@ -163,7 +163,6 @@ rule checkm2:
     resources:
         mem_mb = lambda wildcards, attempt: min(int(config["max_memory"])*1024, 128*1024*attempt),
         runtime = lambda wildcards, attempt: 8*60*attempt,
-        gpus = 1 if config["request_gpu"] else 0
     log:
         'logs/checkm2.log'
     benchmark:
