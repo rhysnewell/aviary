@@ -342,7 +342,7 @@ class Tests(unittest.TestCase):
             f"-2 {data}/wgsim.2.fq.gz "
             f"--conda-prefix {path_to_conda} "
             f"-n 32 -t 32 --local-cores 1 "
-            f"--snakemake-profile aqua-no-immediate-submit --cluster-retries 3 "
+            f"--snakemake-profile aqua --cluster-retries 3 "
         )
         subprocess.run(cmd, shell=True, check=True)
 
@@ -378,7 +378,7 @@ class Tests(unittest.TestCase):
             f"--refinery-max-iterations 0 "
             f"--conda-prefix {path_to_conda} "
             f"-n 32 -t 32 --local-cores 1 "
-            f"--snakemake-profile aqua-no-immediate-submit --cluster-retries 0 "
+            f"--snakemake-profile aqua --cluster-retries 0 "
         )
         subprocess.run(cmd, shell=True, check=True)
 

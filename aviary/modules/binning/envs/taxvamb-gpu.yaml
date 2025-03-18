@@ -9,7 +9,7 @@ dependencies:
   - numpy==1.24.2
   - pytorch==1.13.1
   - pycoverm==0.6.2
-  - pytorch-cuda
+  - pytorch-cuda==12.4
   - pip
   - git
   - pip:
