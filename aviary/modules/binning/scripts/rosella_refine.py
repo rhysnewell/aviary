@@ -292,7 +292,7 @@ def refine(
     log,
 ):
     if kmers is None:
-        rosella_cmd = f"rosella refine -r {assembly} -C {coverage} -d {bin_folder} -x {extension} --checkm-results {checkm} --max-contamination {max_contamination} --max-retries {max_retries} --min-bin-size {min_bin_size} -t {threads} -o {output_folder} --bin-tag {bin_tag}".split()
+        rosella_cmd = f"rosella refine -r {assembly} -C {coverage} -d {bin_folder} -x {extension} --checkm-results {checkm} --max-contamination {max_contamination} --min-bin-size {min_bin_size} -t {threads} -o {output_folder} --bin-tag {bin_tag}".split()
         with open(log, "a") as logf:
             run(rosella_cmd, stdout=logf, stderr=STDOUT)
 
@@ -300,7 +300,7 @@ def refine(
         shutil.copyfile(f"{output_folder}/kmer_frequencies.tsv", f"data/rosella_bins/kmer_frequencies.tsv")
         kmers = "data/rosella_bins/kmer_frequencies.tsv"
     else:
-        rosella_cmd = f"rosella refine -r {assembly} -C {coverage} --kmer-frequency-file {kmers} -d {bin_folder} -x {extension} --checkm-results {checkm} --max-contamination {max_contamination} --max-retries {max_retries} --min-bin-size {min_bin_size} -t {threads} -o {output_folder} --bin-tag {bin_tag}".split()
+        rosella_cmd = f"rosella refine -r {assembly} -C {coverage} --kmer-frequency-file {kmers} -d {bin_folder} -x {extension} --checkm-results {checkm} --max-contamination {max_contamination} --min-bin-size {min_bin_size} -t {threads} -o {output_folder} --bin-tag {bin_tag}".split()
 
         with open(log, "a") as logf:
             run(rosella_cmd, stdout=logf, stderr=STDOUT)
