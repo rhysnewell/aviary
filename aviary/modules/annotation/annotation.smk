@@ -164,7 +164,7 @@ rule download_metabuli:
     log:
         'logs/download_metabuli.log'
     shell:
-        'metabuli databases GTDB {params.metabuli_folder} tmp 2> {log} 2&>1 '
+        'metabuli databases GTDB {params.metabuli_folder} tmp 2> {log} 2>&1 '
 
 rule checkm2:
     input:
