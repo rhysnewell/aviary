@@ -18,6 +18,4 @@ dependencies:
   - packaging
   - tqdm
   - pip
-  - git
-  - pip:
-      - "git+https://github.com/chklovski/CheckM2.git#egg=checkm2"
+  - checkm2 == 1.1.0
