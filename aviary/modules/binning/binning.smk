@@ -152,7 +152,7 @@ rule vamb_jgi_filter:
         fasta = ancient(config["fasta"]),
         done = ancient("data/coverm.cov")
     output:
-        vamb_bams_done = "data/coverm.filt.cov""]
+        vamb_bams_done = "data/coverm.filt.cov"
     threads: 1
     resources:
         mem_mb = lambda wildcards, attempt: min(int(config["max_memory"])*1024, 16*1024*attempt),
