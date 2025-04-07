@@ -1,4 +1,4 @@
-localrules: vamb_jgi_filter, vamb_skip, convert_metabuli, amber_checkm_output, finalise_stats, recover_mags, recover_mags_no_singlem
+localrules: vamb_skip, amber_checkm_output, recover_mags, recover_mags_no_singlem
 
 ruleorder: dereplicate_and_get_abundances_paired > dereplicate_and_get_abundances_interleaved
 ruleorder: checkm_rosella > amber_checkm_output
@@ -152,9 +152,11 @@ rule vamb_jgi_filter:
         fasta = ancient(config["fasta"]),
         done = ancient("data/coverm.cov")
     output:
-        vamb_bams_done = "data/coverm.filt.cov"
-    threads:
-        config["max_threads"]
+        vamb_bams_done = "data/coverm.filt.cov""]
+    threads: 1
+    resources:
+        mem_mb = lambda wildcards, attempt: min(int(config["max_memory"])*1024, 16*1024*attempt),
+        runtime = lambda wildcards, attempt: 24*60*attempt,
     params:
         min_contig_size = config['min_contig_size']
     run:
@@ -265,8 +267,10 @@ rule convert_metabuli:
         filt_cov = ancient("data/coverm.filt.cov")
     output:
         "data/metabuli_taxonomy/taxonomy.tsv"
-    threads:
-        config["max_threads"]
+    threads: 1
+    resources:
+        mem_mb = lambda wildcards, attempt: min(int(config["max_memory"])*1024, 16*1024*attempt),
+        runtime = lambda wildcards, attempt: 24*60*attempt,
     params:
         report = "data/metabuli_taxonomy/tax_report.tsv",
         classifications = "data/metabuli_taxonomy/tax_classifications.tsv",
@@ -846,6 +850,10 @@ rule finalise_stats:
     output:
         bin_stats = "bins/bin_info.tsv",
         checkm_minimal = "bins/checkm_minimal.tsv"
+    threads: 1
+    resources:
+        mem_mb = lambda wildcards, attempt: min(int(config["max_memory"])*1024, 16*1024*attempt),
+        runtime = lambda wildcards, attempt: 24*60*attempt,
     script:
         "scripts/finalise_stats.py"
 
