@@ -292,7 +292,7 @@ def refine(
     log,
 ):
     if kmers is None:
-        rosella_cmd = f"rosella refine -r {assembly} -C {coverage} -d {bin_folder} -x {extension} --checkm-results {checkm} --max-contamination {max_contamination} --min-bin-size {min_bin_size} -t {threads} -o {output_folder} --bin-tag {bin_tag}".split()
+        rosella_cmd = f"pixi run -e rosella rosella refine -r {assembly} -C {coverage} -d {bin_folder} -x {extension} --checkm-results {checkm} --max-contamination {max_contamination} --min-bin-size {min_bin_size} -t {threads} -o {output_folder} --bin-tag {bin_tag}".split()
         with open(log, "a") as logf:
             run(rosella_cmd, stdout=logf, stderr=STDOUT)
 
@@ -300,7 +300,7 @@ def refine(
         shutil.copyfile(f"{output_folder}/kmer_frequencies.tsv", f"data/rosella_bins/kmer_frequencies.tsv")
         kmers = "data/rosella_bins/kmer_frequencies.tsv"
     else:
-        rosella_cmd = f"rosella refine -r {assembly} -C {coverage} --kmer-frequency-file {kmers} -d {bin_folder} -x {extension} --checkm-results {checkm} --max-contamination {max_contamination} --min-bin-size {min_bin_size} -t {threads} -o {output_folder} --bin-tag {bin_tag}".split()
+        rosella_cmd = f"pixi run -e rosella rosella refine -r {assembly} -C {coverage} --kmer-frequency-file {kmers} -d {bin_folder} -x {extension} --checkm-results {checkm} --max-contamination {max_contamination} --min-bin-size {min_bin_size} -t {threads} -o {output_folder} --bin-tag {bin_tag}".split()
 
         with open(log, "a") as logf:
             run(rosella_cmd, stdout=logf, stderr=STDOUT)
@@ -315,12 +315,12 @@ def get_checkm_results(
         final_refining=False,
 ):
 
-    checkm_cmd = f"checkm lineage_wf -t {threads} --pplacer_threads {pplacer_threads} -x fna --tab_table -f {refined_folder}/checkm.out {refined_folder} {refined_folder}/checkm".split()
+    checkm_cmd = f"pixi run -e rosella checkm lineage_wf -t {threads} --pplacer_threads {pplacer_threads} -x fna --tab_table -f {refined_folder}/checkm.out {refined_folder} {refined_folder}/checkm".split()
     with open(log, "a") as logf:
         run(checkm_cmd, stdout=logf, stderr=STDOUT)
 
     if final_refining:
-        checkm_qa_cmd = f"checkm qa -o 2 --tab_table -f {refined_folder}/checkm.out {refined_folder}/checkm/lineage.ms {refined_folder}/checkm/".split()
+        checkm_qa_cmd = f"pixi run -e rosella checkm qa -o 2 --tab_table -f {refined_folder}/checkm.out {refined_folder}/checkm/lineage.ms {refined_folder}/checkm/".split()
         with open(log, "a") as logf:
             run(checkm_qa_cmd, stdout=logf, stderr=STDOUT)
 

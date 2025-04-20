@@ -55,8 +55,6 @@ rule prepare_binning_files:
         metabat_coverage = "data/coverm.cov"
     params:
         tmpdir = config['tmpdir']
-    conda:
-        "../../envs/coverm.yaml"
     threads:
         config["max_threads"]
     resources:
@@ -73,15 +71,13 @@ rule get_bam_indices:
         coverage = "data/coverm.cov"
     output:
         bams = "data/binning_bams/done"
-    conda:
-        "../../envs/coverm.yaml"
     threads:
         config["max_threads"]
     resources:
         mem_mb = lambda wildcards, attempt: min(int(config["max_memory"])*1024, 128*1024*attempt),
         runtime = lambda wildcards, attempt: 24*60*attempt,
     shell:
-        "ls data/binning_bams/*.bam | parallel -j 1 'samtools index -@ {threads} {{}} {{}}.bai' &&"
+        "ls data/binning_bams/*.bam | pixi run -e coverm parallel -j 1 'samtools index -@ {threads} {{}} {{}}.bai' &&"
         "touch data/binning_bams/done"
 
 
@@ -315,8 +311,6 @@ rule metabat2:
         min_bin_size = config["min_bin_size"]
     output:
         metabat_done = "data/metabat_bins_2/done"
-    conda:
-        "envs/metabat2.yaml"
     threads:
         config["max_threads"]
     resources:
@@ -328,7 +322,7 @@ rule metabat2:
         "benchmarks/metabat_2.benchmark.txt"
     shell:
         "rm -rf data/metabat_bins_2/; "
-        "metabat -t {threads} -m {params.min_contig_size} -s {params.min_bin_size} --seed 89 -i {input.fasta} "
+        "pixi run -e metabat2 metabat -t {threads} -m {params.min_contig_size} -s {params.min_bin_size} --seed 89 -i {input.fasta} "
         "-a {input.coverage} -o data/metabat_bins_2/binned_contigs > {log} 2>&1 && "
         "touch {output[0]} || touch {output[0]}"
 
@@ -450,8 +444,6 @@ rule rosella:
     output:
         # kmers = "data/rosella_bins/kmer_frequencies.tsv",
         done = "data/rosella_bins/done"
-    conda:
-        "envs/rosella.yaml"
     threads:
         config["max_threads"]
     resources:
@@ -463,7 +455,7 @@ rule rosella:
         "benchmarks/rosella.benchmark.txt"
     shell:
         "rm -rf data/rosella_bins/; "
-        "rosella recover -r {input.fasta} -C {input.coverage} -t {threads} -o data/rosella_bins "
+        "pixi run -e rosella rosella recover -r {input.fasta} -C {input.coverage} -t {threads} -o data/rosella_bins "
         "--min-contig-size {params.min_contig_size} --min-bin-size {params.min_bin_size} --n-neighbors 100 > {log} 2>&1 && "
         "touch {output.done} || touch {output.done}"
 
@@ -552,8 +544,6 @@ rule checkm_rosella:
     output:
         output_folder = directory("data/rosella_bins/checkm2_out/"),
         output_file = "data/rosella_bins/checkm.out"
-    conda:
-        "../../envs/checkm2.yaml"
     threads:
         config["max_threads"]
     resources:
@@ -576,8 +566,6 @@ rule checkm_metabat2:
     output:
         output_folder = directory("data/metabat_bins_2/checkm2_out/"),
         output_file = "data/metabat_bins_2/checkm.out"
-    conda:
-        "../../envs/checkm2.yaml"
     threads:
         config["max_threads"]
     resources:
@@ -600,8 +588,6 @@ rule checkm_semibin:
     output:
         output_folder = directory("data/semibin_bins/checkm2_out/"),
         output_file = "data/semibin_bins/checkm.out"
-    conda:
-        "../../envs/checkm2.yaml"
     threads:
         config["max_threads"]
     resources:
@@ -641,8 +627,6 @@ rule refine_rosella:
         runtime = lambda wildcards, attempt: 48*60 + 24*60*attempt,
     log:
         "logs/refine_rosella.log"
-    conda:
-        "envs/rosella.yaml"
     script:
         "scripts/rosella_refine.py"
 
@@ -675,8 +659,6 @@ rule refine_metabat2:
         bin_prefix = "metabat2"
     log:
         "logs/refine_metabat2.log"
-    conda:
-        "envs/rosella.yaml"
     script:
         "scripts/rosella_refine.py"
 
@@ -709,8 +691,6 @@ rule refine_semibin:
         bin_prefix = "semibin2"
     log:
         "logs/refine_semibin.log"
-    conda:
-        "envs/rosella.yaml"
     script:
         "scripts/rosella_refine.py"
 
@@ -776,8 +756,6 @@ rule das_tool:
         runtime = lambda wildcards, attempt: 12*60*attempt,
     output:
         touch("data/das_tool_bins_pre_refine/done")
-    conda:
-        "envs/das_tool.yaml"
     log:
         "logs/das_tool.log"
     benchmark:
@@ -815,8 +793,6 @@ rule refine_dastool:
         bin_prefix = "dastool"
     log:
         "logs/refine_dastool.log"
-    conda:
-        "envs/rosella.yaml"
     script:
         "scripts/rosella_refine.py"
 
@@ -832,8 +808,6 @@ rule get_abundances:
         "data/coverm_abundances.tsv"
     log:
         "logs/coverm_abundances.log"
-    conda:
-        "../../envs/coverm.yaml"
     script:
         "scripts/get_abundances.py"
 
@@ -858,8 +832,6 @@ rule checkm_das_tool:
         pplacer_threads = config["pplacer_threads"]
     output:
         "data/das_tool_bins_pre_refine/checkm.out"
-    conda:
-        "../../envs/checkm.yaml"
     threads:
         config["max_threads"]
     resources:
@@ -868,10 +840,10 @@ rule checkm_das_tool:
     log:
         "logs/checkm_das_tool.log"
     shell:
-        'checkm lineage_wf -t {threads} --pplacer_threads {params.pplacer_threads} '
+        'pixi run -e checkm checkm lineage_wf -t {threads} --pplacer_threads {params.pplacer_threads} '
         '-x fa data/das_tool_bins_pre_refine/das_tool_DASTool_bins data/das_tool_bins_pre_refine/checkm --tab_table '
         '-f data/das_tool_bins_pre_refine/checkm.out > {log} 2>&1; '
-        'checkm qa -o 2 --tab_table -f data/das_tool_bins_pre_refine/checkm.out '
+        'pixi run -e checkm checkm qa -o 2 --tab_table -f data/das_tool_bins_pre_refine/checkm.out '
         'data/das_tool_bins_pre_refine/checkm/lineage.ms data/das_tool_bins_pre_refine/checkm/ >> {log} 2>&1; '
 
 
@@ -924,8 +896,6 @@ rule recover_mags:
         coverm = "data/coverm_abundances.tsv" if not config["skip_abundances"] else [],
         contig_coverage = "data/coverm.cov",
         singlem = "data/singlem_out/singlem_appraisal.tsv" if not config["skip_singlem"] else [],
-    conda:
-        "../../envs/coverm.yaml"
     output:
         bins = "bins/done"
     threads:
@@ -940,8 +910,6 @@ rule recover_mags_no_singlem:
         coverm = "data/coverm_abundances.tsv" if not config["skip_abundances"] else [],
         contig_coverage = "data/coverm.cov",
         singlem = [],
-    conda:
-        "../../envs/coverm.yaml"
     output:
         bins = "bins/done",
     threads:
@@ -966,10 +934,8 @@ rule dereplicate_and_get_abundances_paired:
         runtime = lambda wildcards, attempt: 24*60 + 24*60*attempt,
     log:
         "logs/coverm_abundances_paired.log"
-    conda:
-        "../../envs/coverm.yaml"
     shell:
-        "coverm genome -t {threads} -d bins/final_bins/ -1 {input.pe_1} -2 {input.pe_2} --min-covered-fraction 0.0 -x fna > bins/coverm_abundances.tsv 2> {log}; "
+        "pixi run -e coverm coverm genome -t {threads} -d bins/final_bins/ -1 {input.pe_1} -2 {input.pe_2} --min-covered-fraction 0.0 -x fna > bins/coverm_abundances.tsv 2> {log}; "
 
 # Special rule to help out with a buggy output
 rule dereplicate_and_get_abundances_interleaved:
@@ -987,7 +953,5 @@ rule dereplicate_and_get_abundances_interleaved:
         runtime = lambda wildcards, attempt: 24*60 + 24*60*attempt,
     log:
         "logs/coverm_abundances_interleaved.log"
-    conda:
-        "../../envs/coverm.yaml"
     shell:
-        "coverm genome -t {threads} -d bins/final_bins/ --interleaved {input.pe_1} --min-covered-fraction 0.0 -x fna > bins/coverm_abundances.tsv 2> {log}; "
+        "pixi run -e coverm coverm genome -t {threads} -d bins/final_bins/ --interleaved {input.pe_1} --min-covered-fraction 0.0 -x fna > bins/coverm_abundances.tsv 2> {log}; "

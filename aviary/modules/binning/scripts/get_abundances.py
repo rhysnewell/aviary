@@ -13,7 +13,7 @@ def run_coverm(
 ):
     strain_analysis_flag = f"--bam-file-cache-directory {output_dir} --discard-unmapped" if strain_analysis else ""
 
-    coverm_cmd = f"coverm genome -t {threads} {strain_analysis_flag} -d bins/final_bins/ -m relative_abundance covered_fraction {read_type} {reads} -p {minimap2_type} --output-file {output_file} --min-covered-fraction 0.0 -x fna".split()
+    coverm_cmd = f"pixi run -e coverm coverm genome -t {threads} {strain_analysis_flag} -d bins/final_bins/ -m relative_abundance covered_fraction {read_type} {reads} -p {minimap2_type} --output-file {output_file} --min-covered-fraction 0.0 -x fna".split()
 
     with open(log, "a") as logf:
         run(coverm_cmd, stdout=logf, stderr=STDOUT)

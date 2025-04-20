@@ -19,7 +19,7 @@ def checkm(checkm2_db, bin_folder, bin_ext, refinery_max_iterations, output_fold
         with open(log, "a") as logf:
             logf.write(f"Using CheckM2 database {checkm2_db}/uniref100.KO.1.dmnd\n")
             subprocess.run(
-                f"checkm2 predict -i {bin_folder}/ -x {bin_ext} -o {output_folder} -t {threads} --force".split(),
+                f"pixi run -e checkm2 checkm2 predict -i {bin_folder}/ -x {bin_ext} -o {output_folder} -t {threads} --force".split(),
                 env=os.environ,
                 stdout=logf,
                 stderr=subprocess.STDOUT

@@ -1,6 +1,7 @@
 from subprocess import run, STDOUT
 import os
 
+COVERM_CMD = 'pixi run -e coverm coverm'
 
 def get_coverage(
     long_reads,
@@ -16,29 +17,29 @@ def get_coverage(
 
     if long_reads != "none" and not os.path.exists("data/long_cov.tsv"):
         if long_read_type in ["ont", "ont_hq"]:
-            coverm_cmd = f"coverm contig -t {threads} -r {input_fasta} --single {' '.join(long_reads)} -p minimap2-ont -m length trimmed_mean variance --bam-file-cache-directory data/binning_bams/ --discard-unmapped --min-read-percent-identity 0.85 --output-file data/long_cov.tsv".split()
+            coverm_cmd = f"{COVERM_CMD} contig -t {threads} -r {input_fasta} --single {' '.join(long_reads)} -p minimap2-ont -m length trimmed_mean variance --bam-file-cache-directory data/binning_bams/ --discard-unmapped --min-read-percent-identity 0.85 --output-file data/long_cov.tsv".split()
             with open(log, "a") as logf:
                 run(coverm_cmd, stdout=logf, stderr=STDOUT)
 
         elif long_read_type in ["rs", "sq", "ccs", "hifi"]:
-            coverm_cmd = f"coverm contig -t {threads} -r {input_fasta} --single {' '.join(long_reads)} -p minimap2-pb -m length trimmed_mean variance --bam-file-cache-directory data/binning_bams/ --discard-unmapped --min-read-percent-identity 0.9 --output-file data/long_cov.tsv".split()
+            coverm_cmd = f"{COVERM_CMD} contig -t {threads} -r {input_fasta} --single {' '.join(long_reads)} -p minimap2-pb -m length trimmed_mean variance --bam-file-cache-directory data/binning_bams/ --discard-unmapped --min-read-percent-identity 0.9 --output-file data/long_cov.tsv".split()
 
             with open(log, "a") as logf:
                 run(coverm_cmd, stdout=logf, stderr=STDOUT)
 
         else:
-            coverm_cmd = f"coverm contig -t {threads} -r {input_fasta} --single {' '.join(long_reads)} -p minimap2-ont -m length trimmed_mean variance --bam-file-cache-directory data/binning_bams/ --discard-unmapped --min-read-percent-identity 0.85 --output-file data/long_cov.tsv".split()
+            coverm_cmd = f"{COVERM_CMD} contig -t {threads} -r {input_fasta} --single {' '.join(long_reads)} -p minimap2-ont -m length trimmed_mean variance --bam-file-cache-directory data/binning_bams/ --discard-unmapped --min-read-percent-identity 0.85 --output-file data/long_cov.tsv".split()
 
             with open(log, "a") as logf:
                 run(coverm_cmd, stdout=logf, stderr=STDOUT)
 
     if short_reads_2 != 'none' and not os.path.exists("data/short_cov.tsv"):
-        coverm_cmd = f"coverm contig -t {threads} -r {input_fasta} -1 {' '.join(short_reads_1)} -2 {' '.join(short_reads_2)} -m metabat --bam-file-cache-directory data/binning_bams/ --discard-unmapped --output-file data/short_cov.tsv".split()
+        coverm_cmd = f"{COVERM_CMD} contig -t {threads} -r {input_fasta} -1 {' '.join(short_reads_1)} -2 {' '.join(short_reads_2)} -m metabat --bam-file-cache-directory data/binning_bams/ --discard-unmapped --output-file data/short_cov.tsv".split()
         with open(log, "a") as logf:
                 run(coverm_cmd, stdout=logf, stderr=STDOUT)
 
     elif short_reads_1  != 'none' and not os.path.exists("data/short_cov.tsv"):
-        coverm_cmd = f"coverm contig -t {threads} -r {input_fasta} --interleaved {' '.join(short_reads_1)} -m metabat --bam-file-cache-directory data/binning_bams/ --discard-unmapped --output-file data/short_cov.tsv".split()
+        coverm_cmd = f"{COVERM_CMD} contig -t {threads} -r {input_fasta} --interleaved {' '.join(short_reads_1)} -m metabat --bam-file-cache-directory data/binning_bams/ --discard-unmapped --output-file data/short_cov.tsv".split()
 
         with open(log, "a") as logf:
                 run(coverm_cmd, stdout=logf, stderr=STDOUT)

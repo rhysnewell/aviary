@@ -128,13 +128,11 @@ rule download_singlem_metapackage:
 rule download_checkm2:
     params:
         checkm2_folder = os.path.expanduser(config['checkm2_db_folder'])
-    conda:
-        '../../envs/checkm2.yaml'
     threads: 1
     log:
         'logs/download_checkm2.log'
     shell:
-        'checkm2 database --download --path {params.checkm2_folder} 2> {log}; '
+        'pixi run -e checkm2 checkm2 database --download --path {params.checkm2_folder} 2> {log}; '
         'mv {params.checkm2_folder}/CheckM2_database/*.dmnd {params.checkm2_folder}/; '
 
 rule download_metabuli:
@@ -167,12 +165,10 @@ rule checkm2:
         'logs/checkm2.log'
     benchmark:
         'benchmarks/checkm2.benchmark.txt'
-    conda:
-        "../../envs/checkm2.yaml"
     shell:
         'export CHECKM2DB={params.checkm2_db_path}/uniref100.KO.1.dmnd; '
         'echo "Using CheckM2 database $CHECKM2DB" > {log}; '
-        'checkm2 predict -i {input.mag_folder}/ -x {params.mag_extension} -o {output.checkm2_folder} -t {threads} --force'
+        'pixi run -e checkm2 checkm2 predict -i {input.mag_folder}/ -x {params.mag_extension} -o {output.checkm2_folder} -t {threads} --force'
         '>> {log} 2>&1 '
 
 rule eggnog:

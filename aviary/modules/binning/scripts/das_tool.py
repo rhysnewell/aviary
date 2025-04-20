@@ -60,7 +60,7 @@ if __name__ == '__main__':
 
     scaffold2bin_files = ','.join(bin_definition_files)
 
-    das_tool_command = f'DAS_Tool --search_engine diamond --write_bin_evals 1 --write_bins 1 -t {snakemake.threads} --score_threshold -42 \
+    das_tool_command = f'pixi run -e das_tool DAS_Tool --search_engine diamond --write_bin_evals 1 --write_bins 1 -t {snakemake.threads} --score_threshold -42 \
         -i {scaffold2bin_files} \
         -c {snakemake.input.fasta} \
         -o data/das_tool_bins_pre_refine/das_tool >> {logfile} 2>&1'

@@ -15,3 +15,7 @@ config.yaml
 benchmarks
 data
 logs
+
+# pixi environments
+.pixi
+*.egg-info

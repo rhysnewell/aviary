@@ -1,0 +1,79 @@
+[project]
+authors = ["Rhys Newell <rhys.newell94@gmail.com>"]
+channels = ["conda-forge", "bioconda"]
+name = "aviary"
+platforms = ["linux-64"]
+
+[activation]
+# Sets metapackage environment variables, which are assumed to be in the db/ of
+# the base directory (perhaps symlnked).
+scripts = ["admin/set_env_vars.sh"]
+
+[feature.main.dependencies]
+python = ">=3.8,<=3.11"
+snakemake = ">=7.0.0,<=7.32.3"
+"ruamel.yaml" = ">=0.15.99"
+numpy = "*"
+pandas = "*"
+biopython = "*"
+conda = "==25.1.1"
+pigz = ">=2.6"
+parallel = "*"
+bbmap = "*"
+extern = "*"
+pyopenssl = ">22.1.0"
+
+[feature.main.pypi-dependencies]
+"aviary-genome" = { path = ".", editable = true }
+
+# [feature.dev.dependencies]
+# # Dev/test dependencies only
+# pytest = "*"
+# ipython = "*"
+# toml = "*"
+
+[environments]
+default = ["main"]
+# dev = ["dev"]
+metabat2 = ["metabat2"]
+checkm = ["checkm"]
+checkm2 = ["checkm2"]
+coverm = ["coverm"]
+das-tool = ["das-tool"]
+rosella = ["rosella"]
+
+[feature.metabat2.dependencies]
+metabat2 = ">=2.15"
+
+# Incomplete Conda environment /home/ben/git/aviary/aviary/modules/binning/../../envs/checkm2.yaml will be recreated.
+# Incomplete Conda environment /home/ben/git/aviary/aviary/modules/annotation/../../envs/checkm2.yaml will be recreated.
+# Incomplete Conda environment /home/ben/git/aviary/aviary/modules/binning/envs/das_tool.yaml will be recreated.
+# Conda environment /home/ben/git/aviary/aviary/modules/binning/../../envs/checkm.yaml will be created.
+# Conda environment /home/ben/git/aviary/aviary/modules/binning/envs/rosella.yaml will be created.
+# Incomplete Conda environment /home/ben/git/aviary/aviary/modules/binning/../../envs/coverm.yaml will be recreated.
+
+[feature.checkm.dependencies]
+"checkm-genome" = ">=1.1.2"
+parallel = "*"
+
+[feature.checkm2.dependencies]
+checkm2 = "=1.1.0"
+
+[feature.coverm.dependencies]
+coverm = ">=0.6"
+galah = ">=0.3"
+chopper = ">=0.6"
+pigz = "*"
+parallel = "*"
+dashing = "*"
+fastani = "*"
+
+[feature.das-tool.dependencies]
+das_tool = "=1.1.2"
+extern = "=0.4.1"
+
+[feature.rosella.dependencies]
+rosella = ">=0.5.3"
+flight-genome = ">=1.6.3"
+coverm = ">=0.6.1"
+checkm-genome = "=1.1.3"
