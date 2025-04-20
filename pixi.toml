@@ -55,6 +55,7 @@ metabat2 = ">=2.15"
 [feature.checkm.dependencies]
 "checkm-genome" = ">=1.1.2"
 parallel = "*"
+setuptools = "*"
 
 [feature.checkm2.dependencies]
 checkm2 = "=1.1.0"

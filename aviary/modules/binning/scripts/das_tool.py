@@ -51,7 +51,7 @@ if __name__ == '__main__':
 
     bin_definition_files = []
     for binner, extension, bin_definition_file in binners:
-        extern.run(f'Fasta_to_Scaffolds2Bin.sh -i data/{binner} -e {extension} >{bin_definition_file}  2>> {logfile}')
+        extern.run(f'pixi run -e das-tool Fasta_to_Scaffolds2Bin.sh -i data/{binner} -e {extension} >{bin_definition_file}  2>> {logfile}')
         if os.path.getsize(bin_definition_file) == 0:
             logging.warning(f'Bin definition file {bin_definition_file} is empty, suggesting that {binner} failed or did not not create any output bins.')
         else:
@@ -60,7 +60,7 @@ if __name__ == '__main__':
 
     scaffold2bin_files = ','.join(bin_definition_files)
 
-    das_tool_command = f'pixi run -e das_tool DAS_Tool --search_engine diamond --write_bin_evals 1 --write_bins 1 -t {snakemake.threads} --score_threshold -42 \
+    das_tool_command = f'pixi run -e das-tool DAS_Tool --search_engine diamond --write_bin_evals 1 --write_bins 1 -t {snakemake.threads} --score_threshold -42 \
         -i {scaffold2bin_files} \
         -c {snakemake.input.fasta} \
         -o data/das_tool_bins_pre_refine/das_tool >> {logfile} 2>&1'
