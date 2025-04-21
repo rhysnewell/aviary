@@ -21,7 +21,7 @@
 # If not, see <http://www.gnu.org/licenses/>.
 #=======================================================================
 
-import unittest
+import pytest
 import os.path
 import subprocess
 import shutil
@@ -29,7 +29,8 @@ import shutil
 data = os.path.join(os.path.dirname(__file__), 'data')
 path_to_conda = os.path.join(data,'.conda')
 
-class Tests(unittest.TestCase):
+@pytest.mark.expensive
+class Tests:
     def setup_output_dir(self, output_dir):
         try:
             shutil.rmtree(output_dir)

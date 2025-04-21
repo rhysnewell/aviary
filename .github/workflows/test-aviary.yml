@@ -1,4 +1,4 @@
-name: Test Aviary with Setup-Miniconda From Marketplace
+name: Test Aviary
 on: [push, pull_request]
 
 jobs:
@@ -23,11 +23,8 @@ jobs:
 
       - name: Run tests with Pixi
         run: |
-          aviary -h
-          python test/test_assemble.py
-          python test/test_recover.py
-          python test/test_run_checkm.py -b
-          python test/test_convert_metabuli.py
+          pixi run -e dev aviary -h
+          pixi run -e dev pytest -v
 
   # Run after removing lock file so dependences are unlocked
   pixi_test_dependencies_optimistic:
@@ -59,8 +56,5 @@ jobs:
 
       - name: Run tests with Pixi
         run: |
-          aviary -h
-          python test/test_assemble.py
-          python test/test_recover.py
-          python test/test_run_checkm.py -b
-          python test/test_convert_metabuli.py
+          pixi run -e dev aviary -h
+          pixi run -e dev pytest -v
