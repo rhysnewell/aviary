@@ -1,6 +1,7 @@
 import io
 from os.path import dirname, join
 from setuptools import setup, find_packages
+import os
 
 
 # read the contents of your README file
@@ -9,6 +10,11 @@ this_directory = path.abspath(path.dirname(__file__))
 with open(path.join(this_directory, 'README.md'), encoding='utf-8') as f:
     long_description = f.read()
 
+# We read requirements from the requirements.txt file, because that can be
+# auto-generated from the pixi toml file.
+base_dir = dirname(__file__)
+with open(os.path.join(base_dir, "admin/requirements.txt")) as f:
+    install_requires = f.read().splitlines()
 
 def get_version(relpath):
   """Read version info from a file without importing it"""
@@ -38,13 +44,7 @@ setup(
     },
     data_files=[(".", ["README.md", "LICENSE"])],
     include_package_data=True,
-    install_requires= [
-        "snakemake",
-        "numpy",
-        "ruamel.yaml>=0.15.99",
-        "pandas",
-        "biopython",
-    ],
+    install_requires= install_requires,
     entry_points={
           'console_scripts': [
               'aviary = aviary.aviary:main'

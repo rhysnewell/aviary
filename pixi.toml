@@ -26,6 +26,11 @@ pyopenssl = ">22.1.0"
 [feature.main.pypi-dependencies]
 "aviary-genome" = { path = ".", editable = true }
 
+[feature.dev.dependencies]
+pytest = "*"
+ipython = "*"
+toml = "*"
+
 # [feature.dev.dependencies]
 # # Dev/test dependencies only
 # pytest = "*"
@@ -34,7 +39,7 @@ pyopenssl = ">22.1.0"
 
 [environments]
 default = ["main"]
-# dev = ["dev"]
+dev = ["dev", "main"]
 metabat2 = ["metabat2"]
 checkm = ["checkm"]
 checkm2 = ["checkm2"]
