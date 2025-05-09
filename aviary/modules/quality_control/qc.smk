@@ -1,10 +1,12 @@
+
+QC_SCRIPTS_DIR = os.path.join(os.path.dirname(os.path.abspath(workflow.snakefile)), 'scripts')
+
 localrules: assembly_size, assembly_quality, complete_qc_short, complete_qc_long, complete_qc_all
 
 ruleorder: complete_qc_all > complete_qc_long > complete_qc_short
 
 if config['fasta'] == 'none':
     config['fasta'] = 'assembly/final_contigs.fasta'
-
 
 ### Filter illumina reads against provided reference
 rule qc_short_reads:
@@ -25,8 +27,6 @@ rule qc_short_reads:
         coassemble = config["coassemble"],
         reference_filter = [] if "none" in config["reference_filter"] else config["reference_filter"],
         skip_qc = config["skip_qc"]
-    conda:
-        "../../envs/minimap2.yaml"
     threads:
         config["max_threads"]
     resources:
@@ -36,9 +36,26 @@ rule qc_short_reads:
         "logs/qc_short_reads.log"
     benchmark:
         "benchmarks/qc_short_reads.benchmark.txt"
-    script:
-        "scripts/qc_short_reads.py"
-
+    shell:
+        f'pixi run -e minimap2 {QC_SCRIPTS_DIR}/'+\
+        """qc_short_reads.py \
+          --disable-adapter-trimming {params.disable_adapter_trimming} \
+          --skip-qc {params.skip_qc} \
+          --coassemble {params.coassemble} \
+          --short-reads-1 {input.short_reads_1} \
+          --short-reads-2 {input.short_reads_2} \
+          --output-bam {output.bam} \
+          --output-fastq {output.fastq} \
+          --output-filtered {output.filtered} \
+          --quality-cutoff {params.quality_cutoff} \
+          --unqualified-percent-limit {params.unqualified_percent_limit} \
+          --min-length {params.min_length} \
+          --max-length {params.max_length} \
+          --extra-fastp-params "{params.extra_fastp_params}" \
+          --reference-filter {params.reference_filter} \
+          --threads {threads} \
+          --log {log}
+        """
 
 rule qc_long_reads:
     input:
@@ -61,19 +78,26 @@ rule qc_long_reads:
         "logs/qc_long_reads.log"
     benchmark:
         "benchmarks/qc_long_reads.benchmark.txt"
-    conda:
-        'envs/chopper.yaml'
-    script:
-        "scripts/qc_long_reads.py"
-
+    shell:
+        f'pixi run -e chopper {QC_SCRIPTS_DIR}/'+\
+        """qc_long_reads.py \
+            --long-reads {input.long_reads} \
+            --output-long {output.output_long} \
+            --coassemble {params.coassemble} \
+            --min-length {params.min_length} \
+            --min-quality {params.min_mean_q} \
+            --keep-percent {params.keep_percent} \
+            --reference-filter {params.reference_filter} \
+            --skip-qc {params.skip_qc} \
+            --threads {threads} \
+            --log {log}
+        """
 
 rule fastqc:
     input:
         config['short_reads_1']
     output:
         output = "www/fastqc/done"
-    conda:
-        "envs/fastqc.yaml"
     benchmark:
         "benchmarks/fastqc_short.benchmark.txt"
     threads:
@@ -83,16 +107,20 @@ rule fastqc:
         runtime = lambda wildcards, attempt: 12*60*attempt,
     log:
         "logs/fastqc.log"
-    script:
-        "scripts/run_fastqc.py"
+    shell:
+        f'pixi run -e fastqc {QC_SCRIPTS_DIR}/'+\
+        """run_fastqc.py \
+        --short-reads-1 {config[short_reads_1]} \
+        --short-reads-2 {config[short_reads_2]} \
+        --threads {threads} \
+        --log {log[0]}
+        """
 
 rule fastqc_long:
     input:
         'data/long_reads.fastq.gz'
     output:
         output = "www/fastqc_long/done"
-    conda:
-        "envs/fastqc.yaml"
     benchmark:
         "benchmarks/fastqc_long.benchmark.txt"
     threads:
@@ -103,6 +131,7 @@ rule fastqc_long:
     log:
         "logs/fastqc_long.log"
     shell:
+        "pixi run -e fastqc "\
         "fastqc -o www/fastqc_long/ -t {threads} {input[0]} > {log} 2>&1; touch {output.output}"
 
 rule nanoplot:
@@ -111,8 +140,6 @@ rule nanoplot:
          # "data/long_reads.fastq.gz"
     output:
         output = "www/nanoplot/done"
-    conda:
-        "envs/nanoplot.yaml"
     benchmark:
         "benchmarks/nanoplot.benchmark.txt"
     threads:
@@ -123,6 +150,7 @@ rule nanoplot:
     log:
         "logs/nanoplot.log"
     shell:
+        "pixi run -e nanoplot "\
         "NanoPlot -o www/nanoplot -p longReads -t {threads} --fastq {input.long} > {log} 2>&1; touch {output.output}"
 
 rule metaquast:
@@ -142,9 +170,8 @@ rule metaquast:
         runtime = lambda wildcards, attempt: 12*60*attempt,
     log:
         "logs/metaquast.log"
-    conda:
-        "envs/quast.yaml"
     shell:
+        "pixi run -e quast "\
         "metaquast.py {input.assembly} -t {threads} -o www/metaquast {params.gsa} --min-identity 80 --extensive-mis-size 20000 > {log} 2>&1"
 
 rule read_fraction_recovered:
@@ -155,8 +182,6 @@ rule read_fraction_recovered:
         fasta = config["fasta"]
     output:
         "www/fraction_recovered/short_fraction_recovered" if config['short_reads_1'] != 'none' else "www/fraction_recovered/long_fraction_recovered"
-    conda:
-        "../../envs/coverm.yaml"
     threads:
         config["max_threads"]
     resources:
@@ -164,8 +189,17 @@ rule read_fraction_recovered:
         runtime = lambda wildcards, attempt: 24*60 + 24*60*attempt,
     log:
         "logs/fraction_recovered.log"
-    script:
-        "scripts/fraction_recovered.py"
+    shell:
+        f'pixi run -e coverm {QC_SCRIPTS_DIR}/'+\
+        """fraction_recovered.py \
+        --input-fasta {input.fasta} \
+        --long-reads {config[long_reads]} \
+        --short-reads-1 {config[short_reads_1]} \
+        --short-reads-2 {config[short_reads_2]} \
+        --long-read-type {config[long_read_type][0]} \
+        --threads {threads} \
+        --log {log}
+        """
 
 rule assembly_size:
     """
@@ -178,6 +212,7 @@ rule assembly_size:
     log:
         "logs/assembly_stats.log"
     shell:
+        "pixi run -e bbmap "\
         "stats.sh {input.fasta} > {output.sizes} 2> {log}"
 
 

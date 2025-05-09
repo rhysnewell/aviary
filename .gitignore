@@ -19,3 +19,4 @@ logs
 # pixi environments
 .pixi
 *.egg-info
+db

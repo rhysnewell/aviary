@@ -1,7 +1,10 @@
+#!/usr/bin/env python3
+ 
 import subprocess
 import shutil
 import os
 from pathlib import Path
+import argparse
 
 def checkm(checkm2_db, bin_folder, bin_ext, refinery_max_iterations, output_folder, output_file, threads, log):
     if len([f for f in os.listdir(bin_folder) if f.endswith(bin_ext)]) == 0:
@@ -19,7 +22,7 @@ def checkm(checkm2_db, bin_folder, bin_ext, refinery_max_iterations, output_fold
         with open(log, "a") as logf:
             logf.write(f"Using CheckM2 database {checkm2_db}/uniref100.KO.1.dmnd\n")
             subprocess.run(
-                f"pixi run -e checkm2 checkm2 predict -i {bin_folder}/ -x {bin_ext} -o {output_folder} -t {threads} --force".split(),
+                f"checkm2 predict -i {bin_folder}/ -x {bin_ext} -o {output_folder} -t {threads} --force".split(),
                 env=os.environ,
                 stdout=logf,
                 stderr=subprocess.STDOUT
@@ -28,24 +31,28 @@ def checkm(checkm2_db, bin_folder, bin_ext, refinery_max_iterations, output_fold
 
 
 if __name__ == '__main__':
-    checkm2_db = snakemake.params.checkm2_db_path
-    bin_folder = snakemake.params.bin_folder
-    bin_ext = snakemake.params.extension
-    refinery_max_iterations = snakemake.params.refinery_max_iterations
-    output_folder = snakemake.output.output_folder
-    output_file = snakemake.output.output_file
-    threads = snakemake.threads
-    log = snakemake.log[0]
+    parser = argparse.ArgumentParser(description="Run CheckM2 with specified parameters.")
+    parser.add_argument("--checkm2-db", required=True, help="Path to the CheckM2 database.")
+    parser.add_argument("--bin-folder", required=True, help="Path to the folder containing bins.")
+    parser.add_argument("--bin-ext", required=True, help="Extension of bin files.")
+    parser.add_argument("--refinery-max-iterations", type=int, required=True, help="Maximum iterations for refinery.")
+    parser.add_argument("--output-folder", required=True, help="Path to the output folder.")
+    parser.add_argument("--output-file", required=True, help="Path to the output file.")
+    parser.add_argument("--threads", type=int, required=True, help="Number of threads to use.")
+    parser.add_argument("--log", required=True, help="Path to the log file.")
 
-    with open(log, "w") as logf: pass
+    args = parser.parse_args()
+
+    with open(args.log, "w") as logf:
+        pass
 
     checkm(
-        checkm2_db,
-        bin_folder,
-        bin_ext,
-        refinery_max_iterations,
-        output_folder,
-        output_file,
-        threads,
-        log,
+        args.checkm2_db,
+        args.bin_folder,
+        args.bin_ext,
+        args.refinery_max_iterations,
+        args.output_folder,
+        args.output_file,
+        args.threads,
+        args.log,
     )

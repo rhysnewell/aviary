@@ -1,9 +1,11 @@
+#!/usr/bin/env python3
 import subprocess
 import os
 import sys
+import argparse
 from typing import List
 
-def spades_asssembly(
+def spades_assembly(
     input_fastq: str,
     input_long_reads: str,
     output_fasta: str,
@@ -23,8 +25,8 @@ def spades_asssembly(
     :param output_spades_folder: output spades folder
     :param max_memory: maximum memory to use
     :param threads: number of threads
-    :param tmpdir: temporary directory
     :param kmer_sizes: list of kmer sizes
+    :param tmp_dir: temporary directory
     :param long_read_type: type of long reads
     :param log: log file
     :return:
@@ -38,6 +40,8 @@ def spades_asssembly(
         except KeyError:
             tmp_dir_arg = ""
     
+    kmer_str = ",".join(str(k) for k in kmer_sizes)
+    
     if os.path.exists("data/spades_assembly/tmp"):
         with open(log, 'a') as logf:
             subprocess.run("rm -rf data/spades_assembly/tmp".split(), stdout=logf, stderr=subprocess.STDOUT)   
@@ -45,45 +49,64 @@ def spades_asssembly(
     minimumsize=500000
     actualsize = int(subprocess.check_output('stat -c%s data/short_reads.filt.fastq.gz', shell=True))
     # check if directory exists
-    if  os.path.exists("data/spades_assembly"):
+    if os.path.exists("data/spades_assembly"):
         # resume previous assembly
         command = f"spades.py --restart-from last --memory {max_memory} -t {threads} " \
-                f"-o data/spades_assembly -k {kmer_sizes}  {tmp_dir_arg}" 
+                f"-o data/spades_assembly -k {kmer_str} {tmp_dir_arg}" 
         # run cmd
         with open(log, 'a') as logf:
             logf.write(f"Queueing command {command}\n")
             subprocess.run(command.split(), stdout=logf, stderr=subprocess.STDOUT)
-            subprocess.run("cp data/spades_assembly/scaffolds.fasta data/spades_assembly.fasta".split(), stdout=logf, stderr=subprocess.STDOUT)
+            subprocess.run(f"cp data/spades_assembly/scaffolds.fasta {output_fasta}".split(), stdout=logf, stderr=subprocess.STDOUT)
     elif actualsize >= minimumsize:
-        if long_read_type in ["ont","ont_hq"]:
+        if long_read_type in ["ont", "ont_hq"]:
             command = f"spades.py --checkpoints all --memory {max_memory} --meta --nanopore {input_long_reads} --12 {input_fastq} "\
-                f"-o data/spades_assembly -t {threads}  -k {kmer_sizes} {tmp_dir_arg} "       
+                f"-o {output_spades_folder} -t {threads} -k {kmer_str} {tmp_dir_arg} "       
         else:
             command = f"spades.py --checkpoints all --memory {max_memory} --meta --pacbio {input_long_reads} --12 {input_fastq} "\
-                f"-o data/spades_assembly -t {threads}  -k {kmer_sizes} {tmp_dir_arg} "
+                f"-o {output_spades_folder} -t {threads} -k {kmer_str} {tmp_dir_arg} "
         # run cmd
         with open(log, 'a') as logf:
             logf.write(f"Queueing command {command}\n")
             subprocess.run(command.split(), stdout=logf, stderr=subprocess.STDOUT)        
-            subprocess.run("cp data/spades_assembly/scaffolds.fasta data/spades_assembly.fasta".split(), stdout=logf, stderr=subprocess.STDOUT)
+            subprocess.run(f"cp {output_spades_folder}/scaffolds.fasta {output_fasta}".split(), stdout=logf, stderr=subprocess.STDOUT)
     else:
         with open(log, 'a') as logf:
-            subprocess.run(f"mkdir -p {output.spades_folder} && touch {output.fasta}".split(), stdout=logf, stderr=subprocess.STDOUT)
+            subprocess.run(f"mkdir -p {output_spades_folder} && touch {output_fasta}", stdout=logf, stderr=subprocess.STDOUT, shell=True)
+
+
+def main():
+    parser = argparse.ArgumentParser(description='Assemble reads using SPAdes')
+    parser.add_argument('--input-fastq', required=True, help='Path to short reads fastq file')
+    parser.add_argument('--input-long-reads', required=True, help='Path to long reads fastq file')
+    parser.add_argument('--output-fasta', required=True, help='Path to output fasta file')
+    parser.add_argument('--output-spades-folder', required=True, help='Path to output SPAdes folder')
+    parser.add_argument('--max-memory', type=int, required=True, help='Maximum memory to use (GB)')
+    parser.add_argument('--threads', type=int, default=1, help='Number of threads')
+    parser.add_argument('--kmer-sizes', nargs='+', required=True, help='Kmer sizes for assembly')
+    parser.add_argument('--tmp-dir', default='', help='Temporary directory')
+    parser.add_argument('--long-read-type', choices=['ont', 'ont_hq', 'pacbio', 'pacbio_hifi'], 
+                      default='pacbio', help='Type of long reads')
+    parser.add_argument('--log', required=True, help='Path to log file')
     
+    args = parser.parse_args()
+    
+    with open(args.log, "w") as logf:
+        pass  # Initialize empty log file
 
-if __name__ == '__main__':
-    log = snakemake.log[0]
-    with open(log, 'w') as logf: pass
-
-    spades_asssembly(
-        snakemake.input.fastq,
-        snakemake.input.long_reads,
-        snakemake.output.fasta,
-        snakemake.output.spades_folder,
-        snakemake.params.max_memory,
-        snakemake.threads,
-        snakemake.params.kmer_sizes,
-        snakemake.params.tmpdir,
-        snakemake.params.long_read_type,
-        log
+    spades_assembly(
+        args.input_fastq,
+        args.input_long_reads,
+        args.output_fasta,
+        args.output_spades_folder,
+        args.max_memory,
+        args.threads,
+        args.kmer_sizes,
+        args.tmp_dir,
+        args.long_read_type,
+        args.log
     )
+
+
+if __name__ == "__main__":
+    main()

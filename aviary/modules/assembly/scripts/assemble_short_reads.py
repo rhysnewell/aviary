@@ -1,10 +1,11 @@
+#!/usr/bin/env python3
+
 import subprocess
 import os
 import shutil
 import sys
+import argparse
 from typing import List
-
-
 
 def assemble_short_reads(
         read_set1, read_set2,
@@ -104,7 +105,7 @@ def assemble_short_reads(
         shutil.copyfile("data/megahit_assembly/final.contigs.fa", "data/short_read_assembly/scaffolds.fasta")
 
     else:
-        kmers = " ".join(kmer_sizes)
+        kmers = " ".join(map(str, kmer_sizes))
         command = f"spades.py --memory {max_memory} --meta -t {threads} " \
                 f"-o data/short_read_assembly {read_string} -k {kmers} {tmp_dir_arg}"
         with open(log, 'a') as logf:
@@ -113,21 +114,46 @@ def assemble_short_reads(
 
 
 if __name__ == '__main__':
-    read_set1 = snakemake.config['short_reads_1']
-    read_set2 = snakemake.config['short_reads_2']
-    log = snakemake.log[0]
-
-    with open(log, 'w') as logf: pass
-
+    parser = argparse.ArgumentParser(description='Assemble short reads using megahit or spades')
+    parser.add_argument('--short-reads-1', required=True, help='List of short reads 1, or "none"')
+    parser.add_argument('--short-reads-2', default='none', help='List of short reads 2, or "none"')
+    parser.add_argument('--reference-filter', default='none', help='Reference filter, or "none"')
+    parser.add_argument('--max-memory', type=int, required=True, help='Maximum memory to use in GB')
+    parser.add_argument('--use-megahit', type=lambda x: x.lower() == 'true', nargs='?', const=True, default=False,
+                        help='Use megahit (True) or spades (False)')
+    parser.add_argument('--coassemble', type=lambda x: x.lower() == 'true', nargs='?', const=True, default=False,
+                        help='Coassemble reads (True) or not (False)')
+    parser.add_argument('--threads', type=int, required=True, help='Number of threads to use')
+    parser.add_argument('--tmp-dir', default='', help='Temporary directory')
+    parser.add_argument('--kmer-sizes', nargs='+', required=True, help='List of kmer sizes')
+    parser.add_argument('--log', required=True, help='Log file')
+    
+    args = parser.parse_args()
+    
+    # Process read sets - convert string representations to lists
+    if args.short_reads_1 != 'none':
+        read_set1 = args.short_reads_1.split(',')
+    else:
+        read_set1 = 'none'
+        
+    if args.short_reads_2 != 'none':
+        read_set2 = args.short_reads_2.split(',')
+    else:
+        read_set2 = 'none'
+    
+    # Initialize log file
+    with open(args.log, 'w') as logf:
+        pass
+    
     assemble_short_reads(
         read_set1,
         read_set2,
-        snakemake.config['reference_filter'],
-        snakemake.config['max_memory'],
-        snakemake.params.use_megahit,
-        snakemake.params.coassemble,
-        snakemake.threads,
-        snakemake.params.tmpdir,
-        snakemake.params.kmer_sizes,
-        log,
+        args.reference_filter,
+        args.max_memory,
+        args.use_megahit,
+        args.coassemble,
+        args.threads,
+        args.tmp_dir,
+        args.kmer_sizes,
+        args.log,
     )

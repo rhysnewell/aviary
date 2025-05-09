@@ -1,9 +1,11 @@
+#!/usr/bin/env python3
 from subprocess import Popen, run, PIPE, STDOUT
 import os
+import argparse
 
 
 def run_mapping_process(
-    reads_string: str, # combination of reads1 and reads2 or just reads1
+    reads_string: str,  # combination of reads1 and reads2 or just reads1
     input_fasta: str,
     output_bam: str,
     output_fastq: str,
@@ -24,12 +26,12 @@ def run_mapping_process(
         samtools_sort_cmd = f"samtools sort -@ {threads} -o {output_bam}".split()
         logf.write(f"Shell style : {' '.join(minimap_cmd)} | {' '.join(samtools_view_cmd)} | {' '.join(samtools_sort_cmd)}\n")
 
-        minimap_p1 = Popen(minimap_cmd, stdout=PIPE, stderr=logf) # stderr=PIPE optional, minimap2 is chatty
+        minimap_p1 = Popen(minimap_cmd, stdout=PIPE, stderr=logf)  # stderr=PIPE optional, minimap2 is chatty
         samtools_view_p2 = Popen(samtools_view_cmd, stdin=minimap_p1.stdout, stdout=PIPE, stderr=logf)
         samtools_sort_p3 = Popen(samtools_sort_cmd, stdin=samtools_view_p2.stdout, stderr=logf)
         samtools_sort_p3.wait()
 
-        # thoretically p1 and p2 may still be running, this ensures we are collecting their return codes
+        # theoretically p1 and p2 may still be running, this ensures we are collecting their return codes
         minimap_p1.wait()
         samtools_view_p2.wait()
         logf.write(f"minimap return: {minimap_p1.returncode}\n")
@@ -49,7 +51,7 @@ def run_mapping_process(
             samtools_bam2fq_p1 = Popen(samtools_bam2fq_cmd, stdout=PIPE, stderr=logf)
             pigz_p2 = Popen(pigz_cmd, stdin=samtools_bam2fq_p1.stdout, stdout=output_fq, stderr=logf)
 
-            # thoretically p1 and p2 may still be running, this ensures we are collecting their return codes
+            # theoretically p1 and p2 may still be running, this ensures we are collecting their return codes
             samtools_bam2fq_p1.wait()
             pigz_p2.wait()
             logf.write(f"samtools bam2fq return: {samtools_bam2fq_p1.returncode}\n")
@@ -95,10 +97,10 @@ def filter_illumina_assembly(
                 for reads1, reads2 in zip(short_reads_1, short_reads_2):
                     with open(log, "a") as logf:
                         with open("data/short_reads.1.fastq.gz", "a") as f:
-                            run(f"cat {reads1}", stdout=f, stderr=logf)
+                            run(f"cat {reads1}", stdout=f, stderr=logf, shell=True)
                         
                         with open("data/short_reads.2.fastq.gz", "a") as f:
-                            run(f"cat {reads2}", stdout=f, stderr=logf)
+                            run(f"cat {reads2}", stdout=f, stderr=logf, shell=True)
             pe1 = "data/short_reads.1.fastq.gz"
             pe2 = "data/short_reads.2.fastq.gz"
 
@@ -124,9 +126,8 @@ def filter_illumina_assembly(
                 for reads1 in short_reads_1:
                     with open(log, "a") as logf:
                         with open("data/short_reads.1.fastq.gz", "a") as f:
-                            run(f"cat {reads1}", stdout=f, stderr=logf)
+                            run(f"cat {reads1}", stdout=f, stderr=logf, shell=True)
             pe1 = "data/short_reads.1.fastq.gz"
-
 
         run_mapping_process(
             reads_string=pe1,
@@ -140,27 +141,35 @@ def filter_illumina_assembly(
         if os.path.exists("data/short_reads.1.fastq.gz"):
             os.remove("data/short_reads.1.fastq.gz")
 
-if __name__ == "__main__":
-    short_reads_1 = snakemake.config['short_reads_1']
-    short_reads_2 = snakemake.config['short_reads_2']
 
-    input_fasta = snakemake.input.fasta
-    output_bam = snakemake.output.bam
-    output_fastq = snakemake.output.fastq
-
-    threads = snakemake.threads
-    coassemble = snakemake.params.coassemble
-    log = snakemake.log[0]
-
-    with open(log, "a") as logf: pass
+def main():
+    parser = argparse.ArgumentParser(description='Filter Illumina Assembly')
+    parser.add_argument('--short-reads-1', nargs='+', required=True, help='Path to short reads 1')
+    parser.add_argument('--short-reads-2', nargs='+', default='none', help='Path to short reads 2')
+    parser.add_argument('--input-fasta', required=True, help='Path to input fasta file')
+    parser.add_argument('--output-bam', required=True, help='Path to output bam file')
+    parser.add_argument('--output-fastq', required=True, help='Path to output fastq file')
+    parser.add_argument('--threads', type=int, default=1, help='Number of threads')
+    parser.add_argument('--coassemble', type=lambda x: x.lower() == 'true', nargs='?', const=True, default=False, 
+                        help='Whether to coassemble reads')
+    parser.add_argument('--log', required=True, help='Path to log file')
+    
+    args = parser.parse_args()
+    
+    with open(args.log, "w") as logf:
+        pass  # Initialize empty log file
 
     filter_illumina_assembly(
-        short_reads_1=short_reads_1,
-        short_reads_2=short_reads_2,
-        input_fasta=input_fasta,
-        output_bam=output_bam,
-        output_fastq=output_fastq,
-        threads=threads,
-        coassemble=coassemble,
-        log=log,
+        short_reads_1=args.short_reads_1,
+        short_reads_2=args.short_reads_2,
+        input_fasta=args.input_fasta,
+        output_bam=args.output_bam,
+        output_fastq=args.output_fastq,
+        threads=args.threads,
+        coassemble=args.coassemble,
+        log=args.log,
     )
+
+
+if __name__ == "__main__":
+    main()

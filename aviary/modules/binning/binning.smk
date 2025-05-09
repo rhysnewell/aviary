@@ -1,3 +1,6 @@
+BASE_SCRIPTS_DIR = os.path.join(os.path.dirname(os.path.abspath(workflow.snakefile)), '..', '..', 'scripts')
+BINNING_SCRIPTS_DIR = os.path.join(os.path.dirname(os.path.abspath(workflow.snakefile)), 'scripts')
+
 localrules: vamb_jgi_filter, vamb_skip, convert_metabuli, amber_checkm_output, finalise_stats, recover_mags, recover_mags_no_singlem
 
 ruleorder: dereplicate_and_get_abundances_paired > dereplicate_and_get_abundances_interleaved
@@ -7,9 +10,6 @@ ruleorder: checkm_semibin > amber_checkm_output
 
 onstart:
     from snakemake.utils import min_version
-
-    sys.path.append(os.path.join(os.path.dirname(os.path.abspath(workflow.snakefile)),"../../scripts"))
-    sys.path.append(os.path.join(os.path.dirname(os.path.abspath(workflow.snakefile)),"scripts"))
 
     # minimum required snakemake version
     min_version("6.0")
@@ -54,7 +54,7 @@ rule prepare_binning_files:
         maxbin_coverage = "data/maxbin.cov.list",
         metabat_coverage = "data/coverm.cov"
     params:
-        tmpdir = config['tmpdir']
+        tmpdir = f"--tmpdir {config['tmpdir']}" if 'tmpdir' in config and config['tmpdir'] else ""
     threads:
         config["max_threads"]
     resources:
@@ -62,8 +62,18 @@ rule prepare_binning_files:
         runtime = lambda wildcards, attempt: 24*60 + 24*60*attempt,
     log:
         "logs/coverm_prepare.log"
-    script:
-        "scripts/get_coverage.py"
+    shell:
+        f'pixi run -e coverm {BINNING_SCRIPTS_DIR}/'+\
+        """get_coverage.py \
+        --long-reads {config[long_reads]} \
+        --short-reads-1 {config[short_reads_1]} \
+        --short-reads-2 {config[short_reads_2]} \
+        --long-read-type {config[long_read_type]} \
+        --input-fasta {input.input_fasta} \
+        {params.tmpdir} \
+        --threads {threads} \
+        --log {log[0]}
+        """
 
 
 rule get_bam_indices:
@@ -94,8 +104,6 @@ rule maxbin2:
         runtime = lambda wildcards, attempt: 72*60 + 24*60*attempt,
     output:
         "data/maxbin2_bins/done"
-    conda:
-        "envs/maxbin2.yaml"
     log:
         "logs/maxbin2.log"
     benchmark:
@@ -103,7 +111,7 @@ rule maxbin2:
     shell:
         "rm -rf data/maxbin2_bins/; "
         "mkdir -p data/maxbin2_bins && "
-        "run_MaxBin.pl -contig {input.fasta} -thread {threads} -abund_list {input.maxbin_cov} "
+        "pixi run -e maxbin2 run_MaxBin.pl -contig {input.fasta} -thread {threads} -abund_list {input.maxbin_cov} "
         "-out data/maxbin2_bins/maxbin -min_contig_length {params.min_contig_size} > {log} 2>&1 "
         "&& touch {output[0]} || touch {output[0]}"
 
@@ -121,13 +129,12 @@ rule concoct:
         runtime = lambda wildcards, attempt: 72*60 + 24*60*attempt,
     output:
         "data/concoct_bins/done"
-    conda:
-        "envs/concoct.yaml"
     log:
         "logs/concoct.log"
     benchmark:
         "benchmarks/concoct.benchmark.txt"
     shell:
+        "pixi run -e concoct bash -c '"
         "rm -rf data/concoct_*/; "
         "mkdir -p data/concoct_working && "
         "cut_up_fasta.py {input.fasta} -c 10000 -o 0 --merge_last -b data/concoct_working/contigs_10K.bed > data/concoct_working/contigs_10K.fa 2> {log} && "
@@ -136,7 +143,7 @@ rule concoct:
         "merge_cutup_clustering.py data/concoct_working/clustering_gt{params.min_contig_size}.csv > data/concoct_working/clustering_merged.csv 2>> {log} && "
         "mkdir -p data/concoct_bins && "
         "extract_fasta_bins.py {input.fasta} data/concoct_working/clustering_merged.csv --output_path data/concoct_bins/ >> {log} 2>&1 && "
-        "touch {output[0]} || touch {output[0]}"
+        "touch {output[0]} || touch {output[0]}'"
 
 
 rule vamb_jgi_filter:
@@ -179,15 +186,13 @@ rule vamb:
         runtime = lambda wildcards, attempt: 48*60*attempt,
     output:
         "data/vamb_bins/done"
-    conda:
-        "envs/vamb.yaml"
     log:
         "logs/vamb.log"
     benchmark:
         "benchmarks/vamb.benchmark.txt"
     shell:
         "rm -rf data/vamb_bins/; "
-        "bash -c 'OPENBLAS_NUM_THREADS={threads} OMP_NUM_THREADS={threads} MKL_NUM_THREADS={threads} NUMEXPR_NUM_THREADS={threads} vamb --outdir data/vamb_bins/ -p {threads} --jgi {input.coverage} --fasta {input.fasta} "
+        "pixi run -e vamb bash -c 'OPENBLAS_NUM_THREADS={threads} OMP_NUM_THREADS={threads} MKL_NUM_THREADS={threads} NUMEXPR_NUM_THREADS={threads} vamb --outdir data/vamb_bins/ -p {threads} --jgi {input.coverage} --fasta {input.fasta} "
         "--minfasta {params.min_bin_size} -m {params.min_contig_size} > {log} 2>&1 && touch {output[0]}' || "
         "touch {output[0]} && mkdir -p data/vamb_bins/bins"
 
@@ -241,8 +246,6 @@ rule metabuli_taxonomy:
         runtime = lambda wildcards, attempt: 48*60*attempt,
     params:
         metabuli_db = config['metabuli_folder'],
-    conda:
-        "../../envs/metabuli.yaml"
     log:
         "logs/metabuli.log"
     benchmark:
@@ -250,7 +253,7 @@ rule metabuli_taxonomy:
     shell:
         "rm -rf data/metabuli_taxonomy/; "
         "mkdir -p data/metabuli_taxonomy && "
-        "metabuli classify "
+        "pixi run -e metabuli metabuli classify "
         "{input.fasta} {params.metabuli_db}/gtdb data/metabuli_taxonomy tax > {log} 2>&1 "
         "--seq-mode 1 --threads {threads} --max-ram {resources.mem_gb} "
         "&& touch {output[0]}"
@@ -280,6 +283,7 @@ rule taxvamb:
         min_bin_size = config["min_bin_size"],
         min_contig_size = config["min_contig_size"],
         gpu_flag = "--cuda" if config["request_gpu"] else "",
+        pixi_env = "taxvamb-gpu" if config["request_gpu"] else "taxvamb"
     threads:
         config["max_threads"]
     resources:
@@ -288,15 +292,13 @@ rule taxvamb:
         gpus = 1 if config["request_gpu"] else 0
     output:
         "data/taxvamb_bins/done"
-    conda:
-        "envs/taxvamb-gpu.yaml" if config["request_gpu"] else "envs/taxvamb.yaml"
     log:
         "logs/taxvamb.log"
     benchmark:
         "benchmarks/taxvamb.benchmark.txt"
     shell:
         "rm -rf data/taxvamb_bins/; "
-        "bash -c 'OPENBLAS_NUM_THREADS={threads} OMP_NUM_THREADS={threads} MKL_NUM_THREADS={threads} NUMEXPR_NUM_THREADS={threads} vamb bin taxvamb --outdir data/taxvamb_bins/ -p {threads} --fasta {input.fasta} "
+        "pixi run -e {params.pixi_env} bash -c 'OPENBLAS_NUM_THREADS={threads} OMP_NUM_THREADS={threads} MKL_NUM_THREADS={threads} NUMEXPR_NUM_THREADS={threads} vamb bin taxvamb --outdir data/taxvamb_bins/ -p {threads} --fasta {input.fasta} "
         "--abundance_tsv {input.coverage} --taxonomy {input.taxonomy} "
         "--minfasta {params.min_bin_size} -m {params.min_contig_size} {params.gpu_flag} > {log} 2>&1 && touch {output[0]}' || "
         "touch {output[0]} && mkdir -p data/taxvamb_bins/bins"
@@ -333,8 +335,6 @@ rule metabat_spec:
         fasta = ancient(config["fasta"])
     output:
         'data/metabat_bins_spec/done'
-    conda:
-        "envs/metabat2.yaml"
     params:
         min_contig_size = max(int(config["min_contig_size"]), 1500),
         min_bin_size = config["min_bin_size"]
@@ -349,7 +349,7 @@ rule metabat_spec:
         runtime = lambda wildcards, attempt: 24*60*attempt,
     shell:
         "rm -rf data/metabat_bins_spec; "
-        "metabat1 -t {threads} -m {params.min_contig_size} -s {params.min_bin_size} --seed 89 --specific -i {input.fasta} "
+        "pixi run -e metabat2 metabat1 -t {threads} -m {params.min_contig_size} -s {params.min_bin_size} --seed 89 --specific -i {input.fasta} "
         "-a {input.coverage} -o data/metabat_bins_spec/binned_contigs > {log} 2>&1 && "
         "touch {output[0]} || touch {output[0]}"
 
@@ -359,8 +359,6 @@ rule metabat_sspec:
         fasta = ancient(config["fasta"])
     output:
         'data/metabat_bins_sspec/done'
-    conda:
-        "envs/metabat2.yaml"
     params:
         min_contig_size = max(int(config["min_contig_size"]), 1500),
         min_bin_size = config["min_bin_size"]
@@ -375,7 +373,7 @@ rule metabat_sspec:
         runtime = lambda wildcards, attempt: 24*60*attempt,
     shell:
         "rm -rf data/metabat_bins_sspec; "
-        "metabat1 -t {threads} -m {params.min_contig_size} -s {params.min_bin_size} --seed 89 --superspecific "
+        "pixi run -e metabat2 metabat1 -t {threads} -m {params.min_contig_size} -s {params.min_bin_size} --seed 89 --superspecific "
         "-i {input.fasta} -a {input.coverage} -o data/metabat_bins_sspec/binned_contigs > {log} 2>&1 && "
         "touch {output[0]} || touch {output[0]}"
 
@@ -385,8 +383,6 @@ rule metabat_sens:
         fasta = ancient(config["fasta"])
     output:
         'data/metabat_bins_sens/done'
-    conda:
-        "envs/metabat2.yaml"
     params:
         min_contig_size = max(int(config["min_contig_size"]), 1500),
         min_bin_size = config["min_bin_size"]
@@ -401,7 +397,7 @@ rule metabat_sens:
         runtime = lambda wildcards, attempt: 24*60*attempt,
     shell:
         "rm -rf data/metabat_bins_sens; "
-        "metabat1 -t {threads} -m {params.min_contig_size} -s {params.min_bin_size} --seed 89 --sensitive "
+        "pixi run -e metabat2 metabat1 -t {threads} -m {params.min_contig_size} -s {params.min_bin_size} --seed 89 --sensitive "
         "-i {input.fasta} -a {input.coverage} -o data/metabat_bins_sens/binned_contigs > {log} 2>&1 && "
         "touch {output[0]} || touch {output[0]}"
 
@@ -411,8 +407,6 @@ rule metabat_ssens:
         fasta = ancient(config["fasta"])
     output:
         'data/metabat_bins_ssens/done'
-    conda:
-        "envs/metabat2.yaml"
     params:
         min_contig_size = max(int(config["min_contig_size"]), 1500),
         min_bin_size = config["min_bin_size"]
@@ -427,7 +421,7 @@ rule metabat_ssens:
         runtime = lambda wildcards, attempt: 24*60*attempt,
     shell:
         "rm -rf data/metabat_bins_ssens; "
-        "metabat1 -t {threads} -m {params.min_contig_size} -s {params.min_bin_size} --seed 89 --supersensitive "
+        "pixi run -e metabat2 metabat1 -t {threads} -m {params.min_contig_size} -s {params.min_bin_size} --seed 89 --supersensitive "
         "-i {input.fasta} -a {input.coverage} -o data/metabat_bins_ssens/binned_contigs > {log} 2>&1 && "
         "touch {output[0]} || touch {output[0]}"
 
@@ -478,6 +472,7 @@ rule semibin:
         # Can't use premade model with multiple samples, so disregard if provided
         semibin_model = f"--environment {config['semibin_model']} " if get_num_samples() == 1 else "",
         semibin_sequencing_type = "--sequencing-type=long_read" if config["long_reads"] != "none" else "",
+        pixi_env = "semibin-gpu" if config["request_gpu"] else "semibin"
     output:
         done = "data/semibin_bins/done"
     threads:
@@ -486,15 +481,14 @@ rule semibin:
         mem_mb = lambda wildcards, attempt: min(int(config["max_memory"])*1024, 128*1024*attempt),
         runtime = lambda wildcards, attempt: 24*60 + 48*60*(attempt-1),
         gpus = 1 if config["request_gpu"] else 0
-    conda:
-        "envs/semibin-gpu.yaml" if config["request_gpu"] else "envs/semibin.yaml"
     log:
         "logs/semibin.log"
     benchmark:
         "benchmarks/semibin.benchmark.txt"
     shell:
+        "pixi run -e {params.pixi_env} bash -c '"
         "rm -rf data/semibin_bins/; "
-        "mkdir -p data/semibin_bins/output_bins/; "
+        "mkdir -p data/semibin_bins/output_bins/ && "
         "SemiBin2 single_easy_bin "
         "-i {input.fasta} "
         "-b data/binning_bams/*.bam "
@@ -505,8 +499,7 @@ rule semibin:
         "--compression none "
         "{params.semibin_sequencing_type} "
         "> {log} 2>&1 "
-        "&& touch {output.done} || touch {output.done}"
-
+        "&& touch {output.done} || touch {output.done}'"
 
 rule comebin:
     input:
@@ -520,15 +513,15 @@ rule comebin:
         mem_mb = lambda wildcards, attempt: min(int(config["max_memory"])*1024, 128*1024*attempt),
         runtime = lambda wildcards, attempt: 24*60*attempt,
         gpus = 1 if config["request_gpu"] else 0
-    conda:
-        "envs/comebin-gpu.yaml" if config["request_gpu"] else "envs/comebin.yaml"
+    params:
+        pixi_env = "comebin-gpu" if config["request_gpu"] else "comebin"
     log:
         "logs/comebin.log"
     benchmark:
         "benchmarks/comebin.benchmark.txt"
     shell:
         "rm -rf data/comebin_bins/; "
-        "run_comebin.sh -a {input.fasta} -p data/binning_bams -t {threads} -o data/comebin_bins > {log} 2>&1 && "
+        "pixi run -e {params.pixi_env} run_comebin.sh -a {input.fasta} -p data/binning_bams -t {threads} -o data/comebin_bins > {log} 2>&1 && "
         "touch {output.done} || touch {output.done}"
 
 
@@ -551,8 +544,18 @@ rule checkm_rosella:
         runtime = lambda wildcards, attempt: 8*60*attempt,
     log:
         "logs/checkm_rosella.log"
-    script:
-        "scripts/run_checkm.py"
+    shell:
+        f'pixi run -e checkm2 {BINNING_SCRIPTS_DIR}/'+\
+        """run_checkm.py \
+        --checkm2-db {params.checkm2_db_path} \
+        --bin-folder {params.bin_folder} \
+        --bin-ext {params.extension} \
+        --refinery-max-iterations {params.refinery_max_iterations} \
+        --output-folder {output.output_folder} \
+        --output-file {output.output_file} \
+        --threads {threads} \
+        --log {log}
+        """
 
 rule checkm_metabat2:
     input:
@@ -573,8 +576,18 @@ rule checkm_metabat2:
         runtime = lambda wildcards, attempt: 8*60*attempt,
     log:
         "logs/checkm_metabat2.log"
-    script:
-        "scripts/run_checkm.py"
+    shell:
+        f'pixi run -e checkm2 {BINNING_SCRIPTS_DIR}/'+\
+        """run_checkm.py \
+        --checkm2-db {params.checkm2_db_path} \
+        --bin-folder {params.bin_folder} \
+        --bin-ext {params.extension} \
+        --refinery-max-iterations {params.refinery_max_iterations} \
+        --output-folder {output.output_folder} \
+        --output-file {output.output_file} \
+        --threads {threads} \
+        --log {log}
+        """
 
 rule checkm_semibin:
     input:
@@ -595,8 +608,18 @@ rule checkm_semibin:
         runtime = lambda wildcards, attempt: 8*60*attempt,
     log:
         "logs/checkm_semibin.log"
-    script:
-        "scripts/run_checkm.py"
+    shell:
+        f'pixi run -e checkm2 {BINNING_SCRIPTS_DIR}/'+\
+        """run_checkm.py \
+        --checkm2-db {params.checkm2_db_path} \
+        --bin-folder {params.bin_folder} \
+        --bin-ext {params.extension} \
+        --refinery-max-iterations {params.refinery_max_iterations} \
+        --output-folder {output.output_folder} \
+        --output-file {output.output_file} \
+        --threads {threads} \
+        --log {log}
+        """
 
 rule refine_rosella:
     input:
@@ -627,8 +650,25 @@ rule refine_rosella:
         runtime = lambda wildcards, attempt: 48*60 + 24*60*attempt,
     log:
         "logs/refine_rosella.log"
-    script:
-        "scripts/rosella_refine.py"
+    shell:
+        f'pixi run -e checkm2 {BINNING_SCRIPTS_DIR}/'+\
+        """rosella_refine.py \
+        --checkm {input.checkm} \
+        --coverage {input.coverage} \
+        --fasta {input.fasta} \
+        --output-folder {params.output_folder} \
+        --final-refining {params.final_refining} \
+        --min-bin-size {params.min_bin_size} \
+        --max-iterations {params.max_iterations} \
+        --max-retries {params.max_retries} \
+        --pplacer-threads {params.pplacer_threads} \
+        --threads {threads} \
+        --max-contamination {params.max_contamination} \
+        --bin-folder {params.bin_folder} \
+        --extension {params.extension} \
+        --bin-prefix {params.bin_prefix} \
+        --log {log}
+        """
 
 rule refine_metabat2:
     input:
@@ -659,8 +699,25 @@ rule refine_metabat2:
         bin_prefix = "metabat2"
     log:
         "logs/refine_metabat2.log"
-    script:
-        "scripts/rosella_refine.py"
+    shell:
+        f'pixi run -e checkm2 {BINNING_SCRIPTS_DIR}/'+\
+        """rosella_refine.py \
+        --checkm {input.checkm} \
+        --coverage {input.coverage} \
+        --fasta {input.fasta} \
+        --output-folder {params.output_folder} \
+        --final-refining {params.final_refining} \
+        --min-bin-size {params.min_bin_size} \
+        --max-iterations {params.max_iterations} \
+        --max-retries {params.max_retries} \
+        --pplacer-threads {params.pplacer_threads} \
+        --threads {threads} \
+        --max-contamination {params.max_contamination} \
+        --bin-folder {params.bin_folder} \
+        --extension {params.extension} \
+        --bin-prefix {params.bin_prefix} \
+        --log {log}
+        """
 
 rule refine_semibin:
     input:
@@ -675,7 +732,7 @@ rule refine_semibin:
         mem_mb = lambda wildcards, attempt: min(int(config["max_memory"])*1024, 128*1024*attempt),
         runtime = lambda wildcards, attempt: 48*60 + 24*60*attempt,
     output:
-        'data/semibin_refined/done'
+        touch('data/semibin_refined/done')
     benchmark:
         'benchmarks/refine_semibin.benchmark.txt'
     params:
@@ -691,8 +748,25 @@ rule refine_semibin:
         bin_prefix = "semibin2"
     log:
         "logs/refine_semibin.log"
-    script:
-        "scripts/rosella_refine.py"
+    shell:
+        f'pixi run -e checkm2 {BINNING_SCRIPTS_DIR}/'+\
+        """rosella_refine.py \
+        --checkm {input.checkm} \
+        --coverage {input.coverage} \
+        --fasta {input.fasta} \
+        --output-folder {params.output_folder} \
+        --final-refining {params.final_refining} \
+        --min-bin-size {params.min_bin_size} \
+        --max-iterations {params.max_iterations} \
+        --max-retries {params.max_retries} \
+        --pplacer-threads {params.pplacer_threads} \
+        --threads {threads} \
+        --max-contamination {params.max_contamination} \
+        --bin-folder {params.bin_folder} \
+        --extension {params.extension} \
+        --bin-prefix {params.bin_prefix} \
+        --log {log}
+        """
 
 rule amber_checkm_output:
     input:
@@ -760,8 +834,14 @@ rule das_tool:
         "logs/das_tool.log"
     benchmark:
         "benchmarks/das_tool.benchmark.txt"
-    script:
-        "scripts/das_tool.py"
+    shell:
+        f'pixi run -e das-tool {BINNING_SCRIPTS_DIR}/'+\
+        """das_tool.py \
+        --skip-binners {config[skip_binners]} \
+        --fasta {input.fasta} \
+        --threads {threads} \
+        --log {log}
+        """
 
 rule refine_dastool:
     input:
@@ -793,8 +873,25 @@ rule refine_dastool:
         bin_prefix = "dastool"
     log:
         "logs/refine_dastool.log"
-    script:
-        "scripts/rosella_refine.py"
+    shell:
+        f'pixi run -e checkm2 {BINNING_SCRIPTS_DIR}/'+\
+        """rosella_refine.py \
+        --checkm {input.checkm} \
+        --coverage {input.coverage} \
+        --fasta {input.fasta} \
+        --output-folder {params.output_folder} \
+        --final-refining {params.final_refining} \
+        --min-bin-size {params.min_bin_size} \
+        --max-iterations {params.max_iterations} \
+        --max-retries {params.max_retries} \
+        --pplacer-threads {params.pplacer_threads} \
+        --threads {threads} \
+        --max-contamination {params.max_contamination} \
+        --bin-folder {params.bin_folder} \
+        --extension {params.extension} \
+        --bin-prefix {params.bin_prefix} \
+        --log {log}
+        """
 
 rule get_abundances:
     input:
@@ -808,8 +905,17 @@ rule get_abundances:
         "data/coverm_abundances.tsv"
     log:
         "logs/coverm_abundances.log"
-    script:
-        "scripts/get_abundances.py"
+    shell:
+        f'pixi run -e coverm {BINNING_SCRIPTS_DIR}/'+\
+        """get_abundances.py \
+        --long-reads {config[long_reads]} \
+        --short-reads-1 {config[short_reads_1]} \
+        --short-reads-2 {config[short_reads_2]} \
+        --long-read-type {config[long_read_type]} \
+        --threads {threads} \
+        --strain-analysis {config[strain_analysis]} \
+        --log {log}
+        """
 
 rule finalise_stats:
     input:
@@ -840,11 +946,13 @@ rule checkm_das_tool:
     log:
         "logs/checkm_das_tool.log"
     shell:
-        'pixi run -e checkm checkm lineage_wf -t {threads} --pplacer_threads {params.pplacer_threads} '
-        '-x fa data/das_tool_bins_pre_refine/das_tool_DASTool_bins data/das_tool_bins_pre_refine/checkm --tab_table '
-        '-f data/das_tool_bins_pre_refine/checkm.out > {log} 2>&1; '
-        'pixi run -e checkm checkm qa -o 2 --tab_table -f data/das_tool_bins_pre_refine/checkm.out '
-        'data/das_tool_bins_pre_refine/checkm/lineage.ms data/das_tool_bins_pre_refine/checkm/ >> {log} 2>&1; '
+        "pixi run -e checkm bash -c '"
+        "checkm lineage_wf -t {threads} --pplacer_threads {params.pplacer_threads} "
+        "-x fa data/das_tool_bins_pre_refine/das_tool_DASTool_bins data/das_tool_bins_pre_refine/checkm --tab_table "
+        "-f data/das_tool_bins_pre_refine/checkm.out > {log} 2>&1 && "
+        "checkm qa -o 2 --tab_table -f data/das_tool_bins_pre_refine/checkm.out "
+        "data/das_tool_bins_pre_refine/checkm/lineage.ms data/das_tool_bins_pre_refine/checkm/ >> {log} 2>&1; "
+        "'"
 
 
 rule singlem_pipe_reads:
@@ -858,10 +966,16 @@ rule singlem_pipe_reads:
         runtime = lambda wildcards, attempt: 12*60*attempt,
     log:
         "logs/singlem_pipe_reads_log.txt"
-    conda:
-        "../../envs/singlem.yaml"
-    script:
-        "../../scripts/singlem_reads.py"
+    shell:
+        f'pixi run -e singlem {BASE_SCRIPTS_DIR}/'+\
+        """singlem_reads.py \
+        --long-reads {config[long_reads]} \
+        --short-reads-1 {config[short_reads_1]} \
+        --short-reads-2 {config[short_reads_2]} \
+        --threads {threads} \
+        --log {log} \
+        --package-path {params.package_path}
+        """
 
 rule singlem_appraise:
     input:
@@ -882,12 +996,18 @@ rule singlem_appraise:
     resources:
         mem_mb = lambda wildcards, attempt: min(int(config["max_memory"])*1024, 8*1024*attempt),
         runtime = lambda wildcards, attempt: 12*60*attempt,
-    conda:
-        "../../envs/singlem.yaml"
     log:
         "logs/singlem_appraise_log.txt"
-    script:
-        "../../scripts/singlem_appraise.py"
+    shell:
+        f'pixi run -e singlem {BASE_SCRIPTS_DIR}/'+\
+        """singlem_appraise.py \
+        --assembly {input.assembly} \
+        --genomes-folder {params.genomes_folder} \
+        --pipe-results {input.pipe_results} \
+        --threads {threads} \
+        --package-path {params.package_path} \
+        --log {log}
+        """
 
 rule recover_mags:
     input:

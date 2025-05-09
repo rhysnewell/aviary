@@ -25,12 +25,13 @@ import pytest
 import os.path
 import subprocess
 import shutil
+import unittest
 
 data = os.path.join(os.path.dirname(__file__), 'data')
-path_to_conda = os.path.join(data,'.conda')
+path_to_conda = os.path.join(data, '.conda')
 
 @pytest.mark.expensive
-class Tests:
+class Tests(unittest.TestCase):
     def setup_output_dir(self, output_dir):
         try:
             shutil.rmtree(output_dir)
@@ -143,6 +144,7 @@ class Tests:
             f"--conda-prefix {path_to_conda} "
             f"-n 32 -t 32 "
         )
+        print(cmd)
         subprocess.run(cmd, shell=True, check=True)
 
         self.assertTrue(os.path.isdir(f"{output_dir}/aviary_out"))
@@ -331,7 +333,7 @@ class Tests:
 
         self.assertFalse(os.path.isfile(f"{output_dir}/aviary_out/data/final_contigs.fasta"))
 
-    # @unittest.skip("Skipping test due to queue submission")
+    @pytest.mark.qsub
     def test_short_read_recovery_queue_submission(self):
         output_dir = os.path.join("example", "test_short_read_recovery_queue_submission")
         self.setup_output_dir(output_dir)
@@ -355,6 +357,7 @@ class Tests:
             num_lines = sum(1 for _ in f)
         self.assertEqual(num_lines, 3)
 
+    @pytest.mark.qsub
     def test_short_read_recovery_queue_submission_gpus(self):
         output_dir = os.path.join("example", "test_short_read_recovery_queue_submission_gpus")
         self.setup_output_dir(output_dir)

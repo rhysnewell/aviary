@@ -57,18 +57,34 @@ pip install aviary-genome
 
 #### Option 3: Install from source
 
-Initial requirements for aviary can be downloaded using the `aviary.yml`:
+To install from source, we recommend using [pixi](https://pixi.sh/). First clone
+the aviary repository from GitHub:
 ```
 git clone https://github.com/rhysnewell/aviary.git
 cd aviary
-conda env create -n aviary -f aviary.yml
-conda activate aviary
-pip install -e .
 ```
-The `aviary` executable can then be run from any directory. Since the code in
-this directory is then used for running, any updates made there will be
-immediately available. We recommend this mode for developing and debugging
-aviary.
+
+Then aviary can be run using `pixi run aviary` (or via `pixi shell`).
+```
+pixi run aviary --help
+```
+
+When installed this way, aviary is installed in an "editable" way (similar to `pip install -e .`), meaning that any changes made to aviary source are immediately available via the `aviary` command. This is useful for development and debugging.
+
+When run this way, the databases required for aviary (e.g. `CHECKM2DB`) can be symlinked from a `db/` directory in the aviary repository. An activation hook then ensures that these are available when in the pixi environments. To do this, create a `db/` directory in the aviary repository and symlink the required databases into it. For example, as of writing:
+```
+$ ls db -l
+lrwxrwxrwx - woodcrob 23 Apr 07:56 2.1.3 -> /mnt/hpccs01/work/microbiome/db/eggnog-mapper/2.1.3
+lrwxrwxrwx - woodcrob 23 Apr 07:55 2015_01_16_v2 -> /work/microbiome/db/checkm/2015_01_16_v2
+lrwxrwxrwx - woodcrob 23 Apr 07:54 CheckM2_database -> /work/microbiome/db/CheckM2_database
+lrwxrwxrwx - woodcrob 23 Apr 07:57 gtdb207 -> /work/microbiome/db/metabuli/gtdb207
+lrwxrwxrwx - woodcrob 23 Apr 07:56 release220 -> /work/microbiome/db/gtdb/gtdb_release220/auxillary_files/gtdbtk_package/full_package/release220
+lrwxrwxrwx - woodcrob 23 Apr 07:55 S4.3.0.GTDB_r220.metapackage_20240523.smpkg.zb -> /work/microbiome/db/singlem/S4.3.0.GTDB_r220
+```
+To check the expected database symlink names, see `admin/set_env_vars.sh` in the
+aviary repository. The advantage of this approach is that locations of the
+databases are not tracked in the repository, since they are specific to the
+computing cluster of the user.
 
 ## Checking installation
 Whatever option you choose, running `aviary --help` should return the following

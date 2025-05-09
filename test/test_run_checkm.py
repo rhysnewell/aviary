@@ -28,7 +28,7 @@ class Tests(unittest.TestCase):
                 os.environ["CHECKM2DB"] = f"{checkm2_db}/uniref100.KO.1.dmnd"
 
                 mock_subprocess.assert_called_once_with(
-                    f"pixi run -e checkm2 checkm2 predict -i {bin_folder}/ -x fna -o output_folder -t 1 --force".split(),
+                    f"checkm2 predict -i {bin_folder}/ -x fna -o output_folder -t 1 --force".split(),
                     env=os.environ,
                     stdout=ANY,
                     stderr=subprocess.STDOUT

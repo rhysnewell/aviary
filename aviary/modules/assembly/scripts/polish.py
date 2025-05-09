@@ -1,5 +1,7 @@
+#!/usr/bin/env python3
 import os
 import sys
+import argparse
 from subprocess import run, Popen, PIPE, STDOUT
 import random
 import shutil
@@ -100,10 +102,6 @@ def run_minimap_with_samtools(
         samtools = Popen(samtools_cmd, stdin=minimap2.stdout, stderr=logf)
         samtools.wait()
         minimap2.wait()
-        # minimap2.stdout.close()
-        # # minimap2.wait()
-        # # samtools.stdin.close()
-        # samtools.communicate()
 
     # check if output file exists and is not empty
     with open(log, "a") as logf:
@@ -256,9 +254,6 @@ def run_polish(
                 for line in f:
                     qname, qlen, qstart, qstop, strand, ref, rlen, rstart, rstop = line.split()[:9]
                     qlen, qstart, qstop, rlen, rstart, rstop = map(int, [qlen, qstart, qstop, rlen, rstart, rstop])
-                    # if illumina:
-                    #     if qname[-2:] in ['/1', '/2']:
-                    #         qname = qname[:-2]
                     if ref in low_cov:
                         paf_file.write(line)
                         included_reads.add(qname)
@@ -275,18 +270,8 @@ def run_polish(
                         else:
                             excluded_reads.add(qname)
             with open(os.path.join(output_dir, "reads.%s.%d.lst" % (output_prefix, rounds)), "w") as o:
-                # if (reads == 'data/short_reads.fastq.gz' or short_reads_2 == 'none') and illumina:
-                #     print("Using paired end reads and adding /1 and /2 to read names")
-                # else:
-                #     print("Using single end reads")
-
                 for i in included_reads:
                     o.write(i + '\n')
-                    # if (reads == 'data/short_reads.fastq.gz' or short_reads_2 == 'none') and illumina:
-                    #     o.write(i + '/1\n')
-                    #     o.write(i + '/2\n')
-                    # else:
-                    #     o.write(i + '\n')
             logging.info("Retrieving reads...")
             if not isinstance(reads, str):
                 for read in reads:
@@ -354,16 +339,6 @@ def run_polish(
         if long_read_type not in ['ont', 'ont_hq']:
             sys.exit("ERROR: long_read_type must be ont or ont_hq for medaka polishing")
         
-        # bam = os.path.join(output_dir, 'alignment.%s.1.bam') % (output_prefix)
-        # print("Generating BAM file: %s for medaka..." % (bam))
-        # # we just run medaka once: https://twitter.com/rrwick/status/1158278701819125760
-        # # Twitter is a valid source of information :) do not question.
-        # run_minimap_with_samtools(
-        #     reference,
-        #     reads,
-        #     output_file=bam,
-        #     threads=threads,
-        # )
         with open(log, "a") as logf:
             logf.write("Running medaka...\n")
             medaka_cmd = f"medaka_consensus -t {threads} -i {reads} -m {medaka_model} -o data/polishing/ -d {reference}".split()
@@ -371,7 +346,6 @@ def run_polish(
             run(medaka_cmd, stdout=logf, stderr=STDOUT)
 
         # copy the output to the expected location
-
         shutil.copyfile("data/polishing/consensus.fasta", output_fasta)
         # remove the intermediate files
         os.remove("data/polishing/calls_to_draft.bam")
@@ -381,46 +355,47 @@ def run_polish(
 
     if os.path.exists("data/short_reads.racon.1.fastq.gz"):
         os.remove("data/short_reads.racon.1.fastq.gz")
-        # os.remove("data/short_reads.racon.2.fastq.gz")
 
 
 if __name__ == "__main__":
-
-    short_reads_1 = snakemake.config["short_reads_1"]
-    short_reads_2 = snakemake.config["short_reads_2"]
-    input_fastq = snakemake.input.fastq
-    reference = snakemake.input.fasta
-    reference_filter = snakemake.config["reference_filter"]
-    output_dir = "data/polishing"
-    output_prefix = snakemake.params.prefix
-    output_fasta = snakemake.output.fasta
-    rounds = snakemake.params.rounds
-    long_read_type = snakemake.config["long_read_type"]
-    medaka_model = snakemake.config["medaka_model"]
-    illumina = snakemake.params.illumina
-
-    max_cov = snakemake.params.maxcov
-    threads = snakemake.threads
-    coassemble = snakemake.params.coassemble
-    log = snakemake.log[0]
-
-    with open(log, "w") as logf: pass
-
+    parser = argparse.ArgumentParser(description='Polish reads using racon or medaka.')
+    parser.add_argument('--short-reads-1', nargs='+', help='Short reads 1')
+    parser.add_argument('--short-reads-2', default='none', help='Short reads 2')
+    parser.add_argument('--input-fastq', help='Input fastq file')
+    parser.add_argument('--reference', help='Reference fasta file')
+    parser.add_argument('--reference-filter', default='none', help='Reference filter')
+    parser.add_argument('--output-dir', default='data/polishing', help='Output directory')
+    parser.add_argument('--output-prefix', help='Output prefix')
+    parser.add_argument('--output-fasta', help='Output fasta file')
+    parser.add_argument('--rounds', type=int, help='Number of polishing rounds')
+    parser.add_argument('--long-read-type', help='Long read type')
+    parser.add_argument('--medaka-model', help='Medaka model')
+    parser.add_argument('--illumina', type=lambda x: x.lower() == 'true', nargs='?', const=True, default=False, help='Use illumina reads')
+    parser.add_argument('--max-cov', type=int, default=100, help='Maximum coverage')
+    parser.add_argument('--threads', type=int, default=1, help='Number of threads')
+    parser.add_argument('--coassemble', type=lambda x: x.lower() == 'true', nargs='?', const=True, default=False, help='Co-assemble')
+    parser.add_argument('--log', default='polish.log', help='Log file')
+    
+    args = parser.parse_args()
+    
+    with open(args.log, "w") as logf:
+        pass
+    
     run_polish(
-        short_reads_1,
-        short_reads_2,
-        input_fastq,
-        reference=reference,
-        reference_filter=reference_filter,
-        output_dir=output_dir,
-        output_prefix=output_prefix,
-        output_fasta=output_fasta,
-        polishing_rounds=rounds,
-        long_read_type=long_read_type,
-        medaka_model=medaka_model,
-        illumina=illumina,
-        max_cov=max_cov,
-        threads=threads,
-        coassemble=coassemble,
-        log=log,
+        args.short_reads_1,
+        args.short_reads_2,
+        args.input_fastq,
+        reference=args.reference,
+        reference_filter=args.reference_filter,
+        output_dir=args.output_dir,
+        output_prefix=args.output_prefix,
+        output_fasta=args.output_fasta,
+        polishing_rounds=args.rounds,
+        long_read_type=args.long_read_type,
+        medaka_model=args.medaka_model,
+        illumina=args.illumina,
+        max_cov=args.max_cov,
+        threads=args.threads,
+        coassemble=args.coassemble,
+        log=args.log,
     )

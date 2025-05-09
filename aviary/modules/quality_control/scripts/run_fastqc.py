@@ -1,6 +1,8 @@
+#!/usr/bin/env python3
 from subprocess import run, Popen, STDOUT
 import multiprocessing as mp
 import os
+import argparse
 from pathlib import Path
 
 
@@ -71,9 +73,17 @@ def run_fastqc(
 
 
 if __name__ == '__main__':
+    parser = argparse.ArgumentParser(description='Run FastQC on reads')
+    parser.add_argument('--short-reads-1', required=True, help='Path to short reads file 1 or "none"')
+    parser.add_argument('--short-reads-2', default='none', help='Path to short reads file 2 or "none"')
+    parser.add_argument('--threads', type=int, default=1, help='Number of threads to use')
+    parser.add_argument('--log', required=True, help='Path to log file')
+    
+    args = parser.parse_args()
+    
     run_fastqc(
-        snakemake.config['short_reads_1'],
-        snakemake.config['short_reads_2'],
-        snakemake.threads,
-        snakemake.log[0],
+        args.short_reads_1,
+        args.short_reads_2,
+        args.threads,
+        args.log,
     )

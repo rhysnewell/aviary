@@ -1,4 +1,7 @@
+#!/usr/bin/env python3
+
 import os
+import argparse
 from subprocess import Popen, PIPE
 from pathlib import Path
 from typing import List
@@ -7,13 +10,16 @@ def run_skip_qc(
     long_reads: List[str],
     output_long_reads: str,
     coassemble: bool,
-    log_file: str
+    log_file: str,
+    threads: int
 ):
     """
     Skip quality control
     :param long_reads: list of long reads
     :param output_long_reads: output long reads
     :param coassemble: coassemble or not, if true we will filter all reads into the same file
+    :param log_file: file to write logs to
+    :param threads: number of threads for compression
     :return:
     """
     with open(log_file, 'a') as logf:
@@ -71,16 +77,18 @@ def qc_long_reads(
     :param long_reads: list of long reads
     :param reference_filter: list of reference genomes to filter against
     :param coassemble: coassemble or not, if true we will filter all reads into the same file
+    :param skip_qc: skip quality control if true
     :param min_length: minimum length of reads to keep
     :param min_quality: minimum mean quality of reads to keep
     :param keep_percent: percent of reads to keep
     :param threads: number of threads
     :param output_long_reads: output long reads
+    :param log_file: file to write logs to
     :return:
     """
 
     if skip_qc or len(long_reads) == 0:
-        run_skip_qc(long_reads, output_long_reads, coassemble, log_file)
+        run_skip_qc(long_reads, output_long_reads, coassemble, log_file, threads)
         return
 
     # if we have more than one reference_filter file, we need to concatenate them into a single temp file
@@ -158,36 +166,38 @@ def qc_long_reads(
         if os.path.exists(f'{output_long_reads}.reference_filter.fasta.gz'):
             os.remove(f'{output_long_reads}.reference_filter.fasta.gz')
 
-
 if __name__ == '__main__':
-    # inputs
-    long_reads = snakemake.input.long_reads
-
-    # params
-    coassemble = snakemake.params.coassemble
-    min_length = snakemake.params.min_length
-    min_quality = snakemake.params.min_mean_q
-    keep_percent = snakemake.params.keep_percent
-    reference_filter = snakemake.params.reference_filter
-    skip_qc = snakemake.params.skip_qc
-    threads = snakemake.threads
-
-    # output
-    output_long = snakemake.output.output_long
-
-    # log
-    log = snakemake.log[0]
-    with open(log, "w") as logf: pass
-
+    parser = argparse.ArgumentParser(description='Quality control long reads using chopper')
+    parser.add_argument('--long-reads', required=True, nargs='+', help='Long read files')
+    parser.add_argument('--reference-filter', nargs='*', default=[], help='Reference genome files to filter against')
+    parser.add_argument('--coassemble', type=str, choices=['True', 'False'], help='Coassemble reads into one file')
+    parser.add_argument('--skip-qc', type=str, choices=['True', 'False'], help='Skip quality control')
+    parser.add_argument('--min-length', type=int, default=1000, help='Minimum read length')
+    parser.add_argument('--min-quality', type=int, default=10, help='Minimum mean quality')
+    parser.add_argument('--keep-percent', type=int, default=90, help='Percentage of reads to keep')
+    parser.add_argument('--threads', type=int, default=1, help='Number of threads')
+    parser.add_argument('--output-long', required=True, help='Output file for quality controlled long reads')
+    parser.add_argument('--log', required=True, help='Log file')
+    
+    args = parser.parse_args()
+    
+    # Convert string boolean arguments to actual booleans
+    coassemble = args.coassemble == 'True'
+    skip_qc = args.skip_qc == 'True'
+    
+    # Initialize log file
+    with open(args.log, "w") as logf:
+        pass
+    
     qc_long_reads(
-        long_reads=long_reads,
-        reference_filter=reference_filter,
+        long_reads=args.long_reads,
+        reference_filter=args.reference_filter,
         coassemble=coassemble,
         skip_qc=skip_qc,
-        min_length=min_length,
-        min_quality=min_quality,
-        keep_percent=keep_percent,
-        threads=threads,
-        output_long_reads=output_long,
-        log_file=log,
+        min_length=args.min_length,
+        min_quality=args.min_quality,
+        keep_percent=args.keep_percent,
+        threads=args.threads,
+        output_long_reads=args.output_long,
+        log_file=args.log,
     )

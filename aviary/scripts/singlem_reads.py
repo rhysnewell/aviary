@@ -1,3 +1,6 @@
+#!/usr/bin/env python3
+
+import argparse
 from subprocess import CalledProcessError, run, STDOUT
 import os
 from pathlib import Path
@@ -225,24 +228,27 @@ def valid_path(path: str) -> bool:
     return os.path.exists(path)
 
 if __name__ == '__main__':
-    # check if SINGLEM_METAPACKAGE_PATH environment variable is set and path is valid
-    # if not then, error and exit
-    os.environ["SINGLEM_METAPACKAGE_PATH"] = snakemake.params.package_path
+    parser = argparse.ArgumentParser(description="Run SingleM with specified reads and parameters.")
+    parser.add_argument("--long-reads", nargs="+", default=[], help="List of long read files.")
+    parser.add_argument("--short-reads-1", nargs="+", default=[], help="List of short read 1 files.")
+    parser.add_argument("--short-reads-2", nargs="+", default=[], help="List of short read 2 files.")
+    parser.add_argument("--threads", type=int, required=True, help="Number of threads to use.")
+    parser.add_argument("--log", type=str, required=True, help="Path to the log file.")
+    parser.add_argument("--package-path", type=str, required=True, help="Path to the SingleM metapackage.")
+
+    args = parser.parse_args()
+
+    os.environ["SINGLEM_METAPACKAGE_PATH"] = args.package_path
     if "SINGLEM_METAPACKAGE_PATH" not in os.environ or not valid_path(os.environ["SINGLEM_METAPACKAGE_PATH"]):
         raise ValueError("SINGLEM_METAPACKAGE_PATH environment variable not set. Please set using 'aviary configure' or manually. Exiting.")
 
-    long_reads = snakemake.config['long_reads']
-    short_reads_1 = snakemake.config['short_reads_1']
-    short_reads_2 = snakemake.config['short_reads_2']
-    pplacer_threads = snakemake.threads
-    log = snakemake.log[0]
+    read_container = ReadContainer(args.long_reads, args.short_reads_1, args.short_reads_2)
 
-    read_container = ReadContainer(long_reads, short_reads_1, short_reads_2)
-
-    with open(log, "w") as logf: pass
+    with open(args.log, "w") as logf:
+        pass
 
     run_singlem(
         read_container,
-        pplacer_threads,
-        log,
+        args.threads,
+        args.log,
     )
