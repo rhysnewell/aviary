@@ -84,6 +84,7 @@ class Tests(unittest.TestCase):
             f"-2 {data}/wgsim.2.fq.gz "
             f"--conda-prefix {path_to_conda} "
             f"-n 32 -t 32 "
+            f"--strict "
         )
         subprocess.run(cmd, shell=True, check=True)
 
@@ -152,6 +153,7 @@ class Tests(unittest.TestCase):
             f"--min-read-size 10 --min-mean-q 1 "
             f"--conda-prefix {path_to_conda} "
             f"-n 32 -t 32 "
+            f"--strict "
         )
         subprocess.run(cmd, shell=True, check=True)
 
@@ -177,6 +179,7 @@ class Tests(unittest.TestCase):
             f"--min-read-size 10 --min-mean-q 1 "
             f"--conda-prefix {path_to_conda} "
             f"-n 32 -t 32 "
+            f"--strict "
         )
         subprocess.run(cmd, shell=True, check=True)
 
@@ -206,6 +209,7 @@ class Tests(unittest.TestCase):
             f"--refinery-max-iterations 0 "
             f"--conda-prefix {path_to_conda} "
             f"-n 32 -t 32 "
+            f"--strict "
         )
         subprocess.run(cmd, shell=True, check=True)
 
@@ -242,6 +246,7 @@ class Tests(unittest.TestCase):
             f"--refinery-max-iterations 0 "
             f"--conda-prefix {path_to_conda} "
             f"-n 32 -t 32 "
+            f"--strict "
         )
         subprocess.run(cmd, shell=True, check=True)
 
@@ -283,6 +288,7 @@ class Tests(unittest.TestCase):
             f"--refinery-max-iterations 0 "
             f"--conda-prefix {path_to_conda} "
             f"-n 32 -t 32 "
+            f"--strict "
         )
         subprocess.run(cmd, shell=True, check=True)
 
@@ -319,6 +325,7 @@ class Tests(unittest.TestCase):
             f"--refinery-max-iterations 0 "
             f"--conda-prefix {path_to_conda} "
             f"-n 32 -t 32 "
+            f"--strict "
         )
         subprocess.run(cmd, shell=True, check=True)
 
@@ -355,6 +362,7 @@ class Tests(unittest.TestCase):
             f"--refinery-max-iterations 0 "
             f"--conda-prefix {path_to_conda} "
             f"-n 32 -t 32 "
+            f"--strict "
         )
         subprocess.run(cmd, shell=True, check=True)
 
@@ -378,6 +386,7 @@ class Tests(unittest.TestCase):
             f"-2 {data}/wgsim.2.fq.gz "
             f"--conda-prefix {path_to_conda} "
             f"-n 32 -t 32 --local-cores 1 "
+            f"--strict "
             f"--snakemake-profile aqua --cluster-retries 3 "
         )
         subprocess.run(cmd, shell=True, check=True)
@@ -414,6 +423,7 @@ class Tests(unittest.TestCase):
             f"--refinery-max-iterations 0 "
             f"--conda-prefix {path_to_conda} "
             f"-n 32 -t 32 --local-cores 1 "
+            f"--strict "
             f"--snakemake-profile aqua --cluster-retries 0 "
         )
         subprocess.run(cmd, shell=True, check=True)
@@ -437,6 +447,7 @@ class Tests(unittest.TestCase):
             f"--refinery-max-iterations 0 "
             f"--min-read-size 10 --min-mean-q 1 "
             f"-n 32 -t 32 "
+            f"--strict "
         )
         subprocess.run(cmd, shell=True, check=True)
 

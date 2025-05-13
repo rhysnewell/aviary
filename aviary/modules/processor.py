@@ -101,6 +101,7 @@ class Processor:
         self.max_memory = args.max_memory
         self.workflows = args.workflow
         self.request_gpu = args.request_gpu
+        self.strict = args.strict
 
         try:
             self.pplacer_threads = min(int(args.pplacer_threads), int(self.threads), 48)
@@ -430,6 +431,7 @@ class Processor:
         conf["pplacer_threads"] = int(self.pplacer_threads)
         conf["max_memory"] = int(self.max_memory)
         conf["request_gpu"] = self.request_gpu
+        conf["strict"] = self.strict
         conf["short_reads_1"] = self.pe1
         conf["short_reads_2"] = self.pe2
         conf["long_reads"] = self.longreads

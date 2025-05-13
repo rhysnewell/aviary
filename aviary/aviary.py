@@ -185,6 +185,16 @@ def main():
     )
 
     base_group.add_argument(
+        '--strict',
+        help='Ensure that each binner completes successfully. [default: skip binners that fail]',
+        type=str2bool,
+        nargs='?',
+        const=True,
+        dest='strict',
+        default=False,
+    )
+
+    base_group.add_argument(
         '-o', '--output',
         help='Output directory',
         dest='output',
