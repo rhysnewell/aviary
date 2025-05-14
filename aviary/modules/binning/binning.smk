@@ -204,7 +204,9 @@ rule maxbin2:
         fasta = ancient(config["fasta"]),
         maxbin_cov = ancient("data/maxbin.cov.list")
     params:
-        min_contig_size = config["min_contig_size"]
+        min_contig_size = config["min_contig_size"],
+        touch = "" if config["strict"] else "|| touch data/maxbin2_bins/done",
+        really_done = "data/maxbin2_bins/really_done",
     threads:
         config["max_threads"]
     resources:
@@ -223,7 +225,7 @@ rule maxbin2:
         "mkdir -p data/maxbin2_bins && "
         "run_MaxBin.pl -contig {input.fasta} -thread {threads} -abund_list {input.maxbin_cov} "
         "-out data/maxbin2_bins/maxbin -min_contig_length {params.min_contig_size} > {log} 2>&1 "
-        "&& touch {output[0]} || touch {output[0]}"
+        "&& touch {output[0]} {params.really_done} {params.touch}"
 
 
 rule concoct:
@@ -231,7 +233,9 @@ rule concoct:
         fasta = ancient(config["fasta"]),
         bam_done = ancient("data/binning_bams/done")
     params:
-        min_contig_size = config["min_contig_size"]
+        min_contig_size = config["min_contig_size"],
+        touch = "" if config["strict"] else "|| touch data/concoct_bins/done",
+        really_done = "data/concoct_bins/really_done",
     threads:
         config["max_threads"]
     resources:
@@ -253,8 +257,8 @@ rule concoct:
         "concoct --threads {threads} -l {params.min_contig_size} --composition_file data/concoct_working/contigs_10K.fa --coverage_file data/concoct_working/coverage_table.tsv -b data/concoct_working/ 2>/dev/null && "
         "merge_cutup_clustering.py data/concoct_working/clustering_gt{params.min_contig_size}.csv > data/concoct_working/clustering_merged.csv 2>> {log} && "
         "mkdir -p data/concoct_bins && "
-        "extract_fasta_bins.py {input.fasta} data/concoct_working/clustering_merged.csv --output_path data/concoct_bins/ >> {log} 2>&1 && "
-        "touch {output[0]} || touch {output[0]}"
+        "extract_fasta_bins.py {input.fasta} data/concoct_working/clustering_merged.csv --output_path data/concoct_bins/ >> {log} 2>&1 "
+        "&& touch {output[0]} {params.really_done} {params.touch}"
 
 
 rule vamb_jgi_filter:
@@ -290,6 +294,8 @@ rule vamb:
     params:
         min_bin_size = config["min_bin_size"],
         min_contig_size = config["min_contig_size"],
+        touch = "" if config["strict"] else "|| touch data/vamb_bins/done",
+        really_done = "data/vamb_bins/really_done",
     threads:
         config["max_threads"]
     resources:
@@ -306,8 +312,8 @@ rule vamb:
     shell:
         "rm -rf data/vamb_bins/; "
         "bash -c 'OPENBLAS_NUM_THREADS={threads} OMP_NUM_THREADS={threads} MKL_NUM_THREADS={threads} NUMEXPR_NUM_THREADS={threads} vamb --outdir data/vamb_bins/ -p {threads} --jgi {input.coverage} --fasta {input.fasta} "
-        "--minfasta {params.min_bin_size} -m {params.min_contig_size} > {log} 2>&1 && touch {output[0]}' || "
-        "touch {output[0]} && mkdir -p data/vamb_bins/bins"
+        "--minfasta {params.min_bin_size} -m {params.min_contig_size} > {log} 2>&1' "
+        "&& touch {output[0]} {params.really_done} {params.touch} && mkdir -p data/vamb_bins/bins"
 
 
 rule vamb_skip:
@@ -398,6 +404,8 @@ rule taxvamb:
         min_bin_size = config["min_bin_size"],
         min_contig_size = config["min_contig_size"],
         gpu_flag = "--cuda" if config["request_gpu"] else "",
+        touch = "" if config["strict"] else "|| touch data/taxvamb_bins/done",
+        really_done = "data/taxvamb_bins/really_done",
     threads:
         config["max_threads"]
     resources:
@@ -416,8 +424,8 @@ rule taxvamb:
         "rm -rf data/taxvamb_bins/; "
         "bash -c 'OPENBLAS_NUM_THREADS={threads} OMP_NUM_THREADS={threads} MKL_NUM_THREADS={threads} NUMEXPR_NUM_THREADS={threads} vamb bin taxvamb --outdir data/taxvamb_bins/ -p {threads} --fasta {input.fasta} "
         "--abundance_tsv {input.coverage} --taxonomy {input.taxonomy} "
-        "--minfasta {params.min_bin_size} -m {params.min_contig_size} {params.gpu_flag} > {log} 2>&1 && touch {output[0]}' || "
-        "touch {output[0]} && mkdir -p data/taxvamb_bins/bins"
+        "--minfasta {params.min_bin_size} -m {params.min_contig_size} {params.gpu_flag} > {log} 2>&1' "
+        "&& touch {output[0]} {params.really_done} {params.touch} && mkdir -p data/vamb_bins/bins"
 
 
 rule metabat2:
@@ -426,7 +434,9 @@ rule metabat2:
         fasta = ancient(config["fasta"])
     params:
         min_contig_size = max(int(config["min_contig_size"]), 1500),
-        min_bin_size = config["min_bin_size"]
+        min_bin_size = config["min_bin_size"],
+        touch = "" if config["strict"] else "|| touch data/metabat_bins_2/done",
+        really_done = "data/metabat_bins_2/really_done",
     output:
         metabat_done = "data/metabat_bins_2/done"
     conda:
@@ -443,8 +453,8 @@ rule metabat2:
     shell:
         "rm -rf data/metabat_bins_2/; "
         "metabat -t {threads} -m {params.min_contig_size} -s {params.min_bin_size} --seed 89 -i {input.fasta} "
-        "-a {input.coverage} -o data/metabat_bins_2/binned_contigs > {log} 2>&1 && "
-        "touch {output[0]} || touch {output[0]}"
+        "-a {input.coverage} -o data/metabat_bins_2/binned_contigs > {log} 2>&1 "
+        "&& touch {output[0]} {params.really_done} {params.touch}"
 
 
 rule metabat_spec:
@@ -457,7 +467,9 @@ rule metabat_spec:
         "envs/metabat2.yaml"
     params:
         min_contig_size = max(int(config["min_contig_size"]), 1500),
-        min_bin_size = config["min_bin_size"]
+        min_bin_size = config["min_bin_size"],
+        touch = "" if config["strict"] else "|| touch data/metabat_bins_spec/done",
+        really_done = "data/metabat_bins_spec/really_done",
     log:
         "logs/metabat_spec.log"
     benchmark:
@@ -470,8 +482,8 @@ rule metabat_spec:
     shell:
         "rm -rf data/metabat_bins_spec; "
         "metabat1 -t {threads} -m {params.min_contig_size} -s {params.min_bin_size} --seed 89 --specific -i {input.fasta} "
-        "-a {input.coverage} -o data/metabat_bins_spec/binned_contigs > {log} 2>&1 && "
-        "touch {output[0]} || touch {output[0]}"
+        "-a {input.coverage} -o data/metabat_bins_spec/binned_contigs > {log} 2>&1 "
+        "&& touch {output[0]} {params.really_done} {params.touch}"
 
 rule metabat_sspec:
     input:
@@ -483,7 +495,9 @@ rule metabat_sspec:
         "envs/metabat2.yaml"
     params:
         min_contig_size = max(int(config["min_contig_size"]), 1500),
-        min_bin_size = config["min_bin_size"]
+        min_bin_size = config["min_bin_size"],
+        touch = "" if config["strict"] else "|| touch data/metabat_bins_sspec/done",
+        really_done = "data/metabat_bins_sspec/really_done",
     log:
         "logs/metabat_sspec.log"
     benchmark:
@@ -496,8 +510,8 @@ rule metabat_sspec:
     shell:
         "rm -rf data/metabat_bins_sspec; "
         "metabat1 -t {threads} -m {params.min_contig_size} -s {params.min_bin_size} --seed 89 --superspecific "
-        "-i {input.fasta} -a {input.coverage} -o data/metabat_bins_sspec/binned_contigs > {log} 2>&1 && "
-        "touch {output[0]} || touch {output[0]}"
+        "-i {input.fasta} -a {input.coverage} -o data/metabat_bins_sspec/binned_contigs > {log} 2>&1 "
+        "&& touch {output[0]} {params.really_done} {params.touch}"
 
 rule metabat_sens:
     input:
@@ -509,7 +523,9 @@ rule metabat_sens:
         "envs/metabat2.yaml"
     params:
         min_contig_size = max(int(config["min_contig_size"]), 1500),
-        min_bin_size = config["min_bin_size"]
+        min_bin_size = config["min_bin_size"],
+        touch = "" if config["strict"] else "|| touch data/metabat_bins_sens/done",
+        really_done = "data/metabat_bins_sens/really_done",
     log:
         "logs/metabat_sens.log"
     benchmark:
@@ -522,8 +538,8 @@ rule metabat_sens:
     shell:
         "rm -rf data/metabat_bins_sens; "
         "metabat1 -t {threads} -m {params.min_contig_size} -s {params.min_bin_size} --seed 89 --sensitive "
-        "-i {input.fasta} -a {input.coverage} -o data/metabat_bins_sens/binned_contigs > {log} 2>&1 && "
-        "touch {output[0]} || touch {output[0]}"
+        "-i {input.fasta} -a {input.coverage} -o data/metabat_bins_sens/binned_contigs > {log} 2>&1 "
+        "&& touch {output[0]} {params.really_done} {params.touch}"
 
 rule metabat_ssens:
     input:
@@ -535,7 +551,9 @@ rule metabat_ssens:
         "envs/metabat2.yaml"
     params:
         min_contig_size = max(int(config["min_contig_size"]), 1500),
-        min_bin_size = config["min_bin_size"]
+        min_bin_size = config["min_bin_size"],
+        touch = "" if config["strict"] else "|| touch data/metabat_bins_ssens/done",
+        really_done = "data/metabat_bins_ssens/really_done",
     log:
         "logs/metabat_ssens.log"
     benchmark:
@@ -548,8 +566,8 @@ rule metabat_ssens:
     shell:
         "rm -rf data/metabat_bins_ssens; "
         "metabat1 -t {threads} -m {params.min_contig_size} -s {params.min_bin_size} --seed 89 --supersensitive "
-        "-i {input.fasta} -a {input.coverage} -o data/metabat_bins_ssens/binned_contigs > {log} 2>&1 && "
-        "touch {output[0]} || touch {output[0]}"
+        "-i {input.fasta} -a {input.coverage} -o data/metabat_bins_ssens/binned_contigs > {log} 2>&1 "
+        "&& touch {output[0]} {params.really_done} {params.touch}"
 
 rule rosella:
     """
@@ -560,7 +578,9 @@ rule rosella:
         fasta = ancient(config["fasta"])
     params:
         min_contig_size = config["min_contig_size"],
-        min_bin_size = config["min_bin_size"]
+        min_bin_size = config["min_bin_size"],
+        touch = "" if config["strict"] else "|| touch data/rosella_bins/done",
+        really_done = "data/rosella_bins/really_done",
     output:
         # kmers = "data/rosella_bins/kmer_frequencies.tsv",
         done = "data/rosella_bins/done"
@@ -578,8 +598,8 @@ rule rosella:
     shell:
         "rm -rf data/rosella_bins/; "
         "rosella recover -r {input.fasta} -C {input.coverage} -t {threads} -o data/rosella_bins "
-        "--min-contig-size {params.min_contig_size} --min-bin-size {params.min_bin_size} --n-neighbors 100 > {log} 2>&1 && "
-        "touch {output.done} || touch {output.done}"
+        "--min-contig-size {params.min_contig_size} --min-bin-size {params.min_bin_size} --n-neighbors 100 > {log} 2>&1 "
+        "&& touch {output[0]} {params.really_done} {params.touch}"
 
 rule semibin:
     input:
@@ -589,8 +609,10 @@ rule semibin:
         # Can't use premade model with multiple samples, so disregard if provided
         semibin_model = f"--environment {config['semibin_model']} " if get_num_samples() == 1 else "",
         semibin_sequencing_type = "--sequencing-type=long_read" if config["long_reads"] != "none" else "",
+        touch = "" if config["strict"] else "|| touch data/semibin_bins/done",
+        really_done = "data/semibin_bins/really_done",
     output:
-        done = "data/semibin_bins/done"
+        "data/semibin_bins/done"
     threads:
         config["max_threads"]
     resources:
@@ -616,7 +638,7 @@ rule semibin:
         "--compression none "
         "{params.semibin_sequencing_type} "
         "> {log} 2>&1 "
-        "&& touch {output.done} || touch {output.done}"
+        "&& touch {output[0]} {params.really_done} {params.touch}"
 
 
 rule comebin:
@@ -627,6 +649,9 @@ rule comebin:
         done = "data/comebin_bins/done"
     threads:
         config["max_threads"]
+    params:
+        touch = "" if config["strict"] else "|| touch data/comebin_bins/done",
+        really_done = "data/comebin_bins/really_done",
     resources:
         mem_mb = lambda wildcards, attempt: min(int(config["max_memory"])*1024, 128*1024*attempt),
         runtime = lambda wildcards, attempt: 24*60*attempt,
@@ -639,8 +664,8 @@ rule comebin:
         "benchmarks/comebin.benchmark.txt"
     shell:
         "rm -rf data/comebin_bins/; "
-        "run_comebin.sh -a {input.fasta} -p data/binning_bams -t {threads} -o data/comebin_bins > {log} 2>&1 && "
-        "touch {output.done} || touch {output.done}"
+        "run_comebin.sh -a {input.fasta} -p data/binning_bams -t {threads} -o data/comebin_bins > {log} 2>&1 "
+        "&& touch {output[0]} {params.really_done} {params.touch}"
 
 
 rule checkm_rosella:
