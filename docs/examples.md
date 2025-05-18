@@ -60,6 +60,12 @@ jobs: 10000
 cluster-cancel: qdel
 ```
 
+Job resources were set based on [empirical data from 1,000 Aviary runs](https://github.com/rhysnewell/aviary/pull/270).
+The number of CPUs was set based on the average mean load, to the nearest multiple of 8.
+The number of CPUs for binners was standardized to 24, since this was the most common usage pattern.
+Maximum memory was set based on the nearest power of 2, rounding up from the maximum RSS memory.
+These resources can be restricted by setting `--max_memory` and `--max_threads` in Aviary.
+
 ## Expected output
 
 Aviary will produce a variety of different outputs depending on the parameters provided. The following is a list of the expected outputs from the different subcommands.

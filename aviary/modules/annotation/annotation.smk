@@ -175,9 +175,9 @@ rule checkm2:
         mag_extension = config['mag_extension'],
         checkm2_db_path = config["checkm2_db_folder"]
     threads:
-        config["max_threads"]
+        min(config["max_threads"], 16)
     resources:
-        mem_mb = lambda wildcards, attempt: min(int(config["max_memory"])*1024, 128*1024*attempt),
+        mem_mb = lambda wildcards, attempt: min(int(config["max_memory"])*1024, 64*1024*attempt),
         runtime = lambda wildcards, attempt: 8*60*attempt,
     log:
         'logs/checkm2.log'
