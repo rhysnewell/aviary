@@ -23,3 +23,5 @@ MEDAKA_MODELS = [
     "r941_prom_snp_g360", "r941_prom_sup_g507", "r941_prom_sup_snp_g507", "r941_prom_sup_variant_g507", "r941_prom_variant_g303",
     "r941_prom_variant_g322", "r941_prom_variant_g360", "r941_sup_plant_g610", "r941_sup_plant_variant_g610"
 ]
+COVERAGE_JOB_STRATEGIES = ["default", "always", "never"]
+COVERAGE_JOB_CUTOFF = 10

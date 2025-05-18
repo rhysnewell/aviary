@@ -212,7 +212,6 @@ rule polish_meta_racon_ill:
         """polish.py \
         --short-reads-1 {config[short_reads_1]} \
         --short-reads-2 {config[short_reads_2]} \
-        --input-fastq {input.fastq} \
         --reference {input.fasta} \
         --output-dir data/polishing \
         --output-prefix {params.prefix} \

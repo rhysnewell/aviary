@@ -360,7 +360,7 @@ def run_polish(
 if __name__ == "__main__":
     parser = argparse.ArgumentParser(description='Polish reads using racon or medaka.')
     parser.add_argument('--short-reads-1', nargs='+', help='Short reads 1')
-    parser.add_argument('--short-reads-2', default='none', help='Short reads 2')
+    parser.add_argument('--short-reads-2', nargs='+', default='none', help='Short reads 2')
     parser.add_argument('--input-fastq', help='Input fastq file')
     parser.add_argument('--reference', help='Reference fasta file')
     parser.add_argument('--reference-filter', default='none', help='Reference filter')
@@ -380,10 +380,14 @@ if __name__ == "__main__":
     
     with open(args.log, "w") as logf:
         pass
+
+    read2 = args.short_reads_2
+    if read2 == ['none']:
+        read2 = 'none'
     
     run_polish(
         args.short_reads_1,
-        args.short_reads_2,
+        read2,
         args.input_fastq,
         reference=args.reference,
         reference_filter=args.reference_filter,

@@ -86,6 +86,7 @@ class Tests(unittest.TestCase):
             f"-2 {data}/wgsim.2.fq.gz "
             f"--conda-prefix {path_to_conda} "
             f"-n 32 -t 32 "
+            f"--strict "
         )
         subprocess.run(cmd, shell=True, check=True)
 
@@ -95,6 +96,42 @@ class Tests(unittest.TestCase):
             num_lines = sum(1 for _ in f)
         self.assertTrue(num_lines > 1)
 
+        self.assertTrue(os.path.isfile(f"{output_dir}/aviary_out/data/final_contigs.fasta"))
+        self.assertTrue(os.path.islink(f"{output_dir}/aviary_out/assembly/final_contigs.fasta"))
+
+        self.assertTrue(os.path.islink(f"{output_dir}/aviary_out/diversity"))
+        self.assertTrue(os.path.isfile(f"{output_dir}/aviary_out/diversity/metagenome.combined_otu_table.csv"))
+        self.assertTrue(os.path.getsize(f"{output_dir}/aviary_out/diversity/metagenome.combined_otu_table.csv") > 0)
+        self.assertTrue(os.path.isfile(f"{output_dir}/aviary_out/diversity/singlem_appraisal.tsv"))
+        self.assertTrue(os.path.getsize(f"{output_dir}/aviary_out/diversity/singlem_appraisal.tsv") > 0)
+        self.assertTrue(os.path.isfile(f"{output_dir}/aviary_out/diversity/singlem_appraise.svg"))
+
+    def test_long_read_recovery_split(self):
+        output_dir = os.path.join("example", "test_long_read_recovery_split")
+        self.setup_output_dir(output_dir)
+
+        for i, size in enumerate([80000, 50000, 20000]):
+            for end in [1, 2]:
+                cmd = f"zcat {data}/wgsim.{end}.fq.gz | head -n {size} > {output_dir}/wgsim_{i}.{end}.fq.gz"
+                subprocess.run(cmd, shell=True, check=True)
+
+        cmd = (
+            f"aviary recover "
+            f"-o {output_dir}/aviary_out "
+            f"-1 {data}/wgsim.1.fq.gz {output_dir}/wgsim_0.1.fq.gz {output_dir}/wgsim_1.1.fq.gz {output_dir}/wgsim_2.1.fq.gz "
+            f"-2 {data}/wgsim.2.fq.gz {output_dir}/wgsim_0.2.fq.gz {output_dir}/wgsim_1.2.fq.gz {output_dir}/wgsim_2.2.fq.gz "
+            f"-l {data}/pbsim.fq.gz "
+            f"--longread-type ont "
+            f"--coassemble no "
+            f"--coverage-job-strategy always "
+            f"--coverage-samples-per-job 2 "
+            f"--min-read-size 10 --min-mean-q 1 "
+            f"--conda-prefix {path_to_conda} "
+            f"-n 32 -t 32 "
+        )
+        subprocess.run(cmd, shell=True, check=True)
+
+        self.assertTrue(os.path.isdir(f"{output_dir}/aviary_out"))
         self.assertTrue(os.path.isfile(f"{output_dir}/aviary_out/data/final_contigs.fasta"))
         self.assertTrue(os.path.islink(f"{output_dir}/aviary_out/assembly/final_contigs.fasta"))
 
@@ -118,6 +155,7 @@ class Tests(unittest.TestCase):
             f"--min-read-size 10 --min-mean-q 1 "
             f"--conda-prefix {path_to_conda} "
             f"-n 32 -t 32 "
+            f"--strict "
         )
         subprocess.run(cmd, shell=True, check=True)
 
@@ -143,6 +181,7 @@ class Tests(unittest.TestCase):
             f"--min-read-size 10 --min-mean-q 1 "
             f"--conda-prefix {path_to_conda} "
             f"-n 32 -t 32 "
+            f"--strict "
         )
         print(cmd)
         subprocess.run(cmd, shell=True, check=True)
@@ -173,6 +212,7 @@ class Tests(unittest.TestCase):
             f"--refinery-max-iterations 0 "
             f"--conda-prefix {path_to_conda} "
             f"-n 32 -t 32 "
+            f"--strict "
         )
         subprocess.run(cmd, shell=True, check=True)
 
@@ -209,6 +249,7 @@ class Tests(unittest.TestCase):
             f"--refinery-max-iterations 0 "
             f"--conda-prefix {path_to_conda} "
             f"-n 32 -t 32 "
+            f"--strict "
         )
         subprocess.run(cmd, shell=True, check=True)
 
@@ -250,6 +291,7 @@ class Tests(unittest.TestCase):
             f"--refinery-max-iterations 0 "
             f"--conda-prefix {path_to_conda} "
             f"-n 32 -t 32 "
+            f"--strict "
         )
         subprocess.run(cmd, shell=True, check=True)
 
@@ -286,6 +328,7 @@ class Tests(unittest.TestCase):
             f"--refinery-max-iterations 0 "
             f"--conda-prefix {path_to_conda} "
             f"-n 32 -t 32 "
+            f"--strict "
         )
         subprocess.run(cmd, shell=True, check=True)
 
@@ -322,6 +365,7 @@ class Tests(unittest.TestCase):
             f"--refinery-max-iterations 0 "
             f"--conda-prefix {path_to_conda} "
             f"-n 32 -t 32 "
+            f"--strict "
         )
         subprocess.run(cmd, shell=True, check=True)
 
@@ -345,6 +389,7 @@ class Tests(unittest.TestCase):
             f"-2 {data}/wgsim.2.fq.gz "
             f"--conda-prefix {path_to_conda} "
             f"-n 32 -t 32 --local-cores 1 "
+            f"--strict "
             f"--snakemake-profile aqua --cluster-retries 3 "
         )
         subprocess.run(cmd, shell=True, check=True)
@@ -382,6 +427,7 @@ class Tests(unittest.TestCase):
             f"--refinery-max-iterations 0 "
             f"--conda-prefix {path_to_conda} "
             f"-n 32 -t 32 --local-cores 1 "
+            f"--strict "
             f"--snakemake-profile aqua --cluster-retries 0 "
         )
         subprocess.run(cmd, shell=True, check=True)
@@ -397,14 +443,17 @@ class Tests(unittest.TestCase):
         self.setup_output_dir(output_dir)
         cmd = (
             f"aviary batch "
+            f"{pytest.snakemake_profile_arg} "
             f"-o {output_dir}/aviary_out "
             f"-f {data}/example_batch.tsv "
+            # f"--cluster ",
             f"--conda-prefix {path_to_conda} "
             f"--skip-binners rosella vamb metabat "
             f"--skip-qc "
             f"--refinery-max-iterations 0 "
             f"--min-read-size 10 --min-mean-q 1 "
             f"-n 32 -t 32 "
+            f"--strict "
         )
         subprocess.run(cmd, shell=True, check=True)
 

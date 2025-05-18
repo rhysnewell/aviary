@@ -43,7 +43,7 @@ from glob import glob
 from snakemake import utils
 from snakemake.io import load_configfile
 from ruamel.yaml import YAML  # used for yaml reading with comments
-from aviary import LONG_READ_TYPES
+from aviary import LONG_READ_TYPES, COVERAGE_JOB_STRATEGIES, COVERAGE_JOB_CUTOFF
 
 BATCH_HEADER=['sample', 'short_reads_1', 'short_reads_2', 'long_reads', 'long_read_type', 'assembly', 'coassemble']
 
@@ -101,6 +101,7 @@ class Processor:
         self.max_memory = args.max_memory
         self.workflows = args.workflow
         self.request_gpu = args.request_gpu
+        self.strict = args.strict
 
         try:
             self.pplacer_threads = min(int(args.pplacer_threads), int(self.threads), 48)
@@ -116,6 +117,23 @@ class Processor:
         try:
             self.min_contig_size = args.min_contig_size
             self.min_bin_size = args.min_bin_size
+
+            if args.coverage_job_strategy == COVERAGE_JOB_STRATEGIES[0]:
+                num_samples = 0
+                if args.pe1 != "none":
+                    num_samples += len(args.pe1)
+                if args.interleaved != "none":
+                    num_samples += len(args.interleaved)
+                if args.longreads != "none":
+                    num_samples += len(args.longreads)
+
+                self.coverage_split = num_samples >= COVERAGE_JOB_CUTOFF
+            elif args.coverage_job_strategy == COVERAGE_JOB_STRATEGIES[1]:
+                self.coverage_split = True
+            else:
+                self.coverage_split = False
+
+            self.coverage_samples_per_job = args.coverage_samples_per_job
             self.semibin_model = args.semibin_model
             self.refinery_max_iterations = args.refinery_max_iterations
             self.refinery_max_retries = args.refinery_max_retries
@@ -156,6 +174,8 @@ class Processor:
         except AttributeError:
             self.min_contig_size = 1500
             self.min_bin_size = 200000
+            self.coverage_split = False
+            self.coverage_samples_per_job = 5
             self.semibin_model = 'global'
             self.refinery_max_iterations = 5
             self.refinery_max_retries = 3
@@ -403,12 +423,15 @@ class Processor:
         conf["skip_singlem"] = self.skip_singlem
         conf["binning_only"] = self.binning_only
         conf["semibin_model"] = self.semibin_model
+        conf["coverage_split"] = self.coverage_split
+        conf["coverage_samples_per_split"] = self.coverage_samples_per_job
         conf["refinery_max_iterations"] = self.refinery_max_iterations
         conf["refinery_max_retries"] = self.refinery_max_retries
         conf["max_threads"] = int(self.threads)
         conf["pplacer_threads"] = int(self.pplacer_threads)
         conf["max_memory"] = int(self.max_memory)
         conf["request_gpu"] = self.request_gpu
+        conf["strict"] = self.strict
         conf["short_reads_1"] = self.pe1
         conf["short_reads_2"] = self.pe2
         conf["long_reads"] = self.longreads

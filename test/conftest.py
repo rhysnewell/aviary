@@ -4,10 +4,15 @@ import functools
 def pytest_addoption(parser):
     parser.addoption("--run-expensive", action="store_true", help="run expensive tests")
     parser.addoption("--run-qsub", action="store_true", help="run tests that require qsub")
+    # snakemake profile
+    parser.addoption("--profile", help="run snakemake with profile")
 
 def pytest_configure(config):
     config.addinivalue_line("markers", "expensive: mark test as requiring --run-expensive")
     config.addinivalue_line("markers", "qsub: mark test as requiring qsub")
+    pytest.snakemake_profile_arg = ''
+    if config.getoption("--profile"):
+        pytest.snakemake_profile_arg = f"--snakemake-profile {config.getoption('--profile')}"
 
 def pytest_collection_modifyitems(config, items):
     if config.getoption("--run-expensive") and config.getoption("--run-qsub"):

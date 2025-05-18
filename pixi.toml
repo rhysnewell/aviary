@@ -51,6 +51,7 @@ minimap2 = ["minimap2"]
 spades = ["spades"]
 pysam = ["pysam"]
 # Binning
+seqkit = ["seqkit"]
 metabat2 = ["metabat2"]
 checkm = ["checkm"]
 checkm2 = ["checkm2"]
@@ -131,6 +132,9 @@ joblib = "=1.4.2"
 python = ">=3.6"
 pysam = "=0.16"
 
+[feature.seqkit.dependencies]
+seqkit = "*"
+
 [feature.metabat2.dependencies]
 metabat2 = ">=2.15"
 
@@ -172,7 +176,7 @@ concoct = "==1.1.0"
 
 [feature.vamb.dependencies]
 samtools = "*"
-vamb = "3.0.*"
+vamb = "5.0.*"
 
 [feature.taxvamb.dependencies]
 # with pytorch = "==1.13.1", running pixi:

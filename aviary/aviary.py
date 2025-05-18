@@ -19,7 +19,7 @@
 ###############################################################################
 import aviary.config.config as Config
 from aviary.modules.processor import Processor, process_batch
-from .__init__ import __version__, MEDAKA_MODELS, LONG_READ_TYPES
+from .__init__ import __version__, MEDAKA_MODELS, LONG_READ_TYPES, COVERAGE_JOB_STRATEGIES, COVERAGE_JOB_CUTOFF
 __author__ = "Rhys Newell"
 __copyright__ = "Copyright 2022"
 __credits__ = ["Rhys Newell"]
@@ -181,6 +181,16 @@ def main():
         nargs='?',
         const=True,
         dest='request_gpu',
+        default=False,
+    )
+
+    base_group.add_argument(
+        '--strict',
+        help='Ensure that each binner completes successfully. [default: skip binners that fail]',
+        type=str2bool,
+        nargs='?',
+        const=True,
+        dest='strict',
         default=False,
     )
 
@@ -559,6 +569,25 @@ def main():
         help='Minimum bin size in base pairs for a MAG',
         dest='min_bin_size',
         default=200000
+    )
+
+    binning_group.add_argument(
+        '--coverage-job-strategy', '--coverage_job_strategy',
+        help=f'When large numbers of samples are used for co-binning, it can be more computationally scalable to \n'
+             f'calculate coverage across multiple jobs. By default, if there are more than {COVERAGE_JOB_CUTOFF} samples,\n'
+             f'Aviary will calculate coverage in groups of N, where N is determined by `--coverage-samples-per-job`.\n'
+             f'Can be one of: "default" (as above), "never" and "always".',
+        dest='coverage_job_strategy',
+        choices=COVERAGE_JOB_STRATEGIES,
+        default=COVERAGE_JOB_STRATEGIES[0],
+    )
+
+    binning_group.add_argument(
+        '--coverage-samples-per-job', '--coverage_samples_per_job',
+        help='',
+        dest='coverage_samples_per_job',
+        type=int,
+        default=5,
     )
 
     binning_group.add_argument(

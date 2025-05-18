@@ -27,11 +27,8 @@ def run_fastqc(
 
     elif short_reads_2 != 'none': # paired end
         pool = mp.Pool(threads)
-        if isinstance(short_reads_1, str):
-            reads = [short_reads_1, short_reads_2]
-        else:
-            threads = max(len(short_reads_1 + short_reads_2) // threads, 1)
-            reads = short_reads_1 + short_reads_2
+        threads = max(len(short_reads_1 + short_reads_2) // threads, 1)
+        reads = short_reads_1 + short_reads_2
 
         mp_results = [pool.apply_async(spawn_fastqc, args=(read, log, threads))
                     for read in
@@ -74,8 +71,8 @@ def run_fastqc(
 
 if __name__ == '__main__':
     parser = argparse.ArgumentParser(description='Run FastQC on reads')
-    parser.add_argument('--short-reads-1', required=True, help='Path to short reads file 1 or "none"')
-    parser.add_argument('--short-reads-2', default='none', help='Path to short reads file 2 or "none"')
+    parser.add_argument('--short-reads-1', required=True, nargs='+', help='Path to short reads file 1 or "none"')
+    parser.add_argument('--short-reads-2', default='none', nargs='+', help='Path to short reads file 2 or "none"')
     parser.add_argument('--threads', type=int, default=1, help='Number of threads to use')
     parser.add_argument('--log', required=True, help='Path to log file')
     
