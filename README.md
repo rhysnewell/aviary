@@ -148,7 +148,7 @@ any aviary module to check that databases are configured properly.
 
 Upon first running Aviary, you will be prompted to input the location for several database folders if
 they haven't already been provided. If at any point the location of these folders change you can
-use the the `aviary configure` module to update the environment variables used by aviary.
+use the `aviary configure` module to update the environment variables used by aviary.
 
 These environment variables can also be configured manually, just set the following variables in your `.bashrc` file:
 ```

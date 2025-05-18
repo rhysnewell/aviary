@@ -18,7 +18,7 @@
 #                                                                             #
 ###############################################################################
 import aviary.config.config as Config
-from aviary.modules.processor import Processor, process_batch
+from aviary.modules.processor import Processor
 from .__init__ import __version__, MEDAKA_MODELS, LONG_READ_TYPES, COVERAGE_JOB_STRATEGIES, COVERAGE_JOB_CUTOFF
 __author__ = "Rhys Newell"
 __copyright__ = "Copyright 2022"
@@ -76,8 +76,6 @@ Metagenome assembly, binning, and annotation:
                     annotate, diversity in that order.
         cluster   - Combines and dereplicates the MAGs from multiple Aviary runs
                     using Galah
-        batch     - Run Aviary using a given workflow on a supplied batch of samples
-                    and cluster the end result.
 
 Isolate assembly, binning, and annotation:
         isolate   - Perform isolate assembly **PARTIALLY COMPLETED**
@@ -1079,93 +1077,6 @@ def main():
 
     add_workflow_arg(isolate_options, ['circlator'])
 
-    ##########################   ~ BATCH ~  ###########################
-
-    batch_options = subparsers.add_parser('batch',
-                                             description='Performs all steps in the Aviary pipeline on a batch file. \n'
-                                                         'Each line in the batch file is processed separately and then \n'
-                                                         'clustered using aviary. \n'
-                                                         '(Assembly > Binning > Refinement > Annotation > Diversity) * n_samples --> Cluster',
-                                             formatter_class=CustomHelpFormatter,
-                                             parents=[qc_group, assemble_group, binning_group, annotation_group, cluster_group, base_group],
-                                             epilog=
-                                             '''
-                                                      ......:::::: BATCH ::::::......
-
-                                             aviary batch -f batch_file.tsv -t 32 -o batch_test
-                                             
-                                             An example batch file can be found at: https://rhysnewell.github.io/aviary/examples
-
-                                             ''')
-
-    batch_options.add_argument(
-        '-f', '--batch_file', '--batch-file',
-        help='The tab or comma separated batch file containing the input samples to assemble and/or recover MAGs from. \n'
-             'An example batch file can be found at https://rhysnewell.github.io/aviary/examples. The heading line is required. \n'
-             'The number of reads provided to each sample is flexible as is the type of assembly being performed (if any). \n'
-             'Multiple reads can be supplied by providing a comma-separated list (surrounded by double quotes \"\" if using a \n'
-             'comma separated batch file) within the specific read column.',
-        dest="batch_file",
-        # nargs=1,
-        required=True,
-    )
-
-    batch_options.add_argument(
-        '--write-script', '--write_script',
-        help='Write the aviary batch Snakemake commands to a bash script and exit. \n'
-             'Useful when submitting jobs to HPC cluster with custom queueing.',
-        dest='write_script',
-        required=False
-    )
-
-    batch_options.add_argument(
-        '--cluster',
-        help='Cluster final output of all samples using aviary cluster if possible.',
-        dest='cluster',
-        type=str2bool,
-        nargs='?',
-        const=True,
-        default=False
-    )
-
-    batch_options.add_argument(
-        '--cluster-ani-values', '--cluster_ani_values', '--ani-values', '--ani_values',
-        help='The range of ANI values to perform clustering and dereplication at during aviary cluster.',
-        dest='ani_values',
-        nargs='*',
-        default=[0.99, 0.97, 0.95]
-    )
-
-    batch_options.add_argument(
-        '--min-percent-read-identity-long', '--min_percent_read_identity_long',
-        help='Minimum percent read identity used by CoverM for long-reads'
-             'when calculating genome abundances.',
-        dest='long_percent_identity',
-        default='85'
-    )
-
-    batch_options.add_argument(
-        '--min-percent-read-identity-short', '--min_percent_read_identity_short',
-        help='Minimum percent read identity used by CoverM for short-reads \n'
-             'when calculating genome abundances.',
-        dest='short_percent_identity',
-        default='95'
-    )
-
-    batch_options.add_argument(
-        '--medaka-model', '--medaka_model',
-        help='Medaka model to use for polishing long reads. \n',
-        dest='medaka_model',
-        default="r941_min_hac_g507",
-        choices=MEDAKA_MODELS
-    )
-
-    add_workflow_arg(
-        batch_options,
-        ['get_bam_indices', 'recover_mags', 'annotate', 'lorikeet'],
-        help='Main workflow (snakemake target rule) to run for each sample'
-    )
-
     ##########################   ~ configure ~  ###########################
 
     configure_options = subparsers.add_parser('configure',
@@ -1293,33 +1204,30 @@ def main():
     if not os.path.exists(prefix):
         os.makedirs(prefix)
 
-    if args.subparser_name != 'batch':
-        processor = Processor(args)
-        processor.make_config()
+    processor = Processor(args)
+    processor.make_config()
 
-        if args.build:
-            try:
-                args.cmds = args.cmds + '--conda-create-envs-only '
-            except TypeError:
-                args.cmds = '--conda-create-envs-only '
-
+    if args.build:
         try:
-            if args.subparser_name == 'assemble':
-                if args.use_unicycler:
-                    args.workflow.insert(0, "combine_assemblies")
-        except AttributeError:
-            pass
+            args.cmds = args.cmds + '--conda-create-envs-only '
+        except TypeError:
+            args.cmds = '--conda-create-envs-only '
 
-        processor.run_workflow(cores=int(args.n_cores),
-                               local_cores=int(args.local_cores),
-                               dryrun=args.dryrun,
-                               clean=args.clean,
-                               snakemake_args=args.cmds,
-                               rerun_triggers=args.rerun_triggers,
-                               profile=args.snakemake_profile,
-                               cluster_retries=args.cluster_retries)
-    else:
-        process_batch(args, prefix)
+    try:
+        if args.subparser_name == 'assemble':
+            if args.use_unicycler:
+                args.workflow.insert(0, "combine_assemblies")
+    except AttributeError:
+        pass
+
+    processor.run_workflow(cores=int(args.n_cores),
+                            local_cores=int(args.local_cores),
+                            dryrun=args.dryrun,
+                            clean=args.clean,
+                            snakemake_args=args.cmds,
+                            rerun_triggers=args.rerun_triggers,
+                            profile=args.snakemake_profile,
+                            cluster_retries=args.cluster_retries)
 
 def manage_env_vars(args):
     if args.conda_prefix is None:

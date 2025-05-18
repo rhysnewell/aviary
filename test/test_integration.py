@@ -438,44 +438,6 @@ class Tests(unittest.TestCase):
             num_lines = sum(1 for _ in f)
         self.assertTrue(num_lines >= 3)
 
-    def test_batch_recovery(self):
-        output_dir = os.path.join("example", "test_batch_recovery")
-        self.setup_output_dir(output_dir)
-        cmd = (
-            f"aviary batch "
-            f"{pytest.snakemake_profile_arg} "
-            f"-o {output_dir}/aviary_out "
-            f"-f {data}/example_batch.tsv "
-            # f"--cluster ",
-            f"--conda-prefix {path_to_conda} "
-            f"--skip-binners rosella vamb metabat "
-            f"--skip-qc "
-            f"--refinery-max-iterations 0 "
-            f"--min-read-size 10 --min-mean-q 1 "
-            f"-n 32 -t 32 "
-            f"--strict "
-        )
-        subprocess.run(cmd, shell=True, check=True)
-
-        self.assertTrue(os.path.isfile(f"{output_dir}/aviary_out/sample_1/data/final_contigs.fasta"))
-        self.assertTrue(os.path.isfile(f"{output_dir}/aviary_out/sample_2/data/final_contigs.fasta"))
-
-        bin_info_path_1 = f"{output_dir}/aviary_out/sample_1/bins/bin_info.tsv"
-        bin_info_path_2 = f"{output_dir}/aviary_out/sample_2/bins/bin_info.tsv"
-        self.assertTrue(os.path.isfile(bin_info_path_1))
-        self.assertTrue(os.path.isfile(bin_info_path_2))
-        with open(bin_info_path_1) as f:
-            num_lines = sum(1 for _ in f)
-        self.assertEqual(num_lines, 3)
-
-        self.assertTrue(os.path.isdir(f"{output_dir}/aviary_out/aviary_cluster_ani_0.95"))
-        self.assertTrue(os.path.isdir(f"{output_dir}/aviary_out/aviary_cluster_ani_0.97"))
-        self.assertTrue(os.path.isdir(f"{output_dir}/aviary_out/aviary_cluster_ani_0.99"))
-
-        self.assertTrue(os.path.isdir(f"{output_dir}/aviary_out/aviary_cluster_ani_0.95/pangenomes"))
-        self.assertTrue(os.path.isdir(f"{output_dir}/aviary_out/aviary_cluster_ani_0.97/pangenomes"))
-        self.assertTrue(os.path.isdir(f"{output_dir}/aviary_out/aviary_cluster_ani_0.99/pangenomes"))
-
 
 if __name__ == "__main__":
     unittest.main()
