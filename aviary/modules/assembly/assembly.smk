@@ -1,4 +1,6 @@
 ASSEMBLY_SCRIPTS_DIR = os.path.join(os.path.dirname(os.path.abspath(workflow.snakefile)), 'scripts')
+from aviary.modules.common import pixi_run
+
 
 localrules: get_high_cov_contigs, short_only, move_spades_assembly, pool_reads, skip_unicycler, skip_unicycler_with_qc, complete_assembly, complete_assembly_with_qc, reset_to_spades_assembly, remove_final_contigs, combine_assemblies, combine_long_only
 
@@ -67,7 +69,7 @@ rule flye_assembly:
     benchmark:
         "benchmarks/flye_assembly.benchmark.txt"
     shell:
-        f'pixi run -e flye {ASSEMBLY_SCRIPTS_DIR}/'+\
+        f'{pixi_run} -e flye {ASSEMBLY_SCRIPTS_DIR}/'+\
         """run_flye.py \
         --long-read-type {params.long_read_type} \
         --input-fastq {input.fastq} \
@@ -104,7 +106,7 @@ rule polish_metagenome_flye:
     shell:
         # Commented out --reference-filter for now because it appears buggy
         # --reference-filter {config[reference_filter]} \
-        f'pixi run -e polishing {ASSEMBLY_SCRIPTS_DIR}/'+\
+        f'{pixi_run} -e polishing {ASSEMBLY_SCRIPTS_DIR}/'+\
         """polish.py \
         --short-reads-1 {config[short_reads_1]} \
         --short-reads-2 {config[short_reads_2]} \
@@ -145,7 +147,7 @@ rule generate_pilon_sort:
     benchmark:
         "benchmarks/generate_pilon_sort.benchmark.txt"
     shell:
-        f'pixi run -e pilon {ASSEMBLY_SCRIPTS_DIR}/'+\
+        f'{pixi_run} -e pilon {ASSEMBLY_SCRIPTS_DIR}/'+\
         """generate_pilon_sort.py \
         --short-reads-1 {config[short_reads_1]} \
         --short-reads-2 {config[short_reads_2]} \
@@ -177,9 +179,8 @@ rule polish_meta_pilon:
     benchmark:
         "benchmarks/polish_meta_pilon.benchmark.txt"
     shell:
-        """
-        pixi run -e pilon pilon -Xmx{params.pilon_memory}m --genome {input.fasta} --frags data/pilon.sort.bam --output data/assembly.pol.pil --fix bases >data/pilon.err 2> {log}
-        """
+        pixi_run + \
+        " -e pilon pilon -Xmx{params.pilon_memory}m --genome {input.fasta} --frags data/pilon.sort.bam --output data/assembly.pol.pil --fix bases >data/pilon.err 2> {log}"
 
 
 # The assembly polished with Racon and Pilon is polished again with the short reads using Racon
@@ -208,7 +209,7 @@ rule polish_meta_racon_ill:
     shell:
         # Removing --reference-filter for now because it appears buggy
         # --reference-filter {config[reference_filter]} \
-        f'pixi run -e polishing {ASSEMBLY_SCRIPTS_DIR}/'+\
+        f'{pixi_run} -e polishing {ASSEMBLY_SCRIPTS_DIR}/'+\
         """polish.py \
         --short-reads-1 {config[short_reads_1]} \
         --short-reads-2 {config[short_reads_2]} \
@@ -356,7 +357,7 @@ rule filter_illumina_assembly:
     benchmark:
         "benchmarks/filter_illumina_assembly.benchmark.txt"
     shell:
-        f'pixi run -e minimap2 {ASSEMBLY_SCRIPTS_DIR}/'+\
+        f'{pixi_run} -e minimap2 {ASSEMBLY_SCRIPTS_DIR}/'+\
         """filter_illumina_assembly.py \
         --short-reads-1 {config[short_reads_1]} \
         --short-reads-2 {config[short_reads_2]} \
@@ -421,7 +422,7 @@ rule spades_assembly:
     benchmark:
         "benchmarks/spades_assembly.benchmark.txt"
     shell:
-        f'pixi run -e spades {ASSEMBLY_SCRIPTS_DIR}/'+\
+        f'{pixi_run} -e spades {ASSEMBLY_SCRIPTS_DIR}/'+\
         """spades_assembly.py \
         --input-fastq {input.fastq} \
         --input-long-reads {input.long_reads} \
@@ -469,7 +470,7 @@ rule assemble_short_reads:
     shell:
         # Commented out --reference-filter for now because it appears buggy
         # --reference-filter {config[reference_filter]} \
-        f'pixi run -e spades {ASSEMBLY_SCRIPTS_DIR}/'+\
+        f'{pixi_run} -e spades {ASSEMBLY_SCRIPTS_DIR}/'+\
         """assemble_short_reads.py \
         --short-reads-1 {config[short_reads_1]} \
         --short-reads-2 {config[short_reads_2]} \
@@ -514,10 +515,11 @@ rule spades_assembly_coverage:
     benchmark:
         "benchmarks/spades_assembly_coverage.benchmark.txt"
     shell:
-        """
-        pixi run -e coverm {params.tmpdir} coverm contig -m metabat -t {threads} -r {input.fasta} --interleaved {input.fastq} --bam-file-cache-directory data/cached_bams/ > {output.assembly_cov} 2> {log};
-        mv data/cached_bams/*.bam {output.bam} && pixi run -e coverm samtools index -@ {threads} {output.bam} 2>> {log}
-        """
+        pixi_run + \
+        " -e coverm {params.tmpdir} coverm contig -m metabat -t {threads} -r {input.fasta} --interleaved {input.fastq} --bam-file-cache-directory data/cached_bams/ > {output.assembly_cov} 2> {log};"
+        "mv data/cached_bams/*.bam {output.bam} && " + \
+        pixi_run +\
+        " -e coverm samtools index -@ {threads} {output.bam} 2>> {log}"
 
 rule metabat_binning_short:
     input:
@@ -535,12 +537,11 @@ rule metabat_binning_short:
     benchmark:
         "benchmarks/metabat_binning_short.benchmark.txt"
     shell:
-         """
-         mkdir -p data/metabat_bins && \
-         pixi run -e metabat2 metabat --seed 89 --unbinned -m 1500 -l -i {input.fasta} -t {threads} -a {input.assembly_cov} \
-         -o data/metabat_bins/binned_contigs > {log} 2>&1 && \
-         touch data/metabat_bins/done
-         """
+         "mkdir -p data/metabat_bins &&" + \
+         pixi_run + \
+         " -e metabat2 metabat --seed 89 --unbinned -m 1500 -l -i {input.fasta} -t {threads} -a {input.assembly_cov}"
+         " -o data/metabat_bins/binned_contigs > {log} 2>&1 &&"
+         " touch data/metabat_bins/done"
 
 # Long reads are mapped to the spades assembly
 rule map_long_mega:
@@ -560,11 +561,14 @@ rule map_long_mega:
     benchmark:
         "benchmarks/map_long_mega.benchmark.txt"
     shell:
-        """
-        pixi run -e minimap2 minimap2 -t {threads} --split-prefix=tmp -ax map-ont -a {input.fasta} {input.fastq} 2> {log} | pixi run -e minimap2 samtools view -@ {threads} -b 2>> {log} |
-        pixi run -e minimap2 samtools sort -@ {threads} -o {output.bam} - 2>> {log} && \
-        pixi run -e minimap2 samtools index -@ {threads} {output.bam} 2>> {log}
-        """
+        pixi_run + \
+        " -e minimap2 minimap2 -t {threads} --split-prefix=tmp -ax map-ont -a {input.fasta} {input.fastq} 2> {log} |" + \
+        pixi_run + \
+        " -e minimap2 samtools view -@ {threads} -b 2>> {log} |" + \
+        pixi_run + \
+        " -e minimap2 samtools sort -@ {threads} -o {output.bam} - 2>> {log} &&" + \
+        pixi_run + \
+        " -e minimap2 samtools index -@ {threads} {output.bam} 2>> {log}"
 
 # Long and short reads that mapped to the spades assembly are pooled (binned) together
 rule pool_reads:
@@ -581,7 +585,7 @@ rule pool_reads:
     benchmark:
         "benchmarks/pool_reads.benchmark.txt"
     shell:
-        f'pixi run -e pysam {ASSEMBLY_SCRIPTS_DIR}/'+\
+        f'{pixi_run} -e pysam {ASSEMBLY_SCRIPTS_DIR}/'+\
         """pool_reads.py \
         --long-bam {input.long_bam} \
         --short-bam {input.short_bam} \
@@ -632,7 +636,7 @@ rule assemble_pools:
     benchmark:
         "benchmarks/assemble_pools.benchmark.txt"
     shell:
-        f'pixi run {ASSEMBLY_SCRIPTS_DIR}/'+\
+        f'{pixi_run} {ASSEMBLY_SCRIPTS_DIR}/'+\
         """assemble_pools.py \
         --input-list {input.list} \
         --input-fasta {input.fasta} \
@@ -654,7 +658,7 @@ rule combine_assemblies:
         output_fasta = "data/final_contigs.fasta",
     priority: 1
     shell:
-        f'pixi run {ASSEMBLY_SCRIPTS_DIR}/'+\
+        f'{pixi_run} {ASSEMBLY_SCRIPTS_DIR}/'+\
         """combine_assemblies.py \
         --flye-fasta {input.flye_fasta} \
         --short-fasta {input.short_fasta} \
@@ -672,7 +676,7 @@ rule combine_long_only:
         # long_bam = "data/final_long.sort.bam"
     priority: 1
     shell:
-        f'pixi run {ASSEMBLY_SCRIPTS_DIR}/'+\
+        f'{pixi_run} {ASSEMBLY_SCRIPTS_DIR}/'+\
         """combine_assemblies.py \
         --flye-fasta {input.flye_fasta} \
         --output-fasta {output.output_fasta}
@@ -693,7 +697,7 @@ rule skip_unicycler:
     threads:
         config["max_threads"]
     shell:
-        f'pixi run -e bbmap bash -c "' + \
+        f'{pixi_run} -e bbmap bash -c "' + \
         """cat {input.short_fasta} {input.flye_fasta} > {output.fasta}; 
         touch data/unicycler_skipped; 
         mkdir -p www/; 
@@ -717,7 +721,7 @@ rule skip_unicycler_with_qc:
     threads:
         config["max_threads"]
     shell:
-        f'pixi run -e bbmap bash -c "' + \
+        f'{pixi_run} -e bbmap bash -c "' + \
         """cat {input.short_fasta} {input.flye_fasta} > {output.fasta}; 
         touch data/unicycler_skipped; 
         mkdir -p www/; 
@@ -734,7 +738,7 @@ rule complete_assembly:
         final_link = 'assembly/final_contigs.fasta',
         sizes = "www/assembly_stats.txt"
     shell:
-        f'pixi run -e bbmap bash -c "' + \
+        f'{pixi_run} -e bbmap bash -c "' + \
         """mkdir -p www/; 
         stats.sh {input.fasta} > {output.sizes}; 
         mkdir -p assembly; 
@@ -756,7 +760,7 @@ rule complete_assembly_with_qc:
         final_link = 'assembly/final_contigs.fasta',
         sizes = "www/assembly_stats.txt"
     shell:
-        f'pixi run -e bbmap bash -c "' + \
+        f'{pixi_run} -e bbmap bash -c "' + \
         """mkdir -p www/; 
         stats.sh {input.fasta} > {output.sizes}; 
         mkdir -p assembly; 

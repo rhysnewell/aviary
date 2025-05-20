@@ -1,3 +1,5 @@
+from aviary.modules.common import pixi_run
+
 localrules: download_databases, download_eggnog_db, download_gtdb, download_checkm2, annotate
 
 onstart:
@@ -148,7 +150,7 @@ rule download_checkm2:
     log:
         'logs/download_checkm2.log'
     shell:
-        'pixi run -e checkm2 checkm2 database --download --path {params.checkm2_folder} 2> {log}; '
+        pixi_run + ' -e checkm2 checkm2 database --download --path {params.checkm2_folder} 2> {log}; '
         'mv {params.checkm2_folder}/CheckM2_database/*.dmnd {params.checkm2_folder}/; '
 
 rule download_metabuli:
@@ -185,8 +187,8 @@ rule checkm2:
         'benchmarks/checkm2.benchmark.txt'
     shell:
         'export CHECKM2DB={params.checkm2_db_path}/uniref100.KO.1.dmnd; '
-        'echo "Using CheckM2 database $CHECKM2DB" > {log}; '
-        'pixi run -e checkm2 checkm2 predict -i {input.mag_folder}/ -x {params.mag_extension} -o {output.checkm2_folder} -t {threads} --force'
+        'echo "Using CheckM2 database $CHECKM2DB" > {log}; ' + \
+        pixi_run + ' -e checkm2 checkm2 predict -i {input.mag_folder}/ -x {params.mag_extension} -o {output.checkm2_folder} -t {threads} --force'
         '>> {log} 2>&1 '
 
 rule eggnog:

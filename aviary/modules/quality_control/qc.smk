@@ -1,5 +1,6 @@
 
 QC_SCRIPTS_DIR = os.path.join(os.path.dirname(os.path.abspath(workflow.snakefile)), 'scripts')
+from aviary.modules.common import pixi_run
 
 localrules: assembly_size, assembly_quality, complete_qc_short, complete_qc_long, complete_qc_all
 
@@ -37,7 +38,7 @@ rule qc_short_reads:
     benchmark:
         "benchmarks/qc_short_reads.benchmark.txt"
     shell:
-        f'pixi run -e minimap2 {QC_SCRIPTS_DIR}/'+\
+        f'{pixi_run} -e minimap2 {QC_SCRIPTS_DIR}/'+\
         """qc_short_reads.py \
           --disable-adapter-trimming {params.disable_adapter_trimming} \
           --skip-qc {params.skip_qc} \
@@ -79,7 +80,7 @@ rule qc_long_reads:
     benchmark:
         "benchmarks/qc_long_reads.benchmark.txt"
     shell:
-        f'pixi run -e chopper {QC_SCRIPTS_DIR}/'+\
+        f'{pixi_run} -e chopper {QC_SCRIPTS_DIR}/'+\
         """qc_long_reads.py \
             --long-reads {input.long_reads} \
             --output-long {output.output_long} \
@@ -108,7 +109,7 @@ rule fastqc:
     log:
         "logs/fastqc.log"
     shell:
-        f'pixi run -e fastqc {QC_SCRIPTS_DIR}/'+\
+        f'{pixi_run} -e fastqc {QC_SCRIPTS_DIR}/'+\
         """run_fastqc.py \
         --short-reads-1 {config[short_reads_1]} \
         --short-reads-2 {config[short_reads_2]} \
@@ -131,7 +132,7 @@ rule fastqc_long:
     log:
         "logs/fastqc_long.log"
     shell:
-        "pixi run -e fastqc "\
+        f"{pixi_run} -e fastqc "
         "fastqc -o www/fastqc_long/ -t {threads} {input[0]} > {log} 2>&1; touch {output.output}"
 
 rule nanoplot:
@@ -150,7 +151,7 @@ rule nanoplot:
     log:
         "logs/nanoplot.log"
     shell:
-        "pixi run -e nanoplot "\
+        f"{pixi_run} -e nanoplot "
         "NanoPlot -o www/nanoplot -p longReads -t {threads} --fastq {input.long} > {log} 2>&1; touch {output.output}"
 
 rule metaquast:
@@ -171,7 +172,7 @@ rule metaquast:
     log:
         "logs/metaquast.log"
     shell:
-        "pixi run -e quast "\
+        f"{pixi_run} -e quast "
         "metaquast.py {input.assembly} -t {threads} -o www/metaquast {params.gsa} --min-identity 80 --extensive-mis-size 20000 > {log} 2>&1"
 
 rule read_fraction_recovered:
@@ -190,7 +191,7 @@ rule read_fraction_recovered:
     log:
         "logs/fraction_recovered.log"
     shell:
-        f'pixi run -e coverm {QC_SCRIPTS_DIR}/'+\
+        f'{pixi_run} -e coverm {QC_SCRIPTS_DIR}/'+\
         """fraction_recovered.py \
         --input-fasta {input.fasta} \
         --long-reads {config[long_reads]} \
@@ -212,7 +213,7 @@ rule assembly_size:
     log:
         "logs/assembly_stats.log"
     shell:
-        "pixi run -e bbmap "\
+        f"{pixi_run} -e bbmap "
         "stats.sh {input.fasta} > {output.sizes} 2> {log}"
 
 
