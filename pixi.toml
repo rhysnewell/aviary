@@ -61,8 +61,8 @@ rosella = ["rosella"]
 maxbin2 = ["maxbin2"]
 concoct = ["concoct"]
 vamb = ["vamb"]
-taxvamb = ["taxvamb"]
-taxvamb-gpu = ["taxvamb"]
+taxvamb = ["vamb"]
+taxvamb-gpu = ["vamb"]
 semibin = ["semibin"]
 semibin-gpu = ["semibin","semibin-gpu"]
 comebin = ["comebin"]
@@ -177,23 +177,6 @@ concoct = "==1.1.0"
 [feature.vamb.dependencies]
 samtools = "*"
 vamb = "5.0.*"
-
-[feature.taxvamb.dependencies]
-# with pytorch = "==1.13.1", running pixi:
-# Because vamb==4.1.4.dev150+g8fa3280 depends on torch==2.5.1 and torch==1.13.1, we can conclude that vamb==4.1.4.dev150+g8fa3280 cannot be used.
-# with pytorch = "*"
-# Because vamb==4.1.4.dev150+g8fa3280 depends on torch==2.5.1 and torch==2.6.0, we can conclude that vamb==4.1.4.dev150+g8fa3280 cannot be used.
-samtools = '*'
-python = ">=3.9,<3.12"
-numpy = "==2.2.1" # Constrained by vamb pypi git dependency
-# pytorch = "==1.13.1"
-pytorch = "==2.5.1"
-pycoverm = "==0.6.2"
-# pytorch-cuda = "==12.4"
-pytorch-cuda = "*"
-
-[feature.taxvamb.pypi-dependencies]
-vamb = { git = "https://github.com/RasmussenLab/vamb.git", rev = "8fa3280" }
 
 [feature.semibin.dependencies]
 semibin = "2.1.*"

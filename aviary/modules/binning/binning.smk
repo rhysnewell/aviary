@@ -428,7 +428,7 @@ rule convert_metabuli:
 rule taxvamb:
     input:
         coverage = ancient("data/coverm.vamb.cov"),
-        fasta = ancient(config["fasta"]),
+        fasta = ancient("data/large_contigs.fasta"),
         taxonomy = "data/metabuli_taxonomy/taxonomy.tsv"
     params:
         min_bin_size = config["min_bin_size"],
