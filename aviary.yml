@@ -3,8 +3,10 @@ channels:
   - bioconda
   - anaconda
 dependencies:
-  - python >=3.8,<=3.11
-  - snakemake >=7.0.0,<=7.32.3
+  - python =3.11
+  - snakemake >=8.20.6
+  - snakemake-executor-plugin-cluster-generic =1.0.*
+  - snakemake-executor-plugin-slurm =0.11.*
   - ruamel.yaml >=0.15.99 # needs to be explicit
   - numpy
   - pandas
