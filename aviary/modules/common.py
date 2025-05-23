@@ -1,7 +1,7 @@
-import os
+import importlib.resources
 
 def pixi_run_func():
-    aviary_basedir = os.path.join(os.path.dirname(__file__), "..", "..")
-    return f"pixi run --frozen --manifest-path {aviary_basedir}/pixi.toml"
+    pixi_path = importlib.resources.path("aviary", "pixi.toml")
+    return f"pixi run --frozen --manifest-path {pixi_path}"
 
 pixi_run = pixi_run_func()
