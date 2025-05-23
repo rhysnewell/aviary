@@ -1,7 +1,7 @@
 import importlib.resources
 
 def pixi_run_func():
-    pixi_path = importlib.resources.path("aviary", "pixi.toml")
-    return f"pixi run --frozen --manifest-path {pixi_path}"
+    with importlib.resources.path("aviary", "pixi.toml") as manifest_path:
+        return f"pixi run --frozen --manifest-path {manifest_path}"
 
 pixi_run = pixi_run_func()
