@@ -450,19 +450,19 @@ rule assemble_short_reads:
         # reads1 = temporary("data/short_reads.1.fastq.gz"),
         # reads2 = temporary("data/short_reads.2.fastq.gz")
     params:
-         max_memory = config["max_memory"],
-         kmer_sizes = config["kmer_sizes"],
-         use_megahit = config["use_megahit"],
-         coassemble = config["coassemble"],
-         tmpdir = config["tmpdir"],
-         final_assembly = True
+        short_reads_1 = ",".join(config["short_reads_1"]),
+        short_reads_2 = ",".join(config["short_reads_2"]),
+        max_memory = config["max_memory"],
+        kmer_sizes = config["kmer_sizes"],
+        use_megahit = config["use_megahit"],
+        coassemble = config["coassemble"],
+        tmpdir = config["tmpdir"],
+        final_assembly = True
     threads:
         config["max_threads"]
     resources:
         mem_mb = lambda wildcards, attempt: min(int(config["max_memory"])*1024, 512*1024*attempt),
         runtime = lambda wildcards, attempt: 72*60 + 24*60*attempt,
-    log:
-        "logs/short_read_assembly.log"
     log:
         "logs/short_read_assembly.log"
     benchmark:
@@ -472,8 +472,8 @@ rule assemble_short_reads:
         # --reference-filter {config[reference_filter]} \
         f'{pixi_run} -e spades {ASSEMBLY_SCRIPTS_DIR}/'+\
         """assemble_short_reads.py \
-        --short-reads-1 {config[short_reads_1]} \
-        --short-reads-2 {config[short_reads_2]} \
+        --short-reads-1 {params.short_reads_1} \
+        --short-reads-2 {params.short_reads_2} \
         --max-memory {config[max_memory]} \
         --use-megahit {params.use_megahit} \
         --coassemble {params.coassemble} \
