@@ -8,6 +8,12 @@ from bird_tool_utils import in_tempdir
 data = os.path.join(os.path.dirname(__file__), 'data')
 
 class Tests(unittest.TestCase):
+    def test_build(self):
+        cmd = (
+            "aviary build"
+        )
+        subprocess.run(cmd.split(), check=True)
+
     def test_assembly_build_only(self):
         with in_tempdir():
             cmd = (
@@ -20,7 +26,7 @@ class Tests(unittest.TestCase):
             )
             subprocess.run(cmd, shell=True, check=True)
 
-            self.assertTrue(os.path.isdir("build_out/aviary_out"))
+            self.assertFalse(os.path.isdir("build_out/aviary_out"))
             self.assertFalse(os.path.isfile("build_out/aviary_out/data/final_contigs.fasta"))
             self.assertFalse(os.path.islink("build_out/aviary_out/assembly/final_contigs.fasta"))
 

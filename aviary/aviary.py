@@ -1014,6 +1014,21 @@ def main():
 
     add_workflow_arg(cluster_options, ['complete_cluster'])
 
+    ##########################  ~ BUILD ~   ###########################
+
+    build_options = subparsers.add_parser('build',
+                                             description='Build Aviary dependency environments.',
+                                             formatter_class=CustomHelpFormatter,
+                                             epilog=
+                                             '''
+                                                                   ......:::::: BUILD ::::::......
+
+                                             aviary build
+
+                                             ''')
+
+    add_workflow_arg(build_options, ['build'])
+
     ##########################  ~ VIRAL ~   ###########################
 
     viral_options = subparsers.add_parser('viral',
@@ -1185,6 +1200,10 @@ def main():
             logging.info("All paths set. Exiting without downloading databases. If you wish to download databases use --download")
             sys.exit(0)
 
+    if args.subparser_name == 'build' or args.build:
+        subprocess.run(pixi_run.replace("run", "install -a", 1).split(), check=True)
+        sys.exit(0)
+
     # else:
     args = manage_env_vars(args)
     if int(args.max_threads) > int(args.n_cores):
@@ -1197,24 +1216,21 @@ def main():
     processor = Processor(args)
     processor.make_config()
 
-    if args.build:
-        subprocess.run(pixi_run.replace("run", "install -a", 1).split(), check=True)
-    else:
-        try:
-            if args.subparser_name == 'assemble':
-                if args.use_unicycler:
-                    args.workflow.insert(0, "combine_assemblies")
-        except AttributeError:
-            pass
+    try:
+        if args.subparser_name == 'assemble':
+            if args.use_unicycler:
+                args.workflow.insert(0, "combine_assemblies")
+    except AttributeError:
+        pass
 
-        processor.run_workflow(cores=int(args.n_cores),
-                                local_cores=int(args.local_cores),
-                                dryrun=args.dryrun,
-                                clean=args.clean,
-                                snakemake_args=args.cmds,
-                                rerun_triggers=args.rerun_triggers,
-                                profile=args.snakemake_profile,
-                                cluster_retries=args.cluster_retries)
+    processor.run_workflow(cores=int(args.n_cores),
+                            local_cores=int(args.local_cores),
+                            dryrun=args.dryrun,
+                            clean=args.clean,
+                            snakemake_args=args.cmds,
+                            rerun_triggers=args.rerun_triggers,
+                            profile=args.snakemake_profile,
+                            cluster_retries=args.cluster_retries)
 
 def manage_env_vars(args):
     try:
