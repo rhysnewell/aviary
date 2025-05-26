@@ -4,9 +4,11 @@ import unittest
 import os
 import subprocess
 from bird_tool_utils import in_tempdir
+import pytest
 
 data = os.path.join(os.path.dirname(__file__), 'data')
 
+@pytest.mark.expensive
 class Tests(unittest.TestCase):
     def test_build(self):
         cmd = (
