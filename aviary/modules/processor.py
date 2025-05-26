@@ -85,13 +85,7 @@ def get_snakefile(file="Snakefile"):
 ################################ - Classes - ##################################
 
 class Processor:
-    def __init__(self,
-                 args,
-                 # conda_prefix=Config.get_software_db_path('CONDA_ENV_PATH', '--conda-prefix'),
-                 ):
-
-
-        self.conda_prefix = args.conda_prefix
+    def __init__(self, args):
         self.tmpdir = os.path.abspath(args.tmpdir) if args.tmpdir else None
         self.resources = args.resources
         self.output = os.path.abspath(args.output)
@@ -497,7 +491,7 @@ class Processor:
                 "snakemake --snakefile {snakefile} --directory {working_dir} "
                 "{jobs} {local_cores} --rerun-incomplete --keep-going {args} {rerun_triggers} "
                 "--configfile {config_file} --nolock "
-                "{profile} {retries} {conda_frontend} {resources} --use-conda {conda_prefix} "
+                "{profile} {retries} {resources} "
                 "{dryrun} {notemp} "
                 "{target_rule}"
             ).format(
@@ -513,8 +507,6 @@ class Processor:
                 rerun_triggers="" if (rerun_triggers is None) else "--rerun-triggers {}".format(" ".join(rerun_triggers)),
                 args=snakemake_args,
                 target_rule=workflow if workflow != "None" else "",
-                conda_prefix="--conda-prefix " + self.conda_prefix,
-                conda_frontend="--conda-frontend " + "conda",
                 resources=f"--resources mem_mb={int(self.max_memory)*1024} {self.resources}" if not dryrun else ""
             )
 

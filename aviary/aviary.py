@@ -200,14 +200,6 @@ def main():
     )
 
     base_group.add_argument(
-        '--conda-prefix', '--conda_prefix',
-        help='Path to the location of installed conda environments, or where to install new environments. \n'
-             'Can be configured within the `configure` subcommand',
-        dest='conda_prefix',
-        default=None,
-    )
-
-    base_group.add_argument(
         '--tmpdir', '--tempdir', '--tmp-dir', '--tmp_dir', '--tmp', '--temp', '--temp-dir', '--temp_dir',
         help='Path to the location that will be treated used for temporary files. If none is specified, the TMPDIR \n'
              'environment variable will be used. Can be configured within the `configure` subcommand',
@@ -1159,9 +1151,6 @@ def main():
 
     if args.subparser_name == 'configure':
         # Set the environment variables if manually configuring
-        if args.conda_prefix is not None:
-            Config.set_db_path(args.conda_prefix, db_name='CONDA_ENV_PATH')
-
         if args.tmpdir is not None:
             Config.set_db_path(args.tmpdir, db_name='TMPDIR')
 
@@ -1184,7 +1173,6 @@ def main():
             Config.set_db_path(args.metabuli_db_path, db_name='METABULI_DB_PATH')
 
         logging.info("The current aviary environment variables are:")
-        logging.info(f"CONDA_ENV_PATH: {Config.get_software_db_path('CONDA_ENV_PATH', '--conda-prefix')}")
         logging.info(f"TMPDIR: {Config.get_software_db_path('TMPDIR', '--tmpdir')}")
         logging.info(f"GTDBTK_DATA_PATH: {Config.get_software_db_path('GTDBTK_DATA_PATH', '--gtdb-path')}")
         logging.info(f"EGGNOG_DATA_DIR: {Config.get_software_db_path('EGGNOG_DATA_DIR', '--eggnog-db-path')}")
@@ -1230,9 +1218,6 @@ def main():
                             cluster_retries=args.cluster_retries)
 
 def manage_env_vars(args):
-    if args.conda_prefix is None:
-        args.conda_prefix = Config.get_software_db_path('CONDA_ENV_PATH', '--conda-prefix')
-
     try:
         if args.gtdb_path is None:
             args.gtdb_path = Config.get_software_db_path('GTDBTK_DATA_PATH', '--gtdb-path')
