@@ -30,6 +30,7 @@ pixi = "*"
 pytest = "*"
 ipython = "*"
 toml = "*"
+bird_tool_utils_python = "*"
 
 [environments]
 default = ["main"]

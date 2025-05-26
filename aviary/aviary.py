@@ -19,6 +19,7 @@
 ###############################################################################
 import aviary.config.config as Config
 from aviary.modules.processor import Processor
+from aviary.modules.common import pixi_run
 from .__init__ import __version__, MEDAKA_MODELS, LONG_READ_TYPES, COVERAGE_JOB_STRATEGIES, COVERAGE_JOB_CUTOFF
 __author__ = "Rhys Newell"
 __copyright__ = "Copyright 2022"
@@ -35,6 +36,7 @@ import argparse
 import logging
 import os
 from datetime import datetime
+import subprocess
 
 # Debug
 debug={1:logging.CRITICAL,
@@ -265,7 +267,7 @@ def main():
 
     base_group.add_argument(
         '--build',
-        help='Build conda environments necessary to run the pipeline, and then exit. Equivalent to "--snakemake-cmds \'--conda-create-envs-only True \' ". Other inputs should be specified as if running normally so that the right set of conda environments is built.',
+        help='Build Aviary dependency environments, and then exit.',
         type=str2bool,
         nargs='?',
         const=True,
@@ -1196,26 +1198,23 @@ def main():
     processor.make_config()
 
     if args.build:
+        subprocess.run(pixi_run.replace("run", "install -a", 1).split(), check=True)
+    else:
         try:
-            args.cmds = args.cmds + '--conda-create-envs-only '
-        except TypeError:
-            args.cmds = '--conda-create-envs-only '
+            if args.subparser_name == 'assemble':
+                if args.use_unicycler:
+                    args.workflow.insert(0, "combine_assemblies")
+        except AttributeError:
+            pass
 
-    try:
-        if args.subparser_name == 'assemble':
-            if args.use_unicycler:
-                args.workflow.insert(0, "combine_assemblies")
-    except AttributeError:
-        pass
-
-    processor.run_workflow(cores=int(args.n_cores),
-                            local_cores=int(args.local_cores),
-                            dryrun=args.dryrun,
-                            clean=args.clean,
-                            snakemake_args=args.cmds,
-                            rerun_triggers=args.rerun_triggers,
-                            profile=args.snakemake_profile,
-                            cluster_retries=args.cluster_retries)
+        processor.run_workflow(cores=int(args.n_cores),
+                                local_cores=int(args.local_cores),
+                                dryrun=args.dryrun,
+                                clean=args.clean,
+                                snakemake_args=args.cmds,
+                                rerun_triggers=args.rerun_triggers,
+                                profile=args.snakemake_profile,
+                                cluster_retries=args.cluster_retries)
 
 def manage_env_vars(args):
     try:

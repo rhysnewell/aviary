@@ -1293,10 +1293,12 @@ environments:
       - conda: https://conda.anaconda.org/conda-forge/noarch/annotated-types-0.7.0-pyhd8ed1ab_1.conda
       - conda: https://conda.anaconda.org/conda-forge/noarch/appdirs-1.4.4-pyhd8ed1ab_1.conda
       - conda: https://conda.anaconda.org/conda-forge/noarch/archspec-0.2.5-pyhd8ed1ab_0.conda
+      - conda: https://conda.anaconda.org/conda-forge/noarch/argparse-manpage-birdtools-1.7.0-pyhd8ed1ab_1.conda
       - conda: https://conda.anaconda.org/conda-forge/noarch/asttokens-3.0.0-pyhd8ed1ab_1.conda
       - conda: https://conda.anaconda.org/conda-forge/noarch/attrs-25.3.0-pyh71513ae_0.conda
       - conda: https://conda.anaconda.org/conda-forge/linux-64/bcrypt-4.3.0-py311h9e33e62_0.conda
       - conda: https://conda.anaconda.org/conda-forge/linux-64/biopython-1.85-py311h9ecbd09_1.conda
+      - conda: https://conda.anaconda.org/bioconda/noarch/bird_tool_utils_python-0.4.1-pyhdfd78af_0.tar.bz2
       - conda: https://conda.anaconda.org/conda-forge/noarch/boltons-24.0.0-pyhd8ed1ab_1.conda
       - conda: https://conda.anaconda.org/conda-forge/noarch/boto3-1.37.38-pyhd8ed1ab_0.conda
       - conda: https://conda.anaconda.org/conda-forge/noarch/botocore-1.37.38-pyge310_1234567_0.conda
@@ -3765,6 +3767,8 @@ packages:
   - python >=3.9
   license: Apache-2.0
   license_family: Apache
+  purls:
+  - pkg:pypi/argparse-manpage-birdtools?source=hash-mapping
   size: 17788
   timestamp: 1736734701039
 - conda: https://conda.anaconda.org/conda-forge/linux-64/aria2-1.37.0-hbc8128a_2.conda
@@ -4466,6 +4470,8 @@ packages:
   - python >=3.6
   license: GPL-3.0-or-later
   license_family: GPL
+  purls:
+  - pkg:pypi/bird-tool-utils?source=hash-mapping
   size: 30190
   timestamp: 1665732095655
 - conda: https://conda.anaconda.org/bioconda/linux-64/blast-2.16.0-h66d330f_5.tar.bz2
