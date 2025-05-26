@@ -1096,7 +1096,7 @@ def main():
                                             '''
                                                                ......:::::: CONFIGURE ::::::......
 
-                                            aviary configure --conda-prefix ~/.conda --gtdb-path ~/gtdbtk/release207/ --temp-dir /path/to/new/temp
+                                            aviary configure --gtdb-path ~/gtdbtk/release207/ --temp-dir /path/to/new/temp
 
                                             ''')
 

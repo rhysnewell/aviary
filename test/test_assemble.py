@@ -24,7 +24,6 @@ class Tests(unittest.TestCase):
                 f"-1 {FORWARD_READS} "
                 f"-2 {REVERSE_READS} "
                 f"--output {tmpdir}/test "
-                f"--conda-prefix {path_to_conda} "
                 f"--dryrun --tmpdir {tmpdir} "
                 f"--snakemake-cmds \" --quiet\" "
             )

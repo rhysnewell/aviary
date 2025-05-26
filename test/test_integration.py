@@ -47,7 +47,6 @@ class Tests(unittest.TestCase):
             f"-o {output_dir}/aviary_out "
             f"-1 {data}/wgsim.1.fq.gz "
             f"-2 {data}/wgsim.2.fq.gz "
-            f"--conda-prefix {path_to_conda} "
             f"-n 32 -t 32 "
         )
         subprocess.run(cmd, shell=True, check=True)
@@ -70,7 +69,6 @@ class Tests(unittest.TestCase):
             f"-1 {data}/wgsim.1.fq.gz {output_dir}/wgsimagain.1.fq.gz "
             f"-2 {data}/wgsim.2.fq.gz {output_dir}/wgsimagain.2.fq.gz "
             f"--coassemble yes "
-            f"--conda-prefix {path_to_conda} "
             f"-n 32 -t 32 "
         )
         subprocess.run(cmd, shell=True, check=True)
@@ -90,7 +88,6 @@ class Tests(unittest.TestCase):
             f"-l {data}/pbsim.fq.gz "
             f"--longread-type ont "
             f"--min-read-size 10 --min-mean-q 1 "
-            f"--conda-prefix {path_to_conda} "
             f"-n 32 -t 32 "
         )
         subprocess.run(cmd, shell=True, check=True)
@@ -107,7 +104,6 @@ class Tests(unittest.TestCase):
             f"-o {output_dir}/aviary_out "
             f"-1 {data}/wgsim.1.fq.gz "
             f"-2 {data}/wgsim.2.fq.gz "
-            f"--conda-prefix {path_to_conda} "
             f"-n 32 -t 32 "
             f"--strict "
         )
@@ -149,7 +145,6 @@ class Tests(unittest.TestCase):
             f"--coverage-job-strategy always "
             f"--coverage-samples-per-job 2 "
             f"--min-read-size 10 --min-mean-q 1 "
-            f"--conda-prefix {path_to_conda} "
             f"-n 32 -t 32 "
         )
         subprocess.run(cmd, shell=True, check=True)
@@ -176,7 +171,6 @@ class Tests(unittest.TestCase):
             f"-l {data}/pbsim.fq.gz "
             f"--longread-type ont "
             f"--min-read-size 10 --min-mean-q 1 "
-            f"--conda-prefix {path_to_conda} "
             f"-n 32 -t 32 "
             f"--strict "
         )
@@ -202,7 +196,6 @@ class Tests(unittest.TestCase):
             f"-l {data}/pbsim.fq.gz "
             f"--longread-type ont "
             f"--min-read-size 10 --min-mean-q 1 "
-            f"--conda-prefix {path_to_conda} "
             f"-n 32 -t 32 "
             f"--strict "
         )
@@ -233,7 +226,6 @@ class Tests(unittest.TestCase):
             f"--skip-binners rosella vamb metabat "
             f"--skip-qc "
             f"--refinery-max-iterations 0 "
-            f"--conda-prefix {path_to_conda} "
             f"-n 32 -t 32 "
             f"--strict "
         )
@@ -270,7 +262,6 @@ class Tests(unittest.TestCase):
             f"--skip-binners rosella vamb metabat "
             f"--skip-qc "
             f"--refinery-max-iterations 0 "
-            f"--conda-prefix {path_to_conda} "
             f"-n 32 -t 32 "
             f"--strict "
         )
@@ -312,7 +303,6 @@ class Tests(unittest.TestCase):
             f"--skip-binners rosella semibin metabat "
             f"--skip-qc "
             f"--refinery-max-iterations 0 "
-            f"--conda-prefix {path_to_conda} "
             f"-n 32 -t 32 "
             f"--strict "
         )
@@ -349,7 +339,6 @@ class Tests(unittest.TestCase):
             f"--extra-binners taxvamb "
             f"--skip-qc "
             f"--refinery-max-iterations 0 "
-            f"--conda-prefix {path_to_conda} "
             f"-n 32 -t 32 "
             f"--strict "
         )
@@ -386,7 +375,6 @@ class Tests(unittest.TestCase):
             f"--extra-binners comebin "
             f"--skip-qc "
             f"--refinery-max-iterations 0 "
-            f"--conda-prefix {path_to_conda} "
             f"-n 32 -t 32 "
             f"--strict "
         )
@@ -410,7 +398,6 @@ class Tests(unittest.TestCase):
             f"-o {output_dir}/aviary_out "
             f"-1 {data}/wgsim.1.fq.gz "
             f"-2 {data}/wgsim.2.fq.gz "
-            f"--conda-prefix {path_to_conda} "
             f"-n 32 -t 32 --local-cores 1 "
             f"--strict "
             f"--snakemake-profile aqua --cluster-retries 3 "
@@ -448,7 +435,6 @@ class Tests(unittest.TestCase):
             f"--request-gpu "
             f"--skip-qc "
             f"--refinery-max-iterations 0 "
-            f"--conda-prefix {path_to_conda} "
             f"-n 32 -t 32 --local-cores 1 "
             f"--strict "
             f"--snakemake-profile aqua --cluster-retries 0 "
