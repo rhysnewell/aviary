@@ -28,7 +28,6 @@ import shutil
 import unittest
 
 data = os.path.join(os.path.dirname(__file__), 'data')
-path_to_conda = os.path.join(data, '.conda')
 
 @pytest.mark.expensive
 class Tests(unittest.TestCase):

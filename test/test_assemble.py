@@ -6,7 +6,6 @@ import tempfile
 import extern
 
 path_to_data = os.path.join(os.path.dirname(os.path.realpath(__file__)),'data')
-path_to_conda = os.path.join(path_to_data,'.conda')
 
 FORWARD_READS = os.path.join(path_to_data, "wgsim.1.fq.gz")
 REVERSE_READS = os.path.join(path_to_data, "wgsim.2.fq.gz")
