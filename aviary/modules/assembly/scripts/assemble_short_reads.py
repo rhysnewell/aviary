@@ -140,7 +140,10 @@ if __name__ == '__main__':
         read_set2 = args.short_reads_2.split(',')
     else:
         read_set2 = 'none'
-    
+
+    if args.tmp_dir == "None" or args.tmp_dir == "none":
+        args.tmp_dir = ""
+
     # Initialize log file
     with open(args.log, 'w') as logf:
         pass
