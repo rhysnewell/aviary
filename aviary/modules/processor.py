@@ -489,9 +489,9 @@ class Processor:
         for workflow in self.workflows:
             cmd = (
                 "snakemake --snakefile {snakefile} --directory {working_dir} "
-                "{jobs} {local_cores} --rerun-incomplete --keep-going {args} {rerun_triggers} "
+                "{jobs} {local_cores} --rerun-incomplete --keep-going {args} {rerun_triggers} {resources} "
                 "--configfile {config_file} --nolock "
-                "{profile} {retries} {resources} "
+                "{profile} {retries} "
                 "{dryrun} {notemp} "
                 "{target_rule}"
             ).format(
