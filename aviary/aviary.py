@@ -544,6 +544,13 @@ def main():
         required=False,
     )
 
+    annotation_group.add_argument(
+        '--metabuli-db-path', '--metabuli_db_path',
+        help='Path to the local metabuli database',
+        dest='metabuli_db_path',
+        required=False,
+    )
+
     ####################################################################
 
     binning_group = argparse.ArgumentParser(formatter_class=CustomHelpFormatter,
