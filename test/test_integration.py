@@ -22,12 +22,18 @@
 #=======================================================================
 
 import pytest
+import os
 import os.path
 import subprocess
 import shutil
 import unittest
 
 data = os.path.join(os.path.dirname(__file__), 'data')
+
+if os.environ.get("TEST_REQUEST_GPU", "0") == "1":
+    request_gpu = "--request-gpu"
+else:
+    request_gpu = ""
 
 @pytest.mark.expensive
 class Tests(unittest.TestCase):
@@ -259,6 +265,7 @@ class Tests(unittest.TestCase):
             f"-2 {data}/wgsim.2.fq.gz {output_dir}/wgsim2.2.fq.gz "
             f"--binning-only "
             f"--skip-binners rosella vamb metabat "
+            f"{request_gpu} "
             f"--skip-qc "
             f"--refinery-max-iterations 0 "
             f"-n 32 -t 32 "
@@ -336,7 +343,7 @@ class Tests(unittest.TestCase):
             f"--binning-only "
             f"--skip-binners rosella semibin metabat vamb "
             f"--extra-binners taxvamb "
-            f"--request-gpu "
+            f"{request_gpu} "
             f"--skip-qc "
             f"--refinery-max-iterations 0 "
             f"-n 32 -t 32 "
@@ -373,6 +380,7 @@ class Tests(unittest.TestCase):
             f"--binning-only "
             f"--skip-binners rosella semibin metabat vamb "
             f"--extra-binners comebin "
+            f"{request_gpu} "
             f"--skip-qc "
             f"--refinery-max-iterations 0 "
             f"-n 32 -t 32 "

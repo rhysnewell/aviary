@@ -1,6 +1,6 @@
 [project]
 authors = ["Rhys Newell <rhys.newell94@gmail.com>"]
-channels = ["conda-forge", "bioconda", "pytorch"]
+channels = ["conda-forge", "bioconda"]
 name = "aviary"
 platforms = ["linux-64"]
 
@@ -64,8 +64,7 @@ maxbin2 = ["maxbin2"]
 concoct = ["concoct"]
 vamb = ["vamb"]
 taxvamb = ["vamb"]
-taxvamb-gpu = ["vamb"]
-#, "vamb-gpu"]
+taxvamb-gpu = ["vamb", "vamb-gpu"]
 semibin = ["semibin"]
 semibin-gpu = ["semibin","semibin-gpu"]
 comebin = ["comebin"]
@@ -181,28 +180,31 @@ concoct = "==1.1.0"
 samtools = "*"
 vamb = "5.0.*"
 
-# [feature.vamb-gpu.dependencies]
-# pytorch = "*"
-# pytorch-cuda = "==12.1"
-# libcublas = { version = "*", channel = "nvidia" }
-# pixi install --manifest-path aviary/pixi.toml -e taxvamb-gpu
-# pixi run --manifest-path aviary/pixi.toml -e dev python test/test_integration.py Tests.test_short_read_recovery_taxvamb
+[feature.vamb-gpu]
+system-requirements = { cuda = "12.1" }
+channels = ["pytorch", "nvidia"]
+
+[feature.vamb-gpu.dependencies]
+pytorch-gpu = "*"
 
 [feature.semibin.dependencies]
 semibin = "2.1.*"
 
+[feature.semibin-gpu]
+system-requirements = { cuda = "12.1" }
+
 [feature.semibin-gpu.dependencies]
-# pytorch-gpu = "==2.4.0"
 pytorch-gpu = "*"
 
 [feature.comebin.dependencies]
 comebin = "1.0.*"
 
-[feature.comebin-gpu.dependencies]
-# pytorch = "1.10.2"
-pytorch = "*"
-# pytorch-cuda = "11.8"
-pytorch-cuda = "*"
-# mkl = "2024.0"
-mkl = "*"
+[feature.comebin-gpu]
+system-requirements = { cuda = "11.8" }
+channels = ["nvidia", "pytorch"]
+channel-priority = "disabled"
 
+[feature.comebin-gpu.dependencies]
+pytorch = { version = "==1.10.2", channel = "pytorch" }
+pytorch-cuda = { version = "==11.8", channel = "pytorch" }
+mkl = "==2024.0"
