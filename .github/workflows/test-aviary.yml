@@ -16,9 +16,13 @@ jobs:
           curl -fsSL https://pixi.sh/install.sh | bash
           echo "$HOME/.pixi/bin" >> $GITHUB_PATH
 
+      - name: Create dev environment
+        run: |
+          pixi run --manifest-path aviary/pixi.toml -e dev postinstall
+          pixi run --manifest-path aviary/pixi.toml -e dev pixi info
+
       - name: Show environment info
         run: |
-          pixi run --manifest-path aviary/pixi.toml -e dev pixi info
           pixi run --manifest-path aviary/pixi.toml -e dev pixi list
 
       - name: Run tests with Pixi
@@ -48,6 +52,7 @@ jobs:
 
       - name: Create dev environment
         run: |
+          pixi run --manifest-path aviary/pixi.toml -e dev postinstall
           pixi run --manifest-path aviary/pixi.toml -e dev pixi info
 
       - name: Show environment info

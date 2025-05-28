@@ -3,15 +3,14 @@ channels:
 - conda-forge
 - bioconda
 dependencies:
-- pigz=2.8
-- numpy=2.2.5
-- snakemake=7.32.3
-- bbmap=39.19
-- pyopenssl=25.0.0
 - biopython=1.85
-- pandas=2.2.3
-- python=3.11.0
-- conda=25.1.1
 - extern=0.4.1
-- ruamel.yaml=0.18.10
-- parallel=20250222
+- numpy=2.2.6
+- pandas=2.2.3
+- parallel=20250422
+- pigz=2.8
+- pixi=0.47.0
+- pyopenssl=25.1.0
+- python=3.11.0
+- ruamel.yaml=0.18.11
+- snakemake=7.32.3

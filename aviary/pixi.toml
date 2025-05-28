@@ -16,15 +16,16 @@ snakemake = ">=7.0.0,<=7.32.3"
 numpy = "*"
 pandas = "*"
 biopython = "*"
-conda = "==25.1.1"
 pigz = ">=2.6"
 parallel = "*"
 extern = "*"
 pyopenssl = ">22.1.0"
 pixi = "*"
+pip = "*"
 
-[feature.main.pypi-dependencies]
-"aviary-genome" = { path = "..", editable = true }
+[tasks]
+postinstall = "pip install --no-build-isolation --no-deps --disable-pip-version-check -e .."
+update_deps = { cmd = "python ../admin/build_dep_defs_from_pixi.py", depends-on = ["postinstall"] }
 
 [feature.dev.dependencies]
 pytest = "*"
@@ -64,6 +65,7 @@ concoct = ["concoct"]
 vamb = ["vamb"]
 taxvamb = ["vamb"]
 taxvamb-gpu = ["vamb"]
+#, "vamb-gpu"]
 semibin = ["semibin"]
 semibin-gpu = ["semibin","semibin-gpu"]
 comebin = ["comebin"]
@@ -178,6 +180,13 @@ concoct = "==1.1.0"
 [feature.vamb.dependencies]
 samtools = "*"
 vamb = "5.0.*"
+
+# [feature.vamb-gpu.dependencies]
+# pytorch = "*"
+# pytorch-cuda = "==12.1"
+# libcublas = { version = "*", channel = "nvidia" }
+# pixi install --manifest-path aviary/pixi.toml -e taxvamb-gpu
+# pixi run --manifest-path aviary/pixi.toml -e dev python test/test_integration.py Tests.test_short_read_recovery_taxvamb
 
 [feature.semibin.dependencies]
 semibin = "2.1.*"

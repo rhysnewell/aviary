@@ -336,6 +336,7 @@ class Tests(unittest.TestCase):
             f"--binning-only "
             f"--skip-binners rosella semibin metabat vamb "
             f"--extra-binners taxvamb "
+            f"--request-gpu "
             f"--skip-qc "
             f"--refinery-max-iterations 0 "
             f"-n 32 -t 32 "
