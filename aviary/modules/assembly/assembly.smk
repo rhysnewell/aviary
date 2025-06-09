@@ -69,6 +69,28 @@ rule flye_assembly:
     script:
         "scripts/run_flye.py"
 
+rule metamdbg_assembly:
+    input:
+        fastq = "data/long_reads.fastq.gz"
+    output:
+        fasta = "data/metamdbg/contigs.fasta.gz",
+        log = "data/metamdbg/metaMDBG.log", # Some info here is surplus to snakemake log file.
+        junk1 = temp(directory("data/metamdbg/tmp/")),
+    params:
+        long_read_type = config["long_read_type"]
+    threads:
+        config["max_threads"]
+    resources: # TODO: Currently these are copied from flye_assembly, but they should be adjusted
+        mem_mb = lambda wildcards, attempt: min(int(config["max_memory"])*1024, 512*1024*attempt),
+        runtime = lambda wildcards, attempt: 24*60 + 24*60*attempt,
+    log:
+        "logs/metamdbg_assembly.log"
+    conda:
+        "envs/metamdbg.yaml"
+    benchmark:
+        "benchmarks/metamdbg_assembly.benchmark.txt"
+    script:
+        "scripts/run_metamdbg.py"
 
 # Polish the long reads assembly with Racon or Medaka
 rule polish_metagenome_flye:
