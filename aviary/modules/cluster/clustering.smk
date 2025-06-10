@@ -1,3 +1,5 @@
+from aviary.modules.common import pixi_run
+
 onstart:
     import os
     import sys
