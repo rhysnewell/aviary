@@ -1163,6 +1163,8 @@ def main():
     # If --download is given with no arguments, use all choices
     if hasattr(args, 'download') and args.download == []:
         args.download = download_databases
+    if hasattr(args, 'download') and args.download is None:
+        args.download = []
 
     if args.log:
         if os.path.isfile(args.log):
