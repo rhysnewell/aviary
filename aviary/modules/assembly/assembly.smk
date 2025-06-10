@@ -580,8 +580,6 @@ rule pool_reads:
         metabat_done = "data/metabat_bins/done",
     output:
         list = "data/list_of_lists.txt"
-    conda:
-        "envs/pysam.yaml"
     benchmark:
         "benchmarks/pool_reads.benchmark.txt"
     shell:
@@ -601,8 +599,6 @@ rule get_read_pools:
         list = "data/list_of_lists.txt"
     output:
         "data/binned_reads/done"
-    conda:
-         "envs/mfqe.yaml"
     threads:
         config["max_threads"]
     resources:
@@ -613,7 +609,15 @@ rule get_read_pools:
     benchmark:
         "benchmarks/get_read_pools.benchmark.txt"
     script:
-         'scripts/get_binned_reads.py'
+        f'{pixi_run} -e mfqe {ASSEMBLY_SCRIPTS_DIR}/'+\
+        """get_binned_reads.py \
+        --long-reads {config[long_reads]} \
+        --short-reads-1 {config[short_reads_1]} \
+        --short-reads-2 {config[short_reads_2]} \
+        --threads {threads} \
+        --output {output} \
+        --log {log}
+        """
 
 # Short and long reads for each bin are hybrid assembled with Unicycler
 rule assemble_pools:
@@ -631,12 +635,10 @@ rule assemble_pools:
         "logs/assemble_pools.log"
     output:
         fasta = "data/unicycler_combined.fa"
-    conda:
-        "envs/final_assembly.yaml"
     benchmark:
         "benchmarks/assemble_pools.benchmark.txt"
     shell:
-        f'{pixi_run} {ASSEMBLY_SCRIPTS_DIR}/'+\
+        f'{pixi_run} -e final-assembly {ASSEMBLY_SCRIPTS_DIR}/'+\
         """assemble_pools.py \
         --input-list {input.list} \
         --input-fasta {input.fasta} \
