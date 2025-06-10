@@ -69,12 +69,17 @@ semibin = ["semibin"]
 semibin-gpu = ["semibin","semibin-gpu"]
 comebin = ["comebin"]
 comebin-gpu = ["comebin", "comebin-gpu"]
+eggnog = ["eggnog"]
+gtdbtk = ["gtdbtk"]
 
 [feature.metabuli.dependencies]
 metabuli = "~=1.0.0"
 
 [feature.singlem.dependencies]
 singlem = ">=0.16.0"
+
+[feature.singlem.pypi-dependencies]
+bird-tool-utils = "*"
 
 [feature.chopper.dependencies]
 chopper = ">=0.6"
@@ -208,3 +213,11 @@ channel-priority = "disabled"
 pytorch = { version = "==1.10.2", channel = "pytorch" }
 pytorch-cuda = { version = "==11.8", channel = "pytorch" }
 mkl = "==2024.0"
+
+[feature.eggnog.dependencies]
+eggnog-mapper =  ">=2.1.8"
+parallel = "*"
+
+[feature.gtdbtk.dependencies]
+gtdbtk = "==2.4.0"
+fastani = "*"
