@@ -87,9 +87,8 @@ rule run_galah:
         max_contamination = config["max_contamination"],
     threads:
         config['max_threads']
-    conda:
-        "../../envs/coverm.yaml"
     shell:
+        f"{pixi_run} -e coverm "
         "galah cluster -t {threads} --checkm-tab-table {input.checkm} " 
         "--genome-fasta-list {input.genome_list} --output-cluster-definition {output.dereplicated_set} "
         "--ani {params.derep_ani} --precluster-ani {params.precluster_ani} --precluster-method {params.precluster_method} "
@@ -167,16 +166,17 @@ rule generate_pangenomes:
         pggb_params = config["pggb_params"]
     resources:
         mem_mb=int(config["max_memory"])*512
-    conda:
-        'envs/pggb.yaml'
     threads:
         config['max_threads']
     benchmark:
         'benchmarks/pggb.benchmark.txt'
     shell:
         'mkdir -p {output.pangenomes_output}; '
-        'cat {input.pggb_metadata} | parallel -j1 --colsep \'\t\' '
-        '"samtools faidx {{1}}; pggb -i {{1}} -n {{2}} -o {output.pangenomes_output}/{{3}} -t {threads} -p {params.derep_ani} -m {params.pggb_params}"'
+        'cat {input.pggb_metadata} | '
+        f'{pixi_run} -e pggb '
+        'parallel -j1 --colsep \'\t\' '
+        '"samtools faidx {{1}}; '
+        'pggb -i {{1}} -n {{2}} -o {output.pangenomes_output}/{{3}} -t {threads} -p {params.derep_ani} -m {params.pggb_params}"'
 
 rule complete_cluster:
     input:

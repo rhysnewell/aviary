@@ -74,6 +74,8 @@ comebin-gpu = ["comebin", "comebin-gpu"]
 # Annotation
 eggnog = ["eggnog"]
 gtdbtk = ["gtdbtk"]
+# Clustering
+pggb = ["pggb"]
 
 [feature.metabuli.dependencies]
 metabuli = "~=1.0.0"
@@ -234,3 +236,8 @@ parallel = "*"
 [feature.gtdbtk.dependencies]
 gtdbtk = "==2.4.0"
 fastani = "*"
+
+[feature.pggb.dependencies]
+parallel = "*"
+pggb = "*"
+samtools = "*"

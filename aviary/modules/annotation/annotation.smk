@@ -205,7 +205,7 @@ rule eggnog:
     shell:
         # 'download_eggnog_data.py --data_dir {input.eggnog_db} -y; '
         'mkdir -p data/eggnog/; '
-        f'find {{input.mag_folder}}/*.{{params.mag_extension}} | parallel -j1 \'{pixi_run} -e eggnog emapper.py --data_dir {{params.eggnog_db}} '
+        f'find {{input.mag_folder}}/*.{{params.mag_extension}} | {pixi_run} -e eggnog parallel -j1 \'emapper.py --data_dir {{params.eggnog_db}} '
         '--dmnd_db {params.eggnog_db}/*dmnd --cpu {threads} -m diamond --itype genome --genepred prodigal -i {{}} '
         '--output_dir data/eggnog/ --temp_dir {params.tmpdir} -o {{/.}} || echo "Genome already annotated"\' '
         '> {log} 2>&1; '
