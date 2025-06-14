@@ -63,7 +63,8 @@ def get_num_samples():
 
 rule prepare_binning_files:
     input:
-        input_fasta = config["fasta"]
+        large_contigs_done = touch("data/done/filter_contigs_by_size.done"),
+        input_fasta = "data/large_contigs.fasta",
     output:
         maxbin_coverage = "data/maxbin.cov.list",
         metabat_coverage = "data/coverm.cov"
@@ -129,7 +130,8 @@ def select_split_samples(wildcards, read_type):
 
 rule prepare_binning_files_split:
     input:
-        input_fasta = config["fasta"]
+        large_contigs_done = touch("data/done/filter_contigs_by_size.done"),
+        input_fasta = "data/large_contigs.fasta",
     output:
         maxbin_coverage = "data/{split}/maxbin.cov.list",
         metabat_coverage = "data/{split}/coverm.cov"
@@ -225,7 +227,8 @@ rule get_bam_indices:
 
 rule maxbin2:
     input:
-        fasta = ancient(config["fasta"]),
+        large_contigs_done = touch("data/done/filter_contigs_by_size.done"),
+        fasta = "data/large_contigs.fasta",
         maxbin_cov = ancient("data/maxbin.cov.list")
     params:
         min_contig_size = config["min_contig_size"],
@@ -252,7 +255,8 @@ rule maxbin2:
 
 rule concoct:
     input:
-        fasta = ancient(config["fasta"]),
+        large_contigs_done = touch("data/done/filter_contigs_by_size.done"),
+        fasta = "data/large_contigs.fasta",
         bam_done = ancient("data/binning_bams/done")
     params:
         min_contig_size = config["min_contig_size"],
@@ -288,7 +292,8 @@ rule vamb_jgi_filter:
     Outputs a coverage file containing no contigs smaller than minimum contig size
     """
     input:
-        fasta = ancient(config["fasta"]),
+        large_contigs_done = touch("data/done/filter_contigs_by_size.done"),
+        fasta = "data/large_contigs.fasta",
         done = ancient("data/coverm.cov")
     output:
         vamb_bams_done = "data/coverm.filt.cov"
@@ -363,7 +368,8 @@ rule taxvamb_abundance_tsv:
     and the values in the TSV file being precomputed abundances.
     """
     input:
-        fasta = ancient(config["fasta"]),
+        large_contigs_done = touch("data/done/filter_contigs_by_size.done"),
+        fasta = "data/large_contigs.fasta",
         done = ancient("data/coverm.filt.cov")
     output:
         vamb_bams_done = "data/coverm.vamb.cov"
@@ -386,7 +392,8 @@ rule taxvamb_abundance_tsv:
 
 rule metabuli_taxonomy:
     input:
-        fasta = ancient(config["fasta"]),
+        large_contigs_done = touch("data/done/filter_contigs_by_size.done"),
+        fasta = "data/large_contigs.fasta",
     output:
         "data/metabuli_taxonomy/done"
     threads:
@@ -463,7 +470,8 @@ rule taxvamb:
 rule metabat2:
     input:
         coverage = ancient("data/coverm.cov"),
-        fasta = ancient(config["fasta"])
+        large_contigs_done = touch("data/done/filter_contigs_by_size.done"),
+        fasta = "data/large_contigs.fasta"
     params:
         min_contig_size = max(int(config["min_contig_size"]), 1500),
         min_bin_size = config["min_bin_size"],
@@ -490,7 +498,8 @@ rule metabat2:
 rule metabat_spec:
     input:
         coverage = ancient("data/coverm.cov"),
-        fasta = ancient(config["fasta"])
+        large_contigs_done = touch("data/done/filter_contigs_by_size.done"),
+        fasta = "data/large_contigs.fasta"
     output:
         'data/metabat_bins_spec/done'
     params:
@@ -516,7 +525,8 @@ rule metabat_spec:
 rule metabat_sspec:
     input:
         coverage = ancient("data/coverm.cov"),
-        fasta = ancient(config["fasta"])
+        large_contigs_done = touch("data/done/filter_contigs_by_size.done"),
+        fasta = "data/large_contigs.fasta"
     output:
         'data/metabat_bins_sspec/done'
     params:
@@ -542,7 +552,8 @@ rule metabat_sspec:
 rule metabat_sens:
     input:
         coverage = ancient("data/coverm.cov"),
-        fasta = ancient(config["fasta"])
+        large_contigs_done = touch("data/done/filter_contigs_by_size.done"),
+        fasta = "data/large_contigs.fasta"
     output:
         'data/metabat_bins_sens/done'
     params:
@@ -568,7 +579,8 @@ rule metabat_sens:
 rule metabat_ssens:
     input:
         coverage = ancient("data/coverm.cov"),
-        fasta = ancient(config["fasta"])
+        large_contigs_done = touch("data/done/filter_contigs_by_size.done"),
+        fasta = "data/large_contigs.fasta"
     output:
         'data/metabat_bins_ssens/done'
     params:
@@ -597,7 +609,8 @@ rule rosella:
     """
     input:
         coverage = ancient("data/coverm.cov"),
-        fasta = ancient(config["fasta"])
+        large_contigs_done = touch("data/done/filter_contigs_by_size.done"),
+        fasta = "data/large_contigs.fasta"
     params:
         min_contig_size = config["min_contig_size"],
         min_bin_size = config["min_bin_size"],
@@ -623,7 +636,8 @@ rule rosella:
 
 rule semibin:
     input:
-        fasta = ancient(config["fasta"]),
+        large_contigs_done = touch("data/done/filter_contigs_by_size.done"),
+        fasta = "data/large_contigs.fasta",
         bams_indexed = ancient("data/binning_bams/done")
     params:
         # Can't use premade model with multiple samples, so disregard if provided
@@ -663,7 +677,8 @@ rule semibin:
 
 rule comebin:
     input:
-        fasta = ancient(config["fasta"]),
+        large_contigs_done = touch("data/done/filter_contigs_by_size.done"),
+        fasta = "data/large_contigs.fasta",
         bams_indexed = ancient("data/binning_bams/done")
     output:
         done = "data/comebin_bins/done"
@@ -790,7 +805,8 @@ rule refine_rosella:
         checkm = ancient('data/rosella_bins/checkm.out'),
         rosella = ancient('data/rosella_bins/done'),
         coverage = ancient("data/coverm.cov"),
-        fasta = ancient(config["fasta"]),
+        large_contigs_done = touch("data/done/filter_contigs_by_size.done"),
+        fasta = "data/large_contigs.fasta",
         # kmers = "data/rosella_bins/kmer_frequencies.tsv"
     output:
         'data/rosella_refined/done'
@@ -839,7 +855,8 @@ rule refine_metabat2:
         checkm = ancient('data/metabat_bins_2/checkm.out'),
         rosella = ancient('data/metabat_bins_2/done'),
         coverage = ancient("data/coverm.cov"),
-        fasta = ancient(config["fasta"]),
+        large_contigs_done = touch("data/done/filter_contigs_by_size.done"),
+        fasta = "data/large_contigs.fasta",
         # kmers = "data/rosella_bins/kmer_frequencies.tsv"
     output:
         'data/metabat2_refined/done'
@@ -888,7 +905,8 @@ rule refine_semibin:
         checkm = ancient('data/semibin_bins/checkm.out'),
         rosella = ancient('data/semibin_bins/done'),
         coverage = ancient("data/coverm.cov"),
-        fasta = ancient(config["fasta"]),
+        large_contigs_done = touch("data/done/filter_contigs_by_size.done"),
+        fasta = "data/large_contigs.fasta",
         # kmers = "data/rosella_bins/kmer_frequencies.tsv"
     threads:
         config["max_threads"]
@@ -974,7 +992,8 @@ rule das_tool:
     Runs dasTool on the output of all binning algorithms. If a binner failed to produce bins then their output is ignored
     """
     input:
-        fasta = ancient(config["fasta"]),
+        large_contigs_done = touch("data/done/filter_contigs_by_size.done"),
+        fasta = "data/large_contigs.fasta",
         metabat2_done = [] if "metabat2" in config["skip_binners"] else "data/metabat2_refined/done",
         concoct_done = [] if "concoct" in config["skip_binners"] else "data/concoct_bins/done",
         maxbin_done = [] if "maxbin2" in config["skip_binners"] else "data/maxbin2_bins/done",
@@ -1012,7 +1031,8 @@ rule refine_dastool:
         checkm = 'data/das_tool_bins_pre_refine/checkm.out',
         das_tool = 'data/das_tool_bins_pre_refine/done',
         coverage = ancient("data/coverm.cov"),
-        fasta = ancient(config["fasta"]),
+        large_contigs_done = touch("data/done/filter_contigs_by_size.done"),
+        fasta = "data/large_contigs.fasta",
         # kmers = "data/rosella_bins/kmer_frequencies.tsv"
     threads:
         config["max_threads"]
