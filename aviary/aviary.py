@@ -276,13 +276,15 @@ def main():
         default='no',
     )
 
+    download_databases = ["gtdb", "eggnog", "singlem", "checkm2", "metabuli"]
     base_group.add_argument(
         '--download', '--download',
-        help='Downloads the requested GTDB, EggNOG, SingleM, CheckM2, & Metabuli databases',
+        help='Downloads the requested GTDB, EggNOG, SingleM, CheckM2, & Metabuli databases.\n'
+             'If no arguments are provided, all databases will be downloaded. [default: No downloading performed]',
         dest='download',
-        default=[],
+        default=None,
         nargs="*",
-        choices=["gtdb", "eggnog", "singlem", "checkm2", "metabuli"]
+        choices=download_databases
     )
 
     base_group.add_argument(
@@ -1157,6 +1159,12 @@ def main():
     # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ #
     args = main_parser.parse_args()
     time = datetime.now().strftime('%H:%M:%S %d-%m-%Y')
+
+    # If --download is given with no arguments, use all choices
+    if hasattr(args, 'download') and args.download == []:
+        args.download = download_databases
+    if hasattr(args, 'download') and args.download is None:
+        args.download = []
 
     if args.log:
         if os.path.isfile(args.log):
