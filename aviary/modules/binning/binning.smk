@@ -10,6 +10,7 @@ ruleorder: dereplicate_and_get_abundances_paired > dereplicate_and_get_abundance
 ruleorder: checkm_rosella > amber_checkm_output
 ruleorder: checkm_metabat2 > amber_checkm_output
 ruleorder: checkm_semibin > amber_checkm_output
+ruleorder: checkm_completebin > amber_checkm_output
 
 onstart:
     from snakemake.utils import min_version
@@ -704,6 +705,49 @@ rule comebin:
         "&& touch {output[0]} {params.really_done} {params.touch}"
 
 
+rule completebin:
+    input:
+        large_contigs_done = "data/done/filter_contigs_by_size.done",
+        fasta = "data/large_contigs.fasta",
+        bams_indexed = ancient("data/binning_bams/done")
+    output:
+        done = "data/completebin_bins/done"
+    threads:
+        config["max_threads"]
+    params:
+        pixi_env = "completebin-gpu" if config["request_gpu"] else "completebin",
+        touch = "" if config["strict"] else "|| touch data/completebin_bins/done",
+        really_done = "data/completebin_bins/really_done",
+        device = "cuda:0" if config["request_gpu"] else "cpu",
+        min_contig_length = max(900, config["min_contig_size"]),  # CompleteBin minimum is 900bp by default
+        batch_size = 512 if config["request_gpu"] else 128,  # Reduce batch size for GPU memory management
+        db_param = f"--db_files_path {config['completebin_db']}" if "completebin_db" in config and config["completebin_db"] else "",
+    resources:
+        mem_mb = lambda wildcards, attempt: min(int(config["max_memory"])*1024, 256*1024*attempt),  # CompleteBin needs more memory
+        runtime = lambda wildcards, attempt: 48*60*attempt,  # Allow longer runtime
+        gpus = 1 if config["request_gpu"] else 0
+    log:
+        "logs/completebin.log"
+    benchmark:
+        "benchmarks/completebin.benchmark.txt"
+    shell:
+        "rm -rf data/completebin_bins/; " + \
+        "mkdir -p data/completebin_bins/temp/ && " + \
+        pixi_run + " -e {params.pixi_env} bash -c '"
+        "completebin "
+        "-c {input.fasta} "
+        "-b data/binning_bams/*.bam "
+        "-o data/completebin_bins/ "
+        "-temp data/completebin_bins/temp/ "
+        "--device {params.device} "
+        "--min_contig_length {params.min_contig_length} "
+        "--batch_size {params.batch_size} "
+        "--num_workers {threads} "
+        "{params.db_param} "
+        "> {log} 2>&1 "
+        "&& touch {output[0]} {params.really_done} {params.touch}'"
+
+
 rule checkm_rosella:
     input:
         done = ancient("data/rosella_bins/done")
@@ -787,6 +831,38 @@ rule checkm_semibin:
         runtime = lambda wildcards, attempt: 8*60*attempt,
     log:
         "logs/checkm_semibin.log"
+    shell:
+        f'{pixi_run} -e checkm2 {BINNING_SCRIPTS_DIR}/'+\
+        """run_checkm.py \
+        --checkm2-db {params.checkm2_db_path} \
+        --bin-folder {params.bin_folder} \
+        --bin-ext {params.extension} \
+        --refinery-max-iterations {params.refinery_max_iterations} \
+        --output-folder {output.output_folder} \
+        --output-file {output.output_file} \
+        --threads {threads} \
+        --log {log}
+        """
+
+rule checkm_completebin:
+    input:
+        done = ancient("data/completebin_bins/done")
+    params:
+        pplacer_threads = lambda wildcards, threads: min(threads, config["pplacer_threads"]),
+        checkm2_db_path = config["checkm2_db_folder"],
+        bin_folder = "data/completebin_bins/",
+        extension = "fasta",
+        refinery_max_iterations = config["refinery_max_iterations"],
+    output:
+        output_folder = directory("data/completebin_bins/checkm2_out/"),
+        output_file = "data/completebin_bins/checkm.out"
+    threads:
+        config["max_threads"]
+    resources:
+        mem_mb = lambda wildcards, attempt: min(int(config["max_memory"])*1024, 128*1024*attempt),
+        runtime = lambda wildcards, attempt: 8*60*attempt,
+    log:
+        "logs/checkm_completebin.log"
     shell:
         f'{pixi_run} -e checkm2 {BINNING_SCRIPTS_DIR}/'+\
         """run_checkm.py \
@@ -950,13 +1026,63 @@ rule refine_semibin:
         --log {log}
         """
 
+rule refine_completebin:
+    input:
+        checkm = ancient('data/completebin_bins/checkm.out'),
+        rosella = ancient('data/completebin_bins/done'),
+        coverage = ancient("data/coverm.cov"),
+        large_contigs_done = "data/done/filter_contigs_by_size.done",
+        fasta = "data/large_contigs.fasta",
+    threads:
+        config["max_threads"]
+    resources:
+        mem_mb = lambda wildcards, attempt: min(int(config["max_memory"])*1024, 128*1024*attempt),
+        runtime = lambda wildcards, attempt: 48*60 + 24*60*attempt,
+    output:
+        touch('data/completebin_refined/done')
+    benchmark:
+        'benchmarks/refine_completebin.benchmark.txt'
+    params:
+        bin_folder = "data/completebin_bins/",
+        extension = "fasta",
+        output_folder = "data/completebin_refined/",
+        min_bin_size = config["min_bin_size"],
+        max_iterations = config["refinery_max_iterations"],
+        max_retries = config["refinery_max_retries"],
+        pplacer_threads = lambda wildcards, threads: min(threads, config["pplacer_threads"]),
+        max_contamination = 15,
+        final_refining = False,
+        bin_prefix = "completebin"
+    log:
+        "logs/refine_completebin.log"
+    shell:
+        f'{pixi_run} -e checkm2 {BINNING_SCRIPTS_DIR}/'+\
+        """rosella_refine.py \
+        --checkm {input.checkm} \
+        --coverage {input.coverage} \
+        --fasta {input.fasta} \
+        --output-folder {params.output_folder} \
+        --final-refining {params.final_refining} \
+        --min-bin-size {params.min_bin_size} \
+        --max-iterations {params.max_iterations} \
+        --max-retries {params.max_retries} \
+        --pplacer-threads {params.pplacer_threads} \
+        --threads {threads} \
+        --max-contamination {params.max_contamination} \
+        --bin-folder {params.bin_folder} \
+        --extension {params.extension} \
+        --bin-prefix {params.bin_prefix} \
+        --log {log}
+        """
+
 rule amber_checkm_output:
     input:
         amber_done = "data/amber_refine/for_refine/index.html"
     output:
         metabat_checkm = 'data/metabat_bins_2/checkm.out',
         rosella_checkm = 'data/rosella_bins/checkm.out',
-        semibin_checkm = 'data/semibin_bins/checkm.out'
+        semibin_checkm = 'data/semibin_bins/checkm.out',
+        completebin_checkm = 'data/completebin_bins/checkm.out'
         # dastool_checkm = 'data/das_tool_bins_with_refine/checkm.out'
     run:
         import pandas as pd
@@ -986,6 +1112,12 @@ rule amber_checkm_output:
         except FileNotFoundError:
             pass
 
+        try:
+            completebin_amber = pd.read_csv("data/amber_refine/for_refine/genome/completebin_amber.tsv/metrics_per_bin.tsv", sep='\t')
+            amber_to_checkm_like(completebin_amber, "data/completebin_bins/", "data/completebin_bins/checkm.out", "fasta")
+        except FileNotFoundError:
+            pass
+
 
 rule das_tool:
     """
@@ -1004,6 +1136,7 @@ rule das_tool:
         rosella_done = [] if "rosella" in config["skip_binners"] else "data/rosella_refined/done",
         semibin_done = [] if "semibin" in config["skip_binners"] else "data/semibin_refined/done",
         comebin_done = [] if "comebin" in config["skip_binners"] else "data/comebin_bins/done",
+        completebin_done = [] if "completebin" in config["skip_binners"] else "data/completebin_refined/done",
         vamb_done = [] if "vamb" in config["skip_binners"] else "data/vamb_bins/done",
         taxvamb_done = [] if "taxvamb" in config["skip_binners"] else "data/taxvamb_bins/done",
     threads:

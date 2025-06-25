@@ -71,6 +71,8 @@ semibin = ["semibin"]
 semibin-gpu = ["semibin","semibin-gpu"]
 comebin = ["comebin"]
 comebin-gpu = ["comebin", "comebin-gpu"]
+completebin = ["completebin"]
+completebin-gpu = ["completebin", "completebin-gpu"]
 # Annotation
 eggnog = ["eggnog"]
 gtdbtk = ["gtdbtk"]
@@ -228,6 +230,21 @@ channel-priority = "disabled"
 pytorch = { version = "==1.10.2", channel = "pytorch" }
 pytorch-cuda = { version = "==11.8", channel = "pytorch" }
 mkl = "==2024.0"
+
+[feature.completebin.dependencies]
+python = "==3.9.15"
+# CompleteBin dependencies will be installed via pip
+
+[feature.completebin.pypi-dependencies]
+CompleteBin = "==1.0.9.11"
+
+[feature.completebin-gpu]
+system-requirements = { cuda = "12.1" }
+channels = ["pytorch", "nvidia"]
+
+[feature.completebin-gpu.dependencies]
+pytorch = "*"
+# Additional GPU dependencies for CompleteBin will be installed via pip
 
 [feature.eggnog.dependencies]
 eggnog-mapper =  ">=2.1.8"

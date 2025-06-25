@@ -618,13 +618,14 @@ def main():
     binning_group.add_argument(
         '--extra-binners', '--extra_binners', '--extra-binner', '--extra_binner',
         help='Optional list of extra binning algorithms to run. Can be any combination of: \n'
-             'maxbin, maxbin2, concoct, comebin, taxvamb \n'
+             'maxbin, maxbin2, concoct, comebin, taxvamb, completebin \n'
              'These binners are skipped by default as they can have long runtimes \n'
              'N.B. specifying "maxbin" and "maxbin2" are equivalent \n'
-             'N.B. specifying "taxvamb" will also run metabuli for contig taxonomic assignment \n',
+             'N.B. specifying "taxvamb" will also run metabuli for contig taxonomic assignment \n'
+             'N.B. CompleteB in requires Python 3.9 and significant memory/GPU resources \n',
         dest='extra_binners',
         nargs='*',
-        choices=["maxbin", "maxbin2", "concoct", "comebin", "taxvamb"]
+        choices=["maxbin", "maxbin2", "concoct", "comebin", "taxvamb", "completebin"]
     )
 
     binning_group.add_argument(

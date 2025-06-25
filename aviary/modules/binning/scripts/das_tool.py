@@ -37,6 +37,7 @@ if __name__ == '__main__':
     refined_binners_to_use = [
         ('rosella', 'fna'),
         ('semibin', 'fna'),
+        ('completebin', 'fasta'),
     ]
 
     # N.B. specifying "metabat" will skip both MetaBAT1 and MetaBAT2.
