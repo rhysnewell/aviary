@@ -118,10 +118,6 @@ rule download_gtdb:
         'rm "$TARGET_TAR"; '
         'echo "[INFO] - The GTDB-Tk database has been successfully downloaded and extracted."; '
 
-        # Set the environment variable
-        f'{pixi_run} -e gtdbtk conda env config vars set TARGET_DIR="$TARGET_DIR"; '
-        'echo "[INFO] - Added TARGET_DIR ($TARGET_DIR) to the GTDB-Tk conda environment."; '
-
 rule download_singlem_metapackage:
     output: touch(get_db_done_file('singlem'))
     params:
@@ -215,7 +211,7 @@ rule gtdbtk:
     input:
         mag_folder = config['mag_directory']
     output:
-        done = "data/gtdbtk/done"
+        done = touch("data/gtdbtk/done")
     params:
         gtdbtk_folder = config['gtdbtk_folder'],
         pplacer_threads = lambda wildcards, threads: min(threads, config["pplacer_threads"]),
@@ -235,7 +231,6 @@ rule gtdbtk:
         "gtdbtk classify_wf --skip_ani_screen --cpus {threads} --pplacer_cpus {params.pplacer_threads} --extension {params.extension} "
         "--genome_dir {input.mag_folder} --out_dir data/gtdbtk "
         "> {log} 2>&1 "
-        "&& touch data/gtdbtk/done"
 
 rule annotate:
     input:
