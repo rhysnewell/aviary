@@ -8,7 +8,7 @@ rule rerun_rosella:
     output:
         temp("data/rosella_bins/rerun")
     conda:
-        "../binning/envs/rosella.yaml"
+        "envs/rosella.yaml"
     threads:
         config["max_threads"]
     benchmark:
@@ -26,7 +26,7 @@ rule rosella_checkm:
     params:
         pplacer_threads = config['pplacer_threads']
     conda:
-        "../../envs/checkm.yaml"
+        "envs/checkm.yaml"
     threads:
         config["max_threads"]
     shell:
@@ -43,7 +43,7 @@ rule benchmark_vamb:
     params:
         pplacer_threads = config["pplacer_threads"],
     conda:
-        "../../envs/checkm.yaml"
+        "envs/checkm.yaml"
     threads:
         config["max_threads"]
     shell:
@@ -67,7 +67,7 @@ rule binner_result:
     params:
         pplacer_threads = config['pplacer_threads']
     conda:
-        "../../envs/checkm.yaml"
+        "envs/checkm.yaml"
     threads:
         config["max_threads"]
     shell:
@@ -98,7 +98,7 @@ rule checkm2_all_bins:
     params:
         checkm2_db_folder = config["checkm2_db_folder"]
     conda:
-        "../../envs/checkm2.yaml"
+        "envs/checkm2.yaml"
     shell:
         "export CHECKM2DB={params.checkm2_db_folder}; "
         "checkm2 predict -i data/all_bins/ -x fna -o data/checkm2_all_bins/ -t {threads} --force"
@@ -115,7 +115,7 @@ rule checkm2_das_tool:
     params:
         checkm2_db_folder = config["checkm2_db_folder"]
     conda:
-        "../../envs/checkm2.yaml"
+        "envs/checkm2.yaml"
     shell:
         "export CHECKM2DB={params.checkm2_db_folder}; "
         "checkm2 predict -i data/das_tool_bins_no_refine/das_tool_DASTool_bins/ -x fa -o data/checkm2_das_tool_wr/ -t {threads} --force; "
@@ -138,7 +138,7 @@ rule checkm2_refined:
     params:
         checkm2_db_folder = config["checkm2_db_folder"]
     conda:
-        "../../envs/checkm2.yaml"
+        "envs/checkm2.yaml"
     shell:
         "export CHECKM2DB={params.checkm2_db_folder}; "
         "checkm2 predict -i data/rosella_refine_metabat2/final_bins/ -x fna -o data/m2_refined_checkm2/ -t {threads} --force || touch {output.m2_report}; "
@@ -168,7 +168,7 @@ rule checkm2_refined:
 #         rosella_cov = "data/rosella_bins/coverm.cov",
 #         vamb_cov = "data/vamb_bins/coverm.cov"
 #     conda:
-#         "../../envs/coverm.yaml"
+#         "envs/coverm.yaml"
 #     shell:
 #         ""
 
@@ -196,7 +196,7 @@ rule rosella_refine_benchmark_1:
     threads:
         config["max_threads"]
     conda:
-        "../binning/envs/rosella.yaml"
+        "envs/rosella.yaml"
     script:
         "../binning/scripts/rosella_refine.py"
 
@@ -223,7 +223,7 @@ rule rosella_refine_benchmark_2:
     threads:
         config["max_threads"]
     conda:
-        "../binning/envs/rosella.yaml"
+        "envs/rosella.yaml"
     script:
         "../binning/scripts/rosella_refine.py"
 
@@ -250,7 +250,7 @@ rule rosella_refine_benchmark_3:
     threads:
         config["max_threads"]
     conda:
-        "../binning/envs/rosella.yaml"
+        "envs/rosella.yaml"
     script:
         "../binning/scripts/rosella_refine.py"
 
@@ -278,7 +278,7 @@ rule rosella_refine_benchmark_4:
     threads:
         config["max_threads"]
     conda:
-        "../binning/envs/rosella.yaml"
+        "envs/rosella.yaml"
     script:
         "../binning/scripts/rosella_refine.py"
 
@@ -293,7 +293,7 @@ rule checkm1_rosella_refine_1:
     threads:
         config["max_threads"]
     conda:
-        "../../envs/checkm.yaml"
+        "envs/checkm.yaml"
     shell:
         "checkm lineage_wf -t {threads} --pplacer_threads {params.pplacer_threads} -x fna "
         "--tab_table data/rosella_refine_rosella/final_bins/ data/rosella_refine_rosella/checkm > {output.checkm1_done} || touch {output.checkm1_done}; "
@@ -310,7 +310,7 @@ rule checkm1_rosella_refine_2:
     threads:
         config["max_threads"]
     conda:
-        "../../envs/checkm.yaml"
+        "envs/checkm.yaml"
     shell:
         "checkm lineage_wf -t {threads} --pplacer_threads {params.pplacer_threads} -x fna "
         "--tab_table data/rosella_refine_metabat2/final_bins/ data/rosella_refine_metabat2/checkm > {output.checkm1_done} || touch {output.checkm1_done}; "
@@ -327,7 +327,7 @@ rule checkm1_rosella_refine_3:
     threads:
         config["max_threads"]
     conda:
-        "../../envs/checkm.yaml"
+        "envs/checkm.yaml"
     shell:
         "checkm lineage_wf -t {threads} --pplacer_threads {params.pplacer_threads} -x fna "
         "--tab_table data/rosella_refine_semibin/final_bins/ data/rosella_refine_semibin/checkm > {output.checkm1_done} || touch {output.checkm1_done}; "
@@ -344,7 +344,7 @@ rule checkm1_rosella_refine_4:
     threads:
         config["max_threads"]
     conda:
-        "../../envs/checkm.yaml"
+        "envs/checkm.yaml"
     shell:
         "checkm lineage_wf -t {threads} --pplacer_threads {params.pplacer_threads} -x fna "
         "--tab_table data/rosella_refine_das_tool/ data/rosella_refine_das_tool/checkm > {output.checkm1_done} || touch {output.checkm1_done}; "
@@ -374,7 +374,7 @@ rule das_tool_with_refine:
     threads:
         config["max_threads"]
     conda:
-        "../binning/envs/das_tool.yaml"
+        "envs/das_tool.yaml"
     benchmark:
         "benchmarks/das_tool_refine.benchmark.txt"
     shell:
@@ -406,7 +406,7 @@ rule checkm_das_tool_refine:
     output:
         "data/das_tool_bins_with_refine/checkm.out"
     conda:
-        "../../envs/checkm.yaml"
+        "envs/checkm.yaml"
     threads:
         config["max_threads"]
     shell:
@@ -587,7 +587,7 @@ rule das_tool_without_rosella:
     benchmark:
         "benchmarks/das_tool_no_rosella.benchmark.txt"
     conda:
-        "../binning/envs/das_tool.yaml"
+        "envs/das_tool.yaml"
     shell:
         """
         mkdir -p data/no_rosella/
@@ -629,7 +629,7 @@ rule das_tool_no_refine:
     threads:
         config["max_threads"]
     conda:
-        "../binning/envs/das_tool.yaml"
+        "envs/das_tool.yaml"
     benchmark:
         "benchmarks/das_tool_no_refine.benchmark.txt"
     shell:
@@ -661,7 +661,7 @@ rule checkm_das_tool_no_refine:
     output:
         "data/das_tool_bins_no_refine/checkm.out"
     conda:
-        "../../envs/checkm.yaml"
+        "envs/checkm.yaml"
     threads:
         config["max_threads"]
     shell:
@@ -678,7 +678,7 @@ rule checkm_without_rosella:
     output:
         "data/checkm_without_rosella.out"
     conda:
-        "../../envs/checkm.yaml"
+        "envs/checkm.yaml"
     threads:
         config["max_threads"]
     shell:
@@ -938,7 +938,7 @@ rule atlas_dastool:
     threads:
         config["max_threads"]
     conda:
-        "../binning/envs/das_tool.yaml"
+        "envs/das_tool.yaml"
     benchmark:
         "benchmarks/das_tool.benchmark.txt"
     shell:
@@ -960,7 +960,7 @@ rule simulate_atlas:
     output:
         "data/atlas_dastool/checkm.out"
     conda:
-        "../../envs/checkm.yaml"
+        "envs/checkm.yaml"
     threads:
         config["max_threads"]
     shell:
@@ -1022,7 +1022,7 @@ rule simulate_atlas:
 #     output:
 #         "data/das_tool_bins_no_refine/checkm.out"
 #     conda:
-#         "../../envs/checkm.yaml"
+#         "envs/checkm.yaml"
 #     threads:
 #         config["max_threads"]
 #     shell:
