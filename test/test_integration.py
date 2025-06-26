@@ -35,18 +35,80 @@ if os.environ.get("TEST_REQUEST_GPU", "0") == "1":
 else:
     request_gpu = ""
 
+def setup_output_dir(output_dir):
+    try:
+        shutil.rmtree(output_dir)
+    except FileNotFoundError:
+        pass
+    os.makedirs(output_dir)
+
+# We have a separate class for qsub tests (tests that run aviary with the CMR
+# aqua snakemake profile) so that there is no need to run other expensive tests
+# when running qsub tests.
+@pytest.mark.qsub
+class TestsQsub(unittest.TestCase):
+    def test_short_read_recovery_queue_submission(self):
+        output_dir = os.path.join("example", "test_short_read_recovery_queue_submission")
+        setup_output_dir(output_dir)
+
+        cmd = (
+            f"aviary recover "
+            f"-o {output_dir}/aviary_out "
+            f"-1 {data}/wgsim.1.fq.gz "
+            f"-2 {data}/wgsim.2.fq.gz "
+            f"-n 32 -t 32 --local-cores 1 "
+            f"--strict "
+            f"--snakemake-profile aqua --cluster-retries 3 "
+        )
+        subprocess.run(cmd, shell=True, check=True)
+
+        self.assertTrue(os.path.isfile(f"{output_dir}/aviary_out/data/final_contigs.fasta"))
+
+        bin_info_path = f"{output_dir}/aviary_out/bins/bin_info.tsv"
+        self.assertTrue(os.path.isfile(bin_info_path))
+        with open(bin_info_path) as f:
+            num_lines = sum(1 for _ in f)
+        self.assertEqual(num_lines, 3)
+
+    def test_short_read_recovery_queue_submission_gpus(self):
+        output_dir = os.path.join("example", "test_short_read_recovery_queue_submission_gpus")
+        setup_output_dir(output_dir)
+
+        # Create inflated assembly file
+        cmd = f"cat {data}/assembly.fasta > {output_dir}/assembly.fasta"
+        multiplier = 100
+        for i in range(multiplier):
+            cmd += f" && awk '/^>/ {{print $0 \"{i}\"}} !/^>/ {{print $0}}' {data}/assembly.fasta >> {output_dir}/assembly.fasta"
+        subprocess.run(cmd, shell=True, check=True)
+
+        cmd = (
+            f"aviary recover "
+            f"--assembly {output_dir}/assembly.fasta "
+            f"-o {output_dir}/aviary_out "
+            f"-1 {data}/wgsim.1.fq.gz "
+            f"-2 {data}/wgsim.2.fq.gz "
+            f"--skip-binners rosella metabat vamb "
+            f"--extra-binners taxvamb comebin "
+            f"--request-gpu "
+            f"--skip-qc "
+            f"--refinery-max-iterations 0 "
+            f"-n 32 -t 32 --local-cores 1 "
+            f"--strict "
+            f"--snakemake-profile aqua --cluster-retries 0 "
+        )
+        subprocess.run(cmd, shell=True, check=True)
+
+        bin_info_path = f"{output_dir}/aviary_out/bins/bin_info.tsv"
+        self.assertTrue(os.path.isfile(bin_info_path))
+        with open(bin_info_path) as f:
+            num_lines = sum(1 for _ in f)
+        self.assertTrue(num_lines >= 3)
+
 @pytest.mark.expensive
 class Tests(unittest.TestCase):
-    def setup_output_dir(self, output_dir):
-        try:
-            shutil.rmtree(output_dir)
-        except FileNotFoundError:
-            pass
-        os.makedirs(output_dir)
-
     def test_short_read_assembly(self):
         output_dir = os.path.join("example", "test_short_read_assembly")
-        self.setup_output_dir(output_dir)
+        setup_output_dir(output_dir)
         cmd = (
             f"aviary assemble "
             f"-o {output_dir}/aviary_out "
@@ -62,7 +124,7 @@ class Tests(unittest.TestCase):
 
     def test_short_read_coassembly(self):
         output_dir = os.path.join("example", "test_short_read_coassembly")
-        self.setup_output_dir(output_dir)
+        setup_output_dir(output_dir)
 
         cmd = f"cp {data}/wgsim.1.fq.gz {output_dir}/wgsimagain.1.fq.gz"
         cmd2 = f"cp {data}/wgsim.2.fq.gz {output_dir}/wgsimagain.2.fq.gz"
@@ -84,7 +146,7 @@ class Tests(unittest.TestCase):
 
     def test_long_read_assembly(self):
         output_dir = os.path.join("example", "test_long_read_assembly")
-        self.setup_output_dir(output_dir)
+        setup_output_dir(output_dir)
         cmd = (
             f"aviary assemble "
             f"-o {output_dir}/aviary_out "
@@ -103,7 +165,7 @@ class Tests(unittest.TestCase):
 
     def test_short_read_recovery(self):
         output_dir = os.path.join("example", "test_short_read_recovery")
-        self.setup_output_dir(output_dir)
+        setup_output_dir(output_dir)
         cmd = (
             f"aviary recover "
             f"-o {output_dir}/aviary_out "
@@ -132,7 +194,7 @@ class Tests(unittest.TestCase):
 
     def test_long_read_recovery_split(self):
         output_dir = os.path.join("example", "test_long_read_recovery_split")
-        self.setup_output_dir(output_dir)
+        setup_output_dir(output_dir)
 
         for i, size in enumerate([80000, 50000, 20000]):
             for end in [1, 2]:
@@ -167,7 +229,7 @@ class Tests(unittest.TestCase):
 
     def test_long_read_recovery(self):
         output_dir = os.path.join("example", "test_long_read_recovery")
-        self.setup_output_dir(output_dir)
+        setup_output_dir(output_dir)
         cmd = (
             f"aviary recover "
             f"-o {output_dir}/aviary_out "
@@ -194,7 +256,7 @@ class Tests(unittest.TestCase):
 
     def test_long_read_only_recovery(self):
         output_dir = os.path.join("example", "test_long_read_only_recovery")
-        self.setup_output_dir(output_dir)
+        setup_output_dir(output_dir)
         cmd = (
             f"aviary recover "
             f"-o {output_dir}/aviary_out "
@@ -220,7 +282,7 @@ class Tests(unittest.TestCase):
 
     def test_short_read_recovery_fast(self):
         output_dir = os.path.join("example", "test_short_read_recovery_fast")
-        self.setup_output_dir(output_dir)
+        setup_output_dir(output_dir)
         cmd = (
             f"aviary recover "
             f"--assembly {data}/assembly.fasta "
@@ -252,7 +314,7 @@ class Tests(unittest.TestCase):
 
     def test_short_read_recovery_semibin(self):
         output_dir = os.path.join("example", "test_short_read_recovery_semibin")
-        self.setup_output_dir(output_dir)
+        setup_output_dir(output_dir)
 
         cmd = f"ln -sr {data}/wgsim.1.fq.gz {output_dir}/wgsim2.1.fq.gz && ln -sr {data}/wgsim.2.fq.gz {output_dir}/wgsim2.2.fq.gz"
         subprocess.run(cmd, shell=True, check=True)
@@ -289,7 +351,7 @@ class Tests(unittest.TestCase):
 
     def test_short_read_recovery_vamb(self):
         output_dir = os.path.join("example", "test_short_read_recovery_vamb")
-        self.setup_output_dir(output_dir)
+        setup_output_dir(output_dir)
 
         # Create inflated assembly file
         cmd = f"cat {data}/assembly.fasta > {output_dir}/assembly.fasta"
@@ -324,7 +386,7 @@ class Tests(unittest.TestCase):
 
     def test_short_read_recovery_taxvamb(self):
         output_dir = os.path.join("example", "test_short_read_recovery_taxvamb")
-        self.setup_output_dir(output_dir)
+        setup_output_dir(output_dir)
 
         # Create inflated assembly file
         cmd = f"cat {data}/assembly.fasta > {output_dir}/assembly.fasta"
@@ -361,7 +423,7 @@ class Tests(unittest.TestCase):
 
     def test_short_read_recovery_comebin(self):
         output_dir = os.path.join("example", "test_short_read_recovery_comebin")
-        self.setup_output_dir(output_dir)
+        setup_output_dir(output_dir)
 
         # Create inflated assembly file
         cmd = f"cat {data}/assembly.fasta > {output_dir}/assembly.fasta"
@@ -395,66 +457,6 @@ class Tests(unittest.TestCase):
         self.assertTrue(num_lines > 2)
 
         self.assertFalse(os.path.isfile(f"{output_dir}/aviary_out/data/final_contigs.fasta"))
-
-    @pytest.mark.qsub
-    def test_short_read_recovery_queue_submission(self):
-        output_dir = os.path.join("example", "test_short_read_recovery_queue_submission")
-        self.setup_output_dir(output_dir)
-
-        cmd = (
-            f"aviary recover "
-            f"-o {output_dir}/aviary_out "
-            f"-1 {data}/wgsim.1.fq.gz "
-            f"-2 {data}/wgsim.2.fq.gz "
-            f"-n 32 -t 32 --local-cores 1 "
-            f"--strict "
-            f"--snakemake-profile aqua --cluster-retries 3 "
-        )
-        subprocess.run(cmd, shell=True, check=True)
-
-        self.assertTrue(os.path.isfile(f"{output_dir}/aviary_out/data/final_contigs.fasta"))
-
-        bin_info_path = f"{output_dir}/aviary_out/bins/bin_info.tsv"
-        self.assertTrue(os.path.isfile(bin_info_path))
-        with open(bin_info_path) as f:
-            num_lines = sum(1 for _ in f)
-        self.assertEqual(num_lines, 3)
-
-    @pytest.mark.qsub
-    def test_short_read_recovery_queue_submission_gpus(self):
-        output_dir = os.path.join("example", "test_short_read_recovery_queue_submission_gpus")
-        self.setup_output_dir(output_dir)
-
-        # Create inflated assembly file
-        cmd = f"cat {data}/assembly.fasta > {output_dir}/assembly.fasta"
-        multiplier = 100
-        for i in range(multiplier):
-            cmd += f" && awk '/^>/ {{print $0 \"{i}\"}} !/^>/ {{print $0}}' {data}/assembly.fasta >> {output_dir}/assembly.fasta"
-        subprocess.run(cmd, shell=True, check=True)
-
-        cmd = (
-            f"aviary recover "
-            f"--assembly {output_dir}/assembly.fasta "
-            f"-o {output_dir}/aviary_out "
-            f"-1 {data}/wgsim.1.fq.gz "
-            f"-2 {data}/wgsim.2.fq.gz "
-            f"--skip-binners rosella metabat vamb "
-            f"--extra-binners taxvamb comebin "
-            f"--request-gpu "
-            f"--skip-qc "
-            f"--refinery-max-iterations 0 "
-            f"-n 32 -t 32 --local-cores 1 "
-            f"--strict "
-            f"--snakemake-profile aqua --cluster-retries 0 "
-        )
-        subprocess.run(cmd, shell=True, check=True)
-
-        bin_info_path = f"{output_dir}/aviary_out/bins/bin_info.tsv"
-        self.assertTrue(os.path.isfile(bin_info_path))
-        with open(bin_info_path) as f:
-            num_lines = sum(1 for _ in f)
-        self.assertTrue(num_lines >= 3)
-
 
 if __name__ == "__main__":
     unittest.main()
