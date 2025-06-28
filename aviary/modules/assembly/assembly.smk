@@ -418,7 +418,7 @@ rule spades_assembly:
         max_memory = config["max_memory"],
         long_read_type = config["long_read_type"],
         kmer_sizes = " ".join(config["kmer_sizes"]),
-        tmpdir = config["tmpdir"]
+        tmpdir = f"--tmp-dir {config['tmpdir']}" if 'tmpdir' in config and config['tmpdir'] else "",
     benchmark:
         "benchmarks/spades_assembly.benchmark.txt"
     shell:
@@ -431,7 +431,7 @@ rule spades_assembly:
         --max-memory {params.max_memory} \
         --threads {threads} \
         --kmer-sizes {params.kmer_sizes} \
-        --tmp-dir {params.tmpdir} \
+        {params.tmpdir} \
         --long-read-type {params.long_read_type} \
         --log {log[0]}
     """
@@ -456,7 +456,7 @@ rule assemble_short_reads:
         kmer_sizes = config["kmer_sizes"],
         use_megahit = config["use_megahit"],
         coassemble = config["coassemble"],
-        tmpdir = config["tmpdir"],
+        tmpdir = f"--tmpdir {config['tmpdir']}" if 'tmpdir' in config and config['tmpdir'] else "",
         final_assembly = True
     threads:
         config["max_threads"]
@@ -478,7 +478,7 @@ rule assemble_short_reads:
         --use-megahit {params.use_megahit} \
         --coassemble {params.coassemble} \
         --threads {threads} \
-        --tmp-dir {params.tmpdir} \
+        {params.tmpdir} \
         --kmer-sizes {params.kmer_sizes} \
         --log {log}
         """
