@@ -20,3 +20,5 @@ logs
 .pixi
 *.egg-info
 db
+mqsub.out
+test/qsub-test-log.txt
