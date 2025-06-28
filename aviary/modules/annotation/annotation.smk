@@ -174,10 +174,10 @@ rule checkm2:
     benchmark:
         'benchmarks/checkm2.benchmark.txt'
     shell:
-        'export CHECKM2DB={params.checkm2_db_path}/uniref100.KO.1.dmnd; '
-        'echo "Using CheckM2 database $CHECKM2DB" > {log}; ' + \
-        pixi_run + ' -e checkm2 checkm2 predict -i {input.mag_folder}/ -x {params.mag_extension} -o {output.checkm2_folder} -t {threads} --force'
-        '>> {log} 2>&1 '
+        pixi_run + " -e checkm2 bash -c '" \
+        "export CHECKM2DB={params.checkm2_db_path}/uniref100.KO.1.dmnd; " \
+        "echo \"Using CheckM2 database $CHECKM2DB\"; " \
+        "checkm2 predict -i {input.mag_folder}/ -x {params.mag_extension} -o {output.checkm2_folder} -t {threads} --force > {log} 2>&1'"
 
 rule eggnog:
     input:
