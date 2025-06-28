@@ -235,6 +235,7 @@ parallel = "*"
 
 [feature.gtdbtk.dependencies]
 gtdbtk = ">=2.4.1" # Required given R226 data is used.
+numpy = "==2.2.6" # Required because of https://github.com/Ecogenomics/GTDBTk/issues/641
 fastani = "*"
 
 [feature.pggb.dependencies]

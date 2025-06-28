@@ -1736,7 +1736,7 @@ environments:
       - conda: https://conda.anaconda.org/bioconda/linux-64/fastani-1.34-hb66fcc3_6.tar.bz2
       - conda: https://conda.anaconda.org/bioconda/linux-64/fasttree-2.1.11-h7b50bb2_5.tar.bz2
       - conda: https://conda.anaconda.org/conda-forge/linux-64/gsl-2.7-he838d99_0.tar.bz2
-      - conda: https://conda.anaconda.org/bioconda/noarch/gtdbtk-2.4.0-pyhdfd78af_2.tar.bz2
+      - conda: https://conda.anaconda.org/bioconda/noarch/gtdbtk-2.4.1-pyhdfd78af_1.tar.bz2
       - conda: https://conda.anaconda.org/bioconda/linux-64/hmmer-3.4-hb6cb901_4.tar.bz2
       - conda: https://conda.anaconda.org/conda-forge/linux-64/ld_impl_linux-64-2.43-h1423503_5.conda
       - conda: https://conda.anaconda.org/conda-forge/linux-64/libblas-3.9.0-31_h59b9bed_openblas.conda
@@ -1761,7 +1761,7 @@ environments:
       - conda: https://conda.anaconda.org/bioconda/linux-64/mash-2.3-hb105d93_9.tar.bz2
       - conda: https://conda.anaconda.org/conda-forge/linux-64/mpi-1.0-openmpi.tar.bz2
       - conda: https://conda.anaconda.org/conda-forge/linux-64/ncurses-6.5-h2d0b736_3.conda
-      - conda: https://conda.anaconda.org/conda-forge/linux-64/numpy-2.3.0-py313h17eae1a_0.conda
+      - conda: https://conda.anaconda.org/conda-forge/linux-64/numpy-2.2.6-py313h17eae1a_0.conda
       - conda: https://conda.anaconda.org/conda-forge/linux-64/openmpi-4.1.6-hc5af2df_101.conda
       - conda: https://conda.anaconda.org/conda-forge/linux-64/openssl-3.5.0-h7b32b05_1.conda
       - conda: https://conda.anaconda.org/bioconda/linux-64/pplacer-1.1.alpha19-h9ee0642_2.tar.bz2
@@ -7447,9 +7447,9 @@ packages:
   license_family: GPL
   size: 3376423
   timestamp: 1626369596591
-- conda: https://conda.anaconda.org/bioconda/noarch/gtdbtk-2.4.0-pyhdfd78af_2.tar.bz2
-  sha256: 057e08c8675da9ee29b7fa1f44bbc3150cb224c9877e790a46b4943c5a011332
-  md5: e650e71e22f803fcbbde97457450f1f3
+- conda: https://conda.anaconda.org/bioconda/noarch/gtdbtk-2.4.1-pyhdfd78af_1.tar.bz2
+  sha256: 39c2b6a2202b7b3e41a3124b425d5db477dd23e743d9b76395755dd30b2c9cdf
+  md5: b8eeec77243fbc08876f89dbb307b8d2
   depends:
   - dendropy >=4.1.0
   - fastani >=1.32
@@ -7465,8 +7465,8 @@ packages:
   - tqdm >=4.35.0
   license: GNU General Public v3 (GPLv3)
   license_family: GPL3
-  size: 1641575
-  timestamp: 1734867929044
+  size: 1653669
+  timestamp: 1744958441956
 - conda: https://conda.anaconda.org/conda-forge/linux-64/gxx_impl_linux-64-15.1.0-h6a1bac1_2.conda
   sha256: 897ecdad431c5e83981b488dea3d1396c59e64e3403206922fdeae5cff74ddf6
   md5: b36117536fc3b4e3e0db9b8ebaf0f3b7
@@ -12426,6 +12426,24 @@ packages:
   license_family: BSD
   size: 7484186
   timestamp: 1707225809722
+- conda: https://conda.anaconda.org/conda-forge/linux-64/numpy-2.2.6-py313h17eae1a_0.conda
+  sha256: 7da9ebd80a7311e0482c4c6393be0eddf0012b3846df528e375037409b3d2b3d
+  md5: 7a2d2f9adecd86ed5c29c2115354f615
+  depends:
+  - __glibc >=2.17,<3.0.a0
+  - libblas >=3.9.0,<4.0a0
+  - libcblas >=3.9.0,<4.0a0
+  - libgcc >=13
+  - liblapack >=3.9.0,<4.0a0
+  - libstdcxx >=13
+  - python >=3.13,<3.14.0a0
+  - python_abi 3.13.* *_cp313
+  constrains:
+  - numpy-base <0a0
+  license: BSD-3-Clause
+  license_family: BSD
+  size: 8517250
+  timestamp: 1747545080496
 - conda: https://conda.anaconda.org/conda-forge/linux-64/numpy-2.3.0-py311h519dc76_0.conda
   sha256: a9a6f36c2982837e19448c231435a914376948eb493e2cd8e9f69b133ca0e796
   md5: 002e600fcc82f415bfaad7d05a44c016
@@ -12464,24 +12482,6 @@ packages:
   - pkg:pypi/numpy?source=hash-mapping
   size: 8417476
   timestamp: 1749430957684
-- conda: https://conda.anaconda.org/conda-forge/linux-64/numpy-2.3.0-py313h17eae1a_0.conda
-  sha256: 8b88ade24df5229c5d76c5ef09568ae4630b1095982e94648fbbeb18f475aa61
-  md5: db18a34466bef0863e9301b518a75e8f
-  depends:
-  - __glibc >=2.17,<3.0.a0
-  - libblas >=3.9.0,<4.0a0
-  - libcblas >=3.9.0,<4.0a0
-  - libgcc >=13
-  - liblapack >=3.9.0,<4.0a0
-  - libstdcxx >=13
-  - python >=3.13,<3.14.0a0
-  - python_abi 3.13.* *_cp313
-  constrains:
-  - numpy-base <0a0
-  license: BSD-3-Clause
-  license_family: BSD
-  size: 8545037
-  timestamp: 1749430954481
 - conda: https://conda.anaconda.org/conda-forge/noarch/oauth2client-4.1.3-pyhd8ed1ab_1.conda
   sha256: ecba136c9cf86767c4bfc7012f79f6bb4cf449c74507e24a3c0b319e433948ed
   md5: 4fafed28060ec9a8b8c199392e34c476
