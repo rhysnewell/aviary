@@ -234,7 +234,7 @@ eggnog-mapper =  ">=2.1.8"
 parallel = "*"
 
 [feature.gtdbtk.dependencies]
-gtdbtk = "==2.4.0"
+gtdbtk = ">=2.4.1" # Required given R226 data is used.
 fastani = "*"
 
 [feature.pggb.dependencies]

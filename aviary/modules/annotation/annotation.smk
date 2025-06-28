@@ -87,6 +87,7 @@ rule download_gtdb:
         'GTDBTK_DATA_PATH={params.gtdbtk_folder}; '
         'mkdir -p {params.gtdbtk_folder}; '
         # Configuration
+        # NOTE: Updating the database version here might require an update to the GTDB-Tk version in pixi.toml
         'DB_URL="https://data.gtdb.ecogenomic.org/releases/release226/226.0/auxillary_files/gtdbtk_package/full_package/gtdbtk_r226_data.tar.gz"; '
         'TARGET_TAR_NAME="gtdbtk_data.tar.gz"; '
 
