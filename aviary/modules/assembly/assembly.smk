@@ -699,7 +699,7 @@ rule skip_unicycler:
     threads:
         config["max_threads"]
     shell:
-        f'{pixi_run} -e bbmap bash -c "' + \
+        f'{pixi_run} -e bbmap bash -e -o pipefail -c "' + \
         """cat {input.short_fasta} {input.flye_fasta} > {output.fasta}; 
         touch data/unicycler_skipped; 
         mkdir -p www/; 
@@ -723,7 +723,7 @@ rule skip_unicycler_with_qc:
     threads:
         config["max_threads"]
     shell:
-        f'{pixi_run} -e bbmap bash -c "' + \
+        f'{pixi_run} -e bbmap bash -e -o pipefail -c "' + \
         """cat {input.short_fasta} {input.flye_fasta} > {output.fasta}; 
         touch data/unicycler_skipped; 
         mkdir -p www/; 
@@ -740,7 +740,7 @@ rule complete_assembly:
         final_link = 'assembly/final_contigs.fasta',
         sizes = "www/assembly_stats.txt"
     shell:
-        f'{pixi_run} -e bbmap bash -c "' + \
+        f'{pixi_run} -e bbmap bash -e -o pipefail -c "' + \
         """mkdir -p www/; 
         stats.sh {input.fasta} > {output.sizes}; 
         mkdir -p assembly; 
@@ -762,7 +762,7 @@ rule complete_assembly_with_qc:
         final_link = 'assembly/final_contigs.fasta',
         sizes = "www/assembly_stats.txt"
     shell:
-        f'{pixi_run} -e bbmap bash -c "' + \
+        f'{pixi_run} -e bbmap bash -e -o pipefail -c "' + \
         """mkdir -p www/; 
         stats.sh {input.fasta} > {output.sizes}; 
         mkdir -p assembly; 

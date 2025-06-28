@@ -274,7 +274,7 @@ rule concoct:
     benchmark:
         "benchmarks/concoct.benchmark.txt"
     shell:
-        f"{pixi_run} -e concoct bash -c '"
+        f"{pixi_run} -e concoct bash -e -o pipefail -c '"
         "rm -rf data/concoct_*/; "
         "mkdir -p data/concoct_working && "
         "cut_up_fasta.py {input.fasta} -c 10000 -o 0 --merge_last -b data/concoct_working/contigs_10K.bed > data/concoct_working/contigs_10K.fa 2> {log} && "
@@ -348,7 +348,7 @@ rule vamb:
         "benchmarks/vamb.benchmark.txt"
     shell:
         "rm -rf data/vamb_bins/; " + \
-        pixi_run + " -e vamb bash -c 'OPENBLAS_NUM_THREADS={threads} OMP_NUM_THREADS={threads} MKL_NUM_THREADS={threads} NUMEXPR_NUM_THREADS={threads} vamb bin default --outdir data/vamb_bins/ -p {threads} --abundance_tsv {input.coverage} --fasta {input.fasta} "
+        pixi_run + " -e vamb bash -e -o pipefail -c 'OPENBLAS_NUM_THREADS={threads} OMP_NUM_THREADS={threads} MKL_NUM_THREADS={threads} NUMEXPR_NUM_THREADS={threads} vamb bin default --outdir data/vamb_bins/ -p {threads} --abundance_tsv {input.coverage} --fasta {input.fasta} "
         "--minfasta {params.min_bin_size} -m {params.min_contig_size} > {log} 2>&1' "
         "&& touch {output[0]} {params.really_done} {params.touch} && mkdir -p data/vamb_bins/bins"
 
@@ -461,7 +461,7 @@ rule taxvamb:
     shell:
         # Specify -o since we are not doing binsplitting
         "rm -rf data/taxvamb_bins/; " + \
-        pixi_run + " -e {params.pixi_env} bash -c 'OPENBLAS_NUM_THREADS={threads} OMP_NUM_THREADS={threads} MKL_NUM_THREADS={threads} NUMEXPR_NUM_THREADS={threads} vamb bin taxvamb --outdir data/taxvamb_bins/ -p {threads} --fasta {input.fasta} "
+        pixi_run + " -e {params.pixi_env} bash -e -o pipefail -c 'OPENBLAS_NUM_THREADS={threads} OMP_NUM_THREADS={threads} MKL_NUM_THREADS={threads} NUMEXPR_NUM_THREADS={threads} vamb bin taxvamb --outdir data/taxvamb_bins/ -p {threads} --fasta {input.fasta} "
         "--abundance_tsv {input.coverage} --taxonomy {input.taxonomy} "
         "--minfasta {params.min_bin_size} -m {params.min_contig_size} {params.gpu_flag} -o > {log} 2>&1' "
         "&& touch {output[0]} {params.really_done} {params.touch} && mkdir -p data/vamb_bins/bins"
@@ -659,7 +659,7 @@ rule semibin:
     benchmark:
         "benchmarks/semibin.benchmark.txt"
     shell:
-        pixi_run + " -e {params.pixi_env} bash -c '"
+        pixi_run + " -e {params.pixi_env} bash -e -o pipefail -c '"
         "rm -rf data/semibin_bins/; "
         "mkdir -p data/semibin_bins/output_bins/ && "
         "SemiBin2 single_easy_bin "
@@ -1134,7 +1134,7 @@ rule checkm_das_tool:
     log:
         "logs/checkm_das_tool.log"
     shell:
-        f"{pixi_run} -e checkm bash -c '"
+        f"{pixi_run} -e checkm bash -e -o pipefail -c '"
         "checkm lineage_wf -t {threads} --pplacer_threads {params.pplacer_threads} "
         "-x fa data/das_tool_bins_pre_refine/das_tool_DASTool_bins data/das_tool_bins_pre_refine/checkm --tab_table "
         "-f data/das_tool_bins_pre_refine/checkm.out > {log} 2>&1 && "
