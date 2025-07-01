@@ -1238,17 +1238,18 @@ def main():
             logging.info("All paths set. Exiting without downloading databases. If you wish to download databases use --download")
             sys.exit(0)
 
-    if args.build_gpu:
-        subprocess.run(pixi_run.replace("run", "install -a", 1).split(), check=True)
-        sys.exit(0)
-
-    if args.subparser_name == 'build' or args.build:
+    if args.subparser_name == 'build' or args.build or args.build_gpu:
         with importlib.resources.path("aviary", "pixi.toml") as manifest_path:
-            with open(manifest_path, 'rb') as f:
-                manifest_dict = tomllib.load(f)
+            subprocess.run(f"pixi config set --local run-post-link-scripts insecure --manifest-path {manifest_path}".split(), check=True)
 
-        env_args = " ".join([f"-e {e}" for e in manifest_dict["environments"].keys() if not e.endswith("-gpu")])
-        subprocess.run(pixi_run.replace("run", f"install {env_args}", 1).split(), check=True)
+            if args.build_gpu:
+                subprocess.run(f"pixi install -a --frozen --manifest-path {manifest_path}".split(), check=True)
+            else:
+                with open(manifest_path, 'rb') as f:
+                    manifest_dict = tomllib.load(f)
+                env_args = " ".join([f"-e {e}" for e in manifest_dict["environments"].keys() if not e.endswith("-gpu")])
+                subprocess.run(f"pixi install --frozen --manifest-path {manifest_path} {env_args}".split(), check=True)
+
         sys.exit(0)
 
     # else:
