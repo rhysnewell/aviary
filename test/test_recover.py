@@ -13,6 +13,76 @@ REVERSE_READS = os.path.join(path_to_data, "wgsim.2.fq.gz")
 ASSEMBLY = os.path.join(path_to_data, "assembly.fasta")
 
 class Tests(unittest.TestCase):
+    def test_read_permissions(self):
+        """Test with a non-readable fastq input fastq file."""
+        with tempfile.TemporaryDirectory() as tmpdir:
+            # Create a file with no read permissions
+            no_read_permissions = os.path.join(tmpdir, "no_read_permissions.fq.gz")
+            with open(no_read_permissions, 'w') as f:
+                f.write(">abc\nACGT\n")
+            os.chmod(no_read_permissions, 0o200)
+
+            cmd = (
+                f"GTDBTK_DATA_PATH=. "
+                f"CHECKM2DB=. "
+                f"EGGNOG_DATA_DIR=. "
+                f"METABULI_DB_PATH=. "
+                f"SINGLEM_METAPACKAGE_PATH=. "
+                f"aviary recover "
+                f"--assembly {ASSEMBLY} "
+                f"-1 {no_read_permissions} "
+                f"-2 {REVERSE_READS} "
+                f"--output {tmpdir}/test "
+            )
+            try:
+                output = extern.run(cmd)
+                # If the command succeeds, it should not
+                # raise an exception, so we fail the test.
+                raise AssertionError("Command should have failed due to read permissions error.")
+            except extern.ExternCalledProcessError as e:
+                output = str(e)
+                self.assertTrue(" Please check permissions." in output)
+
+            cmd = (
+                f"GTDBTK_DATA_PATH=. "
+                f"CHECKM2DB=. "
+                f"EGGNOG_DATA_DIR=. "
+                f"METABULI_DB_PATH=. "
+                f"SINGLEM_METAPACKAGE_PATH=. "
+                f"aviary recover "
+                f"--assembly {ASSEMBLY} "
+                f"-1 {FORWARD_READS} "
+                f"-2 {no_read_permissions} "
+                f"--output {tmpdir}/test "
+            )
+            try:
+                output = extern.run(cmd)
+                # If the command succeeds, it should not
+                # raise an exception, so we fail the test.
+                raise AssertionError("Command should have failed due to read permissions error.")
+            except extern.ExternCalledProcessError as e:
+                output = str(e)
+                self.assertTrue(" Please check permissions." in output)
+
+            cmd = (
+                f"GTDBTK_DATA_PATH=. "
+                f"CHECKM2DB=. "
+                f"EGGNOG_DATA_DIR=. "
+                f"METABULI_DB_PATH=. "
+                f"SINGLEM_METAPACKAGE_PATH=. "
+                f"aviary assemble "
+                f"--interleaved {no_read_permissions} "
+                f"--output {tmpdir}/test "
+            )
+            try:
+                output = extern.run(cmd)
+                # If the command succeeds, it should not
+                # raise an exception, so we fail the test.
+                raise AssertionError("Command should have failed due to read permissions error.")
+            except extern.ExternCalledProcessError as e:
+                output = str(e)
+                self.assertTrue(" Please check permissions." in output)
+
     def test_recover_simple_inputs(self):
         with tempfile.TemporaryDirectory() as tmpdir:
             cmd = (

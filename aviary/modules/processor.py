@@ -253,6 +253,23 @@ class Processor:
             self.pe2 = 'none'
             self.short_percent_identity = 'none'
 
+        # Ensure that all input read files we have read permission on
+        if self.pe1 != 'none':
+            for p in self.pe1:
+                if not os.access(p, os.R_OK):
+                    logging.error(f"Cannot read short read file {p}. Please check permissions.")
+                    sys.exit(1)
+        if self.pe2 != 'none':
+            for p in self.pe2:
+                if not os.access(p, os.R_OK):
+                    logging.error(f"Cannot read short read file {p}. Please check permissions.")
+                    sys.exit(1)
+        if self.longreads != 'none':
+            for p in self.longreads:
+                if not os.access(p, os.R_OK):
+                    logging.error(f"Cannot read long read file {p}. Please check permissions.")
+                    sys.exit(1)
+
         try:
             self.kmer_sizes = args.kmer_sizes
             self.use_megahit = args.use_megahit
