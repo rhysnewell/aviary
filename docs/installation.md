@@ -22,7 +22,7 @@ channels:
   - defaults
 ```
 
-#### Option 1) Install from Bioconda
+#### Option 1: Install from Bioconda
 
 Conda can handle the creation of the environment for you directly:
 
@@ -35,7 +35,7 @@ Or install into existing environment:
 conda install -c bioconda aviary
 ```
 
-#### Option 2) Install from pip
+#### Option 2: Install from pip
 
 Create the environment using the `aviary.yml` file then install from pip:
 ```
@@ -44,51 +44,41 @@ conda activate aviary
 pip install aviary-genome
 ```
 
-#### Option 3) Install from source
+#### Option 3: Install from source
 
-Initial requirements for aviary can be downloaded using the `aviary.yml`:
+To install from source, we recommend using [pixi](https://pixi.sh/). First clone
+the aviary repository from GitHub:
 ```
 git clone https://github.com/rhysnewell/aviary.git
 cd aviary
-conda env create -n aviary -f aviary.yml
-conda activate aviary
-pip install -e .
 ```
 
-Whatever option you choose, running `aviary --help` should return the following
-output:
+Then install the main environment using pixi:
+```
+pixi run --manifest-path aviary/pixi.toml postinstall
 ```
 
-                    ......:::::: AVIARY ::::::......
-
-           A comprehensive metagenomics bioinformatics pipeline
-
-Metagenome assembly, binning, and annotation:
-        assemble  - Perform hybrid assembly using short and long reads, 
-                    or assembly using only short reads
-        recover   - Recover MAGs from provided assembly using a variety 
-                    of binning algorithms 
-        annotate  - Annotate MAGs using EggNOG and GTBD-tk
-        genotype  - Perform strain diversity analysis of MAGs using Lorikeet
-        complete  - Runs each stage of the pipeline: assemble, recover, 
-                    annotate, genotype in that order.
-        cluster   - Combines and dereplicates the MAGs from multiple Aviary runs
-                    using Galah
-
-Isolate assembly, binning, and annotation:
-        isolate   - Perform isolate assembly **PARTIALLY COMPLETED**
-        
-Utility modules:
-        configure - Set or overwrite the environment variables for future runs.
-
+Then aviary can be run using `pixi run` (or via `pixi shell`).
+```
+pixi run --manifest-path aviary/pixi.toml aviary --help
 ```
 
-Upon first running aviary you will be prompted to input the location for where you would like
-your conda environments to be stored, the GTDB release installed on your system, the location of your
-EggNog database, and the location of your BUSCO database. These locations will be stored as environment
-variables, and automatically sourced by Aviary at runtime.
+When installed this way, aviary is installed in an "editable" way (similar to `pip install -e .`), meaning that any changes made to aviary source are immediately available via the `aviary` command. This is useful for development and debugging.
 
-These environment variables can be reset using `aviary configure`
+When run this way, the databases required for aviary (e.g. `CHECKM2DB`) can be symlinked from a `db/` directory in the aviary repository. An activation hook then ensures that these are available when in the pixi environments. To do this, create a `db/` directory in the aviary repository and symlink the required databases into it. For example, as of writing:
+```
+$ ls db -l
+lrwxrwxrwx - woodcrob 23 Apr 07:56 2.1.3 -> /mnt/hpccs01/work/microbiome/db/eggnog-mapper/2.1.3
+lrwxrwxrwx - woodcrob 23 Apr 07:55 2015_01_16_v2 -> /work/microbiome/db/checkm/2015_01_16_v2
+lrwxrwxrwx - woodcrob 23 Apr 07:54 CheckM2_database -> /work/microbiome/db/CheckM2_database
+lrwxrwxrwx - woodcrob 23 Apr 07:57 gtdb207 -> /work/microbiome/db/metabuli/gtdb207
+lrwxrwxrwx - woodcrob 23 Apr 07:56 release220 -> /work/microbiome/db/gtdb/gtdb_release220/auxillary_files/gtdbtk_package/full_package/release220
+lrwxrwxrwx - woodcrob 23 Apr 07:55 S4.3.0.GTDB_r220.metapackage_20240523.smpkg.zb -> /work/microbiome/db/singlem/S4.3.0.GTDB_r220
+```
+To check the expected database symlink names, see `admin/set_env_vars.sh` in the
+aviary repository. The advantage of this approach is that locations of the
+databases are not tracked in the repository, since they are specific to the
+computing cluster of the user.
 
 ## Databases
 
