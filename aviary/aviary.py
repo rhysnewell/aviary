@@ -37,6 +37,8 @@ import logging
 import os
 from datetime import datetime
 import subprocess
+import importlib.resources
+import tomllib
 
 # Debug
 debug={1:logging.CRITICAL,
@@ -272,6 +274,17 @@ def main():
         nargs='?',
         const=True,
         dest='build',
+        metavar='yes|no',
+        default='no',
+    )
+
+    base_group.add_argument(
+        '--build-gpu',
+        help='Build Aviary dependency environments, including GPU enabled ones, and then exit. Note: requires a GPU to be present.',
+        type=str2bool,
+        nargs='?',
+        const=True,
+        dest='build_gpu',
         metavar='yes|no',
         default='no',
     )
@@ -1036,6 +1049,16 @@ def main():
 
                                              ''')
 
+    build_options.add_argument(
+        '--gpu',
+        help='Also build the GPU enabled environments for Aviary. Note: requires a GPU to be present.',
+        type=str2bool,
+        nargs='?',
+        const=True,
+        dest='build_gpu',
+        default=False,
+    )
+
     add_workflow_arg(build_options, ['build'])
 
     ##########################  ~ VIRAL ~   ###########################
@@ -1215,8 +1238,17 @@ def main():
             logging.info("All paths set. Exiting without downloading databases. If you wish to download databases use --download")
             sys.exit(0)
 
-    if args.subparser_name == 'build' or args.build:
+    if args.build_gpu:
         subprocess.run(pixi_run.replace("run", "install -a", 1).split(), check=True)
+        sys.exit(0)
+
+    if args.subparser_name == 'build' or args.build:
+        with importlib.resources.path("aviary", "pixi.toml") as manifest_path:
+            with open(manifest_path, 'rb') as f:
+                manifest_dict = tomllib.load(f)
+
+        env_args = " ".join([f"-e {e}" for e in manifest_dict["environments"].keys() if not e.endswith("-gpu")])
+        subprocess.run(pixi_run.replace("run", f"install {env_args}", 1).split(), check=True)
         sys.exit(0)
 
     # else:
