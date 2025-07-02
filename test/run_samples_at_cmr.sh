@@ -41,8 +41,8 @@ do
         -1 "$DATA_DIR/${sample}_1.fastq.gz" \
         -2 "$DATA_DIR/${sample}_2.fastq.gz" \
         --binning-only \
-        --threads 32 \
-        --memory 256 \
+        -t 32 \
+        -m 256 \
         '&>' "$OUTPUT_DIR/$sample.log" &>> $MQSUB_OUT
 done
 
