@@ -122,15 +122,25 @@ class Tests(unittest.TestCase):
         self.assertTrue(os.path.isfile(f"{output_dir}/aviary_out/data/final_contigs.fasta"))
         self.assertTrue(os.path.islink(f"{output_dir}/aviary_out/assembly/final_contigs.fasta"))
 
+        with open(f"{output_dir}/aviary_out/data/final_contigs.fasta") as f:
+            contigs = [c for c in f.read().strip().split('\n') if not c.startswith('>')]
+            total_bp = sum(len(c) for c in contigs)
+
+        self.assertTrue(total_bp > 1500000, "Assembly should be at least 1.5 million bp without host filtering")
+
     def test_short_read_assembly_host(self):
         output_dir = os.path.join("example", "test_short_read_assembly_host")
         setup_output_dir(output_dir)
+
+        cmd = f"zcat {data}/GCA_000503915.1_ASM50391v1_genomic.fna.gz > {output_dir}/host_filter.fasta"
+        subprocess.run(cmd, shell=True, check=True)
+
         cmd = (
             f"aviary assemble "
             f"-o {output_dir}/aviary_out "
             f"-1 {data}/wgsim.1.fq.gz "
             f"-2 {data}/wgsim.2.fq.gz "
-            f"--host-filter {data}/host_filter.fasta "
+            f"--host-filter {output_dir}/host_filter.fasta "
             f"-n 32 -t 32 "
         )
         subprocess.run(cmd, shell=True, check=True)
@@ -138,6 +148,12 @@ class Tests(unittest.TestCase):
         self.assertTrue(os.path.isdir(f"{output_dir}/aviary_out"))
         self.assertTrue(os.path.isfile(f"{output_dir}/aviary_out/data/final_contigs.fasta"))
         self.assertTrue(os.path.islink(f"{output_dir}/aviary_out/assembly/final_contigs.fasta"))
+
+        with open(f"{output_dir}/aviary_out/data/final_contigs.fasta") as f:
+            contigs = [c for c in f.read().strip().split('\n') if not c.startswith('>')]
+            total_bp = sum(len(c) for c in contigs)
+
+        self.assertTrue(total_bp < 1000000, "Assembly should be smaller than 1 million bp after host filtering")
 
     def test_short_read_coassembly(self):
         output_dir = os.path.join("example", "test_short_read_coassembly")
