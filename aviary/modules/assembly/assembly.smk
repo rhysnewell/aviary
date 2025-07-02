@@ -104,8 +104,8 @@ rule polish_metagenome_flye:
     benchmark:
         "benchmarks/polish_metagenome_flye.benchmark.txt"
     shell:
-        # Commented out --reference-filter for now because it appears buggy
-        # --reference-filter {config[reference_filter]} \
+        # Commented out --host-filter for now because it appears buggy
+        # --host-filter {config[host_filter]} \
         f'{pixi_run} -e polishing {ASSEMBLY_SCRIPTS_DIR}/'+\
         """polish.py \
         --short-reads-1 {config[short_reads_1]} \
@@ -207,8 +207,8 @@ rule polish_meta_racon_ill:
     benchmark:
         "benchmarks/polish_meta_racon_ill.benchmark.txt"
     shell:
-        # Removing --reference-filter for now because it appears buggy
-        # --reference-filter {config[reference_filter]} \
+        # Removing --host-filter for now because it appears buggy
+        # --host-filter {config[host_filter]} \
         f'{pixi_run} -e polishing {ASSEMBLY_SCRIPTS_DIR}/'+\
         """polish.py \
         --short-reads-1 {config[short_reads_1]} \
@@ -339,7 +339,7 @@ rule get_high_cov_contigs:
 # Specifically, short reads that do not map to the high coverage long contigs are collected
 rule filter_illumina_assembly:
     input:
-        fastq = "data/short_reads.fastq.gz" if config["reference_filter"] != ["none"] else config['short_reads_1'], # check short reads were supplied
+        fastq = "data/short_reads.fastq.gz" if config["host_filter"] != ["none"] else config['short_reads_1'], # check short reads were supplied
         fasta = "data/flye_high_cov.fasta"
     output:
         bam = temp("data/sr_vs_long.sort.bam"),
@@ -468,8 +468,8 @@ rule assemble_short_reads:
     benchmark:
         "benchmarks/short_read_assembly_short.benchmark.txt"
     shell:
-        # Commented out --reference-filter for now because it appears buggy
-        # --reference-filter {config[reference_filter]} \
+        # Commented out --host-filter for now because it appears buggy
+        # --host-filter {config[host_filter]} \
         f'{pixi_run} -e spades {ASSEMBLY_SCRIPTS_DIR}/'+\
         """assemble_short_reads.py \
         --short-reads-1 {params.short_reads_1} \

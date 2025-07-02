@@ -298,7 +298,7 @@ def filter_illumina_reference(
     min_length: int,
     max_length: int,
     extra_fastp_params: str,
-    reference_filter: List[str],
+    host_filter: List[str],
     output_bam: str,
     output_fastq: str,
     threads: int,
@@ -357,62 +357,62 @@ def filter_illumina_reference(
 
     
 
-    reference_filter_file_string = ''
+    host_filter_file_string = ''
     with open(log, "a") as logf:
-        if len(reference_filter) == 0:
-            logf.write(f"Not performing reference filtering: {reference_filter}\n")
+        if len(host_filter) == 0:
+            logf.write(f"Not performing host reference filtering: {host_filter}\n")
             Path(filtered).touch()
             Path(output_bam).touch()
             return
         
-        if len(reference_filter) > 1:
-            with open(f'data/reference_filter.fasta', 'w') as out:
-                for reference in reference_filter:
+        if len(host_filter) > 1:
+            with open(f'data/host_filter.fasta', 'w') as out:
+                for reference in host_filter:
                     # check if file exists
                     if not os.path.exists(reference):
-                        logf.write(f"Reference filter file {reference} does not exist\n")
+                        logf.write(f"Host reference filter file {reference} does not exist\n")
                         exit(1)
 
                     # concatenate accoutning for gzipped files
                     cat_or_zcat = 'zcat' if reference.endswith('.gz') else 'cat'
                     cat_cmd = f'{cat_or_zcat} {reference}'.split()
 
-                    logf.write(f"Shell style : {' '.join(cat_cmd)} > data/reference_filter.fasta\n")
+                    logf.write(f"Shell style : {' '.join(cat_cmd)} > data/host_filter.fasta\n")
 
                     cat_p1 = Popen(cat_cmd, stdout=out, stderr=logf)
                     cat_p1.wait()
                     logf.write(f"cat return: {cat_p1.returncode}\n")
 
             # gzip the concatenated file
-            pigz_cmd = f'pigz -p {threads} data/reference_filter.fasta'.split()
+            pigz_cmd = f'pigz -p {threads} data/host_filter.fasta'.split()
             logf.write(f"Shell style : {' '.join(pigz_cmd)}\n")
 
             pigz_p1 = Popen(pigz_cmd, stderr=logf)
             pigz_p1.wait()
             logf.write(f"pigz return: {pigz_p1.returncode}\n")
 
-            reference_filter_file_string = f'data/reference_filter.fasta.gz'
+            host_filter_file_string = f'data/host_filter.fasta.gz'
         else:
             # make sure file exists
-            if not os.path.exists(reference_filter[0]):
-                logf.write(f"Reference filter file {reference_filter[0]} does not exist\n")
+            if not os.path.exists(host_filter[0]):
+                logf.write(f"Host reference filter file {host_filter[0]} does not exist\n")
                 exit(1)
 
-            reference_filter_file_string = f'{reference_filter[0]}'
+            host_filter_file_string = f'{host_filter[0]}'
 
 
     run_mapping_process(
         reads_string='data/short_reads.fastq.gz',
-        input_fasta=reference_filter_file_string,
+        input_fasta=host_filter_file_string,
         output_bam=output_bam,
         output_fastq=output_fastq,
         threads=threads,
         log=log,
     )
 
-    # remove the reference filter file
-    if os.path.exists("data/reference_filter.fasta.gz"):
-        os.remove("data/reference_filter.fasta.gz")
+    # remove the host reference filter file
+    if os.path.exists("data/host_filter.fasta.gz"):
+        os.remove("data/host_filter.fasta.gz")
 
     Path(filtered).touch()
 
@@ -438,7 +438,7 @@ if __name__ == '__main__':
     
     # Other parameters
     parser.add_argument('--coassemble', type=lambda x: x.lower() == 'true', nargs='?', const=True, default=False, help='Coassemble reads (True or False)')
-    parser.add_argument('--reference-filter', nargs='*', default=[], help='Reference filter FASTA files')
+    parser.add_argument('--host-filter', nargs='*', default=[], help='Host reference genome files to filter against')
     parser.add_argument('--skip-qc', type=lambda x: x.lower() == 'true', nargs='?', const=True, default=False, help='Skip quality control (True or False)')
     parser.add_argument('--threads', type=int, default=1, help='Number of threads')
     parser.add_argument('--log', required=True, help='Log file path')
@@ -458,7 +458,7 @@ if __name__ == '__main__':
         min_length=args.min_length,
         max_length=args.max_length,
         extra_fastp_params=args.extra_fastp_params,
-        reference_filter=args.reference_filter,
+        host_filter=args.host_filter,
         output_bam=args.output_bam,
         output_fastq=args.output_fastq,
         threads=args.threads,

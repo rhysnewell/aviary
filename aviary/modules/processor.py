@@ -183,7 +183,7 @@ class Processor:
             self.assembly = 'none'
 
         try:
-            self.reference_filter = [os.path.abspath(ref_fil) for ref_fil in args.reference_filter if ref_fil != 'none']
+            self.host_filter = [os.path.abspath(ref_fil) for ref_fil in args.host_filter if ref_fil != 'none']
             if args.gold_standard is not None:
                 self.gold_standard = [os.path.abspath(p) for p in args.gold_standard]
             else:
@@ -200,7 +200,7 @@ class Processor:
             self.quality_cutoff = args.quality_cutoff
             self.extra_fastp_params = args.extra_fastp_params
         except AttributeError:
-            self.reference_filter = 'none'
+            self.host_filter = 'none'
             self.gold_standard = 'none'
             self.min_read_size = 0
             self.min_mean_q = 0
@@ -413,7 +413,7 @@ class Processor:
             self.gsa_mappings = os.path.abspath(self.gsa_mappings)
 
         conf["fasta"] = self.assembly
-        conf["reference_filter"] = self.reference_filter
+        conf["host_filter"] = self.host_filter
         conf["min_read_size"] = self.min_read_size
         conf["min_mean_q"] = self.min_mean_q
         conf["keep_percent"] = self.keep_percent

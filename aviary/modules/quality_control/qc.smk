@@ -26,7 +26,7 @@ rule qc_short_reads:
         unqualified_percent_limit = config['unqualified_percent_limit'],
         extra_fastp_params = config['extra_fastp_params'],
         coassemble = config["coassemble"],
-        reference_filter = [] if "none" in config["reference_filter"] else config["reference_filter"],
+        host_filter = [] if "none" in config["host_filter"] else config["host_filter"],
         skip_qc = config["skip_qc"]
     threads:
         config["max_threads"]
@@ -53,7 +53,7 @@ rule qc_short_reads:
           --min-length {params.min_length} \
           --max-length {params.max_length} \
           --extra-fastp-params "{params.extra_fastp_params}" \
-          --reference-filter {params.reference_filter} \
+          --host-filter {params.host_filter} \
           --threads {threads} \
           --log {log}
         """
@@ -68,7 +68,7 @@ rule qc_long_reads:
         min_length = config['min_read_size'],
         keep_percent = config['keep_percent'],
         min_mean_q = config['min_mean_q'],
-        reference_filter = [] if config["reference_filter"] == "none" else config["reference_filter"],
+        host_filter = [] if config["host_filter"] == "none" else config["host_filter"],
         skip_qc = config["skip_qc"]
     threads:
         config["max_threads"]
@@ -88,7 +88,7 @@ rule qc_long_reads:
             --min-length {params.min_length} \
             --min-quality {params.min_mean_q} \
             --keep-percent {params.keep_percent} \
-            --reference-filter {params.reference_filter} \
+            --host-filter {params.host_filter} \
             --skip-qc {params.skip_qc} \
             --threads {threads} \
             --log {log}

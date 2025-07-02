@@ -62,7 +62,7 @@ def run_skip_qc(
 
 def qc_long_reads(
     long_reads: List[str], # long reads to quality control
-    reference_filter: List[str], # one or more references to filter against
+    host_filter: List[str], # one or more references to filter against
     coassemble: bool,
     skip_qc: bool,
     min_length: int,
@@ -75,7 +75,7 @@ def qc_long_reads(
     """
     Quality control long reads using chopper
     :param long_reads: list of long reads
-    :param reference_filter: list of reference genomes to filter against
+    :param host_filter: list of reference genomes to filter against
     :param coassemble: coassemble or not, if true we will filter all reads into the same file
     :param skip_qc: skip quality control if true
     :param min_length: minimum length of reads to keep
@@ -91,15 +91,15 @@ def qc_long_reads(
         run_skip_qc(long_reads, output_long_reads, coassemble, log_file, threads)
         return
 
-    # if we have more than one reference_filter file, we need to concatenate them into a single temp file
+    # if we have more than one host_filter file, we need to concatenate them into a single temp file
     with open(log_file, 'a') as logf:
-        reference_filter_file_string = ''
-        if len(reference_filter) > 1:
-            with open(f'{output_long_reads}.reference_filter.fasta', 'w') as out:
-                for reference in reference_filter:
+        host_filter_file_string = ''
+        if len(host_filter) > 1:
+            with open(f'{output_long_reads}.host_filter.fasta', 'w') as out:
+                for reference in host_filter:
                     # check if file exists
                     if not os.path.exists(reference):
-                        logf.write(f"Reference filter file {reference} does not exist\n")
+                        logf.write(f"Host reference filter file {reference} does not exist\n")
                         exit(1)
 
                     # concatenate accoutning for gzipped files
@@ -113,27 +113,27 @@ def qc_long_reads(
                     logf.write(f"cat return: {cat_p1.returncode}\n")
 
             # gzip the concatenated file
-            pigz_cmd = f'pigz -p {threads} {output_long_reads}.reference_filter.fasta'.split()
+            pigz_cmd = f'pigz -p {threads} {output_long_reads}.host_filter.fasta'.split()
             logf.write(f"Shell style : {' '.join(pigz_cmd)}\n")
 
             pigz_p1 = Popen(pigz_cmd, stderr=logf)
             pigz_p1.wait()
             logf.write(f"pigz return: {pigz_p1.returncode}\n")
 
-            reference_filter_file_string = f'-c {output_long_reads}.reference_filter.fasta.gz'
-        elif len(reference_filter) == 1:
+            host_filter_file_string = f'-c {output_long_reads}.host_filter.fasta.gz'
+        elif len(host_filter) == 1:
             # make sure file exists
-            if not os.path.exists(reference_filter[0]):
-                logf.write(f"Reference filter file {reference_filter[0]} does not exist\n")
+            if not os.path.exists(host_filter[0]):
+                logf.write(f"Host reference filter file {host_filter[0]} does not exist\n")
                 exit(1)
 
-            reference_filter_file_string = f'-c {reference_filter[0]}'
+            host_filter_file_string = f'-c {host_filter[0]}'
 
 
         # run chopper    
         # chopper reads on stdin and write to stdout
         logf.write(f"Running chopper on {len(long_reads)} files\n")
-        logf.write(f"Reference filter: {reference_filter_file_string}\n")
+        logf.write(f"Host reference filter: {host_filter_file_string}\n")
         with open(output_long_reads, 'w') as out:
             for long_read in long_reads:
                 # make sure file exists
@@ -143,7 +143,7 @@ def qc_long_reads(
 
                 cat_or_zcat = 'zcat' if long_read.endswith('.gz') else 'cat'
                 cat_cmd = f'{cat_or_zcat} {long_read}'.split()
-                chopper_cmd = f'chopper -l {min_length} -q {min_quality} -t {threads} {reference_filter_file_string}'.split()
+                chopper_cmd = f'chopper -l {min_length} -q {min_quality} -t {threads} {host_filter_file_string}'.split()
                 pigz_cmd = f'pigz -p {threads}'.split()
 
                 logf.write(f"Shell style : {' '.join(cat_cmd)} | {' '.join(chopper_cmd)} | {' '.join(pigz_cmd)} > {output_long_reads}\n")
@@ -162,14 +162,14 @@ def qc_long_reads(
                 if not coassemble:
                     break
         
-        # clean up reference filter if we concatenated
-        if os.path.exists(f'{output_long_reads}.reference_filter.fasta.gz'):
-            os.remove(f'{output_long_reads}.reference_filter.fasta.gz')
+        # clean up Host reference filter if we concatenated
+        if os.path.exists(f'{output_long_reads}.host_filter.fasta.gz'):
+            os.remove(f'{output_long_reads}.host_filter.fasta.gz')
 
 if __name__ == '__main__':
     parser = argparse.ArgumentParser(description='Quality control long reads using chopper')
     parser.add_argument('--long-reads', required=True, nargs='+', help='Long read files')
-    parser.add_argument('--reference-filter', nargs='*', default=[], help='Reference genome files to filter against')
+    parser.add_argument('--host-filter', nargs='*', default=[], help='Host reference genome files to filter against')
     parser.add_argument('--coassemble', type=str, choices=['True', 'False'], help='Coassemble reads into one file')
     parser.add_argument('--skip-qc', type=str, choices=['True', 'False'], help='Skip quality control')
     parser.add_argument('--min-length', type=int, default=1000, help='Minimum read length')
@@ -191,7 +191,7 @@ if __name__ == '__main__':
     
     qc_long_reads(
         long_reads=args.long_reads,
-        reference_filter=args.reference_filter,
+        host_filter=args.host_filter,
         coassemble=coassemble,
         skip_qc=skip_qc,
         min_length=args.min_length,

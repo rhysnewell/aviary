@@ -339,9 +339,9 @@ def main():
     )
 
     qc_group.add_argument(
-        '-r', '--reference-filter', '--reference_filter',
-        help='One or more reference filter files to aid in the assembly. Remove contaminant reads from the assembly.',
-        dest="reference_filter",
+        '-r', '--host-filter', '--host_filter',
+        help='One or more host reference filter files to aid in the assembly. Remove contaminant reads from the assembly.',
+        dest="host_filter",
         nargs='*',
         default=['none']
     )

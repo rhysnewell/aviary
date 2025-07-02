@@ -33,7 +33,7 @@ This error is almost always caused by the user running out of storage in their `
 
 ### I wish to remove host contamination from my reads
 
-Aviary supports the removal of host contamination during the assembly process via the `-r`, `--reference-filter` parameter. This flag can take one or more compressed or non-compressed fasta files. Aviary will then compare the reads to these references and remove any reads that map to them.
+Aviary supports the removal of host contamination during the assembly process via the `-r`, `--host-filter` parameter. This flag can take one or more compressed or non-compressed fasta files. Aviary will then compare the reads to these references and remove any reads that map to them.
 
 ### SPAdes error: "Error code: -9" or other errors
 
