@@ -129,7 +129,6 @@ def run_polish(
     polishing_rounds: int,
     medaka_model: str,
     reference: str,
-    host_filter: str,
     max_cov: int,
     illumina: bool,
     long_read_type: str,
@@ -148,9 +147,7 @@ def run_polish(
 
     # Whether contigs are polished with illumina or long read
     if illumina:
-        if host_filter != 'none':
-            reads = "data/short_reads.fastq.gz"
-        elif short_reads_2 != 'none':
+        if short_reads_2 != 'none':
 
             # Racon can't handle paired end reads. It treats them as singled-ended. But when you have paired end reads
             # in separate files they can share the same read name, so we need to alter the read name based on the pair
@@ -206,10 +203,7 @@ def run_polish(
             # Generate PAF mapping files
             if not os.path.exists(paf): # Check if mapping already exists
                 if illumina:
-                    if reads != "data/short_reads.fastq.gz":
-                        minimap2_process("sr", reference, ' '.join(reads), threads, paf, log)
-                    else:
-                        minimap2_process("sr", reference, reads, threads, paf, log)
+                    minimap2_process("sr", reference, ' '.join(reads), threads, paf, log)
                 elif long_read_type in ['ont', 'ont_hq']:
                     sys.exit("ONT reads are not supported for racon polishing")
                 else:
@@ -363,7 +357,6 @@ if __name__ == "__main__":
     parser.add_argument('--short-reads-2', nargs='+', default='none', help='Short reads 2')
     parser.add_argument('--input-fastq', help='Input fastq file')
     parser.add_argument('--reference', help='Reference fasta file')
-    parser.add_argument('--host-filter', default='none', help='Host reference genome files to filter against')
     parser.add_argument('--output-dir', default='data/polishing', help='Output directory')
     parser.add_argument('--output-prefix', help='Output prefix')
     parser.add_argument('--output-fasta', help='Output fasta file')
@@ -390,7 +383,6 @@ if __name__ == "__main__":
         read2,
         args.input_fastq,
         reference=args.reference,
-        host_filter=args.host_filter,
         output_dir=args.output_dir,
         output_prefix=args.output_prefix,
         output_fasta=args.output_fasta,

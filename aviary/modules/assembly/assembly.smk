@@ -85,12 +85,15 @@ rule polish_metagenome_flye:
     input:
         fastq = "data/long_reads.fastq.gz",
         fasta = "data/flye/assembly.fasta",
+        qc_reads = [] if config["skip_qc"] or config["short_reads_1"] == "none" else "data/short_reads.fastq.gz",
     params:
         prefix = "polished",
         maxcov = 200,
         rounds = 3,
         illumina = False,
-        coassemble = config["coassemble"]
+        coassemble = config["coassemble"],
+        short_reads_1 = " ".join(config["short_reads_1"]) if config["skip_qc"] else "",
+        short_reads_2 = " ".join(config["short_reads_2"]) if config["skip_qc"] else "none",
     threads:
         config["max_threads"]
     resources:
@@ -104,12 +107,10 @@ rule polish_metagenome_flye:
     benchmark:
         "benchmarks/polish_metagenome_flye.benchmark.txt"
     shell:
-        # Commented out --host-filter for now because it appears buggy
-        # --host-filter {config[host_filter]} \
         f'{pixi_run} -e polishing {ASSEMBLY_SCRIPTS_DIR}/'+\
         """polish.py \
-        --short-reads-1 {config[short_reads_1]} \
-        --short-reads-2 {config[short_reads_2]} \
+        --short-reads-1 {input.qc_reads}{params.short_reads_1} \
+        --short-reads-2 {params.short_reads_2} \
         --input-fastq {input.fastq} \
         --reference {input.fasta} \
         --output-dir data/polishing \
@@ -129,11 +130,12 @@ rule polish_metagenome_flye:
 # Generate BAM file for pilon, discard unmapped reads
 rule generate_pilon_sort:
     input:
-        fastq = config['short_reads_1'],
-        filtered = "data/short_filter.done",
-        fasta = "data/assembly.pol.rac.fasta"
+        fasta = "data/assembly.pol.rac.fasta",
+        qc_reads = [] if config["skip_qc"] or config["short_reads_1"] == "none" else "data/short_reads.fastq.gz",
     params:
-        coassemble = config["coassemble"]
+        coassemble = config["coassemble"],
+        short_reads_1 = " ".join(config["short_reads_1"]) if config["skip_qc"] else "",
+        short_reads_2 = " ".join(config["short_reads_2"]) if config["skip_qc"] else "none",
     output:
         bam = temp("data/pilon.sort.bam"),
         bai = temp("data/pilon.sort.bam.bai")
@@ -149,8 +151,8 @@ rule generate_pilon_sort:
     shell:
         f'{pixi_run} -e pilon {ASSEMBLY_SCRIPTS_DIR}/'+\
         """generate_pilon_sort.py \
-        --short-reads-1 {config[short_reads_1]} \
-        --short-reads-2 {config[short_reads_2]} \
+        --short-reads-1 {input.qc_reads}{params.short_reads_1} \
+        --short-reads-2 {params.short_reads_2} \
         --input-fasta {input.fasta} \
         --output-bam {output.bam} \
         --threads {threads} \
@@ -186,8 +188,8 @@ rule polish_meta_pilon:
 # The assembly polished with Racon and Pilon is polished again with the short reads using Racon
 rule polish_meta_racon_ill:
     input:
-        fastq = config['short_reads_1'], # check short reads are here
-        fasta = "data/assembly.pol.pil.fasta"
+        fasta = "data/assembly.pol.pil.fasta",
+        qc_reads = [] if config["skip_qc"] or config["short_reads_1"] == "none" else "data/short_reads.fastq.gz",
     output:
         fasta = "data/assembly.pol.fin.fasta",
         paf = temp("data/polishing/alignment.racon_ill.0.paf")
@@ -203,16 +205,16 @@ rule polish_meta_racon_ill:
         maxcov = 200,
         rounds = 1,
         illumina = True,
-        coassemble = config["coassemble"]
+        coassemble = config["coassemble"],
+        short_reads_1 = " ".join(config["short_reads_1"]) if config["skip_qc"] else "",
+        short_reads_2 = " ".join(config["short_reads_2"]) if config["skip_qc"] else "none",
     benchmark:
         "benchmarks/polish_meta_racon_ill.benchmark.txt"
     shell:
-        # Removing --host-filter for now because it appears buggy
-        # --host-filter {config[host_filter]} \
         f'{pixi_run} -e polishing {ASSEMBLY_SCRIPTS_DIR}/'+\
         """polish.py \
-        --short-reads-1 {config[short_reads_1]} \
-        --short-reads-2 {config[short_reads_2]} \
+        --short-reads-1 {input.qc_reads}{params.short_reads_1} \
+        --short-reads-2 {params.short_reads_2} \
         --reference {input.fasta} \
         --output-dir data/polishing \
         --output-prefix {params.prefix} \
@@ -339,7 +341,7 @@ rule get_high_cov_contigs:
 # Specifically, short reads that do not map to the high coverage long contigs are collected
 rule filter_illumina_assembly:
     input:
-        fastq = "data/short_reads.fastq.gz" if config["host_filter"] != ["none"] else config['short_reads_1'], # check short reads were supplied
+        fastq = config['short_reads_1'] if config["skip_qc"] else "data/short_reads.fastq.gz",
         fasta = "data/flye_high_cov.fasta"
     output:
         bam = temp("data/sr_vs_long.sort.bam"),
@@ -388,7 +390,7 @@ rule filter_illumina_assembly:
 # If only short reads are provided
 rule short_only:
     input:
-        fastq = "data/short_reads.fastq.gz"
+        fastq = config['short_reads_1'] if config["skip_qc"] else "data/short_reads.fastq.gz",
     output:
         fasta = "data/flye_high_cov.fasta",
         # long_reads = temp("data/long_reads.fastq.gz")
@@ -440,7 +442,7 @@ rule spades_assembly:
 # Perform short read assembly only with no other steps
 rule assemble_short_reads:
     input:
-        fastq = "data/short_reads.fastq.gz"
+        qc_reads = config["short_reads_1"] if config["skip_qc"] else "data/short_reads.fastq.gz",
     output:
         fasta = "data/short_read_assembly/scaffolds.fasta",
         # We cannot mark the output_folder as temp as then it gets deleted,
@@ -450,8 +452,8 @@ rule assemble_short_reads:
         # reads1 = temporary("data/short_reads.1.fastq.gz"),
         # reads2 = temporary("data/short_reads.2.fastq.gz")
     params:
-        short_reads_1 = ",".join(config["short_reads_1"]),
-        short_reads_2 = ",".join(config["short_reads_2"]),
+        short_reads_1 = ",".join(config["short_reads_1"]) if config["skip_qc"] else "",
+        short_reads_2 = ",".join(config["short_reads_2"]) if config["skip_qc"] else "none",
         max_memory = config["max_memory"],
         kmer_sizes = config["kmer_sizes"],
         use_megahit = config["use_megahit"],
@@ -468,11 +470,9 @@ rule assemble_short_reads:
     benchmark:
         "benchmarks/short_read_assembly_short.benchmark.txt"
     shell:
-        # Commented out --host-filter for now because it appears buggy
-        # --host-filter {config[host_filter]} \
         f'{pixi_run} -e spades {ASSEMBLY_SCRIPTS_DIR}/'+\
         """assemble_short_reads.py \
-        --short-reads-1 {params.short_reads_1} \
+        --short-reads-1 {input.qc_reads}{params.short_reads_1} \
         --short-reads-2 {params.short_reads_2} \
         --max-memory {config[max_memory]} \
         --use-megahit {params.use_megahit} \

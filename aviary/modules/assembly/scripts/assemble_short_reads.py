@@ -9,7 +9,6 @@ from typing import List
 
 def assemble_short_reads(
         read_set1, read_set2,
-        host_filter: str,
         max_memory: int,
         use_megahit: bool,
         coassemble: bool,
@@ -47,7 +46,7 @@ def assemble_short_reads(
             if read_set2 != 'none':
                 read_set2 = read_set2[0]
 
-        elif not use_megahit and host_filter == 'none':
+        elif not use_megahit:
             if read_set2 != 'none':
                 for reads1, reads2 in zip(read_set1, read_set2):
                     with open(log, 'a') as logf:
@@ -88,9 +87,6 @@ def assemble_short_reads(
     read_string = f"--12 {read_set1}"
     if read_set2 != 'none':
         read_string = f"-1 {read_set1} -2 {read_set2}"
-    
-    if host_filter != 'none':
-        read_string = f"--12 data/short_reads.fastq.gz"
 
 
     # Run chosen assembler
@@ -117,7 +113,6 @@ if __name__ == '__main__':
     parser = argparse.ArgumentParser(description='Assemble short reads using megahit or spades')
     parser.add_argument('--short-reads-1', required=True, help='List of short reads 1, or "none"')
     parser.add_argument('--short-reads-2', default='none', help='List of short reads 2, or "none"')
-    parser.add_argument('--host-filter', default='none', help='Host reference filter, or "none"')
     parser.add_argument('--max-memory', type=int, required=True, help='Maximum memory to use in GB')
     parser.add_argument('--use-megahit', type=lambda x: x.lower() == 'true', nargs='?', const=True, default=False,
                         help='Use megahit (True) or spades (False)')
@@ -151,7 +146,6 @@ if __name__ == '__main__':
     assemble_short_reads(
         read_set1,
         read_set2,
-        args.host_filter,
         args.max_memory,
         args.use_megahit,
         args.coassemble,

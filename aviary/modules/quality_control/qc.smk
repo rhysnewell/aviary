@@ -26,7 +26,7 @@ rule qc_short_reads:
         unqualified_percent_limit = config['unqualified_percent_limit'],
         extra_fastp_params = config['extra_fastp_params'],
         coassemble = config["coassemble"],
-        host_filter = [] if "none" in config["host_filter"] else config["host_filter"],
+        host_filter = [] if config["host_filter"] == ["none"] else config["host_filter"],
         skip_qc = config["skip_qc"]
     threads:
         config["max_threads"]
@@ -68,7 +68,7 @@ rule qc_long_reads:
         min_length = config['min_read_size'],
         keep_percent = config['keep_percent'],
         min_mean_q = config['min_mean_q'],
-        host_filter = [] if config["host_filter"] == "none" else config["host_filter"],
+        host_filter = [] if config["host_filter"] == ["none"] else config["host_filter"],
         skip_qc = config["skip_qc"]
     threads:
         config["max_threads"]

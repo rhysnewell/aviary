@@ -183,7 +183,11 @@ class Processor:
             self.assembly = 'none'
 
         try:
-            self.host_filter = [os.path.abspath(ref_fil) for ref_fil in args.host_filter if ref_fil != 'none']
+            if args.host_filter != ['none']:
+                self.host_filter = [os.path.abspath(ref_fil) for ref_fil in args.host_filter if ref_fil != 'none']
+            else:
+                self.host_filter = ['none']
+
             if args.gold_standard is not None:
                 self.gold_standard = [os.path.abspath(p) for p in args.gold_standard]
             else:
@@ -200,7 +204,7 @@ class Processor:
             self.quality_cutoff = args.quality_cutoff
             self.extra_fastp_params = args.extra_fastp_params
         except AttributeError:
-            self.host_filter = 'none'
+            self.host_filter = ['none']
             self.gold_standard = 'none'
             self.min_read_size = 0
             self.min_mean_q = 0
