@@ -340,7 +340,7 @@ def main():
 
     qc_group.add_argument(
         '-r', '--host-filter', '--host_filter',
-        help='One or more host reference filter files to aid in the assembly. Remove contaminant reads from the assembly.',
+        help='One or more host reference fasta files for removal of contaminant reads prior to assembly.',
         dest="host_filter",
         nargs='*',
         default=['none']
