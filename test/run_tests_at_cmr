@@ -21,7 +21,7 @@ def collect_expensive_tests():
     )
     nodeids = [
         line.strip() for line in result.stdout.splitlines()
-        if line.strip() and not line.startswith('<')
+        if line.strip() and line.strip().startswith('test/')
     ]
     return nodeids
 
