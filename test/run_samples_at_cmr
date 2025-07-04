@@ -1,0 +1,68 @@
+#!/usr/bin/env python3
+
+import os
+import sys
+import subprocess
+
+# Run from base dir of repo
+# $ pixi run -e dev python test/run_samples_at_cmr
+#
+# For now, need to make sure manually that all the mqsub'd jobs finish without error at the end.
+# Randomly selected via Sandpiper
+# Gut: SRR29134037, SRR6028613, SRR17283995
+# Soil: SRR28059992, SRR30718229, SRR26545921
+# Ocean: ERR599108, SRR13153254, ERR12716859
+
+DATA_DIR = "/work/microbiome/aviary_module_benchmarking/data/test_data"
+DATE = subprocess.Popen(["date", "+%Y%m%d"], stdout=subprocess.PIPE, text=True).communicate()[0].strip()
+COMMIT = subprocess.Popen(["git", "rev-parse", "HEAD"], stdout=subprocess.PIPE, text=True).communicate()[0].strip()
+OUTPUT_DIR = f"/work/microbiome/aviary_module_benchmarking/results/test_data/{DATE}/{COMMIT}"
+
+os.makedirs(OUTPUT_DIR, exist_ok=True)
+
+fails = 0
+for sample in ["SRR29134037",
+               "SRR6028613",
+               "SRR17283995",
+               "SRR28059992",
+               "SRR30718229",
+               "SRR26545921",
+               "ERR599108",
+               "SRR13153254",
+               "ERR12716859"]:
+    with open(f"test/qsub-{sample}-log.txt", "w") as log_file:
+        print(f"Running sample {sample}, outputting to {OUTPUT_DIR}/{sample}")
+        process = subprocess.Popen(
+            [
+                "pixi", "run", "--frozen", "--manifest-path", "aviary/pixi.toml", "-e", "dev",
+                "aviary", "recover",
+                "-o", f"{OUTPUT_DIR}/{sample}",
+                "-1", f"{DATA_DIR}/{sample}_1.fastq.gz",
+                "-2", f"{DATA_DIR}/{sample}_2.fastq.gz",
+                "--binning-only",
+                "-n", "32", "-t", "32", "--local-cores", "1",
+                "-m", "256",
+                "--snakemake-profile", "aqua", "--cluster-retries", "3",
+            ],
+            stdout=subprocess.PIPE,
+            stderr=subprocess.STDOUT,
+            text=True
+        )
+        for line in process.stdout:
+            print(line, end="")
+            log_file.write(line)
+        process.wait()
+        # check return code
+        if process.returncode != 0:
+            print(f"Error: qsub tests failed with return code {process.returncode}.")
+            print("Check the log file test/qsub-test-log.txt for details.")
+            fails += 1
+        else:
+            print("tests marked qsub appear to have run successfully, but check the log file test/qsub-test-log.txt for details.\n")
+
+if fails > 0:
+    print(f"Total number of jobs with FAILED lines: {fails}")
+    sys.exit(fails)
+else:
+    print("All jobs completed successfully without FAILED lines in their output. Win.")
+    sys.exit(0)
