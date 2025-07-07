@@ -238,10 +238,9 @@ rule annotate:
          'data/gtdbtk/done',
          'data/eggnog/done',
     output:
-         'annotation/done',
+         touch('annotation/done'),
     shell:
          """
          ln -sr data/gtdbtk taxonomy; 
-         ln -sr data/eggnog annotation; 
-         touch annotation/done;
+         ln -sr data/eggnog annotation;
          """

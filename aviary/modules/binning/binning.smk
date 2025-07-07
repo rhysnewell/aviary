@@ -214,15 +214,16 @@ rule get_bam_indices:
     input:
         coverage = "data/coverm.cov"
     output:
-        bams = "data/binning_bams/done"
+        bams = touch("data/binning_bams/done")
     threads:
         config["max_threads"]
     resources:
         mem_mb = lambda wildcards, attempt: min(int(config["max_memory"])*1024, 128*1024*attempt),
         runtime = lambda wildcards, attempt: 24*60*attempt,
+    log:
+        "logs/get_bam_indices.log"
     shell:
-        f"ls data/binning_bams/*.bam | {pixi_run}" + " -e coverm parallel -j 1 'samtools index -@ {threads} {{}} {{}}.bai' &&"
-        "touch data/binning_bams/done"
+        f"bash -c 'ls data/binning_bams/*.bam | {pixi_run}" + " -e coverm parallel -j 1 samtools index -@ {threads} {{}} {{}}.bai' &> {log}"
 
 
 rule maxbin2:
@@ -289,7 +290,7 @@ rule concoct:
 rule vamb_jgi_filter:
     """
     vamb has to have to coverage file filtered prior to running otherwise it throws an error
-    Outputs a coverage file containing no contigs smaller than minimum contig size
+    Outputs a coverage file containing no contigs smaller than minimum contig size.
     """
     input:
         large_contigs_done = "data/done/filter_contigs_by_size.done",

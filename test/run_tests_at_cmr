@@ -121,19 +121,22 @@ with open(MQSUB_OUT, "r") as mqsub_file:
         raise ValueError("Warning: Number of segregated log directories does not match number of job IDs. job_ids: {}".format(job_ids))
 
     job_id_to_output = {}
+    job_id_to_path = {}
     for (job_id, log_dir) in zip(job_ids, segregated_log_dirs):
         # Check if the log directory exists
         if not os.path.exists(log_dir):
             print(f"Warning: Log directory {log_dir} for job {job_id} does not exist.")
         else:
-            with open(os.path.join(log_dir, f"{job_id}.OU"), "r") as stdout_file:
+            job_path = os.path.join(log_dir, f"{job_id}.OU")
+            job_id_to_path[job_id] = job_path
+            with open(job_path) as stdout_file:
                 job_id_to_output[job_id] = stdout_file.read()
 
     # For each job, report if any line starts with FAILED
     for job_id, output in job_id_to_output.items():
         if any(line.startswith("FAILED") for line in output.splitlines()):
             fails += 1
-            print(f"Job {job_id} has FAILED lines in its output.")
+            print(f"Job {job_id} has FAILED lines in its output. See {job_id_to_path[job_id]} for details.")
             print(output)
     if fails > 0:
         print(f"Total number of jobs with FAILED lines: {fails}")

@@ -392,13 +392,7 @@ rule short_only:
     input:
         fastq = config['short_reads_1'] if config["skip_qc"] else "data/short_reads.fastq.gz",
     output:
-        fasta = "data/flye_high_cov.fasta",
-        # long_reads = temp("data/long_reads.fastq.gz")
-    shell:
-        """
-        touch {output.fasta}
-        """
-        # touch {output.long_reads}
+        fasta = touch("data/flye_high_cov.fasta"),
 
 # Short reads that did not map to the long read assembly are hybrid assembled with metaspades
 # If no long reads were provided, long_reads.fastq.gz will be empty
@@ -489,8 +483,10 @@ rule move_spades_assembly:
     output:
         out = "data/final_contigs.fasta"
     priority: 1
+    log:
+        "logs/move_spades_assembly.log"
     shell:
-        "cp {input.assembly} {output.out} && rm -rf data/short_read_assembly"
+        "bash -c 'cp {input.assembly} {output.out} && rm -rf data/short_read_assembly' &> {log}"
 
 
 # Short reads are mapped to the spades assembly and jgi_summarize_bam_contig_depths from metabat
@@ -582,6 +578,8 @@ rule pool_reads:
         list = "data/list_of_lists.txt"
     benchmark:
         "benchmarks/pool_reads.benchmark.txt"
+    log:
+        "logs/pool_reads.log"
     shell:
         f'{pixi_run} -e pysam {ASSEMBLY_SCRIPTS_DIR}/'+\
         """pool_reads.py \
@@ -591,6 +589,7 @@ rule pool_reads:
         --short-reads {input.short_reads} \
         --short-reads-2 {config[short_reads_2]} \
         --output-list {output.list}
+        &> {log}
         """
 
 # Binned read lists are processed to extract the reads associated with each bin
