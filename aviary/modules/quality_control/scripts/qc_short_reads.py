@@ -361,7 +361,9 @@ def filter_illumina_reference(
     with open(log, "a") as logf:
         if len(host_filter) == 0:
             logf.write(f"Not performing host reference filtering: {host_filter}\n")
+            logf.write(f"Writing empty filtered file {filtered}\n")
             Path(filtered).touch()
+            logf.write(f"Writing empty output BAM file {output_bam}\n")
             Path(output_bam).touch()
             return
         

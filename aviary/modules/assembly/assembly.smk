@@ -452,7 +452,7 @@ rule assemble_short_reads:
         kmer_sizes = config["kmer_sizes"],
         use_megahit = config["use_megahit"],
         coassemble = config["coassemble"],
-        tmpdir = f"--tmpdir {config['tmpdir']}" if 'tmpdir' in config and config['tmpdir'] else "",
+        tmpdir = f"--tmp-dir {config['tmpdir']}" if 'tmpdir' in config and config['tmpdir'] else "",
         final_assembly = True
     threads:
         config["max_threads"]
