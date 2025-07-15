@@ -832,7 +832,7 @@ rule refine_rosella:
     log:
         "logs/refine_rosella.log"
     shell:
-        f'{pixi_run} -e checkm2 {BINNING_SCRIPTS_DIR}/'+\
+        f'{pixi_run} -e rosella {BINNING_SCRIPTS_DIR}/'+\
         """rosella_refine.py \
         --checkm {input.checkm} \
         --coverage {input.coverage} \
@@ -882,7 +882,7 @@ rule refine_metabat2:
     log:
         "logs/refine_metabat2.log"
     shell:
-        f'{pixi_run} -e checkm2 {BINNING_SCRIPTS_DIR}/'+\
+        f'{pixi_run} -e rosella {BINNING_SCRIPTS_DIR}/'+\
         """rosella_refine.py \
         --checkm {input.checkm} \
         --coverage {input.coverage} \
@@ -932,7 +932,7 @@ rule refine_semibin:
     log:
         "logs/refine_semibin.log"
     shell:
-        f'{pixi_run} -e checkm2 {BINNING_SCRIPTS_DIR}/'+\
+        f'{pixi_run} -e rosella {BINNING_SCRIPTS_DIR}/'+\
         """rosella_refine.py \
         --checkm {input.checkm} \
         --coverage {input.coverage} \
@@ -1059,7 +1059,7 @@ rule refine_dastool:
     log:
         "logs/refine_dastool.log"
     shell:
-        f'{pixi_run} -e checkm2 {BINNING_SCRIPTS_DIR}/'+\
+        f'{pixi_run} -e rosella {BINNING_SCRIPTS_DIR}/'+\
         """rosella_refine.py \
         --checkm {input.checkm} \
         --coverage {input.coverage} \
