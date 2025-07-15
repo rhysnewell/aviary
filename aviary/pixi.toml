@@ -108,7 +108,7 @@ flye = ">=2.9"
 
 [feature.polishing.dependencies]
 flye = ">=2.9"
-medaka = ">=1.7.2"
+medaka = ">=1.7.2,<2.1.0" # Restricted version due to https://github.com/nanoporetech/medaka/issues/566
 setuptools = "*"
 racon = ">=1.4.3"
 samtools = ">=1.16"
@@ -119,7 +119,7 @@ pigz = "*"
 [feature.pilon.dependencies]
 python = ">=3.6"
 flye = ">=2.9"
-medaka = ">=1.7.2"
+medaka = ">=1.7.2,<2.1.0"
 racon = ">=1.4.3"
 samtools = ">=1.9"
 minimap2 = ">=2.15"
