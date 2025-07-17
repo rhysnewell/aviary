@@ -97,7 +97,7 @@ def refinery(args):
             for bin in os.listdir(bin_folder):
                 if bin.endswith(extension):
                     shutil.copy(f"{bin_folder}/{bin}", f"{final_bins}/{os.path.splitext(bin)[0]}.fna")
-            open(f"{args.output_folder}/done", "a").close()
+        open(f"{args.output_folder}/done", "a").close()
         return
 
     # Fix for the jumbled code in the original script
