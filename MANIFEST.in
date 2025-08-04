@@ -1,2 +1,12 @@
 include LICENSE
-recursive-include aviary *
+include aviary/*py
+include aviary/*sh
+include aviary/pixi.toml
+include aviary/pixi.lock
+recursive-include aviary/modules *
+recursive-include aviary/scripts *
+recursive-include aviary/envs *
+recursive-include aviary/config *
+include admin/requirements.txt
+prune */__pycache__
+prune */.pixi
