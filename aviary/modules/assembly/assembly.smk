@@ -446,7 +446,7 @@ rule assemble_short_reads:
         # reads1 = temporary("data/short_reads.1.fastq.gz"),
         # reads2 = temporary("data/short_reads.2.fastq.gz")
     params:
-        short_reads_1 = ",".join(config["short_reads_1"]) if config["skip_qc"] else "",
+        short_reads_1 = ",".join(config["short_reads_1"]) if config["skip_qc"] else "data/short_reads.fastq.gz",
         short_reads_2 = ",".join(config["short_reads_2"]) if config["skip_qc"] else "none",
         max_memory = config["max_memory"],
         kmer_sizes = config["kmer_sizes"],
@@ -466,7 +466,7 @@ rule assemble_short_reads:
     shell:
         f'{pixi_run} -e spades {ASSEMBLY_SCRIPTS_DIR}/'+\
         """assemble_short_reads.py \
-        --short-reads-1 {input.qc_reads}{params.short_reads_1} \
+        --short-reads-1 {params.short_reads_1} \
         --short-reads-2 {params.short_reads_2} \
         --max-memory {config[max_memory]} \
         --use-megahit {params.use_megahit} \
