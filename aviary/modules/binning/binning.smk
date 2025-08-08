@@ -351,7 +351,7 @@ rule vamb:
         "rm -rf data/vamb_bins/; " + \
         pixi_run + " -e vamb bash -e -o pipefail -c 'OPENBLAS_NUM_THREADS={threads} OMP_NUM_THREADS={threads} MKL_NUM_THREADS={threads} NUMEXPR_NUM_THREADS={threads} vamb bin default --outdir data/vamb_bins/ -p {threads} --abundance_tsv {input.coverage} --fasta {input.fasta} "
         "--minfasta {params.min_bin_size} -m {params.min_contig_size} > {log} 2>&1' "
-        "&& touch {output[0]} {params.really_done} {params.touch} && mkdir -p data/vamb_bins/bins"
+        "&& mkdir -p data/vamb_bins/bins && touch {output[0]} {params.really_done} {params.touch}"
 
 
 rule vamb_skip:
@@ -465,7 +465,7 @@ rule taxvamb:
         pixi_run + " -e {params.pixi_env} bash -e -o pipefail -c 'OPENBLAS_NUM_THREADS={threads} OMP_NUM_THREADS={threads} MKL_NUM_THREADS={threads} NUMEXPR_NUM_THREADS={threads} vamb bin taxvamb --outdir data/taxvamb_bins/ -p {threads} --fasta {input.fasta} "
         "--abundance_tsv {input.coverage} --taxonomy {input.taxonomy} "
         "--minfasta {params.min_bin_size} -m {params.min_contig_size} {params.gpu_flag} -o > {log} 2>&1' "
-        "&& touch {output[0]} {params.really_done} {params.touch} && mkdir -p data/vamb_bins/bins"
+        "&& mkdir -p data/taxvamb_bins/bins && touch {output[0]} {params.really_done} {params.touch}"
 
 
 rule metabat2:
@@ -493,7 +493,7 @@ rule metabat2:
         "rm -rf data/metabat_bins_2/; " + \
         pixi_run + " -e metabat2 metabat -t {threads} -m {params.min_contig_size} -s {params.min_bin_size} --seed 89 -i {input.fasta} "
         "-a {input.coverage} -o data/metabat_bins_2/binned_contigs > {log} 2>&1 "
-        "&& touch {output[0]} {params.really_done} {params.touch}"
+        "&& mkdir -p data/metabat_bins_2 && touch {output[0]} {params.really_done} {params.touch}"
 
 
 rule metabat_spec:
@@ -521,7 +521,7 @@ rule metabat_spec:
         "rm -rf data/metabat_bins_spec; " + \
         pixi_run + " -e metabat2 metabat1 -t {threads} -m {params.min_contig_size} -s {params.min_bin_size} --seed 89 --specific -i {input.fasta} "
         "-a {input.coverage} -o data/metabat_bins_spec/binned_contigs > {log} 2>&1 "
-        "&& touch {output[0]} {params.really_done} {params.touch}"
+        "&& mkdir -p data/metabat_bins_spec && touch {output[0]} {params.really_done} {params.touch}"
 
 rule metabat_sspec:
     input:
@@ -548,7 +548,7 @@ rule metabat_sspec:
         "rm -rf data/metabat_bins_sspec; " + \
         pixi_run + " -e metabat2 metabat1 -t {threads} -m {params.min_contig_size} -s {params.min_bin_size} --seed 89 --superspecific "
         "-i {input.fasta} -a {input.coverage} -o data/metabat_bins_sspec/binned_contigs > {log} 2>&1 "
-        "&& touch {output[0]} {params.really_done} {params.touch}"
+        "&& mkdir -p data/metabat_bins_sspec && touch {output[0]} {params.really_done} {params.touch}"
 
 rule metabat_sens:
     input:
@@ -575,7 +575,7 @@ rule metabat_sens:
         "rm -rf data/metabat_bins_sens; " + \
         pixi_run + " -e metabat2 metabat1 -t {threads} -m {params.min_contig_size} -s {params.min_bin_size} --seed 89 --sensitive "
         "-i {input.fasta} -a {input.coverage} -o data/metabat_bins_sens/binned_contigs > {log} 2>&1 "
-        "&& touch {output[0]} {params.really_done} {params.touch}"
+        "&& mkdir -p data/metabat_bins_sens && touch {output[0]} {params.really_done} {params.touch}"
 
 rule metabat_ssens:
     input:
@@ -602,7 +602,7 @@ rule metabat_ssens:
         "rm -rf data/metabat_bins_ssens; " + \
         pixi_run + " -e metabat2 metabat1 -t {threads} -m {params.min_contig_size} -s {params.min_bin_size} --seed 89 --supersensitive "
         "-i {input.fasta} -a {input.coverage} -o data/metabat_bins_ssens/binned_contigs > {log} 2>&1 "
-        "&& touch {output[0]} {params.really_done} {params.touch}"
+        "&& mkdir -p data/metabat_bins_ssens && touch {output[0]} {params.really_done} {params.touch}"
 
 rule rosella:
     """
@@ -633,7 +633,7 @@ rule rosella:
         "rm -rf data/rosella_bins/; " + \
         pixi_run + " -e rosella rosella recover -r {input.fasta} -C {input.coverage} -t {threads} -o data/rosella_bins "
         "--min-contig-size {params.min_contig_size} --min-bin-size {params.min_bin_size} --n-neighbors 100 > {log} 2>&1 "
-        "&& touch {output[0]} {params.really_done} {params.touch}"
+        "&& mkdir -p data/rosella_bins && touch {output[0]} {params.really_done} {params.touch}"
 
 rule semibin:
     input:
@@ -702,7 +702,7 @@ rule comebin:
     shell:
         "rm -rf data/comebin_bins/; " + \
         pixi_run + " -e {params.pixi_env} run_comebin.sh -a {input.fasta} -p data/binning_bams -t {threads} -o data/comebin_bins > {log} 2>&1 "
-        "&& touch {output[0]} {params.really_done} {params.touch}"
+        "&& mkdir -p data/comebin_bins && touch {output[0]} {params.really_done} {params.touch}"
 
 
 rule checkm_rosella:
