@@ -334,7 +334,7 @@ rule vamb:
     params:
         min_bin_size = config["min_bin_size"],
         min_contig_size = config["min_contig_size"],
-        touch = "" if config["strict"] else "|| touch data/vamb_bins/done",
+        touch = "" if config["strict"] else "|| (mkdir -p data/vamb_bins/bins && touch data/vamb_bins/done)",
         really_done = "data/vamb_bins/really_done",
     threads:
         min(config["max_threads"], 24)
@@ -351,7 +351,7 @@ rule vamb:
         "rm -rf data/vamb_bins/; " + \
         pixi_run + " -e vamb bash -e -o pipefail -c 'OPENBLAS_NUM_THREADS={threads} OMP_NUM_THREADS={threads} MKL_NUM_THREADS={threads} NUMEXPR_NUM_THREADS={threads} vamb bin default --outdir data/vamb_bins/ -p {threads} --abundance_tsv {input.coverage} --fasta {input.fasta} "
         "--minfasta {params.min_bin_size} -m {params.min_contig_size} > {log} 2>&1' "
-        "&& mkdir -p data/vamb_bins/bins && touch {output[0]} {params.really_done} {params.touch}"
+        "&& touch {output[0]} {params.really_done} {params.touch}"
 
 
 rule vamb_skip:
@@ -445,7 +445,7 @@ rule taxvamb:
         min_contig_size = config["min_contig_size"],
         gpu_flag = "--cuda" if config["request_gpu"] else "",
         pixi_env = "taxvamb-gpu" if config["request_gpu"] else "taxvamb",
-        touch = "" if config["strict"] else "|| touch data/taxvamb_bins/done",
+        touch = "" if config["strict"] else "|| (mkdir -p data/taxvamb_bins/bins && touch data/taxvamb_bins/done)",
         really_done = "data/taxvamb_bins/really_done",
     threads:
         min(config["max_threads"], 24)
@@ -465,7 +465,7 @@ rule taxvamb:
         pixi_run + " -e {params.pixi_env} bash -e -o pipefail -c 'OPENBLAS_NUM_THREADS={threads} OMP_NUM_THREADS={threads} MKL_NUM_THREADS={threads} NUMEXPR_NUM_THREADS={threads} vamb bin taxvamb --outdir data/taxvamb_bins/ -p {threads} --fasta {input.fasta} "
         "--abundance_tsv {input.coverage} --taxonomy {input.taxonomy} "
         "--minfasta {params.min_bin_size} -m {params.min_contig_size} {params.gpu_flag} -o > {log} 2>&1' "
-        "&& mkdir -p data/taxvamb_bins/bins && touch {output[0]} {params.really_done} {params.touch}"
+        "&& touch {output[0]} {params.really_done} {params.touch}"
 
 
 rule metabat2:
@@ -476,7 +476,7 @@ rule metabat2:
     params:
         min_contig_size = max(int(config["min_contig_size"]), 1500),
         min_bin_size = config["min_bin_size"],
-        touch = "" if config["strict"] else "|| touch data/metabat_bins_2/done",
+        touch = "" if config["strict"] else "|| (mkdir -p data/metabat_bins_2 && touch data/metabat_bins_2/done)",
         really_done = "data/metabat_bins_2/really_done",
     output:
         metabat_done = "data/metabat_bins_2/done"
@@ -493,7 +493,7 @@ rule metabat2:
         "rm -rf data/metabat_bins_2/; " + \
         pixi_run + " -e metabat2 metabat -t {threads} -m {params.min_contig_size} -s {params.min_bin_size} --seed 89 -i {input.fasta} "
         "-a {input.coverage} -o data/metabat_bins_2/binned_contigs > {log} 2>&1 "
-        "&& mkdir -p data/metabat_bins_2 && touch {output[0]} {params.really_done} {params.touch}"
+        "&& touch {output[0]} {params.really_done} {params.touch}"
 
 
 rule metabat_spec:
@@ -506,7 +506,7 @@ rule metabat_spec:
     params:
         min_contig_size = max(int(config["min_contig_size"]), 1500),
         min_bin_size = config["min_bin_size"],
-        touch = "" if config["strict"] else "|| touch data/metabat_bins_spec/done",
+        touch = "" if config["strict"] else "|| (mkdir -p data/metabat_bins_spec && touch data/metabat_bins_spec/done)",
         really_done = "data/metabat_bins_spec/really_done",
     log:
         "logs/metabat_spec.log"
@@ -521,7 +521,7 @@ rule metabat_spec:
         "rm -rf data/metabat_bins_spec; " + \
         pixi_run + " -e metabat2 metabat1 -t {threads} -m {params.min_contig_size} -s {params.min_bin_size} --seed 89 --specific -i {input.fasta} "
         "-a {input.coverage} -o data/metabat_bins_spec/binned_contigs > {log} 2>&1 "
-        "&& mkdir -p data/metabat_bins_spec && touch {output[0]} {params.really_done} {params.touch}"
+        "&& touch {output[0]} {params.really_done} {params.touch}"
 
 rule metabat_sspec:
     input:
@@ -533,7 +533,7 @@ rule metabat_sspec:
     params:
         min_contig_size = max(int(config["min_contig_size"]), 1500),
         min_bin_size = config["min_bin_size"],
-        touch = "" if config["strict"] else "|| touch data/metabat_bins_sspec/done",
+        touch = "" if config["strict"] else "|| (mkdir -p data/metabat_bins_sspec && touch data/metabat_bins_sspec/done)",
         really_done = "data/metabat_bins_sspec/really_done",
     log:
         "logs/metabat_sspec.log"
@@ -548,7 +548,7 @@ rule metabat_sspec:
         "rm -rf data/metabat_bins_sspec; " + \
         pixi_run + " -e metabat2 metabat1 -t {threads} -m {params.min_contig_size} -s {params.min_bin_size} --seed 89 --superspecific "
         "-i {input.fasta} -a {input.coverage} -o data/metabat_bins_sspec/binned_contigs > {log} 2>&1 "
-        "&& mkdir -p data/metabat_bins_sspec && touch {output[0]} {params.really_done} {params.touch}"
+        "&& touch {output[0]} {params.really_done} {params.touch}"
 
 rule metabat_sens:
     input:
@@ -560,7 +560,7 @@ rule metabat_sens:
     params:
         min_contig_size = max(int(config["min_contig_size"]), 1500),
         min_bin_size = config["min_bin_size"],
-        touch = "" if config["strict"] else "|| touch data/metabat_bins_sens/done",
+        touch = "" if config["strict"] else "|| (mkdir -p data/metabat_bins_sens && touch data/metabat_bins_sens/done)",
         really_done = "data/metabat_bins_sens/really_done",
     log:
         "logs/metabat_sens.log"
@@ -575,7 +575,7 @@ rule metabat_sens:
         "rm -rf data/metabat_bins_sens; " + \
         pixi_run + " -e metabat2 metabat1 -t {threads} -m {params.min_contig_size} -s {params.min_bin_size} --seed 89 --sensitive "
         "-i {input.fasta} -a {input.coverage} -o data/metabat_bins_sens/binned_contigs > {log} 2>&1 "
-        "&& mkdir -p data/metabat_bins_sens && touch {output[0]} {params.really_done} {params.touch}"
+        "&& touch {output[0]} {params.really_done} {params.touch}"
 
 rule metabat_ssens:
     input:
@@ -587,7 +587,7 @@ rule metabat_ssens:
     params:
         min_contig_size = max(int(config["min_contig_size"]), 1500),
         min_bin_size = config["min_bin_size"],
-        touch = "" if config["strict"] else "|| touch data/metabat_bins_ssens/done",
+        touch = "" if config["strict"] else "|| (mkdir -p data/metabat_bins_ssens && touch data/metabat_bins_ssens/done)",
         really_done = "data/metabat_bins_ssens/really_done",
     log:
         "logs/metabat_ssens.log"
@@ -602,7 +602,7 @@ rule metabat_ssens:
         "rm -rf data/metabat_bins_ssens; " + \
         pixi_run + " -e metabat2 metabat1 -t {threads} -m {params.min_contig_size} -s {params.min_bin_size} --seed 89 --supersensitive "
         "-i {input.fasta} -a {input.coverage} -o data/metabat_bins_ssens/binned_contigs > {log} 2>&1 "
-        "&& mkdir -p data/metabat_bins_ssens && touch {output[0]} {params.really_done} {params.touch}"
+        "&& touch {output[0]} {params.really_done} {params.touch}"
 
 rule rosella:
     """
@@ -615,7 +615,7 @@ rule rosella:
     params:
         min_contig_size = config["min_contig_size"],
         min_bin_size = config["min_bin_size"],
-        touch = "" if config["strict"] else "|| touch data/rosella_bins/done",
+        touch = "" if config["strict"] else "|| (mkdir -p data/rosella_bins && touch data/rosella_bins/done)",
         really_done = "data/rosella_bins/really_done",
     output:
         # kmers = "data/rosella_bins/kmer_frequencies.tsv",
@@ -633,7 +633,7 @@ rule rosella:
         "rm -rf data/rosella_bins/; " + \
         pixi_run + " -e rosella rosella recover -r {input.fasta} -C {input.coverage} -t {threads} -o data/rosella_bins "
         "--min-contig-size {params.min_contig_size} --min-bin-size {params.min_bin_size} --n-neighbors 100 > {log} 2>&1 "
-        "&& mkdir -p data/rosella_bins && touch {output[0]} {params.really_done} {params.touch}"
+        "&& touch {output[0]} {params.really_done} {params.touch}"
 
 rule semibin:
     input:
@@ -687,7 +687,7 @@ rule comebin:
         config["max_threads"]
     params:
         pixi_env = "comebin-gpu" if config["request_gpu"] else "comebin",
-        touch = "" if config["strict"] else "|| touch data/comebin_bins/done",
+        touch = "" if config["strict"] else "|| (mkdir -p data/comebin_bins && touch data/comebin_bins/done)",
         really_done = "data/comebin_bins/really_done",
     resources:
         mem_mb = lambda wildcards, attempt: min(int(config["max_memory"])*1024, 128*1024*attempt),
@@ -702,7 +702,7 @@ rule comebin:
     shell:
         "rm -rf data/comebin_bins/; " + \
         pixi_run + " -e {params.pixi_env} run_comebin.sh -a {input.fasta} -p data/binning_bams -t {threads} -o data/comebin_bins > {log} 2>&1 "
-        "&& mkdir -p data/comebin_bins && touch {output[0]} {params.really_done} {params.touch}"
+        "&& touch {output[0]} {params.really_done} {params.touch}"
 
 
 rule checkm_rosella:
