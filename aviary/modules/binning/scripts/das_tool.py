@@ -85,7 +85,13 @@ if __name__ == '__main__':
             logging.warning(f'Bin definition file {bin_definition_file} is empty, suggesting that {binner} failed or did not not create any output bins.')
         else:
             bin_definition_files.append(bin_definition_file)
+
+    if len(bin_definition_files) == 0:
+        logging.warning("No bins were found, so DAS_tool cannot be run.")
+        sys.exit(0)
+
     logging.info("Bin definition files created: " + str(bin_definition_files))
+
 
     scaffold2bin_files = ','.join(bin_definition_files)
 

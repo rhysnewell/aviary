@@ -543,6 +543,12 @@ class Processor:
                 logging.info("Finished: %s" % workflow)
                 # logging.info("stderr: %s" % cmd_output)
             except subprocess.CalledProcessError as e:
+                if os.path.exists(os.path.join(self.output, "logs", "das_tool.log")):
+                    with open(os.path.join(self.output, "logs", "das_tool.log")) as f:
+                        if "No bins were found, so DAS_tool cannot be run." in f.read():
+                            logging.info("--- Aviary -----------------------------------------------------------")
+                            logging.warning("No bins were found by any binners.")
+                            sys.exit(0)
                 # removes the traceback
                 logging.critical(e)
                 exit(1)

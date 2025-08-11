@@ -11,6 +11,7 @@ aviary_genome.egg-info
 example/
 test/data/.conda
 test/data/wgsim.metaspades.assembly.fna.fai
+*-log.txt
 config.yaml
 benchmarks
 data

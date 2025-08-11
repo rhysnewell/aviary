@@ -549,6 +549,26 @@ class Tests(unittest.TestCase):
 
         self.assertFalse(os.path.isfile(f"{output_dir}/aviary_out/data/final_contigs.fasta"))
 
+    def test_short_read_recovery_no_bins(self):
+        output_dir = os.path.join("example", "test_short_read_recovery_no_bins")
+        setup_output_dir(output_dir)
+        cmd = (
+            f"aviary recover "
+            f"--assembly {data}/assembly.fasta "
+            f"-o {output_dir}/aviary_out "
+            f"-1 {data}/tiny_sample.1.fq "
+            f"-2 {data}/tiny_sample.2.fq "
+            f"--binning-only "
+            f"--skip-binners rosella vamb semibin metabat1 "
+            f"--skip-qc "
+            f"--refinery-max-iterations 0 "
+            f"-n 32 -t 32 "
+        )
+        subprocess.run(cmd, shell=True, check=True)
+
+        bin_info_path = f"{output_dir}/aviary_out/bins/bin_info.tsv"
+        self.assertFalse(os.path.isfile(bin_info_path))
+
     def test_short_read_recovery_no_assembly_provided(self):
         output_dir = os.path.join("example", "test_short_read_recovery_no_assembly_provided")
         setup_output_dir(output_dir)
