@@ -153,9 +153,9 @@ rule prepare_binning_files_split:
     shell:
         f'{pixi_run} -e coverm {BINNING_SCRIPTS_DIR}/'+\
         """get_coverage.py \
-        --long-reads {config[long_reads]} \
-        --short-reads-1 {config[short_reads_1]} \
-        --short-reads-2 {config[short_reads_2]} \
+        --long-reads {params.long_reads} \
+        --short-reads-1 {params.short_reads_1} \
+        --short-reads-2 {params.short_reads_2} \
         --long-read-type {config[long_read_type]} \
         --input-fasta {input.input_fasta} \
         --bam-cache {params.bam_cache} \
