@@ -76,11 +76,11 @@ if __name__ == '__main__':
         # metabat2 adds \t total_depth=X \t sample_depths=X to contig names, so we need to remove those.
         # Causes dastool error: ERROR: Cannot read scaffold2bin file: data/metabat2_refined_bins.tsv.	Please check file/format. Should be: scaffold_name \t bin_id 
         if 'metabat2' in binner:
-            cut_cmd = "| cut -f1,4"
+            fix_metabat_cmd = "| awk -F'\t' '{print $1 \"\t\" $NF}'"
         else:
-            cut_cmd = ""
+            fix_metabat_cmd = ""
 
-        run(f'Fasta_to_Scaffolds2Bin.sh -i data/{binner} -e {extension} {cut_cmd} >{bin_definition_file}  2>> {logfile}')
+        run(f'Fasta_to_Scaffolds2Bin.sh -i data/{binner} -e {extension} {fix_metabat_cmd} >{bin_definition_file}  2>> {logfile}')
         if os.path.getsize(bin_definition_file) == 0:
             logging.warning(f'Bin definition file {bin_definition_file} is empty, suggesting that {binner} failed or did not not create any output bins.')
         else:
