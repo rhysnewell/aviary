@@ -1,0 +1,244 @@
+<!doctype html>
+
+<html lang="en">
+
+<head>
+    <meta charset="utf-8">
+
+    <title>FAQs &amp; Troubleshooting</title>
+    <meta name="description" content="Documentation for Aviary">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+
+    <link
+        href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700&family=Source+Sans+Pro:ital,wght@0,400;0,600;0,700;1,400;1,600;1,700&display=swap"
+        rel="stylesheet">
+
+    <link rel="stylesheet" type="text/css" href="/aviary/assets/normalize.css?v=1756691352"
+        media="screen" />
+    <link rel="stylesheet" type="text/css" href="/aviary/assets/doctave-style.css?v=1756691352"
+        media="screen" />
+    <link rel="stylesheet" type="text/css" href="/aviary/assets/katex.css?v=1756691352" media="screen" />
+    <link rel="stylesheet" type="text/css" href="/aviary/assets/prism-ghcolors.css?v=1756691352"
+        media="screen" />
+
+    <script>
+        var DOCTAVE_TIMESTAMP = "1756691352";
+        var BASE_PATH = "/aviary/";
+        var color = localStorage.getItem('doctave-color')
+
+        if (color === 'dark') {
+            document.getElementsByTagName('html')[0].classList.remove('light');
+            document.getElementsByTagName('html')[0].classList.add('dark');
+        } else {
+            document.getElementsByTagName('html')[0].classList.remove('dark');
+            document.getElementsByTagName('html')[0].classList.add('light');
+        }
+    </script>
+
+    
+</head>
+
+<body>
+    <label for='menu-toggle-switch' class='menu-toggle-button'>
+        ☰
+    </label>
+    <input type="checkbox" id="menu-toggle-switch" value='0' />
+    <div class='page'>
+        <div class='header'>
+            <div class='logo'>
+                
+                <a href="/aviary/">
+                    <img src="/aviary/images/mini_logo.png" alt='Aviary logo'></img>
+                </a>
+                
+                <h2 class='project-name'>
+                    <a href="/aviary/">
+                        Aviary
+                    </a>
+                </h2>
+            </div>
+            <div class='search'>
+                <form id='search-form'>
+    <input type='text' id='search-box' autocomplete="off" placeholder="Search..."></input>
+    <span class='search-icon'>S</span>
+    <ul id='search-results'></ul>
+</form>
+
+            </div>
+            <div class='header-dummy-right'>
+            </div>
+        </div>
+        <div class='container'>
+            <div class='sidebar-left'>
+                <nav class='site-nav'>
+    <ul>
+        
+            <li><a href="/aviary/installation">Installation</a></li>
+            
+        
+            <li><a href="/aviary/examples">Examples</a></li>
+            
+        
+            <li><a class="active" href="/aviary/faqs">FAQs &amp; Troubleshooting</a></li>
+            
+        
+            <li><a href="/aviary/concepts">Concepts</a></li>
+            
+        
+            <li><a href="/aviary/citations">Citations</a></li>
+            
+        
+    </ul>
+    <span id='light-dark-mode-switch'>
+        <svg xmlns="http://www.w3.org/2000/svg" id="dark-mode-icon" viewBox="0 0 20 20" fill="currentColor">
+            <path d="M17.293 13.293A8 8 0 016.707 2.707a8.001 8.001 0 1010.586 10.586z" />
+        </svg>
+
+        <svg xmlns="http://www.w3.org/2000/svg" id="light-mode-icon" viewBox="0 0 20 20" fill="currentColor">
+            <path fill-rule="evenodd" d="M10 2a1 1 0 011 1v1a1 1 0 11-2 0V3a1 1 0 011-1zm4 8a4 4 0 11-8 0 4 4 0 018 0zm-.464 4.95l.707.707a1 1 0 001.414-1.414l-.707-.707a1 1 0 00-1.414 1.414zm2.12-10.607a1 1 0 010 1.414l-.706.707a1 1 0 11-1.414-1.414l.707-.707a1 1 0 011.414 0zM17 11a1 1 0 100-2h-1a1 1 0 100 2h1zm-7 4a1 1 0 011 1v1a1 1 0 11-2 0v-1a1 1 0 011-1zM5.05 6.464A1 1 0 106.465 5.05l-.708-.707a1 1 0 00-1.414 1.414l.707.707zm1.414 8.486l-.707.707a1 1 0 01-1.414-1.414l.707-.707a1 1 0 011.414 1.414zM4 11a1 1 0 100-2H3a1 1 0 000 2h1z" clip-rule="evenodd" />
+        </svg>
+    </span>
+</nav>
+
+            </div>
+            <div class='doctave-content'>
+                <h1 id="faqs-&amp;-troubleshooting">FAQs &amp; Troubleshooting</h1>
+<p>This page is just meant for general questions that I notice are asked with some frequency. If you feel like something
+is missing from here and you'd like to see it included, feel free to ask it by raising an issue on GitHub.</p>
+<h3 id="i-want-to-perform-both-mag-recovery-and-assembly,-how-do-i-do-that?">I want to perform both MAG recovery and assembly, how do I do that?</h3>
+<p>If you supply all reads to the <code>recover</code> command then Aviary will perform assembly first and then perform MAG recovery. You can perform assembly first by using the <code>assemble</code> command and then using the output assembly file as the input to the <code>recover</code> command. However, it is much simpler to let aviary handle this process for you.</p>
+<h3 id="an-error-occurred-but-i-don't-know-where-to-look-for-the-error-message">An error occurred but I don't know where to look for the error message</h3>
+<p>All of the error messages are stored in the <code>logs/</code> folder. The error messages are stored in the <code>logs/</code> folder with the name of the file corresponding the name of the rule that they originate from. If you had an error occur in the <code>qc_short_reads</code> rule then consult the <code>logs/qc_short_reads.log</code> file for the error message.</p>
+<h3 id="is-aviary-cluster-compatible?">Is Aviary cluster compatible?</h3>
+<p>Yes! Consult the examples page for more information.</p>
+<h3 id="i-have-access-to-a-gpu,-can-i-use-it?">I have access to a GPU, can I use it?</h3>
+<p>Yes! Aviary supports the use of GPUs for the assembly process. If the GPU is on a local machine, you must first install the <code>cuda</code> package into your conda environment. Then, programs that use GPUs should automatically detect its presence.</p>
+<p>If you are using a cluster, you can supply the <code>--request-gpu</code> flag and Aviary will attempt to place rules that use GPUs on to a machine that has GPUs available.</p>
+<h3 id="error-in-prepare_binning_files">Error in prepare_binning_files</h3>
+<p>This error is almost always caused by the user running out of storage in their <code>/tmp</code> folder when <code>coverm</code> performs the mapping process. To fix this, you can either increase the amount of storage available to the <code>/tmp</code> folder or you can change the location of the temporary folder by setting the <code>TMPDIR</code> environment variable to a folder with more storage. Aviary also allows the user to specify the location of the temporary folder by using the <code>--tmpdir</code> parameter.</p>
+<h3 id="i-wish-to-remove-host-contamination-from-my-reads">I wish to remove host contamination from my reads</h3>
+<p>Aviary supports the removal of host contamination during the assembly process via the <code>-r</code>, <code>--reference-filter</code> parameter. This flag can take one or more compressed or non-compressed fasta files. Aviary will then compare the reads to these references and remove any reads that map to them.</p>
+<h3 id="spades-error:-">SPAdes error: "Error code: -9" or other errors</h3>
+<p>The most likely solution to this is that you are running out of memory. SPAdes is a memory intensive program and will exit unexpectedly if it reaches the maximum memory limit of your machine or supplied by aviary.
+To increase the amount of memory available to SPAdes, you can either increase the amount of memory available to the entire pipeline by using the <code>-m</code> parameter.</p>
+<h3 id="qsub-and-pysam---modulenotfounderror">qsub and pysam - ModuleNotFoundError</h3>
+<p>A known issue with using snakemake + pysam + qsub results in the a break in the pipeline. The issue arises because pysam 
+does not activate correctly when using qsub by default. To fix this you just need to add the <code>-V </code> parameter to your qsub
+command.</p>
+<h3 id="which-databases-do-i-download?">Which databases do I download?</h3>
+<p>It is probably best to just let Aviary handle the downloading of your databases via the <code>--download</code> parameter. But, if you
+would like to set them up yourself, please read ahead</p>
+<p>For the GTDB:</p>
+<ul>
+<li><a href="https://gtdb.ecogenomic.org/downloads">GTDB</a> Required for taxonomic annotation
+Download and point the GTDB environment variable to the <code>db/</code> folder inside of that download.</li>
+</ul>
+<p>The <strong>optional</strong> databases are as follows:</p>
+<ul>
+<li><a href="https://github.com/eggnogdb/eggnog-mapper/wiki/eggNOG-mapper-v2.1.5-to-v2.1.7#setup">EggNog</a>.
+Download this databse and point to the root folder of the databse.</li>
+</ul>
+<p>Aviary will ask for the paths to these database files if they don't exist, otherwise you can place these lines into
+the <code>activate.d/aviary.sh</code> or <code>.bashrc</code> files changing the specific paths:</p>
+<pre><code>export GTDBTK_DATA_PATH=/path/to/gtdb/gtdb_release207/db/ # https://gtdb.ecogenomic.org/downloads
+export EGGNOG_DATA_DIR=/path/to/eggnog-mapper/2.1.7/ # https://github.com/eggnogdb/eggnog-mapper/wiki/eggNOG-mapper-v2.1.5-to-v2.1.7#setup
+export SINGLEM_METAPACKAGE_PATH=/path/to/singlem_metapackage.smpkg/
+export CHECKM2DB=/path/to/checkm2db/
+export CONDA_ENV_PATH=/path/to/conda/envs/
+</code></pre>
+<h3 id="why-the-name-">Why the name "Aviary"? Why the bird names in general?</h3>
+<p>Put all your birds in one place.</p>
+<h3 id="where-did-the-logo-come-from?">Where did the logo come from?</h3>
+<p>I made it (among other bird based + CoverM logos) using <a href="https://www.gimp.org/">GIMP</a> and based the idea off of this 
+<a href="https://www.youtube.com/watch?v=fSOR7mPwb4I">tutorial</a>. They are very easy to make so just follow that video if you 
+feel like making something similar.</p>
+<h3 id="where's-the-paper?">Where's the paper?</h3>
+<p>You sound like my supervisor.</p>
+
+            </div>
+            <div class='sidebar-right'>
+                <div class='page-nav' id='page-nav'>
+                    <p class='page-nav-header'>On this page</p>
+                    <ul>
+                        
+                        <li class='page-nav-level-1'>
+                            <a href='#faqs-&amp;-troubleshooting'>FAQs &amp; Troubleshooting</a>
+                        </li>
+                        
+                        <li class='page-nav-level-3'>
+                            <a href='#i-want-to-perform-both-mag-recovery-and-assembly,-how-do-i-do-that?'>I want to perform both MAG recovery and assembly, how do I do that?</a>
+                        </li>
+                        
+                        <li class='page-nav-level-3'>
+                            <a href='#an-error-occurred-but-i-don&#x27;t-know-where-to-look-for-the-error-message'>An error occurred but I don&#x27;t know where to look for the error message</a>
+                        </li>
+                        
+                        <li class='page-nav-level-3'>
+                            <a href='#is-aviary-cluster-compatible?'>Is Aviary cluster compatible?</a>
+                        </li>
+                        
+                        <li class='page-nav-level-3'>
+                            <a href='#i-have-access-to-a-gpu,-can-i-use-it?'>I have access to a GPU, can I use it?</a>
+                        </li>
+                        
+                        <li class='page-nav-level-3'>
+                            <a href='#error-in-prepare_binning_files'>Error in prepare_binning_files</a>
+                        </li>
+                        
+                        <li class='page-nav-level-3'>
+                            <a href='#i-wish-to-remove-host-contamination-from-my-reads'>I wish to remove host contamination from my reads</a>
+                        </li>
+                        
+                        <li class='page-nav-level-3'>
+                            <a href='#spades-error:-&quot;error-code:--9&quot;-or-other-errors'>SPAdes error: &quot;Error code: -9&quot; or other errors</a>
+                        </li>
+                        
+                        <li class='page-nav-level-3'>
+                            <a href='#qsub-and-pysam---modulenotfounderror'>qsub and pysam - ModuleNotFoundError</a>
+                        </li>
+                        
+                        <li class='page-nav-level-3'>
+                            <a href='#which-databases-do-i-download?'>Which databases do I download?</a>
+                        </li>
+                        
+                        <li class='page-nav-level-3'>
+                            <a href='#why-the-name-&quot;aviary&quot;?-why-the-bird-names-in-general?'>Why the name &quot;Aviary&quot;? Why the bird names in general?</a>
+                        </li>
+                        
+                        <li class='page-nav-level-3'>
+                            <a href='#where-did-the-logo-come-from?'>Where did the logo come from?</a>
+                        </li>
+                        
+                        <li class='page-nav-level-3'>
+                            <a href='#where&#x27;s-the-paper?'>Where&#x27;s the paper?</a>
+                        </li>
+                        
+                    </ul>
+                </div>
+            </div>
+            <div class='wave-container'>
+                <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1440 320">
+                    <path fill-opacity="0.35"
+                        d="M0,192L60,213.3C120,235,240,277,360,277.3C480,277,600,235,720,192C840,149,960,107,1080,122.7C1200,139,1320,213,1380,250.7L1440,288L1440,320L1380,320C1320,320,1200,320,1080,320C960,320,840,320,720,320C600,320,480,320,360,320C240,320,120,320,60,320L0,320Z">
+                    </path>
+                    <path fill-opacity="0.5"
+                        d="M0,160L60,181.3C120,203,240,245,360,229.3C480,213,600,139,720,138.7C840,139,960,213,1080,229.3C1200,245,1320,203,1380,181.3L1440,160L1440,320L1380,320C1320,320,1200,320,1080,320C960,320,840,320,720,320C600,320,480,320,360,320C240,320,120,320,60,320L0,320Z">
+                    </path>
+                    <path fill-opacity="0.2"
+                        d="M0,224L60,197.3C120,171,240,117,360,117.3C480,117,600,171,720,186.7C840,203,960,181,1080,186.7C1200,192,1320,224,1380,240L1440,256L1440,320L1380,320C1320,320,1200,320,1080,320C960,320,840,320,720,320C600,320,480,320,360,320C240,320,120,320,60,320L0,320Z">
+                    </path>
+                </svg>
+                <p>Powered by <a href='https://cli.doctave.com' target='_blank'>Doctave</a></p>
+            </div>
+        </div>
+    </div>
+    <script type="text/javascript" src="/aviary/assets/katex.js?v=1756691352"></script>
+    <script type="text/javascript" src="/aviary/assets/mermaid.js?v=1756691352"></script>
+    <script type="text/javascript" src="/aviary/assets/elasticlunr.js?v=1756691352"></script>
+    <script type="text/javascript" src="/aviary/assets/prism.js?v=1756691352"></script>
+    <script type="text/javascript" src="/aviary/assets/doctave-app.js?v=1756691352"></script>
+
+    
+</body>
+
+</html>

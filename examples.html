@@ -1,0 +1,331 @@
+<!doctype html>
+
+<html lang="en">
+
+<head>
+    <meta charset="utf-8">
+
+    <title>Examples</title>
+    <meta name="description" content="Documentation for Aviary">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+
+    <link
+        href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700&family=Source+Sans+Pro:ital,wght@0,400;0,600;0,700;1,400;1,600;1,700&display=swap"
+        rel="stylesheet">
+
+    <link rel="stylesheet" type="text/css" href="/aviary/assets/normalize.css?v=1756691352"
+        media="screen" />
+    <link rel="stylesheet" type="text/css" href="/aviary/assets/doctave-style.css?v=1756691352"
+        media="screen" />
+    <link rel="stylesheet" type="text/css" href="/aviary/assets/katex.css?v=1756691352" media="screen" />
+    <link rel="stylesheet" type="text/css" href="/aviary/assets/prism-ghcolors.css?v=1756691352"
+        media="screen" />
+
+    <script>
+        var DOCTAVE_TIMESTAMP = "1756691352";
+        var BASE_PATH = "/aviary/";
+        var color = localStorage.getItem('doctave-color')
+
+        if (color === 'dark') {
+            document.getElementsByTagName('html')[0].classList.remove('light');
+            document.getElementsByTagName('html')[0].classList.add('dark');
+        } else {
+            document.getElementsByTagName('html')[0].classList.remove('dark');
+            document.getElementsByTagName('html')[0].classList.add('light');
+        }
+    </script>
+
+    
+</head>
+
+<body>
+    <label for='menu-toggle-switch' class='menu-toggle-button'>
+        ☰
+    </label>
+    <input type="checkbox" id="menu-toggle-switch" value='0' />
+    <div class='page'>
+        <div class='header'>
+            <div class='logo'>
+                
+                <a href="/aviary/">
+                    <img src="/aviary/images/mini_logo.png" alt='Aviary logo'></img>
+                </a>
+                
+                <h2 class='project-name'>
+                    <a href="/aviary/">
+                        Aviary
+                    </a>
+                </h2>
+            </div>
+            <div class='search'>
+                <form id='search-form'>
+    <input type='text' id='search-box' autocomplete="off" placeholder="Search..."></input>
+    <span class='search-icon'>S</span>
+    <ul id='search-results'></ul>
+</form>
+
+            </div>
+            <div class='header-dummy-right'>
+            </div>
+        </div>
+        <div class='container'>
+            <div class='sidebar-left'>
+                <nav class='site-nav'>
+    <ul>
+        
+            <li><a href="/aviary/installation">Installation</a></li>
+            
+        
+            <li><a class="active" href="/aviary/examples">Examples</a></li>
+            
+        
+            <li><a href="/aviary/faqs">FAQs &amp; Troubleshooting</a></li>
+            
+        
+            <li><a href="/aviary/concepts">Concepts</a></li>
+            
+        
+            <li><a href="/aviary/citations">Citations</a></li>
+            
+        
+    </ul>
+    <span id='light-dark-mode-switch'>
+        <svg xmlns="http://www.w3.org/2000/svg" id="dark-mode-icon" viewBox="0 0 20 20" fill="currentColor">
+            <path d="M17.293 13.293A8 8 0 016.707 2.707a8.001 8.001 0 1010.586 10.586z" />
+        </svg>
+
+        <svg xmlns="http://www.w3.org/2000/svg" id="light-mode-icon" viewBox="0 0 20 20" fill="currentColor">
+            <path fill-rule="evenodd" d="M10 2a1 1 0 011 1v1a1 1 0 11-2 0V3a1 1 0 011-1zm4 8a4 4 0 11-8 0 4 4 0 018 0zm-.464 4.95l.707.707a1 1 0 001.414-1.414l-.707-.707a1 1 0 00-1.414 1.414zm2.12-10.607a1 1 0 010 1.414l-.706.707a1 1 0 11-1.414-1.414l.707-.707a1 1 0 011.414 0zM17 11a1 1 0 100-2h-1a1 1 0 100 2h1zm-7 4a1 1 0 011 1v1a1 1 0 11-2 0v-1a1 1 0 011-1zM5.05 6.464A1 1 0 106.465 5.05l-.708-.707a1 1 0 00-1.414 1.414l.707.707zm1.414 8.486l-.707.707a1 1 0 01-1.414-1.414l.707-.707a1 1 0 011.414 1.414zM4 11a1 1 0 100-2H3a1 1 0 000 2h1z" clip-rule="evenodd" />
+        </svg>
+    </span>
+</nav>
+
+            </div>
+            <div class='doctave-content'>
+                <h1 id="examples">Examples</h1>
+<h2 id="basic-usage">Basic Usage</h2>
+<p>To perform hybrid assembly:</p>
+<pre><code>aviary assemble -1 *.1.fq.gz -2 *.2.fq.gz --longreads *.nanopore.fastq.gz --long_read_type ont -t 24 -n 48
+</code></pre>
+<p>Aviary is compatible with both Nanopore and PacBio long read technologies. 
+Note: Aviary can also perform assembly using just short or long reads as well.</p>
+<pre><code>aviary assemble -1 *.1.fq.gz -2 *.2.fq.gz -t 24 -n 48
+
+OR
+
+aviary assemble --longreads *.nanopore.fastq.gz --long_read_type ont -t 24 -n 48
+</code></pre>
+<p>To perform mag recovery:</p>
+<pre><code>aviary recover --assembly scaffolds.fasta -1 sr1.1.fq sr2.1.fq.gz -2 sr1.2.fq sr2.2.fq.gz --longreads nanopore.fastq.gz -z ont --output output_dir/ --max_threads 12 --n_cores 24 --gtdb_path /path/to/gtdb/release/
+</code></pre>
+<p>If no assembly file is provided, then aviary will first perform the assembly pipeline to produce an assembly using the 
+input reads.</p>
+<p>If at any point the Aviary workflow is interrupted, the pipeline can be restarted and pick up from the last completed
+step.</p>
+<h2 id="batch-processing">Batch Processing</h2>
+<p>Aviary allows users to supply a batch file to the <code>aviary batch</code> command. This will cause aviary to run on every line within
+the input batch file individually. Example batch files can be found at <a href="/aviary/examples/example_batch.tsv">here</a> and <a href="/aviary/examples/example_batch.csv">here</a>.</p>
+<h2 id="advanced-usage">Advanced Usage</h2>
+<p>Often users are required to send long running jobs off on to high performance clusters. Aviary and snakemake are
+perfectly compatible with clusters and can be sent off as either a single pipeline via PBS script or equivalent.
+Alternatively, snakemake can send individual jobs in a pipeline off into a cluster to share the load across nodes. 
+You can make use of this feature in Aviary via the <code>--snakemake-cmds</code> parameter, E.g.</p>
+<pre><code>aviary assemble -1 *.1.fq.gz -2 *.2.fq.gz --longreads *.nanopore.fastq.gz --long_read_type ont -t 24 -p 24 -n 24 --snakemake-cmds '--cluster qsub '
+</code></pre>
+<p>NOTE: The space after <code>--cluster qsub </code> is required due to a strange quirk in how python's <code>argparse</code> module works.</p>
+<h2 id="hpc-cluster-submission">HPC cluster submission</h2>
+<p>Often users are required to send long running jobs off on to high performance clusters. Aviary and snakemake are
+perfectly compatible with clusters and can be sent off as either a single pipeline via PBS script or equivalent.
+Alternatively, snakemake can send individual jobs in a pipeline off into a cluster to share the load across nodes.
+You can make use of this feature in Aviary by providing a <code>--snakemake-profile cluster</code>, where <code>cluster</code> refers to
+a Snakemake profile at <code>~/.config/snakemake/cluster/config.yaml</code>. An example <code>config.yaml</code> is provided below.
+Additionally, <code>--cluster-retries</code> can be used to set the # of retries per job, with automatically increasing time
+and memory requirements. CPU and memory bounds provided to Aviary are used as a hard-cap for job submission.</p>
+<pre><code class="language-yaml">cluster: qsub
+cluster-status: qstat
+jobs: 10000
+cluster-cancel: qdel
+</code></pre>
+<p>Job resources were set based on <a href="https://github.com/rhysnewell/aviary/pull/270">empirical data from 1,000 Aviary runs</a>.
+The number of CPUs was set based on the average mean load, to the nearest multiple of 8.
+The number of CPUs for binners was standardized to 24, since this was the most common usage pattern.
+Maximum memory was set based on the nearest power of 2, rounding up from the maximum RSS memory.
+These resources can be restricted by setting <code>--max_memory</code> and <code>--max_threads</code> in Aviary.</p>
+<h2 id="expected-output">Expected output</h2>
+<p>Aviary will produce a variety of different outputs depending on the parameters provided. The following is a list of the expected outputs from the different subcommands.</p>
+<p>In general, you will find rule benchmarks in the <code>benchmarks/</code> folder. Logs and error messages will be found in the <code>logs/</code> folder.</p>
+<p>The <code>data/</code> folder contains various output from the different programs that have run. Aviary attempts to keep this folder clean, but there can be a lot of superfluous content in here. The <code>data/</code> folder is also where the final outputs from the pipeline will be found, they will be symlinked out of this folder into their respective output folders.</p>
+<h4 id="1.-assemble">1. Assemble</h4>
+<ul>
+<li><code>assembly/final_contigs.fasta</code> - The assembled genome in FASTA format</li>
+<li><code>www/assembly_stats.txt</code> - A summary of the assembly statistics</li>
+<li><code>www/fastqc</code> - A folder containing the output from fastqc</li>
+<li><code>www/nanoplot</code> - A folder containing the output from NanoPlot</li>
+</ul>
+<h4 id="2.-recover">2. Recover</h4>
+<p>If assembly is performed during the recover process, then the outputs from the assembly step will also be present.</p>
+<ul>
+<li><code>bins/bin_info.tsv</code> - A file containing all of the information about the recovered MAGs. Taxonomy, QC, size, N50, etc.</li>
+<li><code>bins/checkm_minimal.tsv</code> - A minimal version of the <code>bin_info.tsv</code> file.</li>
+<li><code>bins/coverm_abundances.tsv</code> - The abundance of each MAG in each sample.</li>
+<li><code>bins/final_bins</code> - A folder containing the final MAGs in FASTA format.</li>
+<li><code>diversity/singlem_out</code> - A folder containing the output from singlem.</li>
+<li><code>taxonomy/</code> - A folder containing the output from GTDB-tk</li>
+</ul>
+<h4 id="3.-annotate">3. Annotate</h4>
+<ul>
+<li><code>annotation/</code> - A folder containing the output from EggNOG-mapper.</li>
+</ul>
+<h2 id="helpful-parameters-and-commands">Helpful parameters and commands</h2>
+<h3 id="environment-variables">Environment variables</h3>
+<p>Upon first running Aviary, you will be prompted to input the location for several database folders if
+they haven't already been provided. If at any point the location of these folders change you can
+use the the <code>aviary configure</code> module to update the environment variables used by aviary.</p>
+<p>These environment variables can also be configured manually, just set the following variables in your <code>.bashrc</code> file:</p>
+<pre><code>GTDBTK_DATA_PATH
+EGGNOG_DATA_DIR
+SINGLEM_METAPACKAGE_PATH
+CHECKM2DB
+CONDA_ENV_PATH
+</code></pre>
+<h3 id="thread-control">Thread control</h3>
+<p>Aviary has three thread contol options:</p>
+<h4 id="-t,---threads"><code>-t, --threads</code></h4>
+<ul>
+<li>Controls how many threads any individual program can use. If set to 24, then each program that has threading options 
+will use 24 threads when they run.</li>
+</ul>
+<h4 id="-n,---n-cores,---n_cores"><code>-n, --n-cores, --n_cores</code></h4>
+<ul>
+<li>Controls how many cores (CPUs) snakemake will be given. If this value is set higher than <code>--threads</code>, then potentially
+multiple programs will run concurrently providing a great boost in performance. If this value is not set then it defaults 
+to being the same value as <code>--threads</code></li>
+</ul>
+<h4 id="-p,---pplacer-threads,---pplacer_threads"><code>-p, --pplacer-threads, --pplacer_threads</code></h4>
+<ul>
+<li>Pplacer is special and gets its own thread parameter. Why? Because it randomly deadlocks when given too many threads and 
+can also be kind of memory intensive when given extra threads.</li>
+</ul>
+<h3 id="ram-control">RAM control</h3>
+<p>When performing assembly, users are required to estimate how much RAM they will need to use via <code>-m, --max-memory, --max_memory</code>.
+With HPC cluster submission (see above), requested job memory is increased with each rerun and capped at <code>max_memory</code>.</p>
+<h3 id="temporary-directory">Temporary directory</h3>
+<p>By default, Aviary will use <code>/tmp</code> to store temporary files during many processes throughtout assembly and MAG recovery.
+If you would like to use a different directory, you can specify this by using the flexible <code>--tmp</code> parameter.
+If you would permanently like to change the temporary directory, you can use <code>aviary configure --tmp /new/tmp</code> to 
+change the <code>TMPDIR</code> environment variable within your current conda environment. </p>
+<h3 id="workflow-control">Workflow control</h3>
+<p>Often users may not want to run a complete aviary module, as such specific rules can be targeted via the <code>-w, --workflow</code>
+parameter. For example, if a user wanted to only run a specific binning algorithm then that rule can be specified directly:</p>
+<pre><code>aviary recover -w rosella --assembly scaffolds.fasta -1 sr1.1.fq sr2.1.fq.gz -2 sr1.2.fq sr2.2.fq.gz --longreads nanopore.fastq.gz --output output_dir/ --max_threads 12
+</code></pre>
+<p>NOTE: Every step up to the targeted rule still has to be run if it hasn't been run before. The specific rules that can be 
+used can be found within each modules specific snakemake file.</p>
+
+            </div>
+            <div class='sidebar-right'>
+                <div class='page-nav' id='page-nav'>
+                    <p class='page-nav-header'>On this page</p>
+                    <ul>
+                        
+                        <li class='page-nav-level-1'>
+                            <a href='#examples'>Examples</a>
+                        </li>
+                        
+                        <li class='page-nav-level-2'>
+                            <a href='#basic-usage'>Basic Usage</a>
+                        </li>
+                        
+                        <li class='page-nav-level-2'>
+                            <a href='#batch-processing'>Batch Processing</a>
+                        </li>
+                        
+                        <li class='page-nav-level-2'>
+                            <a href='#advanced-usage'>Advanced Usage</a>
+                        </li>
+                        
+                        <li class='page-nav-level-2'>
+                            <a href='#hpc-cluster-submission'>HPC cluster submission</a>
+                        </li>
+                        
+                        <li class='page-nav-level-2'>
+                            <a href='#expected-output'>Expected output</a>
+                        </li>
+                        
+                        <li class='page-nav-level-4'>
+                            <a href='#1.-assemble'>1. Assemble</a>
+                        </li>
+                        
+                        <li class='page-nav-level-4'>
+                            <a href='#2.-recover'>2. Recover</a>
+                        </li>
+                        
+                        <li class='page-nav-level-4'>
+                            <a href='#3.-annotate'>3. Annotate</a>
+                        </li>
+                        
+                        <li class='page-nav-level-2'>
+                            <a href='#helpful-parameters-and-commands'>Helpful parameters and commands</a>
+                        </li>
+                        
+                        <li class='page-nav-level-3'>
+                            <a href='#environment-variables'>Environment variables</a>
+                        </li>
+                        
+                        <li class='page-nav-level-3'>
+                            <a href='#thread-control'>Thread control</a>
+                        </li>
+                        
+                        <li class='page-nav-level-4'>
+                            <a href='#-t,---threads'>-t, --threads</a>
+                        </li>
+                        
+                        <li class='page-nav-level-4'>
+                            <a href='#-n,---n-cores,---n_cores'>-n, --n-cores, --n_cores</a>
+                        </li>
+                        
+                        <li class='page-nav-level-4'>
+                            <a href='#-p,---pplacer-threads,---pplacer_threads'>-p, --pplacer-threads, --pplacer_threads</a>
+                        </li>
+                        
+                        <li class='page-nav-level-3'>
+                            <a href='#ram-control'>RAM control</a>
+                        </li>
+                        
+                        <li class='page-nav-level-3'>
+                            <a href='#temporary-directory'>Temporary directory</a>
+                        </li>
+                        
+                        <li class='page-nav-level-3'>
+                            <a href='#workflow-control'>Workflow control</a>
+                        </li>
+                        
+                    </ul>
+                </div>
+            </div>
+            <div class='wave-container'>
+                <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1440 320">
+                    <path fill-opacity="0.35"
+                        d="M0,192L60,213.3C120,235,240,277,360,277.3C480,277,600,235,720,192C840,149,960,107,1080,122.7C1200,139,1320,213,1380,250.7L1440,288L1440,320L1380,320C1320,320,1200,320,1080,320C960,320,840,320,720,320C600,320,480,320,360,320C240,320,120,320,60,320L0,320Z">
+                    </path>
+                    <path fill-opacity="0.5"
+                        d="M0,160L60,181.3C120,203,240,245,360,229.3C480,213,600,139,720,138.7C840,139,960,213,1080,229.3C1200,245,1320,203,1380,181.3L1440,160L1440,320L1380,320C1320,320,1200,320,1080,320C960,320,840,320,720,320C600,320,480,320,360,320C240,320,120,320,60,320L0,320Z">
+                    </path>
+                    <path fill-opacity="0.2"
+                        d="M0,224L60,197.3C120,171,240,117,360,117.3C480,117,600,171,720,186.7C840,203,960,181,1080,186.7C1200,192,1320,224,1380,240L1440,256L1440,320L1380,320C1320,320,1200,320,1080,320C960,320,840,320,720,320C600,320,480,320,360,320C240,320,120,320,60,320L0,320Z">
+                    </path>
+                </svg>
+                <p>Powered by <a href='https://cli.doctave.com' target='_blank'>Doctave</a></p>
+            </div>
+        </div>
+    </div>
+    <script type="text/javascript" src="/aviary/assets/katex.js?v=1756691352"></script>
+    <script type="text/javascript" src="/aviary/assets/mermaid.js?v=1756691352"></script>
+    <script type="text/javascript" src="/aviary/assets/elasticlunr.js?v=1756691352"></script>
+    <script type="text/javascript" src="/aviary/assets/prism.js?v=1756691352"></script>
+    <script type="text/javascript" src="/aviary/assets/doctave-app.js?v=1756691352"></script>
+
+    
+</body>
+
+</html>

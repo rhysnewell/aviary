@@ -1,0 +1,4 @@
+sample,short_reads_1,short_reads_2,long_reads,long_read_type,assembly,coassemble
+sample_1,pe1.fq.gz,pe2.fq.gz,nanopore.fq.gz,ont,NA,NA
+sample_2,interleaved.fq.gz,NA,pacbio.fq.gz,ccs,NA,NA
+sample_3,"pe1.1.fq.gz,pe1.2.fq.gz","pe2.1.fq.gz,pe2.2.fq.gz","n1.fq.gz,n2.fq.gz,n3.fq.gz",ont-hq,NA,True

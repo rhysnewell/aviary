@@ -1,0 +1,269 @@
+<!doctype html>
+
+<html lang="en">
+
+<head>
+    <meta charset="utf-8">
+
+    <title>Installation</title>
+    <meta name="description" content="Documentation for Aviary">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+
+    <link
+        href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700&family=Source+Sans+Pro:ital,wght@0,400;0,600;0,700;1,400;1,600;1,700&display=swap"
+        rel="stylesheet">
+
+    <link rel="stylesheet" type="text/css" href="/aviary/assets/normalize.css?v=1756691352"
+        media="screen" />
+    <link rel="stylesheet" type="text/css" href="/aviary/assets/doctave-style.css?v=1756691352"
+        media="screen" />
+    <link rel="stylesheet" type="text/css" href="/aviary/assets/katex.css?v=1756691352" media="screen" />
+    <link rel="stylesheet" type="text/css" href="/aviary/assets/prism-ghcolors.css?v=1756691352"
+        media="screen" />
+
+    <script>
+        var DOCTAVE_TIMESTAMP = "1756691352";
+        var BASE_PATH = "/aviary/";
+        var color = localStorage.getItem('doctave-color')
+
+        if (color === 'dark') {
+            document.getElementsByTagName('html')[0].classList.remove('light');
+            document.getElementsByTagName('html')[0].classList.add('dark');
+        } else {
+            document.getElementsByTagName('html')[0].classList.remove('dark');
+            document.getElementsByTagName('html')[0].classList.add('light');
+        }
+    </script>
+
+    
+</head>
+
+<body>
+    <label for='menu-toggle-switch' class='menu-toggle-button'>
+        ☰
+    </label>
+    <input type="checkbox" id="menu-toggle-switch" value='0' />
+    <div class='page'>
+        <div class='header'>
+            <div class='logo'>
+                
+                <a href="/aviary/">
+                    <img src="/aviary/images/mini_logo.png" alt='Aviary logo'></img>
+                </a>
+                
+                <h2 class='project-name'>
+                    <a href="/aviary/">
+                        Aviary
+                    </a>
+                </h2>
+            </div>
+            <div class='search'>
+                <form id='search-form'>
+    <input type='text' id='search-box' autocomplete="off" placeholder="Search..."></input>
+    <span class='search-icon'>S</span>
+    <ul id='search-results'></ul>
+</form>
+
+            </div>
+            <div class='header-dummy-right'>
+            </div>
+        </div>
+        <div class='container'>
+            <div class='sidebar-left'>
+                <nav class='site-nav'>
+    <ul>
+        
+            <li><a class="active" href="/aviary/installation">Installation</a></li>
+            
+        
+            <li><a href="/aviary/examples">Examples</a></li>
+            
+        
+            <li><a href="/aviary/faqs">FAQs &amp; Troubleshooting</a></li>
+            
+        
+            <li><a href="/aviary/concepts">Concepts</a></li>
+            
+        
+            <li><a href="/aviary/citations">Citations</a></li>
+            
+        
+    </ul>
+    <span id='light-dark-mode-switch'>
+        <svg xmlns="http://www.w3.org/2000/svg" id="dark-mode-icon" viewBox="0 0 20 20" fill="currentColor">
+            <path d="M17.293 13.293A8 8 0 016.707 2.707a8.001 8.001 0 1010.586 10.586z" />
+        </svg>
+
+        <svg xmlns="http://www.w3.org/2000/svg" id="light-mode-icon" viewBox="0 0 20 20" fill="currentColor">
+            <path fill-rule="evenodd" d="M10 2a1 1 0 011 1v1a1 1 0 11-2 0V3a1 1 0 011-1zm4 8a4 4 0 11-8 0 4 4 0 018 0zm-.464 4.95l.707.707a1 1 0 001.414-1.414l-.707-.707a1 1 0 00-1.414 1.414zm2.12-10.607a1 1 0 010 1.414l-.706.707a1 1 0 11-1.414-1.414l.707-.707a1 1 0 011.414 0zM17 11a1 1 0 100-2h-1a1 1 0 100 2h1zm-7 4a1 1 0 011 1v1a1 1 0 11-2 0v-1a1 1 0 011-1zM5.05 6.464A1 1 0 106.465 5.05l-.708-.707a1 1 0 00-1.414 1.414l.707.707zm1.414 8.486l-.707.707a1 1 0 01-1.414-1.414l.707-.707a1 1 0 011.414 1.414zM4 11a1 1 0 100-2H3a1 1 0 000 2h1z" clip-rule="evenodd" />
+        </svg>
+    </span>
+</nav>
+
+            </div>
+            <div class='doctave-content'>
+                <h1 id="installation">Installation</h1>
+<h2 id="requirements">Requirements</h2>
+<p>Your conda channels should be configured ideally in this:</p>
+<pre><code>conda config --add channels defaults
+conda config --add channels bioconda
+conda config --add channels conda-forge
+</code></pre>
+<p>Your resulting <code>.condarc</code> file should look something like:</p>
+<pre><code>channels:
+  - conda-forge
+  - bioconda
+  - defaults
+</code></pre>
+<h4 id="option-1)-install-from-bioconda">Option 1) Install from Bioconda</h4>
+<p>Conda can handle the creation of the environment for you directly:</p>
+<pre><code>conda create -n aviary -c bioconda aviary
+</code></pre>
+<p>Or install into existing environment:</p>
+<pre><code>conda install -c bioconda aviary
+</code></pre>
+<h4 id="option-2)-install-from-pip">Option 2) Install from pip</h4>
+<p>Create the environment using the <code>aviary.yml</code> file then install from pip:</p>
+<pre><code>conda env create -n aviary -f aviary.yml
+conda activate aviary
+pip install aviary-genome
+</code></pre>
+<h4 id="option-3)-install-from-source">Option 3) Install from source</h4>
+<p>Initial requirements for aviary can be downloaded using the <code>aviary.yml</code>:</p>
+<pre><code>git clone https://github.com/rhysnewell/aviary.git
+cd aviary
+conda env create -n aviary -f aviary.yml
+conda activate aviary
+pip install -e .
+</code></pre>
+<p>Whatever option you choose, running <code>aviary --help</code> should return the following
+output:</p>
+<pre><code>
+                    ......:::::: AVIARY ::::::......
+
+           A comprehensive metagenomics bioinformatics pipeline
+
+Metagenome assembly, binning, and annotation:
+        assemble  - Perform hybrid assembly using short and long reads, 
+                    or assembly using only short reads
+        recover   - Recover MAGs from provided assembly using a variety 
+                    of binning algorithms 
+        annotate  - Annotate MAGs using EggNOG and GTBD-tk
+        genotype  - Perform strain diversity analysis of MAGs using Lorikeet
+        complete  - Runs each stage of the pipeline: assemble, recover, 
+                    annotate, genotype in that order.
+        cluster   - Combines and dereplicates the MAGs from multiple Aviary runs
+                    using Galah
+
+Isolate assembly, binning, and annotation:
+        isolate   - Perform isolate assembly **PARTIALLY COMPLETED**
+        
+Utility modules:
+        configure - Set or overwrite the environment variables for future runs.
+
+</code></pre>
+<p>Upon first running aviary you will be prompted to input the location for where you would like
+your conda environments to be stored, the GTDB release installed on your system, the location of your
+EggNog database, and the location of your BUSCO database. These locations will be stored as environment
+variables, and automatically sourced by Aviary at runtime.</p>
+<p>These environment variables can be reset using <code>aviary configure</code></p>
+<h2 id="databases">Databases</h2>
+<p>Aviary uses programs which require access to locally stored databases. 
+These databases can be quite large, as such we recommend setting up one instance of Aviary and these databases per machine or machine cluster.</p>
+<p>The <strong>required</strong> databases are as follows:</p>
+<ul>
+<li><a href="https://gtdb.ecogenomic.org/downloads">GTDB</a></li>
+<li><a href="https://github.com/eggnogdb/eggnog-mapper/wiki/eggNOG-mapper-v2.1.5-to-v2.1.8#setup">EggNog</a></li>
+<li><a href="https://github.com/chklovski/CheckM2">CheckM2</a></li>
+</ul>
+<h3 id="installing-databases">Installing databases</h3>
+<p>Aviary can handle the download and installation of these databases via use of the <code>--download</code> flag. Using <code>--download</code>
+will download and install the databases into the folders corresponding to their associated environment variables. Aviary will
+ask you to set these environment variables upon first running and if they are not already available. Otherwise, users can use
+the <code>aviary configure</code> subcommand to reset the environment variables:</p>
+<pre><code class="language-commandline">aviary configure -o logs/ --eggnog-db-path /shared/db/eggnog/ --gtdb-path /shared/db/gtdb/ --checkm2-db-path /shared/db/checkm2db/ --download
+</code></pre>
+<p>This command will check if the databases exist at those given locations, if they don't then aviary will download and change
+the conda environment variables to match those paths. </p>
+<p><strong>N.B.</strong> Again, these databases are VERY large. Please talk to your sysadmin/bioinformatics specialist about setting a shared
+location to install these databases to prevent unnecessary storage use. Additionally, the <code>--download</code> flag can be used within
+any aviary module to check that databases are configured properly.</p>
+<h3 id="environment-variables">Environment variables</h3>
+<p>Upon first running Aviary, you will be prompted to input the location for several database folders if
+they haven't already been provided. If at any point the location of these folders change you can
+use the the <code>aviary configure</code> module to update the environment variables used by aviary.</p>
+<p>These environment variables can also be configured manually, just set the following variables in your <code>.bashrc</code> file:</p>
+<pre><code>export GTDBTK_DATA_PATH=/path/to/gtdb/gtdb_release207/db/ # https://gtdb.ecogenomic.org/downloads
+export EGGNOG_DATA_DIR=/path/to/eggnog-mapper/2.1.7/ # https://github.com/eggnogdb/eggnog-mapper/wiki/eggNOG-mapper-v2.1.5-to-v2.1.7#setup
+export SINGLEM_METAPACKAGE_PATH=/path/to/singlem_metapackage.smpkg/
+export CHECKM2DB=/path/to/checkm2db/
+export CONDA_ENV_PATH=/path/to/conda/envs/
+</code></pre>
+
+            </div>
+            <div class='sidebar-right'>
+                <div class='page-nav' id='page-nav'>
+                    <p class='page-nav-header'>On this page</p>
+                    <ul>
+                        
+                        <li class='page-nav-level-1'>
+                            <a href='#installation'>Installation</a>
+                        </li>
+                        
+                        <li class='page-nav-level-2'>
+                            <a href='#requirements'>Requirements</a>
+                        </li>
+                        
+                        <li class='page-nav-level-4'>
+                            <a href='#option-1)-install-from-bioconda'>Option 1) Install from Bioconda</a>
+                        </li>
+                        
+                        <li class='page-nav-level-4'>
+                            <a href='#option-2)-install-from-pip'>Option 2) Install from pip</a>
+                        </li>
+                        
+                        <li class='page-nav-level-4'>
+                            <a href='#option-3)-install-from-source'>Option 3) Install from source</a>
+                        </li>
+                        
+                        <li class='page-nav-level-2'>
+                            <a href='#databases'>Databases</a>
+                        </li>
+                        
+                        <li class='page-nav-level-3'>
+                            <a href='#installing-databases'>Installing databases</a>
+                        </li>
+                        
+                        <li class='page-nav-level-3'>
+                            <a href='#environment-variables'>Environment variables</a>
+                        </li>
+                        
+                    </ul>
+                </div>
+            </div>
+            <div class='wave-container'>
+                <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1440 320">
+                    <path fill-opacity="0.35"
+                        d="M0,192L60,213.3C120,235,240,277,360,277.3C480,277,600,235,720,192C840,149,960,107,1080,122.7C1200,139,1320,213,1380,250.7L1440,288L1440,320L1380,320C1320,320,1200,320,1080,320C960,320,840,320,720,320C600,320,480,320,360,320C240,320,120,320,60,320L0,320Z">
+                    </path>
+                    <path fill-opacity="0.5"
+                        d="M0,160L60,181.3C120,203,240,245,360,229.3C480,213,600,139,720,138.7C840,139,960,213,1080,229.3C1200,245,1320,203,1380,181.3L1440,160L1440,320L1380,320C1320,320,1200,320,1080,320C960,320,840,320,720,320C600,320,480,320,360,320C240,320,120,320,60,320L0,320Z">
+                    </path>
+                    <path fill-opacity="0.2"
+                        d="M0,224L60,197.3C120,171,240,117,360,117.3C480,117,600,171,720,186.7C840,203,960,181,1080,186.7C1200,192,1320,224,1380,240L1440,256L1440,320L1380,320C1320,320,1200,320,1080,320C960,320,840,320,720,320C600,320,480,320,360,320C240,320,120,320,60,320L0,320Z">
+                    </path>
+                </svg>
+                <p>Powered by <a href='https://cli.doctave.com' target='_blank'>Doctave</a></p>
+            </div>
+        </div>
+    </div>
+    <script type="text/javascript" src="/aviary/assets/katex.js?v=1756691352"></script>
+    <script type="text/javascript" src="/aviary/assets/mermaid.js?v=1756691352"></script>
+    <script type="text/javascript" src="/aviary/assets/elasticlunr.js?v=1756691352"></script>
+    <script type="text/javascript" src="/aviary/assets/prism.js?v=1756691352"></script>
+    <script type="text/javascript" src="/aviary/assets/doctave-app.js?v=1756691352"></script>
+
+    
+</body>
+
+</html>
