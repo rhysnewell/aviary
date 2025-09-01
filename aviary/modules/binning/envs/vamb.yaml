@@ -3,5 +3,5 @@ channels:
   - bioconda
   - defaults
 dependencies:
-  - vamb
+  - vamb==3.0.2
   - samtools

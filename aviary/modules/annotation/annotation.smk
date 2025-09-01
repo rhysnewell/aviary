@@ -38,12 +38,22 @@ if config['mag_directory'] == 'none':
 if config['mag_extension'] == 'none':
     config['mag_extension'] = 'fna'
 
+def get_db_dir(db_name):
+    folder_key = (
+        'singlem_metapackage' if db_name == 'singlem' \
+        else 'checkm2_db_folder' if db_name == 'checkm2' \
+        else 'gtdbtk_folder' if db_name == 'gtdb' \
+        else f'{db_name}_folder'
+    )
+    return os.path.expanduser(config[folder_key])
+
+def get_db_done_file(db_name):
+    return f"{get_db_dir(db_name)}.{db_name}.download.done"
+
 rule download_databases:
     input:
-        'logs/download_gtdb.log' if "gtdb" in config["download"] else [],
-        'logs/download_eggnog.log' if "eggnog" in config["download"] else [],
-        'logs/download_singlem.log' if "singlem" in config["download"] else [],
-        'logs/download_checkm2.log' if "checkm2" in config["download"] else [],
+        [get_db_done_file(db_name) \
+         for db_name in config['download']]
     threads: 1
     log:
         temp("logs/download.log")
@@ -51,8 +61,10 @@ rule download_databases:
         "touch logs/download.log"
 
 rule download_eggnog_db:
+    output:
+        touch(get_db_done_file('eggnog'))
     params:
-        eggnog_db = os.path.expanduser(config['eggnog_folder']),
+        eggnog_db = get_db_dir('eggnog')
     conda:
         'envs/eggnog.yaml'
     threads: 1
@@ -63,8 +75,10 @@ rule download_eggnog_db:
         'download_eggnog_data.py --data_dir {params.eggnog_db} -y 2> {log} '
 
 rule download_gtdb:
+    output:
+        touch(get_db_done_file('gtdb'))
     params:
-        gtdbtk_folder = os.path.expanduser(config['gtdbtk_folder'])
+        gtdbtk_folder = get_db_dir('gtdb')
     conda:
         '../../envs/gtdbtk.yaml'
     threads: 1
@@ -113,8 +127,9 @@ rule download_gtdb:
         'fi; '
 
 rule download_singlem_metapackage:
+    output: touch(get_db_done_file('singlem'))
     params:
-        metapackage_folder = os.path.expanduser(config['singlem_metapackage'])
+        metapackage_folder = get_db_dir('singlem')
     conda:
         "../../envs/singlem.yaml"
     threads: 1
@@ -125,8 +140,10 @@ rule download_singlem_metapackage:
         'mv {params.metapackage_folder}_tmp/*.smpkg.zb {params.metapackage_folder}'
 
 rule download_checkm2:
+    output:
+        touch(get_db_done_file('checkm2'))
     params:
-        checkm2_folder = os.path.expanduser(config['checkm2_db_folder'])
+        checkm2_folder = get_db_dir('checkm2')
     conda:
         '../../envs/checkm2.yaml'
     threads: 1
@@ -135,6 +152,19 @@ rule download_checkm2:
     shell:
         'checkm2 database --download --path {params.checkm2_folder} 2> {log}; '
         'mv {params.checkm2_folder}/CheckM2_database/*.dmnd {params.checkm2_folder}/; '
+
+rule download_metabuli:
+    output:
+        touch(get_db_done_file('metabuli'))
+    params:
+        metabuli_folder = get_db_dir('metabuli')
+    conda:
+        '../../envs/metabuli.yaml'
+    threads: 1
+    log:
+        'logs/download_metabuli.log'
+    shell:
+        'metabuli databases GTDB {params.metabuli_folder} tmp 2> {log} 2>&1 '
 
 rule checkm2:
     input:
@@ -147,11 +177,10 @@ rule checkm2:
         mag_extension = config['mag_extension'],
         checkm2_db_path = config["checkm2_db_folder"]
     threads:
-        config["max_threads"]
+        min(config["max_threads"], 16)
     resources:
-        mem_mb = lambda wildcards, attempt: min(int(config["max_memory"])*1024, 128*1024*attempt),
+        mem_mb = lambda wildcards, attempt: min(int(config["max_memory"])*1024, 64*1024*attempt),
         runtime = lambda wildcards, attempt: 8*60*attempt,
-        gpus = 1 if config["request_gpu"] else 0
     log:
         'logs/checkm2.log'
     benchmark:

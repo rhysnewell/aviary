@@ -9,8 +9,9 @@ dependencies:
   - numpy
   - pandas
   - biopython
-  - mamba >=0.8.2
+  - conda =25.1.1
   - pigz =2.6
   - parallel
   - bbmap
   - extern # for tests
+  - pyopenssl>22.1.0 # see https://github.com/pyca/cryptography/issues/7959#issuecomment-1368711852

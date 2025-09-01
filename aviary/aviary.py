@@ -19,7 +19,7 @@
 ###############################################################################
 import aviary.config.config as Config
 from aviary.modules.processor import Processor, process_batch
-from .__init__ import __version__, MEDAKA_MODELS, LONG_READ_TYPES
+from .__init__ import __version__, MEDAKA_MODELS, LONG_READ_TYPES, COVERAGE_JOB_STRATEGIES, COVERAGE_JOB_CUTOFF
 __author__ = "Rhys Newell"
 __copyright__ = "Copyright 2022"
 __credits__ = ["Rhys Newell"]
@@ -154,6 +154,13 @@ def main():
     )
 
     base_group.add_argument(
+        '-p', '--pplacer-threads', '--pplacer_threads',
+        help='The number of threads given to pplacer, values above `--max-threads` will be scaled to equal `--max-threads`',
+        dest='pplacer_threads',
+        default=8,
+    )
+
+    base_group.add_argument(
         '-n', '--n-cores', '--n_cores',
         help='Maximum number of cores available for use. Setting to multiples of max_threads will allow for multiple processes to be run in parallel.',
         dest='n_cores',
@@ -174,6 +181,16 @@ def main():
         nargs='?',
         const=True,
         dest='request_gpu',
+        default=False,
+    )
+
+    base_group.add_argument(
+        '--strict',
+        help='Ensure that each binner completes successfully. [default: skip binners that fail]',
+        type=str2bool,
+        nargs='?',
+        const=True,
+        dest='strict',
         default=False,
     )
 
@@ -219,6 +236,13 @@ def main():
     )
 
     base_group.add_argument(
+        '--local-cores', '--local_cores',
+        help='Maximum number of cores available for use locally. Only relevant if jobs are being submitted to a cluster (e.g. see `--snakemake-profile`), in which case `--n-cores` will restrict requested cores in submitted jobs.',
+        dest='local_cores',
+        default=16,
+    )
+
+    base_group.add_argument(
         '--cluster-retries',
         help='Number of times to retry a failed job when using cluster submission (see `--snakemake-profile`). ',
         dest='cluster_retries',
@@ -233,15 +257,6 @@ def main():
         const=True,
         dest='dryrun',
         default=False,
-    )
-
-    base_group.add_argument(
-        '--conda-frontend', '--conda_frontend',
-        help='Which conda frontend to use, mamba is faster but harder to debug. Switch this to conda \n'
-             'If experiencing problems installing environments',
-        dest='conda_frontend',
-        default="mamba",
-        choices=["conda", "mamba"],
     )
 
     base_group.add_argument(
@@ -271,11 +286,11 @@ def main():
 
     base_group.add_argument(
         '--download', '--download',
-        help='Downloads the requested GTDB, EggNOG, SingleM, & CheckM2 databases',
+        help='Downloads the requested GTDB, EggNOG, SingleM, CheckM2, & Metabuli databases',
         dest='download',
         default=[],
         nargs="*",
-        choices=["gtdb", "eggnog", "singlem", "checkm2"]
+        choices=["gtdb", "eggnog", "singlem", "checkm2", "metabuli"]
     )
 
     base_group.add_argument(
@@ -557,6 +572,25 @@ def main():
     )
 
     binning_group.add_argument(
+        '--coverage-job-strategy', '--coverage_job_strategy',
+        help=f'When large numbers of samples are used for co-binning, it can be more computationally scalable to \n'
+             f'calculate coverage across multiple jobs. By default, if there are more than {COVERAGE_JOB_CUTOFF} samples,\n'
+             f'Aviary will calculate coverage in groups of N, where N is determined by `--coverage-samples-per-job`.\n'
+             f'Can be one of: "default" (as above), "never" and "always".',
+        dest='coverage_job_strategy',
+        choices=COVERAGE_JOB_STRATEGIES,
+        default=COVERAGE_JOB_STRATEGIES[0],
+    )
+
+    binning_group.add_argument(
+        '--coverage-samples-per-job', '--coverage_samples_per_job',
+        help='',
+        dest='coverage_samples_per_job',
+        type=int,
+        default=5,
+    )
+
+    binning_group.add_argument(
         '--semibin-model', '--semibin_model',
         help='The environment model to passed to SemiBin. Can be one of: \n'
              'human_gut, dog_gut, ocean, soil, cat_gut, human_oral, mouse_gut, pig_gut, built_environment, wastewater, global',
@@ -583,12 +617,13 @@ def main():
     binning_group.add_argument(
         '--extra-binners', '--extra_binners', '--extra-binner', '--extra_binner',
         help='Optional list of extra binning algorithms to run. Can be any combination of: \n'
-             'maxbin, maxbin2, concoct \n'
+             'maxbin, maxbin2, concoct, comebin, taxvamb \n'
              'These binners are skipped by default as they can have long runtimes \n'
-             'N.B. specifying "maxbin" and "maxbin2" are equivalent \n',
+             'N.B. specifying "maxbin" and "maxbin2" are equivalent \n'
+             'N.B. specifying "taxvamb" will also run metabuli for contig taxonomic assignment \n',
         dest='extra_binners',
         nargs='*',
-        choices=["maxbin", "maxbin2", "concoct"]
+        choices=["maxbin", "maxbin2", "concoct", "comebin", "taxvamb"]
     )
 
     binning_group.add_argument(
@@ -1180,6 +1215,13 @@ def main():
         required=False,
     )
 
+    configure_options.add_argument(
+        '--metabuli-db-path', '--metabuli_db_path',
+        help='Path to the local metabuli database',
+        dest='metabuli_db_path',
+        required=False,
+    )
+
     add_workflow_arg(configure_options, ['download_databases'], help=argparse.SUPPRESS)
 
     ###########################################################################
@@ -1227,6 +1269,9 @@ def main():
         if args.singlem_metapackage_path is not None:
             Config.set_db_path(args.singlem_metapackage_path, db_name='SINGLEM_METAPACKAGE_PATH')
 
+        if args.metabuli_db_path is not None:
+            Config.set_db_path(args.metabuli_db_path, db_name='METABULI_DB_PATH')
+
         logging.info("The current aviary environment variables are:")
         logging.info(f"CONDA_ENV_PATH: {Config.get_software_db_path('CONDA_ENV_PATH', '--conda-prefix')}")
         logging.info(f"TMPDIR: {Config.get_software_db_path('TMPDIR', '--tmpdir')}")
@@ -1234,6 +1279,7 @@ def main():
         logging.info(f"EGGNOG_DATA_DIR: {Config.get_software_db_path('EGGNOG_DATA_DIR', '--eggnog-db-path')}")
         logging.info(f"CHECKM2DB: {Config.get_software_db_path('CHECKM2DB', '--checkm2-db-path')}")
         logging.info(f"SINGLEM_METAPACKAGE_PATH: {Config.get_software_db_path('SINGLEM_METAPACKAGE_PATH', '--singlem-metapackage-path')}")
+        logging.info(f"METABULI_DB_PATH: {Config.get_software_db_path('METABULI_DB_PATH', '--metabuli-db-path')}")
         if not args.download:
             logging.info("All paths set. Exiting without downloading databases. If you wish to download databases use --download")
             sys.exit(0)
@@ -1265,9 +1311,9 @@ def main():
             pass
 
         processor.run_workflow(cores=int(args.n_cores),
+                               local_cores=int(args.local_cores),
                                dryrun=args.dryrun,
                                clean=args.clean,
-                               conda_frontend=args.conda_frontend,
                                snakemake_args=args.cmds,
                                rerun_triggers=args.rerun_triggers,
                                profile=args.snakemake_profile,
@@ -1288,6 +1334,8 @@ def manage_env_vars(args):
             args.checkm2_db_path = Config.get_software_db_path('CHECKM2DB', '--checkm2-db-path')
         if args.singlem_metapackage_path is None:
             args.singlem_db_path = Config.get_software_db_path('SINGLEM_METAPACKAGE_PATH', '--singlem-metapackage-path')
+        if args.metabuli_db_path is None:
+            args.metabuli_db_path = Config.get_software_db_path('METABULI_DB_PATH', '--metabuli-db-path')
     except AttributeError:
         pass
 

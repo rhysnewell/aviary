@@ -43,7 +43,7 @@ from glob import glob
 from snakemake import utils
 from snakemake.io import load_configfile
 from ruamel.yaml import YAML  # used for yaml reading with comments
-from aviary import LONG_READ_TYPES
+from aviary import LONG_READ_TYPES, COVERAGE_JOB_STRATEGIES, COVERAGE_JOB_CUTOFF
 
 BATCH_HEADER=['sample', 'short_reads_1', 'short_reads_2', 'long_reads', 'long_read_type', 'assembly', 'coassemble']
 
@@ -99,9 +99,14 @@ class Processor:
         self.output = os.path.abspath(args.output)
         self.threads = args.max_threads
         self.max_memory = args.max_memory
-        self.pplacer_threads = min(int(self.threads), 48)
         self.workflows = args.workflow
         self.request_gpu = args.request_gpu
+        self.strict = args.strict
+
+        try:
+            self.pplacer_threads = min(int(args.pplacer_threads), int(self.threads), 48)
+        except AttributeError:
+            self.pplacer_threads = min(int(self.threads), 48)
 
         try:
             self.strain_analysis = args.strain_analysis
@@ -112,6 +117,23 @@ class Processor:
         try:
             self.min_contig_size = args.min_contig_size
             self.min_bin_size = args.min_bin_size
+
+            if args.coverage_job_strategy == COVERAGE_JOB_STRATEGIES[0]:
+                num_samples = 0
+                if args.pe1 != "none":
+                    num_samples += len(args.pe1)
+                if args.interleaved != "none":
+                    num_samples += len(args.interleaved)
+                if args.longreads != "none":
+                    num_samples += len(args.longreads)
+
+                self.coverage_split = num_samples >= COVERAGE_JOB_CUTOFF
+            elif args.coverage_job_strategy == COVERAGE_JOB_STRATEGIES[1]:
+                self.coverage_split = True
+            else:
+                self.coverage_split = False
+
+            self.coverage_samples_per_job = args.coverage_samples_per_job
             self.semibin_model = args.semibin_model
             self.refinery_max_iterations = args.refinery_max_iterations
             self.refinery_max_retries = args.refinery_max_retries
@@ -124,7 +146,7 @@ class Processor:
                 self.skip_singlem = True
             self.binning_only = args.binning_only
 
-            self.skip_binners = ["maxbin2", "concoct"]
+            self.skip_binners = ["maxbin2", "concoct", "comebin", "taxvamb"]
             if args.extra_binners:
                 for binner in args.extra_binners:
                     binner = binner.lower()   
@@ -132,6 +154,10 @@ class Processor:
                         self.skip_binners.remove("maxbin2")
                     elif binner == "concoct":
                         self.skip_binners.remove("concoct")
+                    elif binner == "comebin":
+                        self.skip_binners.remove("comebin")
+                    elif binner == "taxvamb":
+                        self.skip_binners.remove("taxvamb")
                     else:
                         logging.warning(f"Unknown extra binner {binner} specified. Skipping...")
 
@@ -148,6 +174,8 @@ class Processor:
         except AttributeError:
             self.min_contig_size = 1500
             self.min_bin_size = 200000
+            self.coverage_split = False
+            self.coverage_samples_per_job = 5
             self.semibin_model = 'global'
             self.refinery_max_iterations = 5
             self.refinery_max_retries = 3
@@ -272,10 +300,15 @@ class Processor:
                 self.singlem = args.singlem_metapackage_path
             else:
                 self.singlem = Config.get_software_db_path('SINGLEM_METAPACKAGE_PATH', '--singlem-metapackage-path')
+            if args.metabuli_db_path is not None:
+                self.metabuli = args.metabuli_db_path
+            else:
+                self.metabuli = Config.get_software_db_path('METABULI_DB_PATH', '--metabuli-db-path')
         except AttributeError:
             self.gtdbtk = Config.get_software_db_path('GTDBTK_DATA_PATH', '--gtdb-path')
             self.eggnog = Config.get_software_db_path('EGGNOG_DATA_DIR', '--eggnog-db-path')
             self.singlem = Config.get_software_db_path('SINGLEM_METAPACKAGE_PATH', '--singlem-metapackage-path')
+            self.metabuli = Config.get_software_db_path('METABULI_DB_PATH', '--metabuli-db-path')
             # self.enrichm = Config.get_software_db_path('ENRICHM_DB', '--enrichm-db-path')
 
         try:
@@ -390,12 +423,15 @@ class Processor:
         conf["skip_singlem"] = self.skip_singlem
         conf["binning_only"] = self.binning_only
         conf["semibin_model"] = self.semibin_model
+        conf["coverage_split"] = self.coverage_split
+        conf["coverage_samples_per_split"] = self.coverage_samples_per_job
         conf["refinery_max_iterations"] = self.refinery_max_iterations
         conf["refinery_max_retries"] = self.refinery_max_retries
         conf["max_threads"] = int(self.threads)
         conf["pplacer_threads"] = int(self.pplacer_threads)
         conf["max_memory"] = int(self.max_memory)
         conf["request_gpu"] = self.request_gpu
+        conf["strict"] = self.strict
         conf["short_reads_1"] = self.pe1
         conf["short_reads_2"] = self.pe2
         conf["long_reads"] = self.longreads
@@ -415,6 +451,7 @@ class Processor:
         conf["gtdbtk_folder"] = self.gtdbtk
         conf["eggnog_folder"] = self.eggnog
         conf["singlem_metapackage"] = self.singlem
+        conf["metabuli_folder"] = self.metabuli
         conf["strain_analysis"] = self.strain_analysis
         conf["checkm2_db_folder"] = self.checkm2_db
         conf["use_checkm2_scores"] = self.use_checkm2_scores
@@ -438,8 +475,8 @@ class Processor:
     def _validate_config(self):
         load_configfile(self.config)
 
-    def run_workflow(self, cores=16, profile=None, cluster_retries=None,
-                     dryrun=False, clean=True, conda_frontend="mamba",
+    def run_workflow(self, cores=16, local_cores=None, profile=None, cluster_retries=None,
+                     dryrun=False, clean=True,
                      snakemake_args="", write_to_script=None, rerun_triggers=None):
         """
         Runs the aviary pipeline
@@ -460,7 +497,7 @@ class Processor:
         for workflow in self.workflows:
             cmd = (
                 "snakemake --snakefile {snakefile} --directory {working_dir} "
-                "{jobs} --rerun-incomplete --keep-going {args} {rerun_triggers} "
+                "{jobs} {local_cores} --rerun-incomplete --keep-going {args} {rerun_triggers} "
                 "--configfile {config_file} --nolock "
                 "{profile} {retries} {conda_frontend} {resources} --use-conda {conda_prefix} "
                 "{dryrun} {notemp} "
@@ -469,6 +506,7 @@ class Processor:
                 snakefile=get_snakefile(),
                 working_dir=self.output,
                 jobs="--cores {}".format(cores) if cores is not None else "--jobs 1",
+                local_cores="--local-cores {}".format(local_cores) if local_cores is not None else "",
                 config_file=self.config,
                 profile="" if not profile else "--profile {}".format(profile),
                 retries="" if (cluster_retries is None) else "--retries {}".format(cluster_retries),
@@ -478,7 +516,7 @@ class Processor:
                 args=snakemake_args,
                 target_rule=workflow if workflow != "None" else "",
                 conda_prefix="--conda-prefix " + self.conda_prefix,
-                conda_frontend="--conda-frontend " + conda_frontend,
+                conda_frontend="--conda-frontend " + "conda",
                 resources=f"--resources mem_mb={int(self.max_memory)*1024} {self.resources}" if not dryrun else ""
             )
 
@@ -597,7 +635,6 @@ def process_batch(args, prefix):
         processor.run_workflow(cores=int(new_args.n_cores),
                                dryrun=new_args.dryrun,
                                clean=new_args.clean,
-                               conda_frontend=new_args.conda_frontend,
                                snakemake_args=new_args.cmds,
                                rerun_triggers=new_args.rerun_triggers,
                                profile=new_args.snakemake_profile,
@@ -621,7 +658,6 @@ def process_batch(args, prefix):
             processor.run_workflow(cores=int(args.n_cores),
                                    dryrun=args.dryrun,
                                    clean=args.clean,
-                                   conda_frontend=args.conda_frontend,
                                    snakemake_args=args.cmds,
                                    rerun_triggers=args.rerun_triggers,
                                    profile=args.snakemake_profile,

@@ -1,0 +1,6 @@
+channels:
+  - conda-forge
+  - bioconda
+dependencies:
+  - semibin>=2.1.*
+  - pytorch-gpu=2.4.0
