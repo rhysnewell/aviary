@@ -41,7 +41,7 @@ for sample, cobinning in samples_list.items():
                 "-o", f"{OUTPUT_DIR}/{sample}",
                 "-1"] + forward_reads + [
                 "-2"] + reverse_reads + [
-                "--binning-only",
+                "--binning-only", "--request-gpu",
                 "-n", "32", "-t", "32", "--local-cores", "1",
                 "-m", "256", "--coassemble", "no",
                 "--snakemake-profile", "aqua", "--cluster-retries", "3",
@@ -68,10 +68,32 @@ if fails > 0:
 else:
     print("All jobs completed successfully without FAILED lines in their output. Win.")
 
-    for sample in samples_list:
-        print(f"Processing results for sample {sample} in {OUTPUT_DIR}/{sample}")
-        
+    with open(f"{OUTPUT_DIR}/summary.tsv", "w") as summary_file:
+        summary_file.write("Sample\tScore\tGenomes\n")
+        for sample in samples_list:
+            print(f"Processing results for sample {sample} in {OUTPUT_DIR}/{sample}")
 
-    # Check bin_info, calculate quality, remove genomes <50% quality
-    # Two outputs: score (sum of quality) and count (number of genomes) for each sample
+            sample_score = 0
+            sample_genomes = 0
+            with open(f"{OUTPUT_DIR}/{sample}/bins/bin_info.tsv") as bin_info_file:
+                header = True
+                for line in bin_info_file:
+                    columns = line.strip().split("\t")
+
+                    if header:
+                        comp_col = columns.index("Completeness (CheckM2)")
+                        cont_col = columns.index("Contamination (CheckM2)")
+                        header = False
+                    else:
+                        completeness = float(columns[comp_col])
+                        contamination = float(columns[cont_col])
+                        quality = completeness - 5 * contamination
+
+                        if quality >= 50:
+                            sample_score += quality
+                            sample_genomes += 1
+
+            print(f"Sample {sample} has {sample_genomes} genomes with total score {sample_score}")
+            summary_file.write(f"{sample}\t{sample_score}\t{sample_genomes}\n")
+
     sys.exit(0)
