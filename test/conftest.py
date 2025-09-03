@@ -1,3 +1,4 @@
+import os
 import pytest
 import functools
 
@@ -47,6 +48,26 @@ def skip_unless_expensive(flag_option="--run-expensive"):
             return test_func(*args, **kwargs)
         return wrapper
     return decorator
+
+
+# Set required database env vars to placeholders only for test_run_workflow_errors
+@pytest.fixture(autouse=True)
+def _set_placeholder_db_envs_for_workflow_errors(request, tmp_path, monkeypatch):
+    fname = os.path.basename(str(getattr(request.node, "fspath", "")))
+    if fname != "test_run_workflow_errors.py":
+        return
+
+    # Create per-var directories under the test's tmp_path and set env vars
+    for var in [
+        "GTDBTK_DATA_PATH",
+        "CHECKM2DB",
+        "EGGNOG_DATA_DIR",
+        "METABULI_DB_PATH",
+        "SINGLEM_METAPACKAGE_PATH",
+    ]:
+        d = tmp_path / var.lower()
+        d.mkdir(parents=True, exist_ok=True)
+        monkeypatch.setenv(var, str(d))
 
 def skip_unless_qsub(flag_option="--run-qsub"):
     def decorator(test_func):
