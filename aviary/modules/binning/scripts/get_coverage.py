@@ -4,6 +4,9 @@ import argparse
 from subprocess import run, STDOUT
 import os
 
+def path_exists(file_path: str) -> bool:
+    return os.path.exists(file_path) and os.path.getsize(file_path) > 0
+
 def get_coverage(
     long_reads,
     short_reads_1,
@@ -21,7 +24,7 @@ def get_coverage(
     if tmpdir: os.environ["TMPDIR"] = tmpdir
     os.makedirs(working_dir, exist_ok=True)
 
-    if long_reads != "none" and not os.path.exists(f"{working_dir}/long_cov.tsv"):
+    if long_reads != "none" and not path_exists(f"{working_dir}/long_cov.tsv"):
         if long_read_type in ["ont", "ont_hq"]:
             coverm_cmd = f"coverm contig -t {threads} -r {input_fasta} --single {' '.join(long_reads)} -p minimap2-ont -m length trimmed_mean variance --bam-file-cache-directory {bam_cache} --discard-unmapped --min-read-percent-identity 0.85 --output-file {working_dir}/long_cov.tsv".split()
             with open(log, "a") as logf:
@@ -39,12 +42,12 @@ def get_coverage(
             with open(log, "a") as logf:
                 run(coverm_cmd, stdout=logf, stderr=STDOUT, check=True)
 
-    if short_reads_2 != 'none' and not os.path.exists(f"{working_dir}/short_cov.tsv"):
+    if short_reads_2 != 'none' and not path_exists(f"{working_dir}/short_cov.tsv"):
         coverm_cmd = f"coverm contig -t {threads} -r {input_fasta} -1 {' '.join(short_reads_1)} -2 {' '.join(short_reads_2)} -m metabat --bam-file-cache-directory {bam_cache} --discard-unmapped --output-file {working_dir}/short_cov.tsv".split()
         with open(log, "a") as logf:
                 run(coverm_cmd, stdout=logf, stderr=STDOUT, check=True)
 
-    elif short_reads_1  != 'none' and not os.path.exists(f"{working_dir}/short_cov.tsv"):
+    elif short_reads_1  != 'none' and not path_exists(f"{working_dir}/short_cov.tsv"):
         coverm_cmd = f"coverm contig -t {threads} -r {input_fasta} --interleaved {' '.join(short_reads_1)} -m metabat --bam-file-cache-directory {bam_cache} --discard-unmapped --output-file {working_dir}/short_cov.tsv".split()
 
         with open(log, "a") as logf:
