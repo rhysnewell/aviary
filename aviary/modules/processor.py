@@ -18,8 +18,6 @@
 # along with this program. If not, see <http://www.gnu.org/licenses/>.        #
 #                                                                             #
 ###############################################################################
-import glob
-
 import aviary.config.config as Config
 __author__ = "Rhys Newell"
 __copyright__ = "Copyright 2020"
@@ -44,6 +42,9 @@ from snakemake import utils
 from snakemake.io import load_configfile
 from ruamel.yaml import YAML  # used for yaml reading with comments
 from aviary import LONG_READ_TYPES, COVERAGE_JOB_STRATEGIES, COVERAGE_JOB_CUTOFF
+from aviary.modules.common import workflow_identifier
+import re
+import threading
 
 # Debug
 debug={1:logging.CRITICAL,
@@ -488,6 +489,116 @@ class Processor:
     def _validate_config(self):
         load_configfile(self.config)
 
+    def parse_snakemake_errors(self, text: str):
+        """Extract failed rule names from Snakemake output.
+        Since Snakemake no longer reliably prints "log:" lines, we only
+        capture the erroring rule names here; log discovery happens via the
+        workflow's resources:log_path layout on disk.
+        """
+        rules = []
+        for raw in text.splitlines():
+            m = re.search(r"Error in rule (\S+):", raw)
+            if m:
+                rules.append(m.group(1))
+        # Preserve order but dedupe
+        seen = set()
+        unique_rules = []
+        for r in rules:
+            if r not in seen:
+                unique_rules.append(r)
+                seen.add(r)
+        return unique_rules
+
+    def logs_dir_root_for_workflow(self, output_dir: str, workflow: str) -> str:
+        # All module Snakefiles use logs_dir = "logs" relative to the working directory
+        # (self.output). Therefore logs live in a single global folder: <output>/logs.
+        return os.path.join(output_dir, "logs")
+
+    def find_logs_for_rule(self, rule_name: str, workflow: str, output_dir: str, wid: str | None = None):
+        """Discover log files for a rule by scanning module Snakefiles for its resources:log_path.
+        Parameters
+        - rule_name: Snakemake rule name
+        - workflow: Target rule invoked in the global Snakefile (e.g., 'coassemble.smk')
+        - output_dir: Snakemake working directory used by run_workflow
+        - wid: workflow identifier subdirectory; defaults to aviary.modules.common.workflow_identifier
+        """
+
+        wid = wid or workflow_identifier
+        logs_root = self.logs_dir_root_for_workflow(output_dir, workflow)
+        if not os.path.isdir(logs_root):
+            return []
+
+        # Scan all module Snakefiles for the rule definition
+        modules_dir = os.path.dirname(os.path.abspath(__file__))
+        candidate_files = []
+        # Include global Snakefile just in case, then all module *.smk
+        candidate_files.append(os.path.join(modules_dir, "Snakefile"))
+        for root, _, files in os.walk(modules_dir):
+            for fn in files:
+                if fn.endswith(".smk"):
+                    candidate_files.append(os.path.join(root, fn))
+
+        patterns = []
+        rule_block_re = re.compile(rf"(?ms)^rule\s+{re.escape(rule_name)}\s*:\s*(.*?)\n(?=rule\s+\w+:|$)")
+        log_lambda_re = re.compile(r"log_path\s*=\s*lambda[^:]*:\s*setup_log\((.+?),\s*attempt\)", re.S)
+        fstring_re = re.compile(r"f[\"'](.+?)[\"']", re.S)
+
+        for path in candidate_files:
+            try:
+                with open(path, "r", encoding="utf-8", errors="replace") as sf:
+                    text = sf.read()
+            except Exception:
+                continue
+
+            m_block = rule_block_re.search(text)
+            if not m_block:
+                continue
+
+            block = m_block.group(1)
+            m_log = log_lambda_re.search(block)
+            if not m_log:
+                # Rule found but no log_path resource; keep scanning others, but we'll have fallback
+                continue
+
+            arg = m_log.group(1)
+            m_f = fstring_re.search(arg)
+            if not m_f:
+                continue
+
+            content = m_f.group(1)
+            # Replace placeholders
+            # {logs_dir} -> logs_root
+            content = content.replace("{logs_dir}", logs_root)
+            # Replace wildcards with glob star
+            content = re.sub(r"\{wildcards\.[^}]+\}", "*", content)
+            # Normalize duplicate slashes
+            content = re.sub(r"/+", "/", content)
+            # Build glob pattern to attempts; prefer any wid
+            patterns.append(os.path.join(content, "*", "attempt*.log"))
+
+            # Stop after first successful rule match; most specific
+            break
+
+        # Fallback if no specific pattern found for the rule
+        if not patterns:
+            patterns.append(os.path.join(logs_root, "**", "attempt*.log"))
+
+        files = set()
+        for pat in patterns:
+            for f in glob(pat, recursive=True):
+                if os.path.isfile(f):
+                    files.add(os.path.abspath(f))
+
+        # Prefer higher attempt numbers and newer wid directories. Keep deterministic order.
+        def attempt_num(p):
+            m = re.search(r"attempt(\d+)\.log$", os.path.basename(p))
+            return int(m.group(1)) if m else -1
+        def wid_dir_key(p):
+            # parent dir name is the wid (e.g., 20250101_123456); lexical sort works
+            return os.path.basename(os.path.dirname(p))
+
+        return sorted(files, key=lambda p: (wid_dir_key(p), attempt_num(p)), reverse=True)
+
     def run_workflow(self, cores=16, local_cores=None, profile=None, cluster_retries=None,
                      dryrun=False, clean=True,
                      snakemake_args="", write_to_script=None, rerun_triggers=None):
@@ -537,22 +648,98 @@ class Processor:
                 write_to_script.append(cmd)
                 continue
 
-            try:
-                logging.info("Executing: %s" % cmd)
-                subprocess.run(cmd.split(), check=True)
+            # Stream stdout and stderr separately in real time while buffering for parsing
+            combined_output = []
+            out_buffer = []
+            err_buffer = []
+            logging.info("Executing: %s" % cmd)
+            proc = subprocess.Popen(
+                cmd,
+                shell=True,
+                stdout=subprocess.PIPE,
+                stderr=subprocess.PIPE,
+                text=True,
+                encoding="utf-8",
+                errors="replace",
+                bufsize=1,
+            )
+
+            def _pump(stream, writer, buf):
+                try:
+                    for line in stream:
+                        writer.write(line)
+                        writer.flush()
+                        buf.append(line)
+                        combined_output.append(line)
+                finally:
+                    try:
+                        stream.close()
+                    except Exception:
+                        pass
+
+            threads = []
+            if proc.stdout is not None:
+                t_out = threading.Thread(target=_pump, args=(proc.stdout, sys.stdout, out_buffer))
+                t_out.daemon = True
+                t_out.start()
+                threads.append(t_out)
+            if proc.stderr is not None:
+                t_err = threading.Thread(target=_pump, args=(proc.stderr, sys.stderr, err_buffer))
+                t_err.daemon = True
+                t_err.start()
+                threads.append(t_err)
+
+            for t in threads:
+                t.join()
+            proc.wait()
+
+            if proc.returncode == 0:
                 logging.info("Finished: %s" % workflow)
-                # logging.info("stderr: %s" % cmd_output)
-            except subprocess.CalledProcessError as e:
-                if os.path.exists(os.path.join(self.output, "logs", "das_tool.log")):
-                    with open(os.path.join(self.output, "logs", "das_tool.log")) as f:
-                        if "No bins were found, so DAS_tool cannot be run." in f.read():
-                            logging.info("--- Aviary -----------------------------------------------------------")
-                            logging.warning("No bins were found by any binners.")
-                            sys.exit(0)
-                # removes the traceback
-                logging.critical(e)
-                exit(1)
-                
+                return
+
+            # On failure, parse errors and surface helpful diagnostics
+            output_text = "".join(combined_output)
+            failed_rules = self.parse_snakemake_errors(output_text)
+
+            if not failed_rules:
+                logging.error("Snakemake failed, but no rule-specific errors were parsed. See output above.")
+                sys.exit(1)
+
+            unique_logs = []
+            seen = set()
+            for rule in failed_rules:
+                logs = self.find_logs_for_rule(rule, workflow, self.output, workflow_identifier)
+                if logs:
+                    for lp in logs:
+                        if rule == "das_tool":
+                            with open(lp) as f:
+                                if "No bins were found, so DAS_tool cannot be run." in f.read():
+                                    logging.info("--- Aviary -----------------------------------------------------------")
+                                    logging.warning("No bins were found by any binners.")
+                                    sys.exit(0)
+
+                        logging.error(f"[{workflow_identifier}] Rule failed: {rule}; log: {lp}")
+                        if lp not in seen:
+                            unique_logs.append(lp)
+                            seen.add(lp)
+                else:
+                    logs_root = self.logs_dir_root_for_workflow(self.output, workflow)
+                    logging.error(f"[{workflow_identifier}] Rule failed: {rule}; no log files found under {logs_root}")
+
+            # Dump log files to stderr
+            for lp in unique_logs:
+                try:
+                    with open(lp, "r", encoding="utf-8", errors="replace") as fh:
+                        sys.stderr.write(f"\n===== BEGIN LOG ({workflow_identifier}): {lp} =====\n")
+                        sys.stderr.write(fh.read())
+                        sys.stderr.write(f"\n===== END LOG ({workflow_identifier}): {lp} =====\n")
+                except FileNotFoundError:
+                    sys.stderr.write(f"\n===== LOG NOT FOUND ({workflow_identifier}): {lp} =====\n")
+                except Exception as e:
+                    sys.stderr.write(f"\n===== ERROR READING LOG ({workflow_identifier}) {lp}: {e} =====\n")
+                sys.stderr.flush()
+
+            sys.exit(1)
 
 def fraction_to_percent(val):
     val = float(val)

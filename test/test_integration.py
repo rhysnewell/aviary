@@ -27,6 +27,8 @@ import os.path
 import subprocess
 import shutil
 import unittest
+import glob
+import re
 
 data = os.path.join(os.path.dirname(__file__), 'data')
 
@@ -599,6 +601,46 @@ class Tests(unittest.TestCase):
         self.assertTrue("Training model..." not in log)
 
         self.assertFalse(os.path.isfile(f"{output_dir}/aviary_out/data/final_contigs.fasta"))
+
+    def test_error_integration(self):
+        """Expect aviary_assemble to fail with tiny test data, then check logging.
+        The small input cannot be assembled, so aviary_assemble will error first.
+        We assert Snakemake reports the aviary_assemble error, our handler logs the
+        rule failure with a concrete log path, and that an assemble log exists.
+        """
+        output_dir = os.path.join("example", "test_error_integration")
+        setup_output_dir(output_dir)
+        cmd = (
+            f"aviary recover "
+            f"-o {output_dir}/aviary_out "
+            f"-1 {data}/tiny_sample_bad.1.fq "
+            f"-2 {data}/tiny_sample.2.fq "
+            f"--binning-only "
+            f"--skip-qc --coassemble "
+            f"-n 32 -t 32 "
+            f"--strict "
+        )
+
+        try:
+            proc = subprocess.run(cmd, shell=True, check=True, capture_output=True)
+            combined = (proc.stdout or b"").decode("utf-8", errors="replace") + (proc.stderr or b"").decode("utf-8", errors="replace")
+        except subprocess.CalledProcessError as e:
+            combined = (e.stdout or b"").decode("utf-8", errors="replace") + (e.stderr or b"").decode("utf-8", errors="replace")
+
+        # Snakemake should report a rule error; our wrapper should emit log dumps
+        self.assertTrue(("Error in rule assemble_short_reads" in combined) or ("RuleException in rule assemble_short_reads" in combined))
+        self.assertIn("Rule failed: assemble_short_reads", combined)
+        self.assertTrue(("===== BEGIN LOG (" in combined) and ("===== END LOG (" in combined))
+
+        # Ensure an assemble log exists under the expected logs tree
+        assemble_logs = glob.glob(os.path.join(output_dir, "aviary_out", "logs", "assemble_short_reads", "*", "attempt*.log"))
+        self.assertTrue(len(assemble_logs) > 0)
+
+        # One of the printed log paths should match an existing file
+        printed_paths = re.findall(r"BEGIN LOG \([^)]*\):\s*(.*?)\s*=====", combined)
+        if printed_paths:
+            # Normalize whitespace and test for existence of at least one printed log
+            self.assertTrue(any(os.path.exists(p.strip()) for p in printed_paths))
 
 if __name__ == "__main__":
     unittest.main()

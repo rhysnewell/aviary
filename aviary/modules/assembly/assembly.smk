@@ -1,5 +1,6 @@
 ASSEMBLY_SCRIPTS_DIR = os.path.join(os.path.dirname(os.path.abspath(workflow.snakefile)), 'scripts')
-from aviary.modules.common import pixi_run
+from aviary.modules.common import pixi_run, setup_log
+logs_dir = "logs"
 
 
 localrules: get_high_cov_contigs, short_only, move_spades_assembly, pool_reads, skip_unicycler, skip_unicycler_with_qc, complete_assembly, complete_assembly_with_qc, reset_to_spades_assembly, remove_final_contigs, combine_assemblies, combine_long_only
@@ -64,8 +65,7 @@ rule flye_assembly:
     resources:
         mem_mb = lambda wildcards, attempt: min(int(config["max_memory"])*1024, 512*1024*attempt),
         runtime = lambda wildcards, attempt: 24*60 + 24*60*attempt,
-    log:
-        "logs/flye_assembly.log"
+        log_path = lambda wildcards, attempt: setup_log(f"{logs_dir}/flye_assembly", attempt),
     benchmark:
         "benchmarks/flye_assembly.benchmark.txt"
     shell:
@@ -76,7 +76,7 @@ rule flye_assembly:
         --output-dir data/flye \
         --meta-flag \
         --threads {threads} \
-        --log {log}
+        --log {resources.log_path}
         """
 
 
@@ -99,9 +99,8 @@ rule polish_metagenome_flye:
     resources:
         mem_mb = lambda wildcards, attempt: min(int(config["max_memory"])*1024, 512*1024*attempt),
         runtime = lambda wildcards, attempt: 24*60*attempt,
-        gpus = 1 if config["request_gpu"] else 0
-    log:
-        "logs/polish_metagenome_flye.log"
+        gpus = 1 if config["request_gpu"] else 0,
+        log_path = lambda wildcards, attempt: setup_log(f"{logs_dir}/polish_metagenome_flye", attempt),
     output:
         fasta = "data/assembly.pol.rac.fasta"
     benchmark:
@@ -123,7 +122,7 @@ rule polish_metagenome_flye:
         --max-cov {params.maxcov} \
         --threads {threads} \
         --coassemble {params.coassemble} \
-        --log {log[0]}
+        --log {resources.log_path}
         """
 
 
@@ -144,8 +143,7 @@ rule generate_pilon_sort:
     resources:
         mem_mb = lambda wildcards, attempt: min(int(config["max_memory"])*1024, 512*1024*attempt),
         runtime = lambda wildcards, attempt: 24*60*attempt,
-    log:
-        "logs/generate_pilon_sort.log"
+        log_path = lambda wildcards, attempt: setup_log(f"{logs_dir}/generate_pilon_sort", attempt),
     benchmark:
         "benchmarks/generate_pilon_sort.benchmark.txt"
     shell:
@@ -157,7 +155,7 @@ rule generate_pilon_sort:
         --output-bam {output.bam} \
         --threads {threads} \
         --coassemble {params.coassemble} \
-        --log {log[0]}
+        --log {resources.log_path}
         """
 
 
@@ -174,15 +172,14 @@ rule polish_meta_pilon:
     resources:
         mem_mb = lambda wildcards, attempt: min(int(config["max_memory"])*1024, 512*1024*attempt),
         runtime = lambda wildcards, attempt: 24*60*attempt,
-    log:
-        "logs/polish_meta_pilon.log"
+        log_path = lambda wildcards, attempt: setup_log(f"{logs_dir}/polish_meta_pilon", attempt),
     params:
         pilon_memory = int(config["max_memory"])*512
     benchmark:
         "benchmarks/polish_meta_pilon.benchmark.txt"
     shell:
         pixi_run + \
-        " -e pilon pilon -Xmx{params.pilon_memory}m --genome {input.fasta} --frags data/pilon.sort.bam --output data/assembly.pol.pil --fix bases >data/pilon.err 2> {log}"
+        " -e pilon pilon -Xmx{params.pilon_memory}m --genome {input.fasta} --frags data/pilon.sort.bam --output data/assembly.pol.pil --fix bases >data/pilon.err 2> {resources.log_path}"
 
 
 # The assembly polished with Racon and Pilon is polished again with the short reads using Racon
@@ -198,8 +195,7 @@ rule polish_meta_racon_ill:
     resources:
         mem_mb = lambda wildcards, attempt: min(int(config["max_memory"])*1024, 512*1024*attempt),
         runtime = lambda wildcards, attempt: 24*60*attempt,
-    log:
-        "logs/polish_meta_racon_ill.log"
+        log_path = lambda wildcards, attempt: setup_log(f"{logs_dir}/polish_meta_racon_ill", attempt),
     params:
         prefix = "racon_ill",
         maxcov = 200,
@@ -226,7 +222,7 @@ rule polish_meta_racon_ill:
         --max-cov {params.maxcov} \
         --threads {threads} \
         --coassemble {params.coassemble} \
-        --log {log[0]}
+        --log {resources.log_path}
         """
 
 
@@ -354,8 +350,7 @@ rule filter_illumina_assembly:
     resources:
         mem_mb = lambda wildcards, attempt: min(int(config["max_memory"])*1024, 512*1024*attempt),
         runtime = lambda wildcards, attempt: 24*60*attempt,
-    log:
-        "logs/filter_illumina_assembly.log"
+        log_path = lambda wildcards, attempt: setup_log(f"{logs_dir}/filter_illumina_assembly", attempt),
     benchmark:
         "benchmarks/filter_illumina_assembly.benchmark.txt"
     shell:
@@ -368,7 +363,7 @@ rule filter_illumina_assembly:
         --output-fastq {output.fastq} \
         --threads {threads} \
         --coassemble {params.coassemble} \
-        --log {log[0]}
+        --log {resources.log_path}
         """
 
 
@@ -408,8 +403,7 @@ rule spades_assembly:
     resources:
         mem_mb = lambda wildcards, attempt: min(int(config["max_memory"])*1024, 256*1024*attempt),
         runtime = lambda wildcards, attempt: 72*60 + 24*60*attempt,
-    log:
-        "logs/spades_assembly.log"
+        log_path = lambda wildcards, attempt: setup_log(f"{logs_dir}/spades_assembly", attempt),
     params:
         max_memory = config["max_memory"],
         long_read_type = config["long_read_type"],
@@ -429,7 +423,7 @@ rule spades_assembly:
         --kmer-sizes {params.kmer_sizes} \
         {params.tmpdir} \
         --long-read-type {params.long_read_type} \
-        --log {log[0]}
+        --log {resources.log_path}
     """
 
 
@@ -459,8 +453,7 @@ rule assemble_short_reads:
     resources:
         mem_mb = lambda wildcards, attempt: min(int(config["max_memory"])*1024, 512*1024*attempt),
         runtime = lambda wildcards, attempt: 72*60 + 24*60*attempt,
-    log:
-        "logs/short_read_assembly.log"
+        log_path = lambda wildcards, attempt: setup_log(f"{logs_dir}/assemble_short_reads", attempt),
     benchmark:
         "benchmarks/short_read_assembly_short.benchmark.txt"
     shell:
@@ -474,7 +467,7 @@ rule assemble_short_reads:
         --threads {threads} \
         {params.tmpdir} \
         --kmer-sizes {params.kmer_sizes} \
-        --log {log}
+        --log {resources.log_path}
         """
 
 rule move_spades_assembly:
@@ -483,10 +476,10 @@ rule move_spades_assembly:
     output:
         out = "data/final_contigs.fasta"
     priority: 1
-    log:
-        "logs/move_spades_assembly.log"
+    resources:
+        log_path = lambda wildcards, attempt: setup_log(f"{logs_dir}/move_spades_assembly", attempt),
     shell:
-        "bash -c 'cp {input.assembly} {output.out} && rm -rf data/short_read_assembly' &> {log}"
+        "bash -c 'cp {input.assembly} {output.out} && rm -rf data/short_read_assembly' &> {resources.log_path}"
 
 
 # Short reads are mapped to the spades assembly and jgi_summarize_bam_contig_depths from metabat
@@ -504,18 +497,17 @@ rule spades_assembly_coverage:
     resources:
         mem_mb = lambda wildcards, attempt: min(int(config["max_memory"])*1024, 512*1024*attempt),
         runtime = lambda wildcards, attempt: 24*60*attempt,
-    log:
-        "logs/spades_assembly_coverage.log"
+        log_path = lambda wildcards, attempt: setup_log(f"{logs_dir}/spades_assembly_coverage", attempt),
     params:
          tmpdir = f"TMPDIR={config['tmpdir']}" if config["tmpdir"] else ""
     benchmark:
         "benchmarks/spades_assembly_coverage.benchmark.txt"
     shell:
         pixi_run + \
-        " -e coverm {params.tmpdir} coverm contig -m metabat -t {threads} -r {input.fasta} --interleaved {input.fastq} --bam-file-cache-directory data/cached_bams/ > {output.assembly_cov} 2> {log};"
+        " -e coverm {params.tmpdir} coverm contig -m metabat -t {threads} -r {input.fasta} --interleaved {input.fastq} --bam-file-cache-directory data/cached_bams/ > {output.assembly_cov} 2> {resources.log_path};"
         "mv data/cached_bams/*.bam {output.bam} && " + \
         pixi_run +\
-        " -e coverm samtools index -@ {threads} {output.bam} 2>> {log}"
+        " -e coverm samtools index -@ {threads} {output.bam} 2>> {resources.log_path}"
 
 rule metabat_binning_short:
     input:
@@ -528,16 +520,15 @@ rule metabat_binning_short:
     resources:
         mem_mb = lambda wildcards, attempt: min(int(config["max_memory"])*1024, 512*1024*attempt),
         runtime = lambda wildcards, attempt: 24*60*attempt,
-    log:
-        "logs/metabat_binning_short.log"
+        log_path = lambda wildcards, attempt: setup_log(f"{logs_dir}/metabat_binning_short", attempt),
     benchmark:
         "benchmarks/metabat_binning_short.benchmark.txt"
     shell:
-         "mkdir -p data/metabat_bins &&" + \
-         pixi_run + \
-         " -e metabat2 metabat --seed 89 --unbinned -m 1500 -l -i {input.fasta} -t {threads} -a {input.assembly_cov}"
-         " -o data/metabat_bins/binned_contigs > {log} 2>&1 &&"
-         " touch data/metabat_bins/done"
+        "mkdir -p data/metabat_bins &&" + \
+        pixi_run + \
+        " -e metabat2 metabat --seed 89 --unbinned -m 1500 -l -i {input.fasta} -t {threads} -a {input.assembly_cov}"
+        " -o data/metabat_bins/binned_contigs > {resources.log_path} 2>&1 &&"
+        " touch data/metabat_bins/done"
 
 # Long reads are mapped to the spades assembly
 rule map_long_mega:
@@ -552,19 +543,18 @@ rule map_long_mega:
     resources:
         mem_mb = lambda wildcards, attempt: min(int(config["max_memory"])*1024, 512*1024*attempt),
         runtime = lambda wildcards, attempt: 24*60*attempt,
-    log:
-        "logs/map_long_mega.log"
+        log_path = lambda wildcards, attempt: setup_log(f"{logs_dir}/map_long_mega", attempt),
     benchmark:
         "benchmarks/map_long_mega.benchmark.txt"
     shell:
         pixi_run + \
-        " -e minimap2 minimap2 -t {threads} --split-prefix=tmp -ax map-ont -a {input.fasta} {input.fastq} 2> {log} |" + \
+        " -e minimap2 minimap2 -t {threads} --split-prefix=tmp -ax map-ont -a {input.fasta} {input.fastq} 2> {resources.log_path} |" + \
         pixi_run + \
-        " -e minimap2 samtools view -@ {threads} -b 2>> {log} |" + \
+        " -e minimap2 samtools view -@ {threads} -b 2>> {resources.log_path} |" + \
         pixi_run + \
-        " -e minimap2 samtools sort -@ {threads} -o {output.bam} - 2>> {log} &&" + \
+        " -e minimap2 samtools sort -@ {threads} -o {output.bam} - 2>> {resources.log_path} &&" + \
         pixi_run + \
-        " -e minimap2 samtools index -@ {threads} {output.bam} 2>> {log}"
+        " -e minimap2 samtools index -@ {threads} {output.bam} 2>> {resources.log_path}"
 
 # Long and short reads that mapped to the spades assembly are pooled (binned) together
 rule pool_reads:
@@ -578,8 +568,8 @@ rule pool_reads:
         list = "data/list_of_lists.txt"
     benchmark:
         "benchmarks/pool_reads.benchmark.txt"
-    log:
-        "logs/pool_reads.log"
+    resources:
+        log_path = lambda wildcards, attempt: setup_log(f"{logs_dir}/pool_reads", attempt),
     shell:
         f'{pixi_run} -e pysam {ASSEMBLY_SCRIPTS_DIR}/'+\
         """pool_reads.py \
@@ -589,7 +579,7 @@ rule pool_reads:
         --short-reads {input.short_reads} \
         --short-reads-2 {config[short_reads_2]} \
         --output-list {output.list}
-        &> {log}
+        &> {resources.log_path}
         """
 
 # Binned read lists are processed to extract the reads associated with each bin
@@ -603,8 +593,7 @@ rule get_read_pools:
     resources:
         mem_mb = lambda wildcards, attempt: min(int(config["max_memory"])*1024, 512*1024*attempt),
         runtime = lambda wildcards, attempt: 12*60*attempt,
-    log:
-        "logs/get_read_pools.log"
+        log_path = lambda wildcards, attempt: setup_log(f"{logs_dir}/get_read_pools", attempt),
     benchmark:
         "benchmarks/get_read_pools.benchmark.txt"
     script:
@@ -615,7 +604,7 @@ rule get_read_pools:
         --short-reads-2 {config[short_reads_2]} \
         --threads {threads} \
         --output {output} \
-        --log {log}
+        --log {resources.log_path}
         """
 
 # Short and long reads for each bin are hybrid assembled with Unicycler
@@ -630,8 +619,7 @@ rule assemble_pools:
     resources:
         mem_mb = lambda wildcards, attempt: min(int(config["max_memory"])*1024, 512*1024*attempt),
         runtime = lambda wildcards, attempt: 72*60 + 24*60*attempt,
-    log:
-        "logs/assemble_pools.log"
+        log_path = lambda wildcards, attempt: setup_log(f"{logs_dir}/assemble_pools", attempt),
     output:
         fasta = "data/unicycler_combined.fa"
     benchmark:
@@ -644,7 +632,7 @@ rule assemble_pools:
         --output-fasta {output.fasta} \
         --metabat-done {input.metabat_done} \
         --threads {threads} \
-        --log {log}
+        --log {resources.log_path}
         """
 
     

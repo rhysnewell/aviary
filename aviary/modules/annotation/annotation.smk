@@ -1,4 +1,5 @@
-from aviary.modules.common import pixi_run
+from aviary.modules.common import pixi_run, setup_log
+logs_dir = "logs"
 
 localrules: download_databases, download_eggnog_db, download_gtdb, download_checkm2, annotate
 
@@ -170,15 +171,14 @@ rule checkm2:
     resources:
         mem_mb = lambda wildcards, attempt: min(int(config["max_memory"])*1024, 64*1024*attempt),
         runtime = lambda wildcards, attempt: 8*60*attempt,
-    log:
-        'logs/checkm2.log'
+        log_path = lambda wildcards, attempt: setup_log(f"{logs_dir}/checkm2", attempt),
     benchmark:
         'benchmarks/checkm2.benchmark.txt'
     shell:
         pixi_run + " -e checkm2 bash -e -o pipefail -c '" \
         "export CHECKM2DB={params.checkm2_db_path}/uniref100.KO.1.dmnd; " \
         "echo \"Using CheckM2 database $CHECKM2DB\"; " \
-        "checkm2 predict -i {input.mag_folder}/ -x {params.mag_extension} -o {output.checkm2_folder} -t {threads} --force > {log} 2>&1'"
+        "checkm2 predict -i {input.mag_folder}/ -x {params.mag_extension} -o {output.checkm2_folder} -t {threads} --force > {resources.log_path} 2>&1'"
 
 rule eggnog:
     input:
@@ -195,8 +195,7 @@ rule eggnog:
     resources:
         mem_mb = lambda wildcards, attempt: min(int(config["max_memory"])*1024, 512*1024*attempt),
         runtime = lambda wildcards, attempt: 24*60*attempt,
-    log:
-        'logs/eggnog.log'
+        log_path = lambda wildcards, attempt: setup_log(f"{logs_dir}/eggnog", attempt),
     benchmark:
         'benchmarks/eggnog.benchmark.txt'
     shell:
@@ -205,7 +204,7 @@ rule eggnog:
         f'find {{input.mag_folder}}/*.{{params.mag_extension}} | {pixi_run} -e eggnog parallel -j1 \'emapper.py --data_dir {{params.eggnog_db}} '
         '--dmnd_db {params.eggnog_db}/*dmnd --cpu {threads} -m diamond --itype genome --genepred prodigal -i {{}} '
         '--output_dir data/eggnog/ --temp_dir {params.tmpdir} -o {{/.}} || echo "Genome already annotated"\' '
-        '> {log} 2>&1; '
+        '> {resources.log_path} 2>&1; '
         'touch data/eggnog/done; '
 
 rule gtdbtk:
@@ -222,8 +221,7 @@ rule gtdbtk:
     resources:
         mem_mb = lambda wildcards, attempt: min(int(config["max_memory"])*1024, 256*1024*attempt),
         runtime = lambda wildcards, attempt: 12*60*attempt,
-    log:
-        'logs/gtdbtk.log'
+        log_path = lambda wildcards, attempt: setup_log(f"{logs_dir}/gtdbtk", attempt),
     benchmark:
         'benchmarks/gtdbtk.benchmark.txt'
     shell:
@@ -231,7 +229,7 @@ rule gtdbtk:
         f'{pixi_run} -e gtdbtk '
         "gtdbtk classify_wf --skip_ani_screen --cpus {threads} --pplacer_cpus {params.pplacer_threads} --extension {params.extension} "
         "--genome_dir {input.mag_folder} --out_dir data/gtdbtk "
-        "> {log} 2>&1 "
+        "> {resources.log_path} 2>&1 "
 
 rule annotate:
     input:

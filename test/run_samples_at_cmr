@@ -41,7 +41,7 @@ for sample, cobinning in samples_list.items():
                 "-o", f"{OUTPUT_DIR}/{sample}",
                 "-1"] + forward_reads + [
                 "-2"] + reverse_reads + [
-                "--binning-only", "--request-gpu",
+                "--binning-only", "--request-gpu", "--strict",
                 "-n", "32", "-t", "32", "--local-cores", "1",
                 "-m", "256", "--coassemble", "no",
                 "--snakemake-profile", "aqua", "--cluster-retries", "3",

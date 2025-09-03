@@ -96,7 +96,7 @@ def assemble_short_reads(
 
         with open(log, 'a') as logf:
             logf.write(f"Queueing command {command}\n")
-            subprocess.run(command.split(), stdout=logf, stderr=subprocess.STDOUT)
+            subprocess.run(command.split(), stdout=logf, stderr=subprocess.STDOUT, check=True)
         os.makedirs("data/short_read_assembly", exist_ok=True)
         shutil.copyfile("data/megahit_assembly/final.contigs.fa", "data/short_read_assembly/scaffolds.fasta")
 
@@ -106,7 +106,7 @@ def assemble_short_reads(
                 f"-o data/short_read_assembly {read_string} -k {kmers} {tmp_dir_arg}"
         with open(log, 'a') as logf:
             logf.write(f"Queueing command {command}\n")
-            subprocess.run(command.split(), stdout=logf, stderr=subprocess.STDOUT)
+            subprocess.run(command.split(), stdout=logf, stderr=subprocess.STDOUT, check=True)
 
 
 if __name__ == '__main__':
