@@ -33,7 +33,7 @@ This error is almost always caused by the user running out of storage in their `
 
 ### I wish to remove host contamination from my reads
 
-Aviary supports the removal of host contamination during the assembly process via the `-r`, `--reference-filter` parameter. This flag can take one or more compressed or non-compressed fasta files. Aviary will then compare the reads to these references and remove any reads that map to them.
+Aviary supports the removal of host contamination during the assembly process via the `-r`, `--host-filter` parameter. This flag can take one or more compressed or non-compressed fasta files. Aviary will then compare the reads to these references and remove any reads that map to them.
 
 ### SPAdes error: "Error code: -9" or other errors
 
@@ -68,7 +68,6 @@ export GTDBTK_DATA_PATH=/path/to/gtdb/gtdb_release207/db/ # https://gtdb.ecogeno
 export EGGNOG_DATA_DIR=/path/to/eggnog-mapper/2.1.7/ # https://github.com/eggnogdb/eggnog-mapper/wiki/eggNOG-mapper-v2.1.5-to-v2.1.7#setup
 export SINGLEM_METAPACKAGE_PATH=/path/to/singlem_metapackage.smpkg/
 export CHECKM2DB=/path/to/checkm2db/
-export CONDA_ENV_PATH=/path/to/conda/envs/
 ```
 
 ### Why the name "Aviary"? Why the bird names in general?

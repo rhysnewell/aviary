@@ -1,3 +1,4 @@
+#!/usr/bin/env python3
 import pandas as pd
 from subprocess import run, STDOUT
 import shutil
@@ -5,8 +6,41 @@ import glob
 import os
 import pandas.errors as e
 import datetime
+import argparse
 
-def refinery():
+def parse_args():
+    parser = argparse.ArgumentParser(description='Refinery script for iterative bin refinement')
+    
+    # Input files
+    parser.add_argument('--checkm', required=True, help='Path to the checkm results file')
+    parser.add_argument('--coverage', required=True, help='Path to the coverage file')
+    parser.add_argument('--fasta', required=True, help='Path to the assembly fasta file')
+    
+    # Output parameters
+    parser.add_argument('--output-folder', required=True, help='Output folder path')
+    parser.add_argument('--final-refining', type=lambda x: x.lower() == 'true', nargs='?', const=True, default=False, 
+                        help='Whether this is the final refining step')
+    
+    # Process parameters
+    parser.add_argument('--min-bin-size', required=True, type=int, help='Minimum bin size')
+    parser.add_argument('--max-iterations', required=True, type=int, help='Maximum number of iterations')
+    parser.add_argument('--max-retries', required=True, type=int, help='Maximum number of retries')
+    parser.add_argument('--pplacer-threads', required=True, type=int, help='Number of threads for pplacer')
+    parser.add_argument('--threads', required=True, type=int, help='Number of threads to use')
+    parser.add_argument('--max-contamination', required=True, type=int, help='Maximum allowed contamination')
+    
+    # Bin parameters
+    parser.add_argument('--bin-folder', required=True, help='Path to bin folder')
+    parser.add_argument('--extension', required=True, help='File extension for bins')
+    parser.add_argument('--bin-prefix', required=True, help='Prefix for bin names')
+    
+    # Log parameter
+    parser.add_argument('--log', required=True, help='Path to log file')
+    
+    return parser.parse_args()
+
+
+def refinery(args):
     """
     Main function that performs the refining process iteratively passing bins between
     rosella refine and checkm until either the max number of iterations is reached
@@ -14,33 +48,32 @@ def refinery():
     """
     # These will change
     current_iteration = 0
-    checkm_path = snakemake.input.checkm
+    checkm_path = args.checkm
 
     # These will not change
-    coverage = snakemake.input.coverage
-    assembly = snakemake.input.fasta
-    final_refining = snakemake.params.final_refining
-    log = snakemake.log[0]
+    coverage = args.coverage
+    assembly = args.fasta
+    final_refining = args.final_refining
+    log = args.log
 
     with open(log, "w") as logf: pass
 
-    # kmers = snakemake.input.kmers
+    # kmers = args.kmers
     if os.path.isfile("data/rosella_bins/kmer_frequencies.tsv"):
         kmers = "data/rosella_bins/kmer_frequencies.tsv"
     else:
         kmers = None
-    min_bin_size = snakemake.params.min_bin_size
-    max_iterations = int(snakemake.params.max_iterations)
-    max_retries = int(snakemake.params.max_retries)
-    pplacer_threads = int(snakemake.params.pplacer_threads)
-    threads = int(snakemake.threads)
-    max_contamination = int(snakemake.params.max_contamination)
-    contaminated_bin_folder = snakemake.params.output_folder + "/contaminated_bins"
-    final_bins = snakemake.params.output_folder + "/final_bins"
-    bin_folder = snakemake.params.bin_folder
-    extension = snakemake.params.extension
-    bin_prefix = snakemake.params.bin_prefix
-
+    min_bin_size = args.min_bin_size
+    max_iterations = args.max_iterations
+    max_retries = args.max_retries
+    pplacer_threads = args.pplacer_threads
+    threads = args.threads
+    max_contamination = args.max_contamination
+    contaminated_bin_folder = args.output_folder + "/contaminated_bins"
+    final_bins = args.output_folder + "/final_bins"
+    bin_folder = args.bin_folder
+    extension = args.extension
+    bin_prefix = args.bin_prefix
 
     try:
         os.makedirs(contaminated_bin_folder)
@@ -64,12 +97,11 @@ def refinery():
             for bin in os.listdir(bin_folder):
                 if bin.endswith(extension):
                     shutil.copy(f"{bin_folder}/{bin}", f"{final_bins}/{os.path.splitext(bin)[0]}.fna")
-
-        open(f"{snakemake.params.output_folder}/done", "a").close()
-
+        open(f"{args.output_folder}/done", "a").close()
         return
 
-    final_checkm = current_checkm.copy().loc[current_checkm["Contamination"] <= snakemake.params.max_contamination].copy()
+    # Fix for the jumbled code in the original script
+    final_checkm = current_checkm.copy().loc[current_checkm["Contamination"] <= args.max_contamination].copy()
     final_checkm = move_finished_bins(final_checkm, bin_folder, extension, final_bins)
     previous_checkm_path = None
     unchanged_bins = None
@@ -93,7 +125,7 @@ def refinery():
                 current_checkm, max_contamination, bin_folder, extension, contaminated_bin_folder):
             break
 
-        output_folder = f"{snakemake.params.output_folder}/rosella_refined_{current_iteration + 1}"
+        output_folder = f"{args.output_folder}/rosella_refined_{current_iteration + 1}"
 
         if os.path.exists(output_folder):
             shutil.rmtree(output_folder)
@@ -152,7 +184,7 @@ def refinery():
             if os.path.exists(unchanged_bins):
                 # list the bins in unchanged_bins
                 if previous_checkm_path is None:
-                    previous_checkm_path = snakemake.input.checkm
+                    previous_checkm_path = args.checkm
                 
                 bin_id_accessor_str = "Bin Id"
 
@@ -166,10 +198,8 @@ def refinery():
                     # copy the bin to the final bins folder
                     bin_id = os.path.splitext(bin_path)[0]
                     bin_ids.append(bin_id)
-                    shutil.copy(f"{unchanged_bins}/{bin}", f"{final_bins}/{bin_id}.fna")
-                    # add the bin to the final checkm
-                    # row = previous_checkm.copy().loc[previous_checkm["Bin Id"] == bin_id]
-                    # final_checkm = pd.concat([final_checkm, row])
+                    shutil.copy(f"{unchanged_bins}/{bin_path}", f"{final_bins}/{bin_id}.fna")
+                    
                 final_checkm = pd.concat([final_checkm, previous_checkm.copy().loc[previous_checkm[bin_id_accessor_str].isin(bin_ids)]])
 
             previous_checkm_path = checkm_path
@@ -202,14 +232,13 @@ def refinery():
         with open(log, "a") as logf:
             logf.write("Refinery finished.\n")
         
-        # final_checkm.to_csv(f"{snakemake.params.output_folder}/intermediate_checkm.out", sep='\t', index=False)
-        open(f"{snakemake.params.output_folder}/done", "a").close()
+        # final_checkm.to_csv(f"{args.output_folder}/intermediate_checkm.out", sep='\t', index=False)
+        open(f"{args.output_folder}/done", "a").close()
     
     # in output folder, we then delete directories starting with rosella_refined_
-    for folder in os.listdir(snakemake.params.output_folder):
+    for folder in os.listdir(args.output_folder):
         if folder.startswith("rosella_refined_"):
-            shutil.rmtree(f"{snakemake.params.output_folder}/{folder}")
-
+            shutil.rmtree(f"{args.output_folder}/{folder}")
 
 
 def move_finished_bins(
@@ -307,6 +336,7 @@ def refine(
 
     return kmers
 
+
 def get_checkm_results(
         refined_folder,
         threads,
@@ -314,7 +344,6 @@ def get_checkm_results(
         log,
         final_refining=False,
 ):
-
     checkm_cmd = f"checkm lineage_wf -t {threads} --pplacer_threads {pplacer_threads} -x fna --tab_table -f {refined_folder}/checkm.out {refined_folder} {refined_folder}/checkm".split()
     with open(log, "a") as logf:
         run(checkm_cmd, stdout=logf, stderr=STDOUT)
@@ -326,4 +355,5 @@ def get_checkm_results(
 
 
 if __name__ == '__main__':
-    refinery()
+    args = parse_args()
+    refinery(args)

@@ -1,9 +1,19 @@
 import pysam
 import os
+import argparse
+
+parser = argparse.ArgumentParser(description="Pool reads into bins based on contigs.")
+parser.add_argument("--long-bam", required=True, help="Path to the long BAM file.")
+parser.add_argument("--short-bam", required=True, help="Path to the short BAM file.")
+parser.add_argument("--metabat-done", required=True, help="Path to the MetaBAT output directory.")
+parser.add_argument("--short-reads", required=True, help="Path to the short reads FASTQ file.")
+parser.add_argument("--short-reads-2", required=True, help="Path to the second short reads FASTQ file or 'none'.")
+parser.add_argument("--output-list", required=True, help="Path to the output list file.")
+args = parser.parse_args()
 
 contig_bins = {}
 outlength = {}
-samfile = pysam.AlignmentFile(snakemake.input.long_bam, 'rb')
+samfile = pysam.AlignmentFile(args.long_bam, 'rb')
 gotten_contigs = set()
 maxbin = 0
 outreads = {}
@@ -11,7 +21,7 @@ outbases = {}
 outreads500 = {}
 outbases500 = {}
 
-for bins in os.listdir(snakemake.input.metabat_done[:-4]):
+for bins in os.listdir(args.metabat_done[:-4]):
     if not bins.startswith(
             'binned_contigs') or bins == "binned_contigs.unbinned" or bins == "binned_contigs.lowDepth" or bins == "binned_contigs.tooShort":
         continue
@@ -23,7 +33,7 @@ for bins in os.listdir(snakemake.input.metabat_done[:-4]):
     outbases[bin] = 0
     outreads500[bin] = set()
     outbases500[bin] = 0
-    with open(os.path.join(snakemake.input.metabat_done[:-4], bins)) as f:
+    with open(os.path.join(args.metabat_done[:-4], bins)) as f:
         for line in f:
             contig_bins[line.rstrip()] = bin
             gotten_contigs.add(line.rstrip())

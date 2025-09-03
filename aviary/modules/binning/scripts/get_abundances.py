@@ -1,3 +1,6 @@
+#!/usr/bin/env python
+
+import argparse
 from subprocess import run, STDOUT
 import os
 
@@ -103,21 +106,31 @@ def get_abundances(
                         print(line1.strip(), "\t", long_cov_line, file=file3)
     elif long_reads != "none":  # rename long reads cov if only it exists
         os.rename("data/long_abundances.tsv", "data/coverm_abundances.tsv")
-    elif short_reads_1 != "none":  # rename shrot reads cov if only they exist
+    elif short_reads_1 != "none":  # rename short reads cov if only they exist
         os.rename("data/short_abundances.tsv", "data/coverm_abundances.tsv")
 
 
 if __name__ == '__main__':
-    log = snakemake.log[0]
+    parser = argparse.ArgumentParser(description="Get abundances using CoverM.")
+    parser.add_argument("--long-reads", nargs="+", default="none", help="Paths to long reads files.")
+    parser.add_argument("--short-reads-1", nargs="+", default="none", help="Paths to first set of short reads files.")
+    parser.add_argument("--short-reads-2", nargs="+", default="none", help="Paths to second set of short reads files.")
+    parser.add_argument("--long-read-type", type=str, required=True, help="Type of long reads (e.g., ont, rs, etc.).")
+    parser.add_argument("--threads", type=int, required=True, help="Number of threads to use.")
+    parser.add_argument("--strain-analysis", type=lambda x: x.lower() == 'true', nargs='?', const=True, default=False, help="Enable strain analysis (True/False).")
+    parser.add_argument("--log", type=str, required=True, help="Path to log file.")
 
-    with open(log, "w") as logf: pass
+    args = parser.parse_args()
+
+    with open(args.log, "w") as logf:
+        pass
 
     get_abundances(
-        snakemake.config["long_reads"],
-        snakemake.config["short_reads_1"],
-        snakemake.config["short_reads_2"],
-        snakemake.config["long_read_type"][0],
-        snakemake.threads,
-        snakemake.config["strain_analysis"],
-        log,
+        long_reads=args.long_reads,
+        short_reads_1=args.short_reads_1,
+        short_reads_2=args.short_reads_2,
+        long_read_type=args.long_read_type,
+        threads=args.threads,
+        strain_analysis=args.strain_analysis,
+        log=args.log,
     )

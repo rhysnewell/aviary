@@ -1,10 +1,13 @@
+QC_SCRIPTS_DIR = os.path.join(os.path.dirname(os.path.abspath(workflow.snakefile)), 'scripts')
+from aviary.modules.common import pixi_run, setup_log
+logs_dir = "logs"
+
 localrules: assembly_size, assembly_quality, complete_qc_short, complete_qc_long, complete_qc_all
 
 ruleorder: complete_qc_all > complete_qc_long > complete_qc_short
 
 if config['fasta'] == 'none':
     config['fasta'] = 'assembly/final_contigs.fasta'
-
 
 ### Filter illumina reads against provided reference
 rule qc_short_reads:
@@ -23,22 +26,36 @@ rule qc_short_reads:
         unqualified_percent_limit = config['unqualified_percent_limit'],
         extra_fastp_params = config['extra_fastp_params'],
         coassemble = config["coassemble"],
-        reference_filter = [] if "none" in config["reference_filter"] else config["reference_filter"],
+        host_filter = [] if config["host_filter"] == ["none"] else config["host_filter"],
         skip_qc = config["skip_qc"]
-    conda:
-        "../../envs/minimap2.yaml"
     threads:
         config["max_threads"]
     resources:
         mem_mb = lambda wildcards, attempt: min(int(config["max_memory"])*1024, 512*1024*attempt),
         runtime = lambda wildcards, attempt: 8*60*attempt,
-    log:
-        "logs/qc_short_reads.log"
+        log_path = lambda wildcards, attempt: setup_log(f"{logs_dir}/qc_short_reads", attempt),
     benchmark:
         "benchmarks/qc_short_reads.benchmark.txt"
-    script:
-        "scripts/qc_short_reads.py"
-
+    shell:
+        f'{pixi_run} -e minimap2 {QC_SCRIPTS_DIR}/'+\
+        """qc_short_reads.py \
+          --disable-adapter-trimming {params.disable_adapter_trimming} \
+          --skip-qc {params.skip_qc} \
+          --coassemble {params.coassemble} \
+          --short-reads-1 {input.short_reads_1} \
+          --short-reads-2 {input.short_reads_2} \
+          --output-bam {output.bam} \
+          --output-fastq {output.fastq} \
+          --output-filtered {output.filtered} \
+          --quality-cutoff {params.quality_cutoff} \
+          --unqualified-percent-limit {params.unqualified_percent_limit} \
+          --min-length {params.min_length} \
+          --max-length {params.max_length} \
+          --extra-fastp-params "{params.extra_fastp_params}" \
+          --host-filter {params.host_filter} \
+          --threads {threads} \
+          --log {resources.log_path}
+        """
 
 rule qc_long_reads:
     input:
@@ -50,30 +67,36 @@ rule qc_long_reads:
         min_length = config['min_read_size'],
         keep_percent = config['keep_percent'],
         min_mean_q = config['min_mean_q'],
-        reference_filter = [] if config["reference_filter"] == "none" else config["reference_filter"],
+        host_filter = [] if config["host_filter"] == ["none"] else config["host_filter"],
         skip_qc = config["skip_qc"]
     threads:
         config["max_threads"]
     resources:
         mem_mb = lambda wildcards, attempt: min(int(config["max_memory"])*1024, 128*1024*attempt),
         runtime = lambda wildcards, attempt: 12*60*attempt,
-    log:
-        "logs/qc_long_reads.log"
+        log_path = lambda wildcards, attempt: setup_log(f"{logs_dir}/qc_long_reads", attempt),
     benchmark:
         "benchmarks/qc_long_reads.benchmark.txt"
-    conda:
-        'envs/chopper.yaml'
-    script:
-        "scripts/qc_long_reads.py"
-
+    shell:
+        f'{pixi_run} -e chopper {QC_SCRIPTS_DIR}/'+\
+        """qc_long_reads.py \
+            --long-reads {input.long_reads} \
+            --output-long {output.output_long} \
+            --coassemble {params.coassemble} \
+            --min-length {params.min_length} \
+            --min-quality {params.min_mean_q} \
+            --keep-percent {params.keep_percent} \
+            --host-filter {params.host_filter} \
+            --skip-qc {params.skip_qc} \
+            --threads {threads} \
+            --log {resources.log_path}
+        """
 
 rule fastqc:
     input:
         config['short_reads_1']
     output:
         output = "www/fastqc/done"
-    conda:
-        "envs/fastqc.yaml"
     benchmark:
         "benchmarks/fastqc_short.benchmark.txt"
     threads:
@@ -81,18 +104,21 @@ rule fastqc:
     resources:
         mem_mb = lambda wildcards, attempt: min(int(config["max_memory"])*1024, 128*1024*attempt),
         runtime = lambda wildcards, attempt: 12*60*attempt,
-    log:
-        "logs/fastqc.log"
-    script:
-        "scripts/run_fastqc.py"
+        log_path = lambda wildcards, attempt: setup_log(f"{logs_dir}/fastqc", attempt),
+    shell:
+        f'{pixi_run} -e fastqc {QC_SCRIPTS_DIR}/'+\
+        """run_fastqc.py \
+        --short-reads-1 {config[short_reads_1]} \
+        --short-reads-2 {config[short_reads_2]} \
+        --threads {threads} \
+        --log {resources.log_path}
+        """
 
 rule fastqc_long:
     input:
         'data/long_reads.fastq.gz'
     output:
         output = "www/fastqc_long/done"
-    conda:
-        "envs/fastqc.yaml"
     benchmark:
         "benchmarks/fastqc_long.benchmark.txt"
     threads:
@@ -100,10 +126,10 @@ rule fastqc_long:
     resources:
         mem_mb = lambda wildcards, attempt: min(int(config["max_memory"])*1024, 128*1024*attempt),
         runtime = lambda wildcards, attempt: 12*60*attempt,
-    log:
-        "logs/fastqc_long.log"
+        log_path = lambda wildcards, attempt: setup_log(f"{logs_dir}/fastqc_long", attempt),
     shell:
-        "fastqc -o www/fastqc_long/ -t {threads} {input[0]} > {log} 2>&1; touch {output.output}"
+        f"{pixi_run} -e fastqc "
+        "fastqc -o www/fastqc_long/ -t {threads} {input[0]} > {resources.log_path} 2>&1; touch {output.output}"
 
 rule nanoplot:
     input:
@@ -111,8 +137,6 @@ rule nanoplot:
          # "data/long_reads.fastq.gz"
     output:
         output = "www/nanoplot/done"
-    conda:
-        "envs/nanoplot.yaml"
     benchmark:
         "benchmarks/nanoplot.benchmark.txt"
     threads:
@@ -120,10 +144,10 @@ rule nanoplot:
     resources:
         mem_mb = lambda wildcards, attempt: min(int(config["max_memory"])*1024, 128*1024*attempt),
         runtime = lambda wildcards, attempt: 12*60*attempt,
-    log:
-        "logs/nanoplot.log"
+        log_path = lambda wildcards, attempt: setup_log(f"{logs_dir}/nanoplot", attempt),
     shell:
-        "NanoPlot -o www/nanoplot -p longReads -t {threads} --fastq {input.long} > {log} 2>&1; touch {output.output}"
+        f"{pixi_run} -e nanoplot "
+        "NanoPlot -o www/nanoplot -p longReads -t {threads} --fastq {input.long} > {resources.log_path} 2>&1; touch {output.output}"
 
 rule metaquast:
     """
@@ -140,12 +164,10 @@ rule metaquast:
     resources:
         mem_mb = lambda wildcards, attempt: min(int(config["max_memory"])*1024, 128*1024*attempt),
         runtime = lambda wildcards, attempt: 12*60*attempt,
-    log:
-        "logs/metaquast.log"
-    conda:
-        "envs/quast.yaml"
+        log_path = lambda wildcards, attempt: setup_log(f"{logs_dir}/metaquast", attempt),
     shell:
-        "metaquast.py {input.assembly} -t {threads} -o www/metaquast {params.gsa} --min-identity 80 --extensive-mis-size 20000 > {log} 2>&1"
+        f"{pixi_run} -e quast "
+        "metaquast.py {input.assembly} -t {threads} -o www/metaquast {params.gsa} --min-identity 80 --extensive-mis-size 20000 > {resources.log_path} 2>&1"
 
 rule read_fraction_recovered:
     """
@@ -155,17 +177,23 @@ rule read_fraction_recovered:
         fasta = config["fasta"]
     output:
         "www/fraction_recovered/short_fraction_recovered" if config['short_reads_1'] != 'none' else "www/fraction_recovered/long_fraction_recovered"
-    conda:
-        "../../envs/coverm.yaml"
     threads:
         config["max_threads"]
     resources:
         mem_mb = lambda wildcards, attempt: min(int(config["max_memory"])*1024, 512*1024*attempt),
         runtime = lambda wildcards, attempt: 24*60 + 24*60*attempt,
-    log:
-        "logs/fraction_recovered.log"
-    script:
-        "scripts/fraction_recovered.py"
+        log_path = lambda wildcards, attempt: setup_log(f"{logs_dir}/fraction_recovered", attempt),
+    shell:
+        f'{pixi_run} -e coverm {QC_SCRIPTS_DIR}/'+\
+        """fraction_recovered.py \
+        --input-fasta {input.fasta} \
+        --long-reads {config[long_reads]} \
+        --short-reads-1 {config[short_reads_1]} \
+        --short-reads-2 {config[short_reads_2]} \
+        --long-read-type {config[long_read_type][0]} \
+        --threads {threads} \
+        --log {resources.log_path}
+        """
 
 rule assembly_size:
     """
@@ -175,10 +203,11 @@ rule assembly_size:
         fasta = config["fasta"]
     output:
         sizes = "www/assembly_stats.txt"
-    log:
-        "logs/assembly_stats.log"
+    resources:
+        log_path = lambda wildcards, attempt: setup_log(f"{logs_dir}/assembly_stats", attempt),
     shell:
-        "stats.sh {input.fasta} > {output.sizes} 2> {log}"
+        f"{pixi_run} -e bbmap "
+        "stats.sh {input.fasta} > {output.sizes} 2> {resources.log_path}"
 
 
 rule assembly_quality:

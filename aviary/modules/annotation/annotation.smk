@@ -1,3 +1,6 @@
+from aviary.modules.common import pixi_run, setup_log
+logs_dir = "logs"
+
 localrules: download_databases, download_eggnog_db, download_gtdb, download_checkm2, annotate
 
 onstart:
@@ -65,13 +68,12 @@ rule download_eggnog_db:
         touch(get_db_done_file('eggnog'))
     params:
         eggnog_db = get_db_dir('eggnog')
-    conda:
-        'envs/eggnog.yaml'
     threads: 1
     log:
         'logs/download_eggnog.log'
     shell:
         'mkdir -p {params.eggnog_db}; '
+        f'{pixi_run} -e eggnog '
         'download_eggnog_data.py --data_dir {params.eggnog_db} -y 2> {log} '
 
 rule download_gtdb:
@@ -79,8 +81,6 @@ rule download_gtdb:
         touch(get_db_done_file('gtdb'))
     params:
         gtdbtk_folder = get_db_dir('gtdb')
-    conda:
-        '../../envs/gtdbtk.yaml'
     threads: 1
     log:
         'logs/download_gtdb.log'
@@ -88,7 +88,8 @@ rule download_gtdb:
         'GTDBTK_DATA_PATH={params.gtdbtk_folder}; '
         'mkdir -p {params.gtdbtk_folder}; '
         # Configuration
-        'DB_URL="https://data.gtdb.ecogenomic.org/releases/release220/220.0/auxillary_files/gtdbtk_package/full_package/gtdbtk_r220_data.tar.gz"; '
+        # NOTE: Updating the database version here might require an update to the GTDB-Tk version in pixi.toml
+        'DB_URL="https://data.gtdb.ecogenomic.org/releases/release226/226.0/auxillary_files/gtdbtk_package/full_package/gtdbtk_r226_data.tar.gz"; '
         'TARGET_TAR_NAME="gtdbtk_data.tar.gz"; '
 
         # Script variables (no need to configure)
@@ -119,23 +120,15 @@ rule download_gtdb:
         'rm "$TARGET_TAR"; '
         'echo "[INFO] - The GTDB-Tk database has been successfully downloaded and extracted."; '
 
-        # Set the environment variable
-        'if conda env config vars set TARGET_DIR="$TARGET_DIR"; then '
-        '  echo "[INFO] - Added TARGET_DIR ($TARGET_DIR) to the GTDB-Tk conda environment."; '
-        'else '
-        '  echo "[INFO] - Conda not found in PATH, please be sure to set the TARGET_DIR envrionment variable"; '
-        'fi; '
-
 rule download_singlem_metapackage:
     output: touch(get_db_done_file('singlem'))
     params:
         metapackage_folder = get_db_dir('singlem')
-    conda:
-        "../../envs/singlem.yaml"
     threads: 1
     log:
         'logs/download_singlem.log'
     shell:
+        f'{pixi_run} -e singlem '
         'singlem data --output-directory {params.metapackage_folder}_tmp 2> {log} && '
         'mv {params.metapackage_folder}_tmp/*.smpkg.zb {params.metapackage_folder}'
 
@@ -144,13 +137,11 @@ rule download_checkm2:
         touch(get_db_done_file('checkm2'))
     params:
         checkm2_folder = get_db_dir('checkm2')
-    conda:
-        '../../envs/checkm2.yaml'
     threads: 1
     log:
         'logs/download_checkm2.log'
     shell:
-        'checkm2 database --download --path {params.checkm2_folder} 2> {log}; '
+        pixi_run + ' -e checkm2 checkm2 database --download --path {params.checkm2_folder} 2> {log}; '
         'mv {params.checkm2_folder}/CheckM2_database/*.dmnd {params.checkm2_folder}/; '
 
 rule download_metabuli:
@@ -158,12 +149,11 @@ rule download_metabuli:
         touch(get_db_done_file('metabuli'))
     params:
         metabuli_folder = get_db_dir('metabuli')
-    conda:
-        '../../envs/metabuli.yaml'
     threads: 1
     log:
         'logs/download_metabuli.log'
     shell:
+        f'{pixi_run} -e metabuli '
         'metabuli databases GTDB {params.metabuli_folder} tmp 2> {log} 2>&1 '
 
 rule checkm2:
@@ -181,17 +171,14 @@ rule checkm2:
     resources:
         mem_mb = lambda wildcards, attempt: min(int(config["max_memory"])*1024, 64*1024*attempt),
         runtime = lambda wildcards, attempt: 8*60*attempt,
-    log:
-        'logs/checkm2.log'
+        log_path = lambda wildcards, attempt: setup_log(f"{logs_dir}/checkm2", attempt),
     benchmark:
         'benchmarks/checkm2.benchmark.txt'
-    conda:
-        "../../envs/checkm2.yaml"
     shell:
-        'export CHECKM2DB={params.checkm2_db_path}/uniref100.KO.1.dmnd; '
-        'echo "Using CheckM2 database $CHECKM2DB" > {log}; '
-        'checkm2 predict -i {input.mag_folder}/ -x {params.mag_extension} -o {output.checkm2_folder} -t {threads} --force'
-        '>> {log} 2>&1 '
+        pixi_run + " -e checkm2 bash -e -o pipefail -c '" \
+        "export CHECKM2DB={params.checkm2_db_path}/uniref100.KO.1.dmnd; " \
+        "echo \"Using CheckM2 database $CHECKM2DB\"; " \
+        "checkm2 predict -i {input.mag_folder}/ -x {params.mag_extension} -o {output.checkm2_folder} -t {threads} --force > {resources.log_path} 2>&1'"
 
 rule eggnog:
     input:
@@ -208,57 +195,50 @@ rule eggnog:
     resources:
         mem_mb = lambda wildcards, attempt: min(int(config["max_memory"])*1024, 512*1024*attempt),
         runtime = lambda wildcards, attempt: 24*60*attempt,
-    log:
-        'logs/eggnog.log'
+        log_path = lambda wildcards, attempt: setup_log(f"{logs_dir}/eggnog", attempt),
     benchmark:
         'benchmarks/eggnog.benchmark.txt'
-    conda:
-        'envs/eggnog.yaml'
     shell:
         # 'download_eggnog_data.py --data_dir {input.eggnog_db} -y; '
         'mkdir -p data/eggnog/; '
-        'find {input.mag_folder}/*.{params.mag_extension} | parallel -j1 \'emapper.py --data_dir {params.eggnog_db} '
+        f'find {{input.mag_folder}}/*.{{params.mag_extension}} | {pixi_run} -e eggnog parallel -j1 \'emapper.py --data_dir {{params.eggnog_db}} '
         '--dmnd_db {params.eggnog_db}/*dmnd --cpu {threads} -m diamond --itype genome --genepred prodigal -i {{}} '
         '--output_dir data/eggnog/ --temp_dir {params.tmpdir} -o {{/.}} || echo "Genome already annotated"\' '
-        '> {log} 2>&1; '
+        '> {resources.log_path} 2>&1; '
         'touch data/eggnog/done; '
 
 rule gtdbtk:
     input:
         mag_folder = config['mag_directory']
     output:
-        done = "data/gtdbtk/done"
+        done = touch("data/gtdbtk/done")
     params:
         gtdbtk_folder = config['gtdbtk_folder'],
         pplacer_threads = lambda wildcards, threads: min(threads, config["pplacer_threads"]),
         extension = config['mag_extension']
-    conda:
-        "../../envs/gtdbtk.yaml"
     threads:
         config["max_threads"]
     resources:
         mem_mb = lambda wildcards, attempt: min(int(config["max_memory"])*1024, 256*1024*attempt),
         runtime = lambda wildcards, attempt: 12*60*attempt,
-    log:
-        'logs/gtdbtk.log'
+        log_path = lambda wildcards, attempt: setup_log(f"{logs_dir}/gtdbtk", attempt),
     benchmark:
         'benchmarks/gtdbtk.benchmark.txt'
     shell:
         "export GTDBTK_DATA_PATH={params.gtdbtk_folder} && "
+        f'{pixi_run} -e gtdbtk '
         "gtdbtk classify_wf --skip_ani_screen --cpus {threads} --pplacer_cpus {params.pplacer_threads} --extension {params.extension} "
         "--genome_dir {input.mag_folder} --out_dir data/gtdbtk "
-        "> {log} 2>&1 "
-        "&& touch data/gtdbtk/done"
+        "> {resources.log_path} 2>&1 "
 
 rule annotate:
     input:
          'data/gtdbtk/done',
          'data/eggnog/done',
     output:
-         'annotation/done',
+         touch('annotation/done'),
     shell:
          """
          ln -sr data/gtdbtk taxonomy; 
-         ln -sr data/eggnog annotation; 
-         touch annotation/done;
+         ln -sr data/eggnog annotation;
          """

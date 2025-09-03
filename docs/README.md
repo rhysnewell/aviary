@@ -9,7 +9,6 @@ comprehensive binning pipeline. Each module can be run independently or as a sin
 # Module details
 |__method__ |__description__ |
 | --- | --- |
-|`batch`|Performs all steps in the Aviary pipeline on a batch file. Clusters the final output.|
 |`cluster`|Dereplicate/choose representative genomes from multiple aviary runs|
 |`assemble`|Perform quality control and assembly of provided reads. Will provide hybrid assembly if given long and short reads|
 |`recover`|Recover MAGs from provided assembly using a variety of binning algorithms. Also perform quality checks on recovered MAGs and taxonomic classification.|

@@ -11,7 +11,15 @@ aviary_genome.egg-info
 example/
 test/data/.conda
 test/data/wgsim.metaspades.assembly.fna.fai
+*-log.txt
 config.yaml
 benchmarks
 data
 logs
+
+# pixi environments
+.pixi
+*.egg-info
+db
+mqsub.out
+test/qsub-test-log.txt

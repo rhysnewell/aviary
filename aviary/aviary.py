@@ -18,7 +18,8 @@
 #                                                                             #
 ###############################################################################
 import aviary.config.config as Config
-from aviary.modules.processor import Processor, process_batch
+from aviary.modules.processor import Processor
+from aviary.modules.common import pixi_run
 from .__init__ import __version__, MEDAKA_MODELS, LONG_READ_TYPES, COVERAGE_JOB_STRATEGIES, COVERAGE_JOB_CUTOFF
 __author__ = "Rhys Newell"
 __copyright__ = "Copyright 2022"
@@ -35,6 +36,9 @@ import argparse
 import logging
 import os
 from datetime import datetime
+import subprocess
+import importlib.resources
+import tomllib
 
 # Debug
 debug={1:logging.CRITICAL,
@@ -76,8 +80,6 @@ Metagenome assembly, binning, and annotation:
                     annotate, diversity in that order.
         cluster   - Combines and dereplicates the MAGs from multiple Aviary runs
                     using Galah
-        batch     - Run Aviary using a given workflow on a supplied batch of samples
-                    and cluster the end result.
 
 Isolate assembly, binning, and annotation:
         isolate   - Perform isolate assembly **PARTIALLY COMPLETED**
@@ -202,14 +204,6 @@ def main():
     )
 
     base_group.add_argument(
-        '--conda-prefix', '--conda_prefix',
-        help='Path to the location of installed conda environments, or where to install new environments. \n'
-             'Can be configured within the `configure` subcommand',
-        dest='conda_prefix',
-        default=None,
-    )
-
-    base_group.add_argument(
         '--tmpdir', '--tempdir', '--tmp-dir', '--tmp_dir', '--tmp', '--temp', '--temp-dir', '--temp_dir',
         help='Path to the location that will be treated used for temporary files. If none is specified, the TMPDIR \n'
              'environment variable will be used. Can be configured within the `configure` subcommand',
@@ -275,7 +269,7 @@ def main():
 
     base_group.add_argument(
         '--build',
-        help='Build conda environments necessary to run the pipeline, and then exit. Equivalent to "--snakemake-cmds \'--conda-create-envs-only True \' ". Other inputs should be specified as if running normally so that the right set of conda environments is built.',
+        help='Build Aviary dependency environments, and then exit.',
         type=str2bool,
         nargs='?',
         const=True,
@@ -285,12 +279,25 @@ def main():
     )
 
     base_group.add_argument(
+        '--build-gpu',
+        help='Build Aviary dependency environments, including GPU enabled ones, and then exit. Note: requires a GPU to be present.',
+        type=str2bool,
+        nargs='?',
+        const=True,
+        dest='build_gpu',
+        metavar='yes|no',
+        default='no',
+    )
+
+    download_databases = ["gtdb", "eggnog", "singlem", "checkm2", "metabuli"]
+    base_group.add_argument(
         '--download', '--download',
-        help='Downloads the requested GTDB, EggNOG, SingleM, CheckM2, & Metabuli databases',
+        help='Downloads the requested GTDB, EggNOG, SingleM, CheckM2, & Metabuli databases.\n'
+             'If no arguments are provided, all databases will be downloaded. [default: No downloading performed]',
         dest='download',
-        default=[],
+        default=None,
         nargs="*",
-        choices=["gtdb", "eggnog", "singlem", "checkm2", "metabuli"]
+        choices=download_databases
     )
 
     base_group.add_argument(
@@ -332,9 +339,9 @@ def main():
     )
 
     qc_group.add_argument(
-        '-r', '--reference-filter', '--reference_filter',
-        help='One or more reference filter files to aid in the assembly. Remove contaminant reads from the assembly.',
-        dest="reference_filter",
+        '-r', '--host-filter', '--host_filter',
+        help='One or more host reference fasta files for removal of contaminant reads prior to assembly.',
+        dest="host_filter",
         nargs='*',
         default=['none']
     )
@@ -549,6 +556,13 @@ def main():
         '--checkm2-db-path', '--checkm2_db_path',
         help='Path to Checkm2 Database',
         dest='checkm2_db_path',
+        required=False,
+    )
+
+    annotation_group.add_argument(
+        '--metabuli-db-path', '--metabuli_db_path',
+        help='Path to the local metabuli database',
+        dest='metabuli_db_path',
         required=False,
     )
 
@@ -1022,6 +1036,31 @@ def main():
 
     add_workflow_arg(cluster_options, ['complete_cluster'])
 
+    ##########################  ~ BUILD ~   ###########################
+
+    build_options = subparsers.add_parser('build',
+                                             description='Build Aviary dependency environments.',
+                                             formatter_class=CustomHelpFormatter,
+                                             epilog=
+                                             '''
+                                                                   ......:::::: BUILD ::::::......
+
+                                             aviary build
+
+                                             ''')
+
+    build_options.add_argument(
+        '--gpu',
+        help='Also build the GPU enabled environments for Aviary. Note: requires a GPU to be present.',
+        type=str2bool,
+        nargs='?',
+        const=True,
+        dest='build_gpu',
+        default=False,
+    )
+
+    add_workflow_arg(build_options, ['build'])
+
     ##########################  ~ VIRAL ~   ###########################
 
     viral_options = subparsers.add_parser('viral',
@@ -1079,93 +1118,6 @@ def main():
 
     add_workflow_arg(isolate_options, ['circlator'])
 
-    ##########################   ~ BATCH ~  ###########################
-
-    batch_options = subparsers.add_parser('batch',
-                                             description='Performs all steps in the Aviary pipeline on a batch file. \n'
-                                                         'Each line in the batch file is processed separately and then \n'
-                                                         'clustered using aviary. \n'
-                                                         '(Assembly > Binning > Refinement > Annotation > Diversity) * n_samples --> Cluster',
-                                             formatter_class=CustomHelpFormatter,
-                                             parents=[qc_group, assemble_group, binning_group, annotation_group, cluster_group, base_group],
-                                             epilog=
-                                             '''
-                                                      ......:::::: BATCH ::::::......
-
-                                             aviary batch -f batch_file.tsv -t 32 -o batch_test
-                                             
-                                             An example batch file can be found at: https://rhysnewell.github.io/aviary/examples
-
-                                             ''')
-
-    batch_options.add_argument(
-        '-f', '--batch_file', '--batch-file',
-        help='The tab or comma separated batch file containing the input samples to assemble and/or recover MAGs from. \n'
-             'An example batch file can be found at https://rhysnewell.github.io/aviary/examples. The heading line is required. \n'
-             'The number of reads provided to each sample is flexible as is the type of assembly being performed (if any). \n'
-             'Multiple reads can be supplied by providing a comma-separated list (surrounded by double quotes \"\" if using a \n'
-             'comma separated batch file) within the specific read column.',
-        dest="batch_file",
-        # nargs=1,
-        required=True,
-    )
-
-    batch_options.add_argument(
-        '--write-script', '--write_script',
-        help='Write the aviary batch Snakemake commands to a bash script and exit. \n'
-             'Useful when submitting jobs to HPC cluster with custom queueing.',
-        dest='write_script',
-        required=False
-    )
-
-    batch_options.add_argument(
-        '--cluster',
-        help='Cluster final output of all samples using aviary cluster if possible.',
-        dest='cluster',
-        type=str2bool,
-        nargs='?',
-        const=True,
-        default=False
-    )
-
-    batch_options.add_argument(
-        '--cluster-ani-values', '--cluster_ani_values', '--ani-values', '--ani_values',
-        help='The range of ANI values to perform clustering and dereplication at during aviary cluster.',
-        dest='ani_values',
-        nargs='*',
-        default=[0.99, 0.97, 0.95]
-    )
-
-    batch_options.add_argument(
-        '--min-percent-read-identity-long', '--min_percent_read_identity_long',
-        help='Minimum percent read identity used by CoverM for long-reads'
-             'when calculating genome abundances.',
-        dest='long_percent_identity',
-        default='85'
-    )
-
-    batch_options.add_argument(
-        '--min-percent-read-identity-short', '--min_percent_read_identity_short',
-        help='Minimum percent read identity used by CoverM for short-reads \n'
-             'when calculating genome abundances.',
-        dest='short_percent_identity',
-        default='95'
-    )
-
-    batch_options.add_argument(
-        '--medaka-model', '--medaka_model',
-        help='Medaka model to use for polishing long reads. \n',
-        dest='medaka_model',
-        default="r941_min_hac_g507",
-        choices=MEDAKA_MODELS
-    )
-
-    add_workflow_arg(
-        batch_options,
-        ['get_bam_indices', 'recover_mags', 'annotate', 'lorikeet'],
-        help='Main workflow (snakemake target rule) to run for each sample'
-    )
-
     ##########################   ~ configure ~  ###########################
 
     configure_options = subparsers.add_parser('configure',
@@ -1176,7 +1128,7 @@ def main():
                                             '''
                                                                ......:::::: CONFIGURE ::::::......
 
-                                            aviary configure --conda-prefix ~/.conda --gtdb-path ~/gtdbtk/release207/ --temp-dir /path/to/new/temp
+                                            aviary configure --gtdb-path ~/gtdbtk/release207/ --temp-dir /path/to/new/temp
 
                                             ''')
 
@@ -1231,6 +1183,12 @@ def main():
     args = main_parser.parse_args()
     time = datetime.now().strftime('%H:%M:%S %d-%m-%Y')
 
+    # If --download is given with no arguments, use all choices
+    if hasattr(args, 'download') and args.download == []:
+        args.download = download_databases
+    if hasattr(args, 'download') and args.download is None:
+        args.download = []
+
     if args.log:
         if os.path.isfile(args.log):
             raise Exception("File %s exists" % args.log)
@@ -1248,9 +1206,6 @@ def main():
 
     if args.subparser_name == 'configure':
         # Set the environment variables if manually configuring
-        if args.conda_prefix is not None:
-            Config.set_db_path(args.conda_prefix, db_name='CONDA_ENV_PATH')
-
         if args.tmpdir is not None:
             Config.set_db_path(args.tmpdir, db_name='TMPDIR')
 
@@ -1273,7 +1228,6 @@ def main():
             Config.set_db_path(args.metabuli_db_path, db_name='METABULI_DB_PATH')
 
         logging.info("The current aviary environment variables are:")
-        logging.info(f"CONDA_ENV_PATH: {Config.get_software_db_path('CONDA_ENV_PATH', '--conda-prefix')}")
         logging.info(f"TMPDIR: {Config.get_software_db_path('TMPDIR', '--tmpdir')}")
         logging.info(f"GTDBTK_DATA_PATH: {Config.get_software_db_path('GTDBTK_DATA_PATH', '--gtdb-path')}")
         logging.info(f"EGGNOG_DATA_DIR: {Config.get_software_db_path('EGGNOG_DATA_DIR', '--eggnog-db-path')}")
@@ -1284,6 +1238,20 @@ def main():
             logging.info("All paths set. Exiting without downloading databases. If you wish to download databases use --download")
             sys.exit(0)
 
+    if args.subparser_name == 'build' or args.build or args.build_gpu:
+        with importlib.resources.path("aviary", "pixi.toml") as manifest_path:
+            subprocess.run(f"pixi config set --local run-post-link-scripts insecure --manifest-path {manifest_path}".split(), check=True)
+
+            if args.build_gpu:
+                subprocess.run(f"pixi install -a --frozen --manifest-path {manifest_path}".split(), check=True)
+            else:
+                with open(manifest_path, 'rb') as f:
+                    manifest_dict = tomllib.load(f)
+                env_args = " ".join([f"-e {e}" for e in manifest_dict["environments"].keys() if not e.endswith("-gpu")])
+                subprocess.run(f"pixi install --frozen --manifest-path {manifest_path} {env_args}".split(), check=True)
+
+        sys.exit(0)
+
     # else:
     args = manage_env_vars(args)
     if int(args.max_threads) > int(args.n_cores):
@@ -1293,38 +1261,26 @@ def main():
     if not os.path.exists(prefix):
         os.makedirs(prefix)
 
-    if args.subparser_name != 'batch':
-        processor = Processor(args)
-        processor.make_config()
+    processor = Processor(args)
+    processor.make_config()
 
-        if args.build:
-            try:
-                args.cmds = args.cmds + '--conda-create-envs-only '
-            except TypeError:
-                args.cmds = '--conda-create-envs-only '
+    try:
+        if args.subparser_name == 'assemble':
+            if args.use_unicycler:
+                args.workflow.insert(0, "combine_assemblies")
+    except AttributeError:
+        pass
 
-        try:
-            if args.subparser_name == 'assemble':
-                if args.use_unicycler:
-                    args.workflow.insert(0, "combine_assemblies")
-        except AttributeError:
-            pass
-
-        processor.run_workflow(cores=int(args.n_cores),
-                               local_cores=int(args.local_cores),
-                               dryrun=args.dryrun,
-                               clean=args.clean,
-                               snakemake_args=args.cmds,
-                               rerun_triggers=args.rerun_triggers,
-                               profile=args.snakemake_profile,
-                               cluster_retries=args.cluster_retries)
-    else:
-        process_batch(args, prefix)
+    processor.run_workflow(cores=int(args.n_cores),
+                            local_cores=int(args.local_cores),
+                            dryrun=args.dryrun,
+                            clean=args.clean,
+                            snakemake_args=args.cmds,
+                            rerun_triggers=args.rerun_triggers,
+                            profile=args.snakemake_profile,
+                            cluster_retries=args.cluster_retries)
 
 def manage_env_vars(args):
-    if args.conda_prefix is None:
-        args.conda_prefix = Config.get_software_db_path('CONDA_ENV_PATH', '--conda-prefix')
-
     try:
         if args.gtdb_path is None:
             args.gtdb_path = Config.get_software_db_path('GTDBTK_DATA_PATH', '--gtdb-path')

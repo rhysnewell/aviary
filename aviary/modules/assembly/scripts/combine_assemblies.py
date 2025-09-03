@@ -1,8 +1,10 @@
+#!/usr/bin/env python3
+
 import subprocess
 import os
 import logging
 import shutil
-
+import argparse
 
 def combine_assemblies(flye_fasta, short_fasta, output_fasta: str):
     """
@@ -23,26 +25,35 @@ def combine_assemblies(flye_fasta, short_fasta, output_fasta: str):
         logging.info("Treating Flye assembly as final assembly...")
     else:
         with open(output_fasta, 'w') as output:
-            subprocess.run(f"cat {flye_fasta} {short_fasta}", stdout=output_fasta)
+            subprocess.run(f"cat {flye_fasta} {short_fasta}", shell=True, stdout=output)
 
         logging.info("Flye and metaSPAdes/Unicycler assemblies combined...")
 
-
 if __name__ == "__main__":
-    try:
-        flye_fasta = snakemake.input.flye_fasta
-    except AttributeError:
-        flye_fasta = None
+    parser = argparse.ArgumentParser(description="Combine Flye and metaSPAdes/Unicycler assemblies.")
+    parser.add_argument(
+        "--flye-fasta",
+        type=str,
+        required=False,
+        help="Path to the Flye assembly FASTA file."
+    )
+    parser.add_argument(
+        "--short-fasta",
+        type=str,
+        required=False,
+        help="Path to the metaSPAdes/Unicycler assembly FASTA file."
+    )
+    parser.add_argument(
+        "--output-fasta",
+        type=str,
+        required=True,
+        help="Path to the output combined FASTA file."
+    )
 
-    try:
-        short_fasta = snakemake.input.short_fasta
-    except AttributeError:
-        short_fasta = None
-
-    output_fasta = snakemake.output.output_fasta
+    args = parser.parse_args()
 
     combine_assemblies(
-        flye_fasta=flye_fasta,
-        short_fasta=short_fasta,
-        output_fasta=output_fasta
+        flye_fasta=args.flye_fasta,
+        short_fasta=args.short_fasta,
+        output_fasta=args.output_fasta
     )

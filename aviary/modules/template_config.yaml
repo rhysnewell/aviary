@@ -26,7 +26,7 @@ coverage_split:
     False
 coverage_samples_per_split:
     5
-reference_filter:
+host_filter:
     none
 strain_analysis:
     False

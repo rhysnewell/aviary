@@ -1,3 +1,6 @@
+#!/usr/bin/env python3
+
+import argparse
 from subprocess import CalledProcessError, run, STDOUT
 import os
 from pathlib import Path
@@ -6,7 +9,6 @@ import gzip
 import subprocess
 import tempfile
 import glob
-
 
 class SingleMContainer:
     def __init__(self, threads: int, output_dir: str, genomes: str, assembly: str, pipe_results: str, logf: str):
@@ -26,7 +28,6 @@ class SingleMContainer:
         self.logf = logf
         self.process_queue = []
 
-    
     def run(self):
         with open(self.logf, "a") as logf:
             logf.write("generating SingleM commands\n")
@@ -36,7 +37,7 @@ class SingleMContainer:
             logf.write("running SingleM commands\n")
             self.run_commands(logf)
             self.appraise_otu_tables(logf)
-    
+
     def appraise_otu_tables(self, logf):
         logf.write("Appraising SingleM otu tables\n")
         genome_otu_tables = glob.glob(os.path.join(self.intermediate_dir, "*genome_single*.csv"))
@@ -56,8 +57,8 @@ class SingleMContainer:
                     run(appraise_cmd, stdout=outf, stderr=logf)
             Path("data/singlem_out/metagenome.combined_otu_table.csv").touch()
         except CalledProcessError as e:
-            with open(log, "a") as logf:
-                logf.write(e)
+            with open(self.logf, "a") as logf:
+                logf.write(str(e))
                 logf.write("\nSingleM appraise failed. Exiting.\n")
             Path("data/singlem_out/metagenome.combined_otu_table.csv").touch()
    
@@ -111,7 +112,13 @@ def run_singlem(
     pipe_results: str,
     threads: int,
     log: str,
+    package_path: str,
 ):
+    # Set SINGLEM_METAPACKAGE_PATH environment variable
+    os.environ["SINGLEM_METAPACKAGE_PATH"] = package_path
+    if not valid_path(os.environ["SINGLEM_METAPACKAGE_PATH"]):
+        raise ValueError("SINGLEM_METAPACKAGE_PATH environment variable not valid. Please set using 'aviary configure' or manually. Exiting.")
+        
     output_dir = "data/singlem_out"
     singlem_container = SingleMContainer(threads, output_dir, genomes_folder, assembly, pipe_results, log)
     singlem_container.run()
@@ -120,24 +127,24 @@ def valid_path(path: str) -> bool:
     return os.path.exists(path)
 
 if __name__ == '__main__':
-    # check if SINGLEM_METAPACKAGE_PATH environment variable is set and path is valid
-    # if not then, error and exit
-    os.environ["SINGLEM_METAPACKAGE_PATH"] = snakemake.params.package_path
-    if "SINGLEM_METAPACKAGE_PATH" not in os.environ or not valid_path(os.environ["SINGLEM_METAPACKAGE_PATH"]):
-        raise ValueError("SINGLEM_METAPACKAGE_PATH environment variable not set. Please set using 'aviary configure' or manually. Exiting.")
-
-    assembly = snakemake.input.assembly
-    genomes = snakemake.params.genomes_folder
-    pipe_results = snakemake.input.pipe_results
-    threads = snakemake.threads
-    log = snakemake.log[0]
-
-    with open(log, "w") as logf: pass
+    parser = argparse.ArgumentParser(description='Run SingleM appraise on genomes and assembly')
+    parser.add_argument('--genomes-folder', required=True, help='Folder containing genome fasta files')
+    parser.add_argument('--assembly', required=True, help='Assembly file path')
+    parser.add_argument('--pipe-results', required=True, help='Path to SingleM pipe results')
+    parser.add_argument('--threads', type=int, default=1, help='Number of threads to use')
+    parser.add_argument('--log', default='singlem_appraise.log', help='Log file path')
+    parser.add_argument('--package-path', required=True, help='Path to SingleM metapackage')
+    
+    args = parser.parse_args()
+    
+    with open(args.log, "w") as logf: 
+        pass
 
     run_singlem(
-        genomes,
-        assembly,
-        pipe_results,
-        threads,
-        log,
+        args.genomes_folder,
+        args.assembly,
+        args.pipe_results,
+        args.threads,
+        args.log,
+        args.package_path,
     )

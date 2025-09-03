@@ -1,6 +1,9 @@
+#!/usr/bin/env python3
+
 from subprocess import run, STDOUT
 import os
 from pathlib import Path
+import argparse
 
 def dummy_fasta(output_fasta: str):
     with open(output_fasta, "w") as out:
@@ -55,20 +58,25 @@ def run_flye(
 
 
 if __name__ == '__main__':
-    long_read_type = snakemake.params.long_read_type
-    input_fastq = snakemake.input.fastq
-    output_dir = "data/flye"
-    meta_flag = True
-    threads = snakemake.threads
-    log = snakemake.log[0]
+    parser = argparse.ArgumentParser(description="Run Flye assembly.")
+    parser.add_argument("--long-read-type", required=True, help="Type of long reads (e.g., ont, ont_hq, ccs, hifi).")
+    parser.add_argument("--input-fastq", required=True, help="Path to the input FASTQ file.")
+    parser.add_argument("--output-dir", default="data/flye", help="Directory for Flye output.")
+    parser.add_argument("--meta-flag", action="store_true", help="Enable meta assembly mode.")
+    parser.add_argument("--threads", type=int, required=True, help="Number of threads to use.")
+    parser.add_argument("--log", required=True, help="Path to the log file.")
 
-    with open(log, "w") as logf: pass
+    args = parser.parse_args()
+
+    # Clear the log file
+    with open(args.log, "w") as logf:
+        pass
 
     run_flye(
-        long_read_type=long_read_type,
-        input_fastq=input_fastq,
-        output_dir=output_dir,
-        meta_flag=meta_flag,
-        threads=threads,
-        log=log,
+        long_read_type=args.long_read_type,
+        input_fastq=args.input_fastq,
+        output_dir=args.output_dir,
+        meta_flag=args.meta_flag,
+        threads=args.threads,
+        log=args.log,
     )

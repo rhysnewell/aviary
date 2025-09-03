@@ -1,0 +1,146 @@
+#!/usr/bin/env python3
+
+import os
+import subprocess
+import sys
+import tempfile
+import extern
+
+# Run from base dir of repo
+# $ pixi run -e dev --manifest-path aviary/pixi.toml python test/run_tests_at_cmr
+#
+# For now, need to make sure manually that all the mqsub'd jobs finish without error at the end.
+
+def collect_expensive_tests():
+    """Collect all test nodeids marked as 'expensive'."""
+    # Unfortunately, pytest.main doesn't return nodeids directly.
+    # Instead, we'll use subprocess to parse the output.
+    result = subprocess.run(
+        ['pytest', '--collect-only', '-q', '-m', 'expensive', 'test'],
+        capture_output=True, text=True
+    )
+    nodeids = [
+        line.strip() for line in result.stdout.splitlines()
+        if line.strip() and line.strip().startswith('test/')
+    ]
+    return nodeids
+
+MQSUB_OUT="mqsub.out"
+# Remove old mqsub output file
+if os.path.exists(MQSUB_OUT):
+    os.remove(MQSUB_OUT)
+
+# GPU testing - taxvamb
+print("mqsub GPU testing - taxvamb ..")
+cmd = "mqsub -t32 --A100 --segregated-log-files --bg --hours 4 -m 64 -- " \
+    "pixi run --frozen --manifest-path aviary/pixi.toml -e dev " \
+    "bash -c \"'export TEST_REQUEST_GPU=1 && echo gtdb=$GTDBTK_DATA_PATH && python test/test_integration.py Tests.test_short_read_recovery_taxvamb'\" " \
+    f"&>>{MQSUB_OUT}"
+extern.run(cmd)
+
+# GPU testing - comebin
+print("mqsub GPU testing - comebin ..")
+cmd = "mqsub -t32 --A100 --segregated-log-files --bg --hours 4 -m 64 -- " \
+    "pixi run --frozen --manifest-path aviary/pixi.toml -e dev " \
+    "bash -c \"'export TEST_REQUEST_GPU=1 && echo gtdb=$GTDBTK_DATA_PATH && python test/test_integration.py Tests.test_short_read_recovery_comebin'\" " \
+    f"&>>{MQSUB_OUT}"
+extern.run(cmd)
+
+# GPU testing - semibin
+print("mqsub GPU testing - semibin ..")
+cmd = "mqsub -t32 --A100 --segregated-log-files --bg --hours 4 -m 64 -- " \
+    "pixi run --frozen --manifest-path aviary/pixi.toml -e dev " \
+    "bash -c \"'export TEST_REQUEST_GPU=1 && echo gtdb=$GTDBTK_DATA_PATH && python test/test_integration.py Tests.test_short_read_recovery_semibin'\" " \
+    f"&>>{MQSUB_OUT}"
+
+# Expensive tests
+expensive_tests = collect_expensive_tests()
+print(f"Running {len(expensive_tests)} expensive tests individually via mqsub..")
+if not expensive_tests:
+    raise ValueError("No tests marked as 'expensive' found.")
+for test in expensive_tests:
+    print(f"mqsub Expensive test: {test} ..")
+    cmd = (
+        "mqsub -t 16 -m 64 --hours 4 --segregated-log-files --bg -- "
+        f"pixi run --frozen --manifest-path aviary/pixi.toml -e dev pytest --run-expensive {test} &>>{MQSUB_OUT}"
+    )
+    extern.run(cmd)
+
+print("Running qsub tests locally, which qsub themselves ..")
+fails = 0
+with open("test/qsub-test-log.txt", "w") as log_file:
+    process = subprocess.Popen(
+        [
+            "pixi", "run", "--frozen", "--manifest-path", "aviary/pixi.toml", "-e", "dev",
+            "pytest", "test", "-m", "qsub", "--run-qsub",
+        ],
+        stdout=subprocess.PIPE,
+        stderr=subprocess.STDOUT,
+        text=True
+    )
+    for line in process.stdout:
+        print(line, end="")
+        log_file.write(line)
+    process.wait()
+    # check return code
+    if process.returncode != 0:
+        print(f"Error: qsub tests failed with return code {process.returncode}.")
+        print("Check the log file test/qsub-test-log.txt for details.")
+        fails += 1
+    else:
+        print("tests marked qsub appear to have run successfully, but check the log file test/qsub-test-log.txt for details.\n")
+
+with open(MQSUB_OUT, "r") as mqsub_file:
+    mqsub_lines = mqsub_file.readlines()
+    # e.g.
+    # 06/30/2025 05:19:34 PM INFO: Creating segregated log directory /mnt/hpccs01/home/woodcrob/qsub_logs/2025-06-30/pixi-2
+    # 06/30/2025 05:19:34 PM INFO: qsub stdout was: 6687439.aqua
+    # qsub stdout: 6687439.aqua
+
+    # 06/30/2025 05:19:34 PM INFO: Creating segregated log directory /mnt/hpccs01/home/woodcrob/qsub_logs/2025-06-30/pixi-3
+    # 06/30/2025 05:19:34 PM INFO: qsub stdout was: 6687440.aqua
+    # qsub stdout: 6687440.aqua
+    job_ids = [
+        line.split("qsub stdout: ")[1].strip() for line in mqsub_lines
+        if line.startswith("qsub stdout: ")
+    ]
+    print(f"Found {len(job_ids)} job IDs e.g. {job_ids[0]}, running mqwait for them..")
+    with tempfile.NamedTemporaryFile() as temp_file:
+        temp_file.write("\n".join(job_ids).encode())
+        temp_file.flush()
+        subprocess.run(["mqwait", "-i", temp_file.name], check=True)
+
+    segregated_log_dirs = [
+        line.split("Creating segregated log directory ")[1].strip()
+        for line in mqsub_lines
+        if "Creating segregated log directory " in line
+    ]
+    print(f"Found {len(segregated_log_dirs)} segregated log directories, e.g. {segregated_log_dirs[0]}")
+
+    if len(segregated_log_dirs) != len(job_ids):
+        raise ValueError("Warning: Number of segregated log directories does not match number of job IDs. job_ids: {}".format(job_ids))
+
+    job_id_to_output = {}
+    job_id_to_path = {}
+    for (job_id, log_dir) in zip(job_ids, segregated_log_dirs):
+        # Check if the log directory exists
+        if not os.path.exists(log_dir):
+            print(f"Warning: Log directory {log_dir} for job {job_id} does not exist.")
+        else:
+            job_path = os.path.join(log_dir, f"{job_id}.OU")
+            job_id_to_path[job_id] = job_path
+            with open(job_path) as stdout_file:
+                job_id_to_output[job_id] = stdout_file.read()
+
+    # For each job, report if any line starts with FAILED
+    for job_id, output in job_id_to_output.items():
+        if any(line.startswith("FAILED") for line in output.splitlines()):
+            fails += 1
+            print(f"Job {job_id} has FAILED lines in its output. See {job_id_to_path[job_id]} for details.")
+            print(output)
+    if fails > 0:
+        print(f"Total number of jobs with FAILED lines: {fails}")
+        sys.exit(fails)
+    else:
+        print("All jobs completed successfully without FAILED lines in their output. Win.")
+        sys.exit(0)
