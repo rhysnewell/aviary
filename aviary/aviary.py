@@ -85,6 +85,7 @@ Isolate assembly, binning, and annotation:
         isolate   - Perform isolate assembly **PARTIALLY COMPLETED**
         
 Utility modules:
+        build - Build the conda environments used by Aviary
         configure - Set or overwrite the environment variables for future runs.
 
 """
