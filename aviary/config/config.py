@@ -39,8 +39,10 @@ def source_bashrc():
             for line in f:
                 if line.startswith('#') or not line.strip():
                     continue
-                # if 'export' not in line:
-                #     continue
+                if 'export' not in line:
+                    continue
+                if 'PATH' in line:
+                    continue
                 # Remove leading `export `, if you have those
                 # then, split name / value pair
                 # key, value = line.replace('export ', '', 1).strip().split('=', 1)
