@@ -19,10 +19,12 @@ OUTPUT_DIR = f"/work/microbiome/users_large/aroneys/aviary_test_samples/{COMMIT}
 
 SAMPLES_LIST = "test/test_samples.tsv"
 samples_list = {}
+samples_env = {}
 with open(SAMPLES_LIST) as f:
     for line in f:
         sample = line.strip().split("\t")[0]
         samples_list[sample] = line.strip().split("\t")[1].split(",")
+        samples_env[sample] = line.strip().split("\t")[2]
 
 os.makedirs(OUTPUT_DIR, exist_ok=True)
 
@@ -69,7 +71,7 @@ else:
     print("All jobs completed successfully without FAILED lines in their output. Win.")
 
     with open(f"{OUTPUT_DIR}/summary.tsv", "w") as summary_file:
-        summary_file.write("Sample\tScore\tGenomes\n")
+        summary_file.write("Env\tSample\tScore\tGenomes\n")
         for sample in samples_list:
             print(f"Processing results for sample {sample} in {OUTPUT_DIR}/{sample}")
 
@@ -94,6 +96,6 @@ else:
                             sample_genomes += 1
 
             print(f"Sample {sample} has {sample_genomes} genomes with total score {sample_score}")
-            summary_file.write(f"{sample}\t{sample_score}\t{sample_genomes}\n")
+            summary_file.write(f"{samples_env[sample]}\t{sample}\t{sample_score}\t{sample_genomes}\n")
 
     sys.exit(0)
