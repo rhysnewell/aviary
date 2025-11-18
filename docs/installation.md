@@ -68,12 +68,12 @@ When installed this way, aviary is installed in an "editable" way (similar to `p
 When run this way, the databases required for aviary (e.g. `CHECKM2DB`) can be symlinked from a `db/` directory in the aviary repository. An activation hook then ensures that these are available when in the pixi environments. To do this, create a `db/` directory in the aviary repository and symlink the required databases into it. For example, as of writing:
 ```
 $ ls db -l
-lrwxrwxrwx - woodcrob 23 Apr 07:56 2.1.3 -> /mnt/hpccs01/work/microbiome/db/eggnog-mapper/2.1.3
-lrwxrwxrwx - woodcrob 23 Apr 07:55 2015_01_16_v2 -> /work/microbiome/db/checkm/2015_01_16_v2
-lrwxrwxrwx - woodcrob 23 Apr 07:54 CheckM2_database -> /work/microbiome/db/CheckM2_database
-lrwxrwxrwx - woodcrob 23 Apr 07:57 gtdb207 -> /work/microbiome/db/metabuli/gtdb207
-lrwxrwxrwx - woodcrob 23 Apr 07:56 release220 -> /work/microbiome/db/gtdb/gtdb_release220/auxillary_files/gtdbtk_package/full_package/release220
-lrwxrwxrwx - woodcrob 23 Apr 07:55 S4.3.0.GTDB_r220.metapackage_20240523.smpkg.zb -> /work/microbiome/db/singlem/S4.3.0.GTDB_r220
+lrwxrwxrwx 1 woodcrob default 40 Apr 23  2025 2015_01_16_v2 -> /work/microbiome/db/checkm/2015_01_16_v2
+lrwxrwxrwx 1 woodcrob default 57 May  2  2025 2024-3-28-GTDB214.1+humanT2T -> /work/microbiome/db/metabuli/2024-3-28-GTDB214.1+humanT2T
+lrwxrwxrwx 1 woodcrob default 51 Apr 23  2025 2.1.3 -> /mnt/hpccs01/work/microbiome/db/eggnog-mapper/2.1.3
+lrwxrwxrwx 1 woodcrob default 73 Nov 18 08:04 CheckM2_database -> /work/microbiome/db/CheckM2_database/CheckM2_database/uniref100.KO.1.dmnd
+lrwxrwxrwx 1 woodcrob default 95 Apr 23  2025 release220 -> /work/microbiome/db/gtdb/gtdb_release220/auxillary_files/gtdbtk_package/full_package/release220
+lrwxrwxrwx 1 woodcrob default 74 Jun 10 15:54 S5.4.0.GTDB_r226.metapackage_20250331.smpkg.zb -> /work/microbiome/db/singlem/S5.4.0.GTDB_r226.metapackage_20250331.smpkg.zb
 ```
 To check the expected database symlink names, see `admin/set_env_vars.sh` in the
 aviary repository. The advantage of this approach is that locations of the

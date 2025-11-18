@@ -176,7 +176,7 @@ rule checkm2:
         'benchmarks/checkm2.benchmark.txt'
     shell:
         pixi_run + " -e checkm2 bash -e -o pipefail -c '" \
-        "export CHECKM2DB={params.checkm2_db_path}/uniref100.KO.1.dmnd; " \
+        "export CHECKM2DB={params.checkm2_db_path}; " \
         "echo \"Using CheckM2 database $CHECKM2DB\"; " \
         "checkm2 predict -i {input.mag_folder}/ -x {params.mag_extension} -o {output.checkm2_folder} -t {threads} --force > {resources.log_path} 2>&1'"
 

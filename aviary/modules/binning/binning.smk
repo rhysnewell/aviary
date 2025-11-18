@@ -1097,9 +1097,13 @@ rule checkm_das_tool:
     input:
         done = "data/das_tool_bins_pre_refine/done"
     params:
-        pplacer_threads = config["pplacer_threads"]
+        checkm2_db_path = config["checkm2_db_folder"],
+        bin_folder = "data/das_tool_bins_pre_refine/das_tool_DASTool_bins/",
+        extension = "fa",
     output:
-        "data/das_tool_bins_pre_refine/quality_report.tsv"
+        # TODO: The checkm2 output folder should be temporary, I think need to modify run_checkm.py to implement this.
+        output_folder = directory("data/das_tool_bins_pre_refine/checkm2_working/"),
+        output_file = "data/das_tool_bins_pre_refine/quality_report.tsv"
     threads:
         config["max_threads"]
     resources:
@@ -1107,14 +1111,17 @@ rule checkm_das_tool:
         runtime = lambda wildcards, attempt: 8*60*attempt,
         log_path = lambda wildcards, attempt: setup_log(f"{logs_dir}/checkm_das_tool", attempt),
     shell:
-        f"{pixi_run} -e checkm bash -e -o pipefail -c '"
-        "checkm2 predict "
-        "--threads {threads} "
-        "--input data/das_tool_bins_pre_refine/das_tool_DASTool_bins "
-        "--output-directory data/das_tool_bins_pre_refine "
-        "-x fa "
-        "--force " # Force so for idempotency
-        ">> {resources.log_path} 2>&1'"
+        f'{pixi_run} -e checkm2 {BINNING_SCRIPTS_DIR}/'+\
+        """run_checkm.py \
+        --checkm2-db {params.checkm2_db_path} \
+        --bin-folder {params.bin_folder} \
+        --bin-ext {params.extension} \
+        --refinery-max-iterations 1 \
+        --output-folder {output.output_folder} \
+        --output-file {output.output_file} \
+        --threads {threads} \
+        --log {resources.log_path}
+        """
 
 rule singlem_pipe_reads:
     output:
