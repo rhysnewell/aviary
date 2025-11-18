@@ -1004,7 +1004,7 @@ rule das_tool:
 
 rule refine_dastool:
     input:
-        checkm = 'data/das_tool_bins_pre_refine/checkm.out',
+        checkm = 'data/das_tool_bins_pre_refine/quality_report.tsv',
         das_tool = 'data/das_tool_bins_pre_refine/done',
         coverage = ancient("data/coverm.cov"),
         large_contigs_done = "data/done/filter_contigs_by_size.done",
@@ -1099,7 +1099,7 @@ rule checkm_das_tool:
     params:
         pplacer_threads = config["pplacer_threads"]
     output:
-        "data/das_tool_bins_pre_refine/checkm.out"
+        "data/das_tool_bins_pre_refine/quality_report.tsv"
     threads:
         config["max_threads"]
     resources:
@@ -1108,13 +1108,13 @@ rule checkm_das_tool:
         log_path = lambda wildcards, attempt: setup_log(f"{logs_dir}/checkm_das_tool", attempt),
     shell:
         f"{pixi_run} -e checkm bash -e -o pipefail -c '"
-        "checkm lineage_wf -t {threads} --pplacer_threads {params.pplacer_threads} "
-        "-x fa data/das_tool_bins_pre_refine/das_tool_DASTool_bins data/das_tool_bins_pre_refine/checkm --tab_table "
-        "-f data/das_tool_bins_pre_refine/checkm.out > {resources.log_path} 2>&1 && "
-        "checkm qa -o 2 --tab_table -f data/das_tool_bins_pre_refine/checkm.out "
-        "data/das_tool_bins_pre_refine/checkm/lineage.ms data/das_tool_bins_pre_refine/checkm/ >> {resources.log_path} 2>&1; "
-        "'"
-
+        "checkm2 predict "
+        "--threads {threads} "
+        "--input data/das_tool_bins_pre_refine/das_tool_DASTool_bins "
+        "--output-directory data/das_tool_bins_pre_refine "
+        "-x fa "
+        "--force " # Force so for idempotency
+        ">> {resources.log_path} 2>&1'"
 
 rule singlem_pipe_reads:
     output:
