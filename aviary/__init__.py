@@ -3,6 +3,7 @@ __version__ = "0.12.0"
 
 # CONSTANTS
 LONG_READ_TYPES = ["ont", "ont_hq", "rs", "sq", "ccs", "hifi"]
+LONG_READ_ASSEMBLERS = ["myloasm", "flye"]
 MEDAKA_MODELS = [
     "r103_fast_g507", "r103_fast_snp_g507", "r103_fast_variant_g507", "r103_hac_g507", "r103_hac_snp_g507",
     "r103_hac_variant_g507", "r103_min_high_g345", "r103_min_high_g360", "r103_prom_high_g360", "r103_prom_snp_g3210",

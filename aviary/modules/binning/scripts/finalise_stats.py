@@ -3,7 +3,7 @@ from Bio import SeqIO
 import os
 from glob import glob
 
-def find_circular(checkm_output, checkm1=True):
+def find_circular(checkm_output, assembly_info_path, checkm1=True):
     if checkm1:
         bin_column = "Bin Id"
     else:
@@ -13,7 +13,7 @@ def find_circular(checkm_output, checkm1=True):
     circular_bps = []
     circular_fractions = []
 
-    assembly_info = pd.read_csv("data/flye/assembly_info.txt", sep="\t")
+    assembly_info = pd.read_csv(assembly_info_path, sep="\t")
 
     for bin_name in checkm_output[bin_column]:
 
@@ -83,8 +83,11 @@ if __name__ == "__main__":
     coverage_file.rename({"Genome" : checkm_output.columns[0]}, inplace=True, axis=1)
 
 
-    if os.path.isfile("data/flye/assembly_info.txt"):
-        checkm_output = find_circular(checkm_output, is_checkm1)
+    assembly_dir = f"data/{snakemake.config.get('long_read_assembler', 'myloasm')}"
+    assembly_info_path = os.path.join(assembly_dir, "assembly_info.txt")
+
+    if os.path.isfile(assembly_info_path):
+        checkm_output = find_circular(checkm_output, assembly_info_path, is_checkm1)
 
     taxa = get_taxonomy(checkm_output.columns[0])
 

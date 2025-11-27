@@ -2,6 +2,14 @@ ASSEMBLY_SCRIPTS_DIR = os.path.join(os.path.dirname(os.path.abspath(workflow.sna
 from aviary.modules.common import pixi_run
 
 
+LONG_READ_ASSEMBLER = config.get("long_read_assembler", "myloasm")
+LONG_ASSEMBLY_DIR = f"data/{LONG_READ_ASSEMBLER}"
+LONG_ASSEMBLY_FASTA = f"{LONG_ASSEMBLY_DIR}/assembly.fasta"
+LONG_ASSEMBLY_GRAPH = f"{LONG_ASSEMBLY_DIR}/assembly_graph.gfa"
+LONG_ASSEMBLY_INFO = f"{LONG_ASSEMBLY_DIR}/assembly_info.txt"
+LONG_HIGH_COV_FASTA = f"data/{LONG_READ_ASSEMBLER}_high_cov.fasta"
+ASSEMBLER_ENV = "flye" if LONG_READ_ASSEMBLER == "flye" else "myloasm"
+
 localrules: get_high_cov_contigs, short_only, move_spades_assembly, pool_reads, skip_unicycler, skip_unicycler_with_qc, complete_assembly, complete_assembly_with_qc, reset_to_spades_assembly, remove_final_contigs, combine_assemblies, combine_long_only
 
 ruleorder: filter_illumina_assembly > short_only > combine_long_only
@@ -44,47 +52,77 @@ onstart:
         sys.exit("short_reads_2 does not point to a file")
     
 
-# Assembly long reads with metaflye
-rule flye_assembly:
-    input:
-        fastq = "data/long_reads.fastq.gz"
-    output:
-        fasta = "data/flye/assembly.fasta",
-        graph = "data/flye/assembly_graph.gfa",
-        info = "data/flye/assembly_info.txt",
-        junk1 = temp(directory("data/flye/00-assembly/")),
-        junk2 = temp(directory("data/flye/10-consensus/")),
-        junk3 = temp(directory("data/flye/20-repeat/")),
-        junk4 = temp(directory("data/flye/30-contigger/")),
-        junk5 = temp(directory("data/flye/40-polishing/"))
-    params:
-        long_read_type = config["long_read_type"]
-    threads:
-        config["max_threads"]
-    resources:
-        mem_mb = lambda wildcards, attempt: min(int(config["max_memory"])*1024, 512*1024*attempt),
-        runtime = lambda wildcards, attempt: 24*60 + 24*60*attempt,
-    log:
-        "logs/flye_assembly.log"
-    benchmark:
-        "benchmarks/flye_assembly.benchmark.txt"
-    shell:
-        f'{pixi_run} -e flye {ASSEMBLY_SCRIPTS_DIR}/'+\
-        """run_flye.py \
-        --long-read-type {params.long_read_type} \
-        --input-fastq {input.fastq} \
-        --output-dir data/flye \
-        --meta-flag \
-        --threads {threads} \
-        --log {log}
-        """
+if LONG_READ_ASSEMBLER == "flye":
+    # Assembly long reads with metaflye
+    rule long_read_assembly:
+        input:
+            fastq = "data/long_reads.fastq.gz"
+        output:
+            fasta = LONG_ASSEMBLY_FASTA,
+            graph = LONG_ASSEMBLY_GRAPH,
+            info = LONG_ASSEMBLY_INFO,
+            junk1 = temp(directory(f"{LONG_ASSEMBLY_DIR}/00-assembly/")),
+            junk2 = temp(directory(f"{LONG_ASSEMBLY_DIR}/10-consensus/")),
+            junk3 = temp(directory(f"{LONG_ASSEMBLY_DIR}/20-repeat/")),
+            junk4 = temp(directory(f"{LONG_ASSEMBLY_DIR}/30-contigger/")),
+            junk5 = temp(directory(f"{LONG_ASSEMBLY_DIR}/40-polishing/"))
+        params:
+            long_read_type = config["long_read_type"]
+        threads:
+            config["max_threads"]
+        resources:
+            mem_mb = lambda wildcards, attempt: min(int(config["max_memory"])*1024, 512*1024*attempt),
+            runtime = lambda wildcards, attempt: 24*60 + 24*60*attempt,
+        log:
+            "logs/flye_assembly.log"
+        benchmark:
+            "benchmarks/flye_assembly.benchmark.txt"
+        shell:
+            f'{pixi_run} -e {ASSEMBLER_ENV} {ASSEMBLY_SCRIPTS_DIR}/'+\
+            """run_flye.py \
+            --long-read-type {params.long_read_type} \
+            --input-fastq {input.fastq} \
+            --output-dir {LONG_ASSEMBLY_DIR} \
+            --meta-flag \
+            --threads {threads} \
+            --log {log}
+            """
+else:
+    # Assembly long reads with myloasm
+    rule long_read_assembly:
+        input:
+            fastq = "data/long_reads.fastq.gz"
+        output:
+            fasta = LONG_ASSEMBLY_FASTA,
+            graph = LONG_ASSEMBLY_GRAPH,
+            info = LONG_ASSEMBLY_INFO,
+        params:
+            long_read_type = config["long_read_type"]
+        threads:
+            config["max_threads"]
+        resources:
+            mem_mb = lambda wildcards, attempt: min(int(config["max_memory"])*1024, 512*1024*attempt),
+            runtime = lambda wildcards, attempt: 24*60 + 24*60*attempt,
+        log:
+            "logs/myloasm_assembly.log"
+        benchmark:
+            "benchmarks/myloasm_assembly.benchmark.txt"
+        shell:
+            f'{pixi_run} -e {ASSEMBLER_ENV} {ASSEMBLY_SCRIPTS_DIR}/'+\
+            """run_myloasm.py \
+            --long-read-type {params.long_read_type} \
+            --input-fastq {input.fastq} \
+            --output-dir {LONG_ASSEMBLY_DIR} \
+            --threads {threads} \
+            --log {log}
+            """
 
 
 # Polish the long reads assembly with Racon or Medaka
 rule polish_metagenome_flye:
     input:
         fastq = "data/long_reads.fastq.gz",
-        fasta = "data/flye/assembly.fasta",
+        fasta = LONG_ASSEMBLY_FASTA,
         qc_reads = [] if config["skip_qc"] or config["short_reads_1"] == "none" else "data/short_reads.fastq.gz",
     params:
         prefix = "polished",
@@ -233,12 +271,12 @@ rule polish_meta_racon_ill:
 # High coverage contigs are identified
 rule get_high_cov_contigs:
     input:
-        info = "data/flye/assembly_info.txt",
+        info = LONG_ASSEMBLY_INFO,
         fasta = "data/assembly.pol.fin.fasta",
-        graph = "data/flye/assembly_graph.gfa",
+        graph = LONG_ASSEMBLY_GRAPH,
         paf = "data/polishing/alignment.racon_ill.0.paf"
     output:
-        fasta = "data/flye_high_cov.fasta"
+        fasta = LONG_HIGH_COV_FASTA
     benchmark:
         "benchmarks/get_high_cov_contigs.benchmark.txt"
     params:
@@ -342,7 +380,7 @@ rule get_high_cov_contigs:
 rule filter_illumina_assembly:
     input:
         fastq = config['short_reads_1'] if config["skip_qc"] else "data/short_reads.fastq.gz",
-        fasta = "data/flye_high_cov.fasta"
+        fasta = LONG_HIGH_COV_FASTA
     output:
         bam = temp("data/sr_vs_long.sort.bam"),
         bai = temp("data/sr_vs_long.sort.bam.bai"),
@@ -378,7 +416,7 @@ rule filter_illumina_assembly:
 #         unassembled_long = [] if "none" in config["unassembled_long"] else config["unassembled_long"]
 #     output:
 #         # fastq = "data/short_reads.filt.fastq.gz",
-#         fasta = "data/flye_high_cov.fasta",
+#         fasta = LONG_HIGH_COV_FASTA,
 #         long_reads = temp("data/long_reads.fastq.gz")
 #     shell:
 #         """
@@ -392,7 +430,7 @@ rule short_only:
     input:
         fastq = config['short_reads_1'] if config["skip_qc"] else "data/short_reads.fastq.gz",
     output:
-        fasta = touch("data/flye_high_cov.fasta"),
+        fasta = touch(LONG_HIGH_COV_FASTA),
 
 # Short reads that did not map to the long read assembly are hybrid assembled with metaspades
 # If no long reads were provided, long_reads.fastq.gz will be empty
@@ -654,7 +692,7 @@ rule assemble_pools:
 rule combine_assemblies:
     input:
         short_fasta = "data/unicycler_combined.fa",
-        flye_fasta = "data/flye_high_cov.fasta"
+        flye_fasta = LONG_HIGH_COV_FASTA
     output:
         output_fasta = "data/final_contigs.fasta",
     priority: 1
@@ -688,7 +726,7 @@ rule combine_long_only:
 rule skip_unicycler:
     input:
         short_fasta = "data/spades_assembly.fasta",
-        flye_fasta = "data/flye_high_cov.fasta"
+        flye_fasta = LONG_HIGH_COV_FASTA
     output:
         fasta = "data/final_contigs.fasta",
         final_link = 'assembly/final_contigs.fasta',
@@ -711,7 +749,7 @@ rule skip_unicycler:
 rule skip_unicycler_with_qc:
     input:
         short_fasta = "data/spades_assembly.fasta",
-        flye_fasta = "data/flye_high_cov.fasta",
+        flye_fasta = LONG_HIGH_COV_FASTA,
         qc_done = 'data/qc_done'
     output:
         fasta = "data/final_contigs.fasta",
@@ -782,7 +820,7 @@ rule reset_to_spades_assembly:
          'rm -rf data/spades*; '
          'rm -rf assembly/; '
          'rm -rf data/final_contigs.fasta; '
-         'rm -rf data/flye_high_cov.fasta; '
+         f'rm -rf {LONG_HIGH_COV_FASTA}; '
          'rm -rf data/list_of*; '
          'rm -rf data/binned_reads; '
          'rm -rf data/final_assemblies; '

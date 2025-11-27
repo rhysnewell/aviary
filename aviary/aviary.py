@@ -20,7 +20,7 @@
 import aviary.config.config as Config
 from aviary.modules.processor import Processor
 from aviary.modules.common import pixi_run
-from .__init__ import __version__, MEDAKA_MODELS, LONG_READ_TYPES, COVERAGE_JOB_STRATEGIES, COVERAGE_JOB_CUTOFF
+from .__init__ import __version__, MEDAKA_MODELS, LONG_READ_TYPES, LONG_READ_ASSEMBLERS, COVERAGE_JOB_STRATEGIES, COVERAGE_JOB_CUTOFF
 __author__ = "Rhys Newell"
 __copyright__ = "Copyright 2022"
 __credits__ = ["Rhys Newell"]
@@ -502,6 +502,14 @@ def main():
         dest='longread_type',
         default="ont",
         choices=LONG_READ_TYPES,
+    )
+
+    long_read_group.add_argument(
+        '--long-read-assembler', '--long_read_assembler', '--longread-assembler',
+        help='Long-read assembler to use. Defaults to myloasm; set to flye to retain the previous behaviour.',
+        dest='long_read_assembler',
+        default='myloasm',
+        choices=LONG_READ_ASSEMBLERS,
     )
 
     long_read_group.add_argument(

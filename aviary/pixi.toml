@@ -47,6 +47,7 @@ quast = ["quast"]
 bbmap = ["bbmap"]
 # Assembly
 flye = ["flye"]
+myloasm = ["myloasm"]
 polishing = ["polishing"]
 pilon = ["pilon"]
 minimap2 = ["minimap2"]
@@ -105,6 +106,9 @@ bbmap = "*"
 
 [feature.flye.dependencies]
 flye = ">=2.9"
+
+[feature.myloasm.dependencies]
+myloasm = "*"
 
 [feature.polishing.dependencies]
 flye = ">=2.9"

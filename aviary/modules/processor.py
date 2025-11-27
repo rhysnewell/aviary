@@ -233,9 +233,11 @@ class Processor:
         try:
             self.longread_type = args.longread_type
             self.medaka_model = args.medaka_model
+            self.long_read_assembler = getattr(args, "long_read_assembler", "myloasm")
         except AttributeError:
             self.longread_type = 'none'
             self.medaka_model = 'none'
+            self.long_read_assembler = 'myloasm'
 
         try:
             self.short_percent_identity = args.short_percent_identity
@@ -449,6 +451,7 @@ class Processor:
         conf["short_reads_2"] = self.pe2
         conf["long_reads"] = self.longreads
         conf["long_read_type"] = self.longread_type
+        conf["long_read_assembler"] = self.long_read_assembler
         conf["medaka_model"] = self.medaka_model
         conf["kmer_sizes"] = self.kmer_sizes
         conf["use_megahit"] = self.use_megahit
