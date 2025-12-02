@@ -1,4 +1,4 @@
-[project]
+[workspace]
 authors = ["Rhys Newell <rhys.newell94@gmail.com>"]
 channels = ["conda-forge", "bioconda"]
 name = "aviary"
