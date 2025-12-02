@@ -11,51 +11,6 @@ def handler(signum, frame):
 signal.signal(signal.SIGALRM, handler)
 
 
-def source_conda_env():
-    try:
-        with open(format('%s/etc/conda/activate.d/aviary.sh' % os.environ['CONDA_PREFIX'])) as f:
-            for line in f:
-                if line.startswith('#') or not line.strip():
-                    continue
-                # if 'export' not in line:
-                #     continue
-                # Remove leading `export `, if you have those
-                # then, split name / value pair
-                # key, value = line.replace('export ', '', 1).strip().split('=', 1)
-                try:
-                    key, value = line.strip().split('=', 1)
-                    key = key.strip('export ')
-                    # print(key, value)
-                    os.environ[key] = value  # Load to local environ
-                except ValueError:
-                    continue
-    except FileNotFoundError:
-        # File not found so going to have to create it
-        pass
-
-def source_bashrc():
-    try:
-        with open('%s/.bashrc' % os.environ['HOME']) as f:
-            for line in f:
-                if line.startswith('#') or not line.strip():
-                    continue
-                if 'export' not in line:
-                    continue
-                if 'PATH' in line:
-                    continue
-                # Remove leading `export `, if you have those
-                # then, split name / value pair
-                # key, value = line.replace('export ', '', 1).strip().split('=', 1)
-                try:
-                    key, value = line.strip().split('=', 1)
-                    key = key.strip('export ')
-                    os.environ[key] = value  # Load to local environ
-                except ValueError:
-                    continue
-    except FileNotFoundError:
-        # File not found so going to have to create it
-        pass
-
 def configure_variable(variable, value):
     os.environ[variable] = value
     subprocess.run(f"{pixi_run} conda env config vars set {variable}={value}".split(), check=True, capture_output=True)

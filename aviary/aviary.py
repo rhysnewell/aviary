@@ -85,7 +85,7 @@ Isolate assembly, binning, and annotation:
         isolate   - Perform isolate assembly **PARTIALLY COMPLETED**
         
 Utility modules:
-        build - Build the conda environments used by Aviary
+        build - Build the pixi environments used by Aviary
         configure - Set or overwrite the environment variables for future runs.
 
 """
@@ -117,13 +117,6 @@ def main():
     if len(sys.argv) == 1 or sys.argv[1] == '-h' or sys.argv[1] == '--help':
         phelp()
         return
-
-    # Source the conda environment variables in case users have previously set
-    # the variables using config but have not restarted the environment.
-    try:
-        Config.source_conda_env()
-    except FileNotFoundError:
-        Config.source_bashrc()
 
     ############################ ~ Main Parser ~ ##############################
     main_parser = argparse.ArgumentParser(prog='aviary',
