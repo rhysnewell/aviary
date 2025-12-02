@@ -33,7 +33,6 @@ def get_software_db_path(db_name='CONDA_ENV_PATH', software_flag='--conda-prefix
         return SW_PATH
     except KeyError:
         try:
-            source_bashrc()
             SW_PATH = os.environ[db_name]
             configure_variable(db_name, SW_PATH)
             return SW_PATH
