@@ -17,12 +17,7 @@ def configure_variable(variable, value):
     try:
         subprocess.run(f"pixi run --frozen conda env config vars set {variable}={value}".split(), check=True, capture_output=True)
     except subprocess.CalledProcessError:
-        try:
-            subprocess.run(f"conda env config vars set {variable}={value}".split(), check=True, capture_output=True)
-        except subprocess.CalledProcessError:
-            # put the export in the bashrc
-            with open(f"{os.environ['HOME']}/.bashrc", 'a') as f:
-                f.write(f'export {variable}={value}\n')
+        subprocess.run(f"conda env config vars set {variable}={value}".split(), check=True, capture_output=True)
 
 """
 Load the reference package. This will fail if the directory doesn't exist.
