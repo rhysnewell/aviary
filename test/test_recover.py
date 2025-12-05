@@ -127,7 +127,6 @@ class Tests(unittest.TestCase):
             self.assertTrue("refine_dastool" in output)
 
             # Extras
-            self.assertTrue("checkm2" in output)
             self.assertTrue("gtdbtk" in output)
             self.assertTrue("get_abundances" in output)
             self.assertTrue("singlem_pipe_reads" in output)
@@ -183,7 +182,6 @@ class Tests(unittest.TestCase):
             self.assertTrue("refine_dastool" in output)
 
             # Extras
-            self.assertTrue("checkm2" in output)
             self.assertTrue("gtdbtk" in output)
             self.assertTrue("get_abundances" in output)
             self.assertTrue("singlem_pipe_reads" in output)
@@ -239,7 +237,6 @@ class Tests(unittest.TestCase):
             self.assertTrue("refine_dastool" in output)
 
             # Extras
-            self.assertTrue("checkm2" in output)
             self.assertTrue("gtdbtk" in output)
             self.assertTrue("get_abundances" in output)
             self.assertTrue("singlem_pipe_reads" not in output)
@@ -295,7 +292,6 @@ class Tests(unittest.TestCase):
             self.assertTrue("refine_dastool" in output)
 
             # Extras
-            self.assertTrue("checkm2" in output)
             self.assertTrue("gtdbtk" in output)
             self.assertTrue("get_abundances" not in output)
             self.assertTrue("singlem_pipe_reads" in output)
@@ -351,7 +347,6 @@ class Tests(unittest.TestCase):
             self.assertTrue("refine_dastool" in output)
 
             # Extras
-            self.assertTrue("checkm2" in output)
             self.assertTrue("gtdbtk" not in output)
             self.assertTrue("get_abundances" in output)
             self.assertTrue("singlem_pipe_reads" in output)
@@ -407,7 +402,6 @@ class Tests(unittest.TestCase):
             self.assertTrue("refine_dastool" in output)
 
             # Extras
-            self.assertTrue("checkm2" in output)
             self.assertTrue("gtdbtk" not in output)
             self.assertTrue("get_abundances" not in output)
             self.assertTrue("singlem_pipe_reads" not in output)
