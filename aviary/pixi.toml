@@ -4,11 +4,6 @@ channels = ["conda-forge", "bioconda"]
 name = "aviary"
 platforms = ["linux-64"]
 
-[activation]
-# Sets metapackage environment variables, which are assumed to be in the db/ of
-# the base directory (perhaps symlnked).
-scripts = ["set_env_vars.sh"]
-
 [feature.main.dependencies]
 python = ">=3.8"
 snakemake = ">=7.0.0"
@@ -32,6 +27,11 @@ pytest = "*"
 ipython = "*"
 toml = "*"
 bird_tool_utils_python = "*"
+
+[feature.dev.activation]
+# Sets metapackage environment variables, which are assumed to be in the db/ of
+# the base directory (perhaps symlnked).
+scripts = ["set_env_vars.sh"]
 
 [environments]
 default = ["main"]
