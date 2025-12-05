@@ -4,13 +4,10 @@ BINNING_SCRIPTS_DIR = os.path.join(os.path.dirname(os.path.abspath(workflow.snak
 from aviary.modules.common import pixi_run, setup_log
 logs_dir = "logs"
 
-localrules: vamb_skip, amber_checkm_output, recover_mags, recover_mags_no_singlem
+localrules: vamb_skip, recover_mags, recover_mags_no_singlem
 
 ruleorder: prepare_binning_files_gather > prepare_binning_files
 ruleorder: dereplicate_and_get_abundances_paired > dereplicate_and_get_abundances_interleaved
-ruleorder: checkm_rosella > amber_checkm_output
-ruleorder: checkm_metabat2 > amber_checkm_output
-ruleorder: checkm_semibin > amber_checkm_output
 
 onstart:
     from snakemake.utils import min_version
@@ -696,9 +693,9 @@ rule checkm_rosella:
         bin_folder = "data/rosella_bins/",
         extension = "fna",
         refinery_max_iterations = config["refinery_max_iterations"],
+        output_folder = "data/rosella_bins/checkm2_out/",
     output:
-        output_folder = directory("data/rosella_bins/checkm2_out/"),
-        output_file = "data/rosella_bins/checkm.out"
+        output_file = "data/rosella_bins/checkm2_quality_report.tsv"
     threads:
         config["max_threads"]
     resources:
@@ -712,7 +709,7 @@ rule checkm_rosella:
         --bin-folder {params.bin_folder} \
         --bin-ext {params.extension} \
         --refinery-max-iterations {params.refinery_max_iterations} \
-        --output-folder {output.output_folder} \
+        --output-folder {params.output_folder} \
         --output-file {output.output_file} \
         --threads {threads} \
         --log {resources.log_path}
@@ -727,9 +724,9 @@ rule checkm_metabat2:
         bin_folder = "data/metabat_bins_2/",
         extension = "fa",
         refinery_max_iterations = config["refinery_max_iterations"],
+        output_folder = "data/metabat_bins_2/checkm2_out/",
     output:
-        output_folder = directory("data/metabat_bins_2/checkm2_out/"),
-        output_file = "data/metabat_bins_2/checkm.out"
+        output_file = "data/metabat_bins_2/checkm2_quality_report.tsv"
     threads:
         config["max_threads"]
     resources:
@@ -743,7 +740,7 @@ rule checkm_metabat2:
         --bin-folder {params.bin_folder} \
         --bin-ext {params.extension} \
         --refinery-max-iterations {params.refinery_max_iterations} \
-        --output-folder {output.output_folder} \
+        --output-folder {params.output_folder} \
         --output-file {output.output_file} \
         --threads {threads} \
         --log {resources.log_path}
@@ -758,9 +755,9 @@ rule checkm_semibin:
         bin_folder = "data/semibin_bins/output_bins/",
         extension = "fa",
         refinery_max_iterations = config["refinery_max_iterations"],
+        output_folder = "data/semibin_bins/checkm2_out/",
     output:
-        output_folder = directory("data/semibin_bins/checkm2_out/"),
-        output_file = "data/semibin_bins/checkm.out"
+        output_file = "data/semibin_bins/checkm2_quality_report.tsv"
     threads:
         config["max_threads"]
     resources:
@@ -774,7 +771,7 @@ rule checkm_semibin:
         --bin-folder {params.bin_folder} \
         --bin-ext {params.extension} \
         --refinery-max-iterations {params.refinery_max_iterations} \
-        --output-folder {output.output_folder} \
+        --output-folder {params.output_folder} \
         --output-file {output.output_file} \
         --threads {threads} \
         --log {resources.log_path}
@@ -782,7 +779,7 @@ rule checkm_semibin:
 
 rule refine_rosella:
     input:
-        checkm = ancient('data/rosella_bins/checkm.out'),
+        checkm = ancient('data/rosella_bins/checkm2_quality_report.tsv'),
         rosella = ancient('data/rosella_bins/done'),
         coverage = ancient("data/coverm.cov"),
         large_contigs_done = "data/done/filter_contigs_by_size.done",
@@ -802,7 +799,10 @@ rule refine_rosella:
         pplacer_threads = lambda wildcards, threads: min(threads, config["pplacer_threads"]),
         max_contamination = 15,
         final_refining = False,
-        bin_prefix = "rosella"
+        bin_prefix = "rosella",
+        checkm2_db_path = config["checkm2_db_folder"],
+        pixi_run = pixi_run,
+        binning_scripts_dir = BINNING_SCRIPTS_DIR,
     threads:
         config["max_threads"]
     resources:
@@ -826,12 +826,15 @@ rule refine_rosella:
         --bin-folder {params.bin_folder} \
         --extension {params.extension} \
         --bin-prefix {params.bin_prefix} \
+        --checkm2-db-path {params.checkm2_db_path} \
+        --pixi-run '{params.pixi_run}' \
+        --binning-scripts-dir {params.binning_scripts_dir} \
         --log {resources.log_path}
         """
 
 rule refine_metabat2:
     input:
-        checkm = ancient('data/metabat_bins_2/checkm.out'),
+        checkm = ancient('data/metabat_bins_2/checkm2_quality_report.tsv'),
         rosella = ancient('data/metabat_bins_2/done'),
         coverage = ancient("data/coverm.cov"),
         large_contigs_done = "data/done/filter_contigs_by_size.done",
@@ -857,7 +860,10 @@ rule refine_metabat2:
         pplacer_threads = lambda wildcards, threads: min(threads, config["pplacer_threads"]),
         max_contamination = 15,
         final_refining = False,
-        bin_prefix = "metabat2"
+        bin_prefix = "metabat2",
+        checkm2_db_path = config["checkm2_db_folder"],
+        pixi_run = pixi_run,
+        binning_scripts_dir = BINNING_SCRIPTS_DIR,
     shell:
         f'{pixi_run} -e rosella {BINNING_SCRIPTS_DIR}/'+\
         """rosella_refine.py \
@@ -875,12 +881,15 @@ rule refine_metabat2:
         --bin-folder {params.bin_folder} \
         --extension {params.extension} \
         --bin-prefix {params.bin_prefix} \
+        --checkm2-db-path {params.checkm2_db_path} \
+        --pixi-run '{params.pixi_run}' \
+        --binning-scripts-dir {params.binning_scripts_dir} \
         --log {resources.log_path}
         """
 
 rule refine_semibin:
     input:
-        checkm = ancient('data/semibin_bins/checkm.out'),
+        checkm = ancient('data/semibin_bins/checkm2_quality_report.tsv'),
         rosella = ancient('data/semibin_bins/done'),
         coverage = ancient("data/coverm.cov"),
         large_contigs_done = "data/done/filter_contigs_by_size.done",
@@ -906,7 +915,10 @@ rule refine_semibin:
         pplacer_threads = lambda wildcards, threads: min(threads, config["pplacer_threads"]),
         max_contamination = 15,
         final_refining = False,
-        bin_prefix = "semibin2"
+        bin_prefix = "semibin2",
+        checkm2_db_path = config["checkm2_db_folder"],
+        pixi_run = pixi_run,
+        binning_scripts_dir = BINNING_SCRIPTS_DIR,
     shell:
         f'{pixi_run} -e rosella {BINNING_SCRIPTS_DIR}/'+\
         """rosella_refine.py \
@@ -924,45 +936,11 @@ rule refine_semibin:
         --bin-folder {params.bin_folder} \
         --extension {params.extension} \
         --bin-prefix {params.bin_prefix} \
+        --checkm2-db-path {params.checkm2_db_path} \
+        --pixi-run '{params.pixi_run}' \
+        --binning-scripts-dir {params.binning_scripts_dir} \
         --log {resources.log_path}
         """
-
-rule amber_checkm_output:
-    input:
-        amber_done = "data/amber_refine/for_refine/index.html"
-    output:
-        metabat_checkm = 'data/metabat_bins_2/checkm.out',
-        rosella_checkm = 'data/rosella_bins/checkm.out',
-        semibin_checkm = 'data/semibin_bins/checkm.out'
-        # dastool_checkm = 'data/das_tool_bins_with_refine/checkm.out'
-    run:
-        import pandas as pd
-
-        def amber_to_checkm_like(amber_table, prefix="data/rosella_bins/", output="data/rosella_bins/checkm.out", extension="fna"):
-            amber_table["Bin Id"] = amber_table["Bin ID"].replace(prefix, "", regex=True)
-            amber_table["Bin Id"] = amber_table["Bin Id"].replace(f".{extension}", "", regex=True)
-            amber_table["Completeness"] = amber_table["Completeness (bp)"] * 100
-            amber_table["Contamination"] = round((1 - amber_table["Purity (bp)"]) * 100, 2)
-            amber_table.to_csv(output, sep='\t', index=False)
-
-        try:
-            rosella_amber = pd.read_csv("data/amber_refine/for_refine/genome/rosella_amber.tsv/metrics_per_bin.tsv", sep='\t')
-            amber_to_checkm_like(rosella_amber, "data/rosella_bins/", "data/rosella_bins/checkm.out", "fna")
-        except FileNotFoundError:
-            pass
-
-        try:
-            metabat_amber = pd.read_csv("data/amber_refine/for_refine/genome/m2_amber.tsv/metrics_per_bin.tsv", sep='\t')
-            amber_to_checkm_like(metabat_amber, "data/metabat_bins_2/", "data/metabat_bins_2/checkm.out", "fa")
-        except FileNotFoundError:
-            pass
-
-        try:
-            semibin_amber = pd.read_csv("data/amber_refine/for_refine/genome/semibin_amber.tsv/metrics_per_bin.tsv", sep='\t')
-            amber_to_checkm_like(semibin_amber, "data/semibin_bins/output_bins/", "data/semibin_bins/checkm.out", "fa")
-        except FileNotFoundError:
-            pass
-
 
 rule das_tool:
     """
@@ -1002,10 +980,38 @@ rule das_tool:
         --log {resources.log_path}
         """
 
+rule checkm_das_tool:
+    input:
+        done = "data/das_tool_bins_pre_refine/done"
+    output:
+        output_file = "data/das_tool_bins_pre_refine/quality_report.tsv"
+    params:
+        checkm2_db_path = config["checkm2_db_folder"],
+        bin_folder = "data/das_tool_bins_pre_refine/das_tool_DASTool_bins/",
+        extension = "fa",
+        output_folder = "data/das_tool_bins_pre_refine/checkm2_working/",
+    threads:
+        config["max_threads"]
+    resources:
+        mem_mb = lambda wildcards, attempt: min(int(config["max_memory"])*1024, 128*1024*attempt),
+        runtime = lambda wildcards, attempt: 8*60*attempt,
+        log_path = lambda wildcards, attempt: setup_log(f"{logs_dir}/checkm_das_tool", attempt),
+    shell:
+        f'{pixi_run} -e checkm2 {BINNING_SCRIPTS_DIR}/'+\
+        """run_checkm.py \
+        --checkm2-db {params.checkm2_db_path} \
+        --bin-folder {params.bin_folder} \
+        --bin-ext {params.extension} \
+        --refinery-max-iterations 1 \
+        --output-folder {params.output_folder} \
+        --output-file {output.output_file} \
+        --threads {threads} \
+        --log {resources.log_path}
+        """
+
 rule refine_dastool:
     input:
         checkm = 'data/das_tool_bins_pre_refine/quality_report.tsv',
-        das_tool = 'data/das_tool_bins_pre_refine/done',
         coverage = ancient("data/coverm.cov"),
         large_contigs_done = "data/done/filter_contigs_by_size.done",
         fasta = "data/large_contigs.fasta",
@@ -1017,7 +1023,7 @@ rule refine_dastool:
         runtime = lambda wildcards, attempt: 48*60 + 24*60*attempt,
         log_path = lambda wildcards, attempt: setup_log(f"{logs_dir}/refine_dastool", attempt),
     output:
-        temporary('bins/checkm.out'),
+        temporary('bins/quality_report.tsv'),
         directory('bins/final_bins')
     benchmark:
         'benchmarks/refine_dastool.benchmark.txt'
@@ -1031,7 +1037,10 @@ rule refine_dastool:
         pplacer_threads = lambda wildcards, threads: min(threads, config["pplacer_threads"]),
         max_contamination = 15,
         final_refining = True,
-        bin_prefix = "dastool"
+        bin_prefix = "dastool",
+        checkm2_db_path = config["checkm2_db_folder"],
+        pixi_run = pixi_run,
+        binning_scripts_dir = BINNING_SCRIPTS_DIR,
     shell:
         f'{pixi_run} -e rosella {BINNING_SCRIPTS_DIR}/'+\
         """rosella_refine.py \
@@ -1049,12 +1058,15 @@ rule refine_dastool:
         --bin-folder {params.bin_folder} \
         --extension {params.extension} \
         --bin-prefix {params.bin_prefix} \
+        --checkm2-db-path {params.checkm2_db_path} \
+        --pixi-run '{params.pixi_run}' \
+        --binning-scripts-dir {params.binning_scripts_dir} \
         --log {resources.log_path}
         """
 
 rule get_abundances:
     input:
-        "bins/checkm.out"
+        "bins/final_bins"
     threads:
         config["max_threads"]
     resources:
@@ -1077,8 +1089,7 @@ rule get_abundances:
 
 rule finalise_stats:
     input:
-        checkm1_done = "bins/checkm.out",
-        checkm2_done = "bins/checkm2_output/quality_report.tsv",
+        checkm2_done = "bins/quality_report.tsv",
         coverage_file = "data/coverm_abundances.tsv" if not config["skip_abundances"] else [],
         gtdbtk_done = "data/gtdbtk/done" if not config["skip_taxonomy"] else []
     output:
@@ -1090,38 +1101,6 @@ rule finalise_stats:
         runtime = lambda wildcards, attempt: 24*60*attempt,
     script:
         "scripts/finalise_stats.py"
-
-
-
-rule checkm_das_tool:
-    input:
-        done = "data/das_tool_bins_pre_refine/done"
-    params:
-        checkm2_db_path = config["checkm2_db_folder"],
-        bin_folder = "data/das_tool_bins_pre_refine/das_tool_DASTool_bins/",
-        extension = "fa",
-    output:
-        # TODO: The checkm2 output folder should be temporary, I think need to modify run_checkm.py to implement this.
-        output_folder = directory("data/das_tool_bins_pre_refine/checkm2_working/"),
-        output_file = "data/das_tool_bins_pre_refine/quality_report.tsv"
-    threads:
-        config["max_threads"]
-    resources:
-        mem_mb = lambda wildcards, attempt: min(int(config["max_memory"])*1024, 128*1024*attempt),
-        runtime = lambda wildcards, attempt: 8*60*attempt,
-        log_path = lambda wildcards, attempt: setup_log(f"{logs_dir}/checkm_das_tool", attempt),
-    shell:
-        f'{pixi_run} -e checkm2 {BINNING_SCRIPTS_DIR}/'+\
-        """run_checkm.py \
-        --checkm2-db {params.checkm2_db_path} \
-        --bin-folder {params.bin_folder} \
-        --bin-ext {params.extension} \
-        --refinery-max-iterations 1 \
-        --output-folder {output.output_folder} \
-        --output-file {output.output_file} \
-        --threads {threads} \
-        --log {resources.log_path}
-        """
 
 rule singlem_pipe_reads:
     output:
@@ -1149,7 +1128,7 @@ rule singlem_appraise:
         pipe_results = "data/singlem_out/metagenome.combined_otu_table.csv",
         assembly = config["fasta"],
         # gtdbtk_done = "data/gtdbtk/done",
-        bins_complete = "bins/checkm.out"
+        bins_complete = "bins/final_bins"
     output:
         binned = "data/singlem_out/binned.otu_table.csv",
         unbinned = "data/singlem_out/unbinned.otu_table.csv",

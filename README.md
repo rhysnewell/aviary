@@ -73,13 +73,13 @@ cd aviary
 Then install the main environment using pixi:
 
 ```bash
-pixi run --manifest-path aviary/pixi.toml postinstall
+pixi run postinstall
 ```
 
 Then aviary can be run using `pixi run` (or via `pixi shell`).
 
 ```bash
-pixi run --manifest-path aviary/pixi.toml aviary --help
+pixi run aviary --help
 ```
 
 When installed this way, aviary is installed in an "editable" way (similar to `pip install -e .`), meaning that any changes made to aviary source are immediately available via the `aviary` command. This is useful for development and debugging.

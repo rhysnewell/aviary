@@ -57,7 +57,6 @@ final-assembly = ["final-assembly"]
 # Binning
 seqkit = ["seqkit"]
 metabat2 = ["metabat2"]
-checkm = ["checkm"]
 checkm2 = ["checkm2"]
 coverm = ["coverm"]
 das-tool = ["das-tool"]
@@ -160,11 +159,6 @@ seqkit = "*"
 [feature.metabat2.dependencies]
 metabat2 = ">=2.15"
 
-[feature.checkm.dependencies]
-"checkm-genome" = ">=1.1.2"
-parallel = "*"
-setuptools = "*"
-
 [feature.checkm2.dependencies]
 checkm2 = ">=1.1.0"
 
@@ -185,7 +179,6 @@ extern = ">=0.4.1"
 rosella = ">=0.5.3"
 flight-genome = ">=1.6.3"
 coverm = ">=0.6.1"
-checkm-genome = ">=1.1.3"
 
 [feature.maxbin2.dependencies]
 maxbin2 = ">=2.2.7"

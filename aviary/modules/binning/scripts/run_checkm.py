@@ -28,6 +28,7 @@ def checkm(checkm2_db, bin_folder, bin_ext, refinery_max_iterations, output_fold
                 stderr=subprocess.STDOUT
                 )
         shutil.copy(f"{output_folder}/quality_report.tsv", output_file)
+        shutil.rmtree(output_folder)
 
 
 if __name__ == '__main__':
