@@ -6,6 +6,9 @@ import sys
 import tempfile
 import extern
 
+# Setup
+# $ pixi run -e dev postinstall
+# $ pixi run -e dev aviary build # or setup db folder as in README
 # Run from base dir of repo
 # $ pixi run -e dev --manifest-path aviary/pixi.toml python test/run_tests_at_cmr
 #
