@@ -19,6 +19,10 @@ import subprocess
 DATA_DIR = "/work/microbiome/aviary_module_benchmarking/data/test_data"
 COMMIT = subprocess.Popen(["git", "rev-parse", "HEAD"], stdout=subprocess.PIPE, text=True).communicate()[0].strip()
 OUTPUT_DIR = f"/work/microbiome/users_large/aroneys/aviary_test_samples/{COMMIT}"
+ASSEMBLERS = {
+    "megahit": "--use-megahit",
+    "metaspades": "",
+}
 
 SAMPLES_LIST = "test/test_samples.tsv"
 samples_list = {}
@@ -30,42 +34,47 @@ with open(SAMPLES_LIST) as f:
         samples_env[sample] = line.strip().split("\t")[2]
 
 os.makedirs(OUTPUT_DIR, exist_ok=True)
+for assembler in ASSEMBLERS.keys():
+    OUTPUT_DIR_ASM = f"{OUTPUT_DIR}/{assembler}"
+    os.makedirs(OUTPUT_DIR_ASM, exist_ok=True)
 
 fails = 0
 for sample, cobinning in samples_list.items():
-    with open(f"test/qsub-{sample}-log.txt", "w") as log_file:
-        print(f"Running sample {sample}, outputting to {OUTPUT_DIR}/{sample}")
+    for assembler, asm_flag in ASSEMBLERS.items():
+        sample_output = f"{OUTPUT_DIR}/{assembler}/{sample}"
+        with open(f"test/qsub-{sample}-log.txt", "w") as log_file:
+            print(f"Running sample {sample} with {assembler}, outputting to {sample_output}")
 
-        forward_reads = [f"{DATA_DIR}/{sample}_1.fastq.gz" for sample in cobinning]
-        reverse_reads = [f"{DATA_DIR}/{sample}_2.fastq.gz" for sample in cobinning]
+            forward_reads = [f"{DATA_DIR}/{sample}_1.fastq.gz" for sample in cobinning]
+            reverse_reads = [f"{DATA_DIR}/{sample}_2.fastq.gz" for sample in cobinning]
 
-        process = subprocess.Popen(
-            [
-                "pixi", "run", "--frozen", "--manifest-path", "aviary/pixi.toml", "-e", "dev",
-                "aviary", "recover",
-                "-o", f"{OUTPUT_DIR}/{sample}",
-                "-1"] + forward_reads + [
-                "-2"] + reverse_reads + [
-                "--binning-only", "--request-gpu", "--strict",
-                "-n", "32", "-t", "32", "--local-cores", "1",
-                "-m", "256", "--coassemble", "no",
-                "--snakemake-profile", "aqua", "--cluster-retries", "3",
-            ],
-            stdout=subprocess.PIPE,
-            stderr=subprocess.STDOUT,
-            text=True
-        )
-        for line in process.stdout:
-            print(line, end="")
-            log_file.write(line)
-        process.wait()
-        # check return code
-        if process.returncode != 0:
-            print(f"Error: qsub tests failed with return code {process.returncode}.")
-            print("Check the log file test/qsub-test-log.txt for details.")
-            fails += 1
-        else:
-            print("tests marked qsub appear to have run successfully, but check the log file test/qsub-test-log.txt for details.\n")
+            process = subprocess.Popen(
+                [
+                    "pixi", "run", "--frozen", "--manifest-path", "aviary/pixi.toml", "-e", "dev",
+                    "aviary", "recover", asm_flag,
+                    "-o", sample_output,
+                    "-1"] + forward_reads + [
+                    "-2"] + reverse_reads + [
+                    "--binning-only", "--request-gpu", "--strict",
+                    "-n", "32", "-t", "32", "--local-cores", "1",
+                    "-m", "256", "--coassemble", "no",
+                    "--snakemake-profile", "aqua", "--cluster-retries", "3",
+                ],
+                stdout=subprocess.PIPE,
+                stderr=subprocess.STDOUT,
+                text=True
+            )
+            for line in process.stdout:
+                print(line, end="")
+                log_file.write(line)
+            process.wait()
+            # check return code
+            if process.returncode != 0:
+                print(f"Error: qsub tests failed with return code {process.returncode}.")
+                print("Check the log file test/qsub-test-log.txt for details.")
+                fails += 1
+            else:
+                print("tests marked qsub appear to have run successfully, but check the log file test/qsub-test-log.txt for details.\n")
 
 if fails > 0:
     print(f"Total number of jobs with FAILED lines: {fails}")
