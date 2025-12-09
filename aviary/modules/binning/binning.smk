@@ -1163,8 +1163,10 @@ rule recover_mags:
         singlem = "data/singlem_out/singlem_appraisal.tsv" if not config["skip_singlem"] else [],
     output:
         bins = "bins/done"
-    threads:
-        config["max_threads"]
+    threads: 1
+    resources:
+        mem_mb = lambda wildcards, attempt: min(int(config["max_memory"])*1024, 8*1024*attempt),
+        runtime = lambda wildcards, attempt: 6*60*attempt,
     script:
         "scripts/finalise_recovery.py"
 
@@ -1177,8 +1179,10 @@ rule recover_mags_no_singlem:
         singlem = [],
     output:
         bins = "bins/done",
-    threads:
-        config["max_threads"]
+    threads: 1
+    resources:
+        mem_mb = lambda wildcards, attempt: min(int(config["max_memory"])*1024, 8*1024*attempt),
+        runtime = lambda wildcards, attempt: 6*60*attempt,
     script:
         "scripts/finalise_recovery.py"
 
