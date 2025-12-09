@@ -50,7 +50,7 @@ class Tests(unittest.TestCase):
         cmd = (
             f"aviary annotate "
             f"-o {output_dir}/aviary_out "
-            f"--genome-fasta-directory test/data/bins1"
+            f"--genome-fasta-directory test/data/bins1 "
             f"-n 32 -t 32 "
         )
         subprocess.run(cmd, shell=True, check=True)
