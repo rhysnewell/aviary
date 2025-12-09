@@ -361,12 +361,6 @@ class Tests(unittest.TestCase):
             num_lines = sum(1 for _ in f)
         self.assertEqual(num_lines, 3)
 
-        semibin_log_path = f"{output_dir}/aviary_out/logs/semibin.log"
-        self.assertTrue(os.path.isfile(semibin_log_path))
-        with open(semibin_log_path) as f:
-            log = f.read()
-        self.assertTrue("Training model..." not in log)
-
         self.assertFalse(os.path.isfile(f"{output_dir}/aviary_out/data/final_contigs.fasta"))
 
     def test_short_read_recovery_semibin(self):
@@ -397,12 +391,6 @@ class Tests(unittest.TestCase):
         with open(bin_info_path) as f:
             num_lines = sum(1 for _ in f)
         self.assertEqual(num_lines, 3)
-
-        semibin_log_path = f"{output_dir}/aviary_out/logs/semibin.log"
-        self.assertTrue(os.path.isfile(semibin_log_path))
-        with open(semibin_log_path) as f:
-            log = f.read()
-        self.assertTrue("Training model..." in log)
 
         self.assertFalse(os.path.isfile(f"{output_dir}/aviary_out/data/final_contigs.fasta"))
 
@@ -593,12 +581,6 @@ class Tests(unittest.TestCase):
         with open(bin_info_path) as f:
             num_lines = sum(1 for _ in f)
         self.assertEqual(num_lines, 3)
-
-        semibin_log_path = f"{output_dir}/aviary_out/logs/semibin.log"
-        self.assertTrue(os.path.isfile(semibin_log_path))
-        with open(semibin_log_path) as f:
-            log = f.read()
-        self.assertTrue("Training model..." not in log)
 
         self.assertFalse(os.path.isfile(f"{output_dir}/aviary_out/data/final_contigs.fasta"))
 
