@@ -1128,16 +1128,15 @@ rule singlem_appraise:
         pipe_results = "data/singlem_out/metagenome.combined_otu_table.csv",
         assembly = config["fasta"],
         # gtdbtk_done = "data/gtdbtk/done",
-        bins_complete = "bins/final_bins"
+        genomes_folder = "bins/final_bins"
     output:
         binned = "data/singlem_out/binned.otu_table.csv",
         unbinned = "data/singlem_out/unbinned.otu_table.csv",
         plot = "data/singlem_out/singlem_appraise.svg",
-        assembled = "data/singlem_out/assembled.otu_table.csv",
+        unaccounted_for = "data/singlem_out/unaccounted_for.otu_table.csv",
         singlem = "data/singlem_out/singlem_appraisal.tsv"
     params:
         package_path = config['singlem_metapackage'],
-        genomes_folder = "data/refined_bins/final_bins/"
     threads: min(config["max_threads"], 48)
     resources:
         mem_mb = lambda wildcards, attempt: min(int(config["max_memory"])*1024, 8*1024*attempt),
@@ -1147,7 +1146,7 @@ rule singlem_appraise:
         f'{pixi_run} -e singlem {BASE_SCRIPTS_DIR}/'+\
         """singlem_appraise.py \
         --assembly {input.assembly} \
-        --genomes-folder {params.genomes_folder} \
+        --genomes-folder {input.genomes_folder} \
         --pipe-results {input.pipe_results} \
         --threads {threads} \
         --package-path {params.package_path} \
