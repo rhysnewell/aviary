@@ -42,6 +42,11 @@ with open(f"{OUTPUT_DIR}/cmds.sh", "w") as cmd_file:
     for sample, cobinning in samples_list.items():
         for assembler, asm_flag in ASSEMBLERS.items():
             sample_output = f"{OUTPUT_DIR}/{assembler}/{sample}"
+            bin_info = f"{sample_output}/bins/bin_info.tsv"
+            if os.path.exists(bin_info):
+                print(f"Skipping sample {sample} with {assembler}, already complete")
+                continue
+
             log_file = f"{OUTPUT_DIR}/{assembler}/{sample}.log"
             forward_reads = [f"{DATA_DIR}/{sample}_1.fastq.gz" for sample in cobinning]
             reverse_reads = [f"{DATA_DIR}/{sample}_2.fastq.gz" for sample in cobinning]
@@ -95,8 +100,8 @@ else:
                         columns = line.strip().split("\t")
 
                         if header:
-                            comp_col = columns.index("Completeness (CheckM2)")
-                            cont_col = columns.index("Contamination (CheckM2)")
+                            comp_col = columns.index("Completeness")
+                            cont_col = columns.index("Contamination")
                             header = False
                         else:
                             completeness = float(columns[comp_col])
@@ -108,6 +113,6 @@ else:
                                 sample_genomes += 1
 
                 print(f"Sample {sample} with {assembler} has {sample_genomes} genomes with total score {sample_score}")
-                summary_file.write(f"{samples_env[sample]}\t{sample}\t{assembler}\t{sample_score}\t{sample_genomes}\n")
+                summary_file.write(f"{samples_env[sample]}\t{sample}\t{assembler}\t{int(sample_score)}\t{sample_genomes}\n")
 
     sys.exit(0)
