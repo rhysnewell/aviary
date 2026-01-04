@@ -180,9 +180,6 @@ def refinery(args):
                 with open(log, "a") as logf:
                     logf.write(f"Running CheckM2 on {bin_count} bins\n")
 
-            # Bad file descriptor??
-            #pixi run snakemake --snakefile /mnt/hpccs01/work/microbiome/users/aroneys/src/aviary/aviary/modules/Snakefile --directory /work/microbiome/users_large/aroneys/aviary_test_samples/78871810b7d7f9c182e229f8966bf9705df39b3c/metaspades/SRR6490520 --cores 12 --local-cores 12 --rerun-incomplete --keep-going  --rerun-triggers mtime --resources mem_mb=262144   --configfile /work/microbiome/users_large/aroneys/aviary_test_samples/78871810b7d7f9c182e229f8966bf9705df39b3c/metaspades/SRR6490520/config.yaml --nolock  data/metabat2_refined/done
-            # import pdb; pdb.set_trace()
             get_checkm_results(bin_folder, pixi_run, BINNING_SCRIPTS_DIR, checkm2_db_path, threads, log + f"_{current_iteration}_checkm2.log")
             # update the checkm2 results and counter
             checkm_path = f"{bin_folder}/quality_report.tsv"
