@@ -582,7 +582,7 @@ class Tests(unittest.TestCase):
             num_lines = sum(1 for _ in f)
         self.assertEqual(num_lines, 3)
 
-        self.assertFalse(os.path.isfile(f"{output_dir}/aviary_out/data/final_contigs.fasta"))
+        self.assertTrue(os.path.isfile(f"{output_dir}/aviary_out/assembly/final_contigs.fasta"))
 
     def test_error_integration(self):
         """Expect aviary_assemble to fail with tiny test data, then check logging.
