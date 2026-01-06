@@ -31,7 +31,7 @@ bird_tool_utils_python = "*"
 [feature.dev.activation]
 # Sets metapackage environment variables, which are assumed to be in the db/ of
 # the base directory (perhaps symlnked).
-scripts = ["aviary/set_env_vars.sh"]
+scripts = ["admin/set_env_vars.sh"]
 
 [environments]
 default = ["main"]
