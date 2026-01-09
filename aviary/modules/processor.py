@@ -695,7 +695,7 @@ class Processor:
 
             if proc.returncode == 0:
                 logging.info("Finished: %s" % workflow)
-                return
+                continue
 
             # On failure, parse errors and surface helpful diagnostics
             output_text = "".join(combined_output)
