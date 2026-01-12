@@ -22,6 +22,15 @@ pip = "*"
 postinstall = "pip install --no-build-isolation --no-deps --disable-pip-version-check -e .."
 update_deps = { cmd = "python ../admin/build_dep_defs_from_pixi.py", depends-on = ["postinstall"] }
 
+[tasks.run-a-test]
+args = ["test_name"]
+cmd = "pytest test --run-expensive -k {{ test_name }}"
+depends-on = ["postinstall"]
+
+[tasks.run-quick-tests]
+cmd = "pytest test"
+depends-on = ["postinstall"]
+
 [feature.dev.dependencies]
 pytest = "*"
 ipython = "*"
