@@ -29,8 +29,9 @@ def parse_metadata(description: str) -> dict:
     metadata["circ"] = "Y" if circ_value == "yes" else "N"
 
     depth_match = re.search(r"depth-([0-9.]+)-([0-9.]+)-([0-9.]+)", description)
-    if depth_match:
-        metadata["cov"] = float(depth_match.group(1))
+    if not depth_match:
+        raise ValueError(f"Missing depth metadata in contig header: {description}")
+    metadata["cov"] = float(depth_match.group(1))
 
     duplication = re.search(r"duplicated-(yes|no|possibly)", description)
     if not duplication:
