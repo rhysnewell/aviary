@@ -100,7 +100,7 @@ nanoplot = ">=1.44"
 quast = "==5.0.2"
 
 [feature.bbmap.dependencies]
-bbmap = "*"
+bbmap = ">=39.01"
 
 [feature.flye.dependencies]
 flye = ">=2.9"

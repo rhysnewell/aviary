@@ -625,23 +625,23 @@ def main():
     binning_group.add_argument(
         '--extra-binners', '--extra_binners', '--extra-binner', '--extra_binner',
         help='Optional list of extra binning algorithms to run. Can be any combination of: \n'
-             'maxbin, maxbin2, concoct, comebin, taxvamb \n'
+             'maxbin, maxbin2, concoct, comebin, taxvamb, quickbin \n'
              'These binners are skipped by default as they can have long runtimes \n'
              'N.B. specifying "maxbin" and "maxbin2" are equivalent \n'
              'N.B. specifying "taxvamb" will also run metabuli for contig taxonomic assignment \n',
         dest='extra_binners',
         nargs='*',
-        choices=["maxbin", "maxbin2", "concoct", "comebin", "taxvamb"]
+        choices=["maxbin", "maxbin2", "concoct", "comebin", "taxvamb", "quickbin"]
     )
 
     binning_group.add_argument(
         '--skip-binners', '--skip_binners', '--skip_binner', '--skip-binner',
         help='Optional list of binning algorithms to skip. Can be any combination of: \n'
-             'rosella, semibin, metabat1, metabat2, metabat, vamb \n'
+             'rosella, semibin, metabat1, metabat2, metabat, vamb, quickbin \n'
              'N.B. specifying "metabat" will skip both MetaBAT1 and MetaBAT2. \n',
         dest='skip_binners',
         nargs='*',
-        choices=["rosella", "semibin", "metabat1", "metabat2", "metabat", "vamb"]
+        choices=["rosella", "semibin", "metabat1", "metabat2", "metabat", "vamb", "quickbin"]
     )
 
     binning_group.add_argument(

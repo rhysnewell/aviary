@@ -33,6 +33,7 @@ if __name__ == '__main__':
         ('vamb', 'fna'),
         ('comebin', 'fa'),
         ('taxvamb', 'fna'),
+        ('quickbin', 'fna'),
     ]
     refined_binners_to_use = [
         ('rosella', 'fna'),
