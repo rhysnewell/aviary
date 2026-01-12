@@ -23,18 +23,20 @@ DEFAULT_FIELDS = {
 def parse_metadata(description: str) -> dict:
     metadata = DEFAULT_FIELDS.copy()
     circularity = re.search(r"circular-(yes|no|possibly)", description)
-    if circularity:
-        circ_value = circularity.group(1)
-        metadata["circ"] = "Y" if circ_value in {"yes", "possibly"} else "N"
+    if not circularity:
+        raise ValueError(f"Missing circularity metadata in contig header: {description}")
+    circ_value = circularity.group(1)
+    metadata["circ"] = "Y" if circ_value == "yes" else "N"
 
     depth_match = re.search(r"depth-([0-9.]+)-([0-9.]+)-([0-9.]+)", description)
     if depth_match:
         metadata["cov"] = float(depth_match.group(1))
 
     duplication = re.search(r"duplicated-(yes|no|possibly)", description)
-    if duplication:
-        repeat_value = duplication.group(1)
-        metadata["repeat"] = "Y" if repeat_value in {"yes", "possibly"} else "N"
+    if not duplication:
+        raise ValueError(f"Missing duplication metadata in contig header: {description}")
+    repeat_value = duplication.group(1)
+    metadata["repeat"] = "Y" if repeat_value == "yes" else "N"
 
     return metadata
 
