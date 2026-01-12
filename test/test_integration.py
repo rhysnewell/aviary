@@ -238,6 +238,23 @@ class Tests(unittest.TestCase):
         self.assertTrue(os.path.isfile(f"{output_dir}/aviary_out/data/final_contigs.fasta"))
         self.assertTrue(os.path.islink(f"{output_dir}/aviary_out/assembly/final_contigs.fasta"))
 
+    def test_long_read_assembly_no_short_reads(self):
+        output_dir = os.path.join("example", "test_long_read_assembly_no_short_reads")
+        setup_output_dir(output_dir)
+        cmd = (
+            f"aviary assemble "
+            f"-o {output_dir}/aviary_out "
+            f"-l {data}/pbsim.fq.gz "
+            f"--longread-type ont "
+            f"--min-read-size 10 --min-mean-q 1 "
+            f"-n 32 -t 32 "
+        )
+        subprocess.run(cmd, shell=True, check=True)
+
+        self.assertTrue(os.path.isdir(f"{output_dir}/aviary_out"))
+        self.assertTrue(os.path.isfile(f"{output_dir}/aviary_out/data/final_contigs.fasta"))
+        self.assertTrue(os.path.islink(f"{output_dir}/aviary_out/assembly/final_contigs.fasta"))
+
     def test_short_read_recovery(self):
         output_dir = os.path.join("example", "test_short_read_recovery")
         setup_output_dir(output_dir)
