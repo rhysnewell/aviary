@@ -302,28 +302,51 @@ class Processor:
 
         self.download = args.download
 
+        workflows_requiring_db_paths = {
+            "recover_mags",
+            "recover_mags_no_singlem",
+            "annotate",
+            "complete_cluster",
+            "download_databases",
+        }
+        needs_db_paths = self.download or any(
+            workflow in workflows_requiring_db_paths for workflow in self.workflows
+        )
+
         try:
-            if args.gtdb_path is not None:
-                self.gtdbtk = args.gtdb_path
+            if not needs_db_paths:
+                self.gtdbtk = "none"
+                self.eggnog = "none"
+                self.singlem = "none"
+                self.metabuli = "none"
+            else:
+                if args.gtdb_path is not None:
+                    self.gtdbtk = args.gtdb_path
+                else:
+                    self.gtdbtk = Config.get_software_db_path('GTDBTK_DATA_PATH', '--gtdb-path')
+                if args.eggnog_db_path is not None:
+                    self.eggnog = args.eggnog_db_path
+                else:
+                    self.eggnog = Config.get_software_db_path('EGGNOG_DATA_DIR', '--eggnog-db-path')
+                if args.singlem_metapackage_path is not None:
+                    self.singlem = args.singlem_metapackage_path
+                else:
+                    self.singlem = Config.get_software_db_path('SINGLEM_METAPACKAGE_PATH', '--singlem-metapackage-path')
+                if args.metabuli_db_path is not None:
+                    self.metabuli = args.metabuli_db_path
+                else:
+                    self.metabuli = Config.get_software_db_path('METABULI_DB_PATH', '--metabuli-db-path')
+        except AttributeError:
+            if not needs_db_paths:
+                self.gtdbtk = "none"
+                self.eggnog = "none"
+                self.singlem = "none"
+                self.metabuli = "none"
             else:
                 self.gtdbtk = Config.get_software_db_path('GTDBTK_DATA_PATH', '--gtdb-path')
-            if args.eggnog_db_path is not None:
-                self.eggnog = args.eggnog_db_path
-            else:
                 self.eggnog = Config.get_software_db_path('EGGNOG_DATA_DIR', '--eggnog-db-path')
-            if args.singlem_metapackage_path is not None:
-                self.singlem = args.singlem_metapackage_path
-            else:
                 self.singlem = Config.get_software_db_path('SINGLEM_METAPACKAGE_PATH', '--singlem-metapackage-path')
-            if args.metabuli_db_path is not None:
-                self.metabuli = args.metabuli_db_path
-            else:
                 self.metabuli = Config.get_software_db_path('METABULI_DB_PATH', '--metabuli-db-path')
-        except AttributeError:
-            self.gtdbtk = Config.get_software_db_path('GTDBTK_DATA_PATH', '--gtdb-path')
-            self.eggnog = Config.get_software_db_path('EGGNOG_DATA_DIR', '--eggnog-db-path')
-            self.singlem = Config.get_software_db_path('SINGLEM_METAPACKAGE_PATH', '--singlem-metapackage-path')
-            self.metabuli = Config.get_software_db_path('METABULI_DB_PATH', '--metabuli-db-path')
             # self.enrichm = Config.get_software_db_path('ENRICHM_DB', '--enrichm-db-path')
 
         try:
@@ -366,9 +389,17 @@ class Processor:
             if args.checkm2_db_path is not None:
                 self.checkm2_db = args.checkm2_db_path
             else:
-                self.checkm2_db = Config.get_software_db_path('CHECKM2DB', '--checkm2-db-path')
+                self.checkm2_db = (
+                    Config.get_software_db_path('CHECKM2DB', '--checkm2-db-path')
+                    if needs_db_paths
+                    else "none"
+                )
         except AttributeError:
-            self.checkm2_db = Config.get_software_db_path('CHECKM2DB', '--checkm2-db-path')
+            self.checkm2_db = (
+                Config.get_software_db_path('CHECKM2DB', '--checkm2-db-path')
+                if needs_db_paths
+                else "none"
+            )
             # self.checkm2_db = 'none'
 
         # Must be always be first workflow

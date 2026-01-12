@@ -67,7 +67,8 @@ if LONG_READ_ASSEMBLER == "flye":
             junk4 = temp(directory(f"{LONG_ASSEMBLY_DIR}/30-contigger/")),
             junk5 = temp(directory(f"{LONG_ASSEMBLY_DIR}/40-polishing/"))
         params:
-            long_read_type = config["long_read_type"]
+            long_read_type = config["long_read_type"],
+            output_dir = LONG_ASSEMBLY_DIR
         threads:
             config["max_threads"]
         resources:
@@ -82,7 +83,7 @@ if LONG_READ_ASSEMBLER == "flye":
             """run_flye.py \
             --long-read-type {params.long_read_type} \
             --input-fastq {input.fastq} \
-            --output-dir {LONG_ASSEMBLY_DIR} \
+            --output-dir {params.output_dir} \
             --meta-flag \
             --threads {threads} \
             --log {log}
@@ -97,7 +98,8 @@ else:
             graph = LONG_ASSEMBLY_GRAPH,
             info = LONG_ASSEMBLY_INFO,
         params:
-            long_read_type = config["long_read_type"]
+            long_read_type = config["long_read_type"],
+            output_dir = LONG_ASSEMBLY_DIR
         threads:
             config["max_threads"]
         resources:
@@ -112,7 +114,7 @@ else:
             """run_myloasm.py \
             --long-read-type {params.long_read_type} \
             --input-fastq {input.fastq} \
-            --output-dir {LONG_ASSEMBLY_DIR} \
+            --output-dir {params.output_dir} \
             --threads {threads} \
             --log {log}
             """
@@ -130,7 +132,10 @@ rule polish_metagenome_flye:
         rounds = 3,
         illumina = False,
         coassemble = config["coassemble"],
-        short_reads_1 = " ".join(config["short_reads_1"]) if config["skip_qc"] else "",
+        short_reads_1 = lambda wildcards, input: "" if config["short_reads_1"] == "none" else (
+            "--short-reads-1 "
+            + (" ".join(config["short_reads_1"]) if config["skip_qc"] else input.qc_reads)
+        ),
         short_reads_2 = " ".join(config["short_reads_2"]) if config["skip_qc"] else "none",
     threads:
         config["max_threads"]
@@ -147,7 +152,7 @@ rule polish_metagenome_flye:
     shell:
         f'{pixi_run} -e polishing {ASSEMBLY_SCRIPTS_DIR}/'+\
         """polish.py \
-        --short-reads-1 {input.qc_reads}{params.short_reads_1} \
+        {params.short_reads_1} \
         --short-reads-2 {params.short_reads_2} \
         --input-fastq {input.fastq} \
         --reference {input.fasta} \

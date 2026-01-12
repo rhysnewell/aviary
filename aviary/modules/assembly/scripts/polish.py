@@ -136,6 +136,17 @@ def run_polish(
     threads: int,
     log: str,
 ):
+    if not reference or not os.path.exists(reference) or os.path.getsize(reference) == 0:
+        os.makedirs(os.path.dirname(output_fasta) or ".", exist_ok=True)
+        with open(log, "a") as logf:
+            logf.write("Reference assembly is empty; skipping polishing.\n")
+        if reference and os.path.exists(reference):
+            shutil.copyfile(reference, output_fasta)
+        else:
+            with open(output_fasta, "w"):
+                pass
+        return
+
     # out = "data/polishing"
 
     try:

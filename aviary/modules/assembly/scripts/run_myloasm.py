@@ -1,3 +1,5 @@
+#!/usr/bin/env python3
+
 import argparse
 import os
 import re
@@ -62,31 +64,42 @@ def ensure_placeholder(path: str) -> None:
 
 def run_myloasm(input_fastq: str, output_dir: str, long_read_type: str, threads: int, log: str) -> None:
     os.makedirs(output_dir, exist_ok=True)
-
-    with open(log, "w") as logf:
-        cmd = [
-            "myloasm",
-            "--reads",
-            input_fastq,
-            "--out-dir",
-            output_dir,
-            "--threads",
-            str(threads),
-        ]
-        if long_read_type:
-            cmd.extend(["--long-read-type", long_read_type])
-
-        subprocess.run(cmd, check=True, stdout=logf, stderr=subprocess.STDOUT)
-
     assembly_fasta = os.path.join(output_dir, "assembly.fasta")
     assembly_primary = os.path.join(output_dir, "assembly_primary.fa")
     assembly_graph = os.path.join(output_dir, "assembly_graph.gfa")
     assembly_graph_src = os.path.join(output_dir, "final_contig_graph.gfa")
     assembly_info = os.path.join(output_dir, "assembly_info.txt")
 
+    allow_empty = False
+    cmd = [
+        "myloasm",
+        input_fastq,
+        "--output-dir",
+        output_dir,
+        "--threads",
+        str(threads),
+    ]
+    if long_read_type and long_read_type.lower() in {"hifi", "ccs"}:
+        cmd.append("--hifi")
+
+    with open(log, "w") as logf:
+        try:
+            subprocess.run(cmd, check=True, stdout=logf, stderr=subprocess.STDOUT)
+        except subprocess.CalledProcessError:
+            initial_polished = os.path.join(output_dir, "initial_polished.fa")
+            if os.path.exists(initial_polished) and os.path.getsize(initial_polished) == 0:
+                allow_empty = True
+                logf.write(
+                    "Myloasm produced no contigs; continuing with empty assembly outputs.\n"
+                )
+            else:
+                raise
+
     if not os.path.exists(assembly_fasta):
         if os.path.exists(assembly_primary):
             shutil.copyfile(assembly_primary, assembly_fasta)
+        elif allow_empty:
+            ensure_placeholder(assembly_fasta)
         else:
             raise FileNotFoundError(
                 "Myloasm did not create an assembly at "
