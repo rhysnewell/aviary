@@ -39,7 +39,7 @@ class Tests(unittest.TestCase):
             self.assertTrue("move_spades_assembly" in output)
 
             # Long-read
-            self.assertTrue("flye_assembly" not in output)
+            self.assertTrue("long_read_assembly" not in output)
             self.assertTrue("polish_metagenome_flye" not in output)
             self.assertTrue("combine_long_only" not in output)
             self.assertTrue("skip_unicycler " not in output)
@@ -100,7 +100,7 @@ class Tests(unittest.TestCase):
             self.assertTrue("move_spades_assembly" in output)
 
             # Long-read
-            self.assertTrue("flye_assembly" not in output)
+            self.assertTrue("long_read_assembly" not in output)
             self.assertTrue("polish_metagenome_flye" not in output)
             self.assertTrue("combine_long_only" not in output)
             self.assertTrue("skip_unicycler " not in output)
@@ -162,7 +162,7 @@ class Tests(unittest.TestCase):
             self.assertTrue("move_spades_assembly" not in output)
 
             # Long-read
-            self.assertTrue("flye_assembly" in output)
+            self.assertTrue("long_read_assembly" in output)
             self.assertTrue("polish_metagenome_flye" in output)
             self.assertTrue("combine_long_only" not in output)
             self.assertTrue("skip_unicycler " not in output)
@@ -225,7 +225,7 @@ class Tests(unittest.TestCase):
             self.assertTrue("move_spades_assembly" not in output)
 
             # Long-read
-            self.assertTrue("flye_assembly" in output)
+            self.assertTrue("long_read_assembly" in output)
             self.assertTrue("polish_metagenome_flye" in output)
             self.assertTrue("combine_long_only" not in output)
             self.assertTrue("skip_unicycler " not in output)
@@ -286,7 +286,7 @@ class Tests(unittest.TestCase):
             self.assertTrue("move_spades_assembly" not in output)
 
             # Long-read
-            self.assertTrue("flye_assembly" in output)
+            self.assertTrue("long_read_assembly" in output)
             self.assertTrue("polish_metagenome_flye" in output)
             self.assertTrue("combine_long_only" in output)
             self.assertTrue("skip_unicycler " not in output)
@@ -347,7 +347,7 @@ class Tests(unittest.TestCase):
             self.assertTrue("move_spades_assembly" not in output)
 
             # Long-read
-            self.assertTrue("flye_assembly" in output)
+            self.assertTrue("long_read_assembly" in output)
             self.assertTrue("polish_metagenome_flye" in output)
             self.assertTrue("combine_long_only" in output)
             self.assertTrue("skip_unicycler " not in output)
