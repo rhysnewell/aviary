@@ -622,7 +622,7 @@ rule semibin:
     input:
         large_contigs_done = "data/done/filter_contigs_by_size.done",
         fasta = "data/large_contigs.fasta",
-        coverage = ancient("data/coverm.cov")
+        bams_indexed = ancient("data/binning_bams/done")
     params:
         # Can't use premade model with multiple samples, so disregard if provided
         semibin_model = f"--environment {config['semibin_model']} " if get_num_samples() == 1 else "",
@@ -662,7 +662,7 @@ rule comebin:
     input:
         large_contigs_done = "data/done/filter_contigs_by_size.done",
         fasta = "data/large_contigs.fasta",
-        coverage = ancient("data/coverm.cov")
+        bams_indexed = ancient("data/binning_bams/done")
     output:
         done = "data/comebin_bins/done"
     threads:
