@@ -12,22 +12,26 @@ REVERSE_READS = os.path.join(path_to_data, "wgsim.2.fq.gz")
 LONG_READS = os.path.join(path_to_data, "pbsim.fq.gz")
 
 class Tests(unittest.TestCase):
+    def run_dryrun(self, extra_args, tmpdir):
+        cmd = (
+            f"GTDBTK_DATA_PATH=. "
+            f"CHECKM2DB=. "
+            f"EGGNOG_DATA_DIR=. "
+            f"METABULI_DB_PATH=. "
+            f"SINGLEM_METAPACKAGE_PATH=. "
+            f"aviary assemble "
+            f"{extra_args} "
+            f"--output {tmpdir}/test "
+            f"--dryrun --tmpdir {tmpdir} "
+            f"--snakemake-cmds \" --quiet\" "
+        )
+        return extern.run(cmd)
     def test_assemble_simple_inputs(self):
         with tempfile.TemporaryDirectory() as tmpdir:
-            cmd = (
-                f"GTDBTK_DATA_PATH=. "
-                f"CHECKM2DB=. "
-                f"EGGNOG_DATA_DIR=. "
-                f"METABULI_DB_PATH=. "
-                f"SINGLEM_METAPACKAGE_PATH=. "
-                f"aviary assemble "
-                f"-1 {FORWARD_READS} "
-                f"-2 {REVERSE_READS} "
-                f"--output {tmpdir}/test "
-                f"--dryrun --tmpdir {tmpdir} "
-                f"--snakemake-cmds \" --quiet\" "
+            output = self.run_dryrun(
+                f"-1 {FORWARD_READS} -2 {REVERSE_READS}",
+                tmpdir,
             )
-            output = extern.run(cmd)
 
             # General
             self.assertTrue("complete_assembly " not in output)
@@ -74,21 +78,10 @@ class Tests(unittest.TestCase):
 
     def test_assemble_simple_inputs_skip_qc(self):
         with tempfile.TemporaryDirectory() as tmpdir:
-            cmd = (
-                f"GTDBTK_DATA_PATH=. "
-                f"CHECKM2DB=. "
-                f"EGGNOG_DATA_DIR=. "
-                f"METABULI_DB_PATH=. "
-                f"SINGLEM_METAPACKAGE_PATH=. "
-                f"aviary assemble "
-                f"-1 {FORWARD_READS} "
-                f"-2 {REVERSE_READS} "
-                f"--skip-qc "
-                f"--output {tmpdir}/test "
-                f"--dryrun --tmpdir {tmpdir} "
-                f"--snakemake-cmds \" --quiet\" "
+            output = self.run_dryrun(
+                f"-1 {FORWARD_READS} -2 {REVERSE_READS} --skip-qc",
+                tmpdir,
             )
-            output = extern.run(cmd)
 
             # General
             self.assertTrue("complete_assembly " not in output)
@@ -135,22 +128,11 @@ class Tests(unittest.TestCase):
 
     def test_assemble_hybrid(self):
         with tempfile.TemporaryDirectory() as tmpdir:
-            cmd = (
-                f"GTDBTK_DATA_PATH=. "
-                f"CHECKM2DB=. "
-                f"EGGNOG_DATA_DIR=. "
-                f"METABULI_DB_PATH=. "
-                f"SINGLEM_METAPACKAGE_PATH=. "
-                f"aviary assemble "
-                f"-1 {FORWARD_READS} "
-                f"-2 {REVERSE_READS} "
-                f"-l {LONG_READS} "
-                f"--longread-type ont "
-                f"--output {tmpdir}/test "
-                f"--dryrun --tmpdir {tmpdir} "
-                f"--snakemake-cmds \" --quiet\" "
+            output = self.run_dryrun(
+                f"-1 {FORWARD_READS} -2 {REVERSE_READS} -l {LONG_READS} "
+                f"--longread-type ont",
+                tmpdir,
             )
-            output = extern.run(cmd)
 
             # General
             self.assertTrue("complete_assembly " not in output)
@@ -197,23 +179,11 @@ class Tests(unittest.TestCase):
 
     def test_assemble_hybrid_skip_qc(self):
         with tempfile.TemporaryDirectory() as tmpdir:
-            cmd = (
-                f"GTDBTK_DATA_PATH=. "
-                f"CHECKM2DB=. "
-                f"EGGNOG_DATA_DIR=. "
-                f"METABULI_DB_PATH=. "
-                f"SINGLEM_METAPACKAGE_PATH=. "
-                f"aviary assemble "
-                f"-1 {FORWARD_READS} "
-                f"-2 {REVERSE_READS} "
-                f"-l {LONG_READS} "
-                f"--longread-type ont "
-                f"--skip-qc "
-                f"--output {tmpdir}/test "
-                f"--dryrun --tmpdir {tmpdir} "
-                f"--snakemake-cmds \" --quiet\" "
+            output = self.run_dryrun(
+                f"-1 {FORWARD_READS} -2 {REVERSE_READS} -l {LONG_READS} "
+                f"--longread-type ont --skip-qc",
+                tmpdir,
             )
-            output = extern.run(cmd)
 
             # General
             self.assertTrue("complete_assembly " not in output)
@@ -261,20 +231,10 @@ class Tests(unittest.TestCase):
 
     def test_assemble_long_reads(self):
         with tempfile.TemporaryDirectory() as tmpdir:
-            cmd = (
-                f"GTDBTK_DATA_PATH=. "
-                f"CHECKM2DB=. "
-                f"EGGNOG_DATA_DIR=. "
-                f"METABULI_DB_PATH=. "
-                f"SINGLEM_METAPACKAGE_PATH=. "
-                f"aviary assemble "
-                f"-l {LONG_READS} "
-                f"--longread-type ont "
-                f"--output {tmpdir}/test "
-                f"--dryrun --tmpdir {tmpdir} "
-                f"--snakemake-cmds \" --quiet\" "
+            output = self.run_dryrun(
+                f"-l {LONG_READS} --longread-type ont",
+                tmpdir,
             )
-            output = extern.run(cmd)
 
             # General
             self.assertTrue("complete_assembly " not in output)
@@ -321,21 +281,10 @@ class Tests(unittest.TestCase):
 
     def test_assemble_long_reads_skip_qc(self):
         with tempfile.TemporaryDirectory() as tmpdir:
-            cmd = (
-                f"GTDBTK_DATA_PATH=. "
-                f"CHECKM2DB=. "
-                f"EGGNOG_DATA_DIR=. "
-                f"METABULI_DB_PATH=. "
-                f"SINGLEM_METAPACKAGE_PATH=. "
-                f"aviary assemble "
-                f"-l {LONG_READS} "
-                f"--longread-type ont "
-                f"--skip-qc "
-                f"--output {tmpdir}/test "
-                f"--dryrun --tmpdir {tmpdir} "
-                f"--snakemake-cmds \" --quiet\" "
+            output = self.run_dryrun(
+                f"-l {LONG_READS} --longread-type ont --skip-qc",
+                tmpdir,
             )
-            output = extern.run(cmd)
 
             # General
             self.assertTrue("complete_assembly " not in output)
@@ -380,6 +329,28 @@ class Tests(unittest.TestCase):
             self.assertTrue("fastqc_long" in output)
             self.assertTrue("nanoplot" in output)
             self.assertTrue("metaquast" not in output)
+
+    def test_assemble_long_reads_flye(self):
+        with tempfile.TemporaryDirectory() as tmpdir:
+            output = self.run_dryrun(
+                f"-l {LONG_READS} --longread-type ont --long-read-assembler flye",
+                tmpdir,
+            )
+
+            self.assertTrue("long_read_assembly" in output)
+            self.assertTrue("logs/flye_assembly.log" in output)
+            self.assertTrue("logs/myloasm_assembly.log" not in output)
+
+    def test_assemble_long_reads_myloasm(self):
+        with tempfile.TemporaryDirectory() as tmpdir:
+            output = self.run_dryrun(
+                f"-l {LONG_READS} --longread-type ont --long-read-assembler myloasm",
+                tmpdir,
+            )
+
+            self.assertTrue("long_read_assembly" in output)
+            self.assertTrue("logs/myloasm_assembly.log" in output)
+            self.assertTrue("logs/flye_assembly.log" not in output)
 
 if __name__ == '__main__':
     unittest.main()
