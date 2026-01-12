@@ -199,7 +199,7 @@ class Tests(unittest.TestCase):
         self.assertTrue(os.path.isfile(f"{output_dir}/aviary_out/data/final_contigs.fasta"))
         self.assertTrue(os.path.islink(f"{output_dir}/aviary_out/assembly/final_contigs.fasta"))
 
-    def test_long_read_assembly(self):
+    def test_long_read_assembly_default(self):
         output_dir = os.path.join("example", "test_long_read_assembly")
         setup_output_dir(output_dir)
         cmd = (
