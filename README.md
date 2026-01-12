@@ -52,10 +52,10 @@ conda install -c bioconda aviary
 
 ### Option 2: Install from pip
 
-Create the environment using the `aviary.yml` file then install from pip:
+Create the environment using the `admin/requirements.txt` file then install from pip:
 
 ```bash
-conda env create -n aviary -f aviary.yml
+conda env create -n aviary -f admin/requirements.txt
 conda activate aviary
 pip install aviary-genome
 ```
