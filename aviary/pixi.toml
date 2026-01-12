@@ -106,9 +106,11 @@ bbmap = "*"
 
 [feature.flye.dependencies]
 flye = ">=2.9"
+biopython = "*"
 
 [feature.myloasm.dependencies]
 myloasm = "*"
+biopython = "*"
 
 [feature.polishing.dependencies]
 flye = ">=2.9"
