@@ -687,7 +687,7 @@ rule quickbin:
     input:
         large_contigs_done = "data/done/filter_contigs_by_size.done",
         fasta = "data/large_contigs.fasta",
-        coverage = ancient("data/coverm.cov")
+        bams_indexed = ancient("data/binning_bams/done")
     output:
         done = "data/quickbin_bins/done"
     threads:
@@ -706,8 +706,9 @@ rule quickbin:
     shell:
         "rm -rf data/quickbin_bins/; " + \
         "mkdir -p data/quickbin_bins && " + \
-        pixi_run + " -e bbmap quickbin.sh in={input.fasta} out=data/quickbin_bins/quickbin_bin%.fna cov={input.coverage} "
-        "mincontig={params.min_contig_size} mincluster={params.min_bin_size} {params.max_samples}threads={threads} > {resources.log_path} 2>&1 "
+        pixi_run + " -e bbmap quickbin.sh in={input.fasta} out=data/quickbin_bins/quickbin_bin%.fna "
+        "mincontig={params.min_contig_size} mincluster={params.min_bin_size} {params.max_samples}threads={threads} "
+        "data/binning_bams/*.bam > {resources.log_path} 2>&1 "
         "&& touch {output[0]} {params.touch}"
 
 
