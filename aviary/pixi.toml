@@ -22,14 +22,26 @@ pip = "*"
 postinstall = { cmd = "pip install --no-build-isolation --no-deps --disable-pip-version-check -e ..", cwd = "aviary" }
 update_deps = { cmd = "python ../admin/build_dep_defs_from_pixi.py", depends-on = ["postinstall"] }
 
-[tasks.run-a-test]
+[tasks.run-a-test-base]
 args = ["test_name"]
 cmd = "pytest test --run-expensive -k {{ test_name }}"
 depends-on = ["postinstall"]
 
-[tasks.run-quick-tests]
+[tasks.run-a-test]
+args = ["test_name"]
+depends-on = [
+    {task = "run-a-test-base", environment = "dev", args = [ "{{ test_name }}" ] }
+]
+
+[tasks.run-quick-tests-base]
 cmd = "pytest test"
 depends-on = ["postinstall"]
+
+[tasks.run-quick-tests]
+args = ["test_name"]
+depends-on = [
+    {task = "run-quick-tests-base", environment = "dev" }
+]
 
 [feature.dev.dependencies]
 pytest = "*"
