@@ -544,11 +544,6 @@ class Tests(unittest.TestCase):
         setup_output_dir(output_dir)
 
         cmd = (
-            f"GTDBTK_DATA_PATH=. "
-            f"CHECKM2DB=. "
-            f"EGGNOG_DATA_DIR=. "
-            f"METABULI_DB_PATH=. "
-            f"SINGLEM_METAPACKAGE_PATH=. "
             f"aviary recover "
             f"--assembly {data}/assembly.fasta "
             f"-o {output_dir}/aviary_out "

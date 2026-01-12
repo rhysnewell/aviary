@@ -706,10 +706,11 @@ rule quickbin:
     shell:
         "rm -rf data/quickbin_bins/; " + \
         "mkdir -p data/quickbin_bins && " + \
-        pixi_run + " -e bbmap quickbin.sh in={input.fasta} out=data/quickbin_bins/quickbin_bin%.fna "
-        "mincontig={params.min_contig_size} mincluster={params.min_bin_size} {params.max_samples}threads={threads} "
+        pixi_run + " -e bbmap quickbin.sh in={input.fasta} out=data/quickbin_bins "
+        "mincontig={params.min_contig_size} mincluster={params.min_bin_size} threads={threads} "
         "data/binning_bams/*.bam > {resources.log_path} 2>&1 "
-        "&& touch {output[0]} {params.touch}"
+        "&& for f in data/quickbin_bins/*.fa; do [ -e \"$f\" ] && mv \"$f\" \"${{f%.fa}}.fna\"; done; "
+        "touch {output[0]} {params.touch}"
 
 
 rule checkm_rosella:
