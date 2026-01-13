@@ -72,10 +72,6 @@ module annotation:
     snakefile: "annotation/annotation.smk"
     config: config
 
-module benchmarking:
-    snakefile: "benchmarking/benchmarking.smk"
-    config: config
-
 use rule * from qc as *
 
 use rule * from cluster as *
@@ -87,8 +83,6 @@ use rule * from isolate as *
 use rule * from binning as *
 
 use rule * from annotation as *
-
-use rule * from benchmarking as *
 
 if config["fasta"] == "none":
     config["fasta"] = "assembly/final_contigs.fasta"
