@@ -75,9 +75,8 @@ Metagenome assembly, binning, and annotation:
         recover   - Recover MAGs from provided assembly using a variety 
                     of binning algorithms 
         annotate  - Annotate MAGs using EggNOG and GTBD-tk
-        diversity - Perform strain diversity analysis of MAGs using Lorikeet
         complete  - Runs each stage of the pipeline: assemble, recover, 
-                    annotate, diversity in that order.
+                    annotate in that order.
         cluster   - Combines and dereplicates the MAGs from multiple Aviary runs
                     using Galah
 
@@ -935,16 +934,6 @@ def main():
 
     add_workflow_arg(recover_options, ['recover_mags'])
 
-    recover_options.add_argument(
-        '--perform-strain-analysis', '--perform_strain_analysis',
-        help='Specify whether to use Lorikeet on recovered MAGs get strain diversity metrics',
-        type=str2bool,
-        nargs='?',
-        const=True,
-        dest='strain_analysis',
-        default=False
-    )
-
     ##########################  ~ ANNOTATE ~   ###########################
 
     annotate_options = subparsers.add_parser('annotate',
@@ -968,41 +957,6 @@ def main():
     )
 
     add_workflow_arg(annotate_options, ['annotate'])
-
-    ##########################  ~ diversity ~   ###########################
-
-    diversity_options = subparsers.add_parser('diversity',
-                                             description='Perform strain diversity analysis',
-                                             formatter_class=CustomHelpFormatter,
-                                             parents=[mag_group, qc_group, assemble_group, short_read_group, long_read_group,
-                                                      binning_group, annotation_group, base_group],
-                                             epilog=
-                                             '''
-                                                                    ......:::::: DIVERSITY ::::::......
-
-                                             aviary diversity -c R1.fastq.gz R2.fastq.gz --genome-fasta-directory input_bins/
-
-                                             ''')
-
-    diversity_options.add_argument(
-        '-a', '--assembly',
-        help='FASTA file containing scaffolded contigs of one or more metagenome assemblies wishing to be passed to QUAST',
-        dest="assembly",
-        nargs="*",
-        required=False,
-    )
-
-    add_workflow_arg(diversity_options, ['lorikeet'])
-
-    diversity_options.add_argument(
-        '--perform-strain-analysis', '--perform_strain_analysis',
-        help=argparse.SUPPRESS,
-        type=str2bool,
-        nargs='?',
-        const=True,
-        dest='strain_analysis',
-        default=True
-    )
 
     ##########################  ~ CLUSTER ~   ###########################
 
@@ -1094,7 +1048,7 @@ def main():
         required=False,
     )
 
-    add_workflow_arg(complete_options, ['get_bam_indices', 'recover_mags', 'annotate', 'lorikeet'])
+    add_workflow_arg(complete_options, ['get_bam_indices', 'recover_mags', 'annotate'])
 
     ##########################  ~ ISOLATE ~  ###########################
 

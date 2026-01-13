@@ -584,6 +584,51 @@ class Tests(unittest.TestCase):
 
         self.assertTrue(os.path.isfile(f"{output_dir}/aviary_out/assembly/final_contigs.fasta"))
 
+    def test_short_read_complete(self):
+        output_dir = os.path.join("example", "test_short_read_complete")
+        setup_output_dir(output_dir)
+        cmd = (
+            f"aviary complete "
+            f"-o {output_dir}/aviary_out "
+            f"-1 {data}/wgsim.1.fq.gz "
+            f"-2 {data}/wgsim.2.fq.gz "
+            f"{request_gpu} "
+            f"-n 32 -t 32 "
+            f"--strict "
+        )
+        subprocess.run(cmd, shell=True, check=True)
+
+        bin_info_path = f"{output_dir}/aviary_out/bins/bin_info.tsv"
+        self.assertTrue(os.path.isfile(bin_info_path))
+        with open(bin_info_path) as f:
+            num_lines = sum(1 for _ in f)
+        self.assertTrue(num_lines > 1)
+
+        self.assertTrue(os.path.isfile(f"{output_dir}/aviary_out/data/final_contigs.fasta"))
+        self.assertTrue(os.path.islink(f"{output_dir}/aviary_out/assembly/final_contigs.fasta"))
+
+        self.assertTrue(os.path.islink(f"{output_dir}/aviary_out/diversity"))
+        self.assertTrue(os.path.isfile(f"{output_dir}/aviary_out/diversity/metagenome.combined_otu_table.csv"))
+        self.assertTrue(os.path.getsize(f"{output_dir}/aviary_out/diversity/metagenome.combined_otu_table.csv") > 0)
+        self.assertTrue(os.path.isfile(f"{output_dir}/aviary_out/diversity/singlem_appraisal.tsv"))
+        self.assertTrue(os.path.getsize(f"{output_dir}/aviary_out/diversity/singlem_appraisal.tsv") > 0)
+        self.assertTrue(os.path.isfile(f"{output_dir}/aviary_out/diversity/singlem_appraise.svg"))
+
+        gtdbtk_path = f"{output_dir}/aviary_out/taxonomy/gtdbtk.bac120.summary.tsv"
+        self.assertTrue(os.path.isfile(gtdbtk_path))
+        with open(gtdbtk_path) as f:
+            num_lines = sum(1 for _ in f)
+        self.assertTrue(num_lines > 1)
+
+        eggnog_paths = glob.glob(os.path.join(output_dir, "aviary_out", "annotation", "eggnog", "*.annotations"))
+        self.assertTrue(len(eggnog_paths) > 0)
+
+        for eggnog_path in eggnog_paths:
+            self.assertTrue(os.path.isfile(eggnog_path))
+            with open(eggnog_path) as f:
+                num_lines = sum(1 for _ in f)
+            self.assertTrue(num_lines > 1)
+
     def test_error_integration(self):
         """Expect aviary_assemble to fail with tiny test data, then check logging.
         The small input cannot be assembled, so aviary_assemble will error first.

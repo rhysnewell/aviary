@@ -28,8 +28,6 @@ coverage_samples_per_split:
     5
 host_filter:
     none
-strain_analysis:
-    False
 unassembled_long:
     none
 mags:

@@ -10,10 +10,10 @@
 
 # Aviary
 
-An easy to use for wrapper for a robust snakemake pipeline for metagenomic short-read, long-read, and hybrid assembly. 
-Aviary also performs binning, annotation, strain diversity analyses,a nd provides users with an easy way to combine and 
-dereplicate many aviary results with rapidity. The pipeline currently includes a series of distinct, yet flexible, modules
-that can seamlessly communicate with each other. Each module can be run independently or as a single pipeline depending on provided input.
+An easy to use for wrapper for a robust snakemake pipeline for metagenomic short-read, long-read, and hybrid assembly.
+Aviary also performs binning, annotation, and provides users with an easy way to combine and dereplicate many aviary
+results with rapidity. The pipeline currently includes a series of distinct, yet flexible, modules that can seamlessly
+communicate with each other. Each module can be run independently or as a single pipeline depending on provided input.
 
 [Please refer to the full docs here](https://rhysnewell.github.io/aviary)
 
@@ -117,9 +117,8 @@ Metagenome assembly, binning, and annotation:
         recover   - Recover MAGs from provided assembly using a variety 
                     of binning algorithms 
         annotate  - Annotate MAGs using EggNOG and GTBD-tk
-        genotype  - Perform strain diversity analysis of MAGs using Lorikeet
         complete  - Runs each stage of the pipeline: assemble, recover, 
-                    annotate, genotype in that order.
+                    annotate in that order.
         cluster   - Combines and dereplicates the MAGs from multiple Aviary runs
                     using Galah
 

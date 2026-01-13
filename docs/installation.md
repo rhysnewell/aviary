@@ -5,23 +5,6 @@ title: Installation
 Installation
 ========
 
-## Requirements
-
-Your conda channels should be configured ideally in this:
-```
-conda config --add channels defaults
-conda config --add channels bioconda
-conda config --add channels conda-forge
-```
-
-Your resulting `.condarc` file should look something like:
-```
-channels:
-  - conda-forge
-  - bioconda
-  - defaults
-```
-
 #### Option 1: Install from Bioconda
 
 Conda can handle the creation of the environment for you directly:
@@ -79,6 +62,23 @@ To check the expected database symlink names, see `admin/set_env_vars.sh` in the
 aviary repository. The advantage of this approach is that locations of the
 databases are not tracked in the repository, since they are specific to the
 computing cluster of the user.
+
+## Conda channel setup
+
+Your conda channels should be configured ideally in this:
+```
+conda config --add channels defaults
+conda config --add channels bioconda
+conda config --add channels conda-forge
+```
+
+Your resulting `.condarc` file should look something like:
+```
+channels:
+  - conda-forge
+  - bioconda
+  - defaults
+```
 
 ## Databases
 

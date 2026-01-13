@@ -1083,7 +1083,6 @@ rule get_abundances:
         --short-reads-2 {config[short_reads_2]} \
         --long-read-type {config[long_read_type]} \
         --threads {threads} \
-        --strain-analysis {config[strain_analysis]} \
         --log {resources.log_path}
         """
 

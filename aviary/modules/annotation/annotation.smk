@@ -233,7 +233,7 @@ rule gtdbtk:
 
 rule annotate:
     input:
-         'data/gtdbtk/done',
+         'data/gtdbtk/done' if not config["skip_taxonomy"] else [],
          'data/eggnog/done',
     output:
          touch('annotation/done'),
