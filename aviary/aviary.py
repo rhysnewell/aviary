@@ -788,28 +788,6 @@ def main():
         default='-k 79 -G 7919,8069'
     )
 
-    #####################################################################
-    # viral_group = argparse.ArgumentParser(formatter_class=CustomHelpFormatter,
-    #                                         add_help=False)
-    #
-    # viral_group.add_argument(
-    #     '--virsorter-data', '--virsorter_data',
-    #     help='The guppy model used by medaka to perform polishing',
-    #     dest='guppy_model',
-    #     nargs=1,
-    #     required=False,
-    #     default='r941_min_high_g360'
-    # )
-    #
-    # viral_group.add_argument(
-    #     '--genome-size', '--genome_size',
-    #     help='Approximate size of the isolate genome to be assembled',
-    #     dest='genome_size',
-    #     nargs=1,
-    #     required=False,
-    #     default=5000000
-    # )
-
     assemble_group = argparse.ArgumentParser(formatter_class=CustomHelpFormatter, add_help=False)
     assemble_group.add_argument(
         '--use-unicycler', '--use_unicycler',
@@ -1008,22 +986,6 @@ def main():
     )
 
     add_workflow_arg(build_options, ['build'])
-
-    ##########################  ~ VIRAL ~   ###########################
-
-    viral_options = subparsers.add_parser('viral',
-                                          description='The incomplete binning pipeline',
-                                          formatter_class=CustomHelpFormatter,
-                                          parents=[mag_group, short_read_group, long_read_group, annotation_group, base_group],
-                                          epilog=
-                                          '''
-                                                  ......:::::: VIRAL ::::::...... 
- 
-                                          aviary viral --genome-fasta-files *.fasta
- 
-                                          ''')
-
-    add_workflow_arg(viral_options, ['create_webpage_genotype'])
 
     ##########################   ~ COMPLETE ~  ###########################
 

@@ -72,10 +72,6 @@ module annotation:
     snakefile: "annotation/annotation.smk"
     config: config
 
-module viral_analysis:
-    snakefile: "viral_analysis/viral_analysis.smk"
-    config: config
-
 module benchmarking:
     snakefile: "benchmarking/benchmarking.smk"
     config: config
@@ -92,36 +88,7 @@ use rule * from binning as *
 
 use rule * from annotation as *
 
-use rule * from viral_analysis as *
-
 use rule * from benchmarking as *
 
 if config["fasta"] == "none":
     config["fasta"] = "assembly/final_contigs.fasta"
-
-
-# Create summary webpage
-rule create_webpage:
-    input:
-        checkm_file = "bins/checkm_minimal.tsv",
-        final_bins = "bins/bin_info.tsv",
-        # busco_done = "annotation/busco/done",
-        # enrichm_done = "annotation/enrichm/done",
-        fasta = config['fasta'],
-        long_reads_qc_html = "www/nanoplot/longReadsNanoPlot-report.html",
-        short_reads_fastqc_html = "www/fastqc/done",
-        long_reads_fastqc_html = "www/fastqc_long/done",
-        annotation_done = 'annotation/done',
-        singlem_done = "diversity/singlem_out/singlem_appraisal.tsv",
-    output:
-        "www/index.html"
-    threads:
-        config["max_threads"]
-    conda:
-        "../envs/webpage.yaml"
-    script:
-        "scripts/create_aviary_webpage.py"
-
-
-
-
