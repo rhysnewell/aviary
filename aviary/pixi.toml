@@ -6,7 +6,8 @@ platforms = ["linux-64"]
 
 [feature.main.dependencies]
 python = ">=3.8"
-snakemake = ">=7.0.0"
+# snakemake = ">=7.0.0, <8" # v7 max due to (at least) import error
+snakemake = "9.*" # Current target, v10 not released yet
 "ruamel.yaml" = ">=0.15.99"
 numpy = "*"
 pandas = "*"
@@ -20,8 +21,15 @@ pip = "*"
 setuptools = "*"
 
 [tasks]
-postinstall = { cmd = "pip install --no-build-isolation --no-deps --disable-pip-version-check -e ..", cwd = "aviary" }
+postinstall-base = { cmd = "pip install --no-build-isolation --no-deps --disable-pip-version-check -e ..", cwd = "aviary" }
 update_deps = { cmd = "python ../admin/build_dep_defs_from_pixi.py", depends-on = ["postinstall"] }
+
+[tasks.postinstall]
+# install into both standard and dev envs
+depends-on = [
+    { task = "postinstall-base", environment = "main" },
+    { task = "postinstall-base", environment = "dev" }
+]
 
 [tasks.run-a-test-base]
 args = ["test_name"]
