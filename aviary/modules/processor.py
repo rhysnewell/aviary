@@ -39,7 +39,7 @@ from glob import glob
 
 # Local imports
 from snakemake import utils
-from snakemake.io import load_configfile
+from snakemake.common.configfile import load_configfile
 from ruamel.yaml import YAML  # used for yaml reading with comments
 from aviary import LONG_READ_TYPES, COVERAGE_JOB_STRATEGIES, COVERAGE_JOB_CUTOFF
 from aviary.modules.common import workflow_identifier
