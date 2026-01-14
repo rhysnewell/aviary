@@ -4,7 +4,9 @@ import time
 
 def pixi_run_func():
     with importlib.resources.path("aviary", "pixi.toml") as manifest_path:
-        return f"pixi run --frozen --manifest-path {manifest_path}"
+        # Do not pub --frozen here, otherwise dev becomes more confusing because
+        # pixi.toml changes have no effect.
+        return f"pixi run --manifest-path {manifest_path}"
 
 pixi_run = pixi_run_func()
 
