@@ -489,7 +489,7 @@ def main():
 
     long_read_group.add_argument(
         '-z', '--longread-type', '--longread_type', '--long_read_type', '--long-read-type',
-        help='Whether the sequencing platform and technology for the longreads. \n'
+        help='Sequencing platform and technology for the longreads. \n'
              '"rs" for PacBio RSII, "sq" for PacBio Sequel, "ccs" for PacBio CCS, "hifi" for PacBio HiFi \n'
              'reads, "ont" for Oxford Nanopore and "ont_hq" for Oxford Nanopore high quality reads (Guppy5+ or Q20) \n',
         dest='longread_type',
@@ -497,12 +497,14 @@ def main():
         choices=LONG_READ_TYPES,
     )
 
+    medaka_default = "r941_min_hac_g507"
     long_read_group.add_argument(
         '--medaka-model', '--medaka_model',
         help='Medaka model to use for polishing long reads. \n',
         dest='medaka_model',
-        default="r941_min_hac_g507",
-        choices=MEDAKA_MODELS
+        default=medaka_default,
+        choices=MEDAKA_MODELS,
+        metavar='MODEL'
     )
 
     long_read_group.add_argument(

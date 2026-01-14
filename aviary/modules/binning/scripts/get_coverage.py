@@ -37,10 +37,7 @@ def get_coverage(
                 run(coverm_cmd, stdout=logf, stderr=STDOUT, check=True)
 
         else:
-            coverm_cmd = f"coverm contig -t {threads} -r {input_fasta} --single {' '.join(long_reads)} -p minimap2-ont -m length trimmed_mean variance --bam-file-cache-directory {bam_cache} --discard-unmapped --min-read-percent-identity 0.85 --output-file {working_dir}/long_cov.tsv".split()
-
-            with open(log, "a") as logf:
-                run(coverm_cmd, stdout=logf, stderr=STDOUT, check=True)
+            raise Exception("Unexpected long_read_type: {}".format(long_read_type))
 
     if short_reads_2 != 'none' and not path_exists(f"{working_dir}/short_cov.tsv"):
         coverm_cmd = f"coverm contig -t {threads} -r {input_fasta} -1 {' '.join(short_reads_1)} -2 {' '.join(short_reads_2)} -m metabat --bam-file-cache-directory {bam_cache} --discard-unmapped --output-file {working_dir}/short_cov.tsv".split()

@@ -284,7 +284,7 @@ class Tests(unittest.TestCase):
         self.assertTrue(os.path.getsize(f"{output_dir}/aviary_out/diversity/singlem_appraisal.tsv") > 0)
         self.assertTrue(os.path.isfile(f"{output_dir}/aviary_out/diversity/singlem_appraise.svg"))
 
-    def test_long_read_recovery(self):
+    def test_long_read_recovery_default(self):
         output_dir = os.path.join("example", "test_long_read_recovery")
         setup_output_dir(output_dir)
         cmd = (
