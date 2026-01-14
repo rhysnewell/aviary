@@ -75,9 +75,8 @@ Metagenome assembly, binning, and annotation:
         recover   - Recover MAGs from provided assembly using a variety 
                     of binning algorithms 
         annotate  - Annotate MAGs using EggNOG and GTBD-tk
-        diversity - Perform strain diversity analysis of MAGs using Lorikeet
         complete  - Runs each stage of the pipeline: assemble, recover, 
-                    annotate, diversity in that order.
+                    annotate in that order.
         cluster   - Combines and dereplicates the MAGs from multiple Aviary runs
                     using Galah
 
@@ -85,6 +84,7 @@ Isolate assembly, binning, and annotation:
         isolate   - Perform isolate assembly **PARTIALLY COMPLETED**
         
 Utility modules:
+        build - Build the pixi environments used by Aviary
         configure - Set or overwrite the environment variables for future runs.
 
 """
@@ -116,13 +116,6 @@ def main():
     if len(sys.argv) == 1 or sys.argv[1] == '-h' or sys.argv[1] == '--help':
         phelp()
         return
-
-    # Source the conda environment variables in case users have previously set
-    # the variables using config but have not restarted the environment.
-    try:
-        Config.source_conda_env()
-    except FileNotFoundError:
-        Config.source_bashrc()
 
     ############################ ~ Main Parser ~ ##############################
     main_parser = argparse.ArgumentParser(prog='aviary',
@@ -496,7 +489,7 @@ def main():
 
     long_read_group.add_argument(
         '-z', '--longread-type', '--longread_type', '--long_read_type', '--long-read-type',
-        help='Whether the sequencing platform and technology for the longreads. \n'
+        help='Sequencing platform and technology for the longreads. \n'
              '"rs" for PacBio RSII, "sq" for PacBio Sequel, "ccs" for PacBio CCS, "hifi" for PacBio HiFi \n'
              'reads, "ont" for Oxford Nanopore and "ont_hq" for Oxford Nanopore high quality reads (Guppy5+ or Q20) \n',
         dest='longread_type',
@@ -504,6 +497,7 @@ def main():
         choices=LONG_READ_TYPES,
     )
 
+    medaka_default = "r941_min_hac_g507"
     long_read_group.add_argument(
         '--long-read-assembler', '--long_read_assembler', '--longread-assembler',
         help='Long-read assembler to use. Defaults to myloasm; set to flye to retain the previous behaviour.',
@@ -516,8 +510,9 @@ def main():
         '--medaka-model', '--medaka_model',
         help='Medaka model to use for polishing long reads. \n',
         dest='medaka_model',
-        default="r941_min_hac_g507",
-        choices=MEDAKA_MODELS
+        default=medaka_default,
+        choices=MEDAKA_MODELS,
+        metavar='MODEL'
     )
 
     long_read_group.add_argument(
@@ -803,28 +798,6 @@ def main():
         default='-k 79 -G 7919,8069'
     )
 
-    #####################################################################
-    # viral_group = argparse.ArgumentParser(formatter_class=CustomHelpFormatter,
-    #                                         add_help=False)
-    #
-    # viral_group.add_argument(
-    #     '--virsorter-data', '--virsorter_data',
-    #     help='The guppy model used by medaka to perform polishing',
-    #     dest='guppy_model',
-    #     nargs=1,
-    #     required=False,
-    #     default='r941_min_high_g360'
-    # )
-    #
-    # viral_group.add_argument(
-    #     '--genome-size', '--genome_size',
-    #     help='Approximate size of the isolate genome to be assembled',
-    #     dest='genome_size',
-    #     nargs=1,
-    #     required=False,
-    #     default=5000000
-    # )
-
     assemble_group = argparse.ArgumentParser(formatter_class=CustomHelpFormatter, add_help=False)
     assemble_group.add_argument(
         '--use-unicycler', '--use_unicycler',
@@ -949,16 +922,6 @@ def main():
 
     add_workflow_arg(recover_options, ['recover_mags'])
 
-    recover_options.add_argument(
-        '--perform-strain-analysis', '--perform_strain_analysis',
-        help='Specify whether to use Lorikeet on recovered MAGs get strain diversity metrics',
-        type=str2bool,
-        nargs='?',
-        const=True,
-        dest='strain_analysis',
-        default=False
-    )
-
     ##########################  ~ ANNOTATE ~   ###########################
 
     annotate_options = subparsers.add_parser('annotate',
@@ -982,41 +945,6 @@ def main():
     )
 
     add_workflow_arg(annotate_options, ['annotate'])
-
-    ##########################  ~ diversity ~   ###########################
-
-    diversity_options = subparsers.add_parser('diversity',
-                                             description='Perform strain diversity analysis',
-                                             formatter_class=CustomHelpFormatter,
-                                             parents=[mag_group, qc_group, assemble_group, short_read_group, long_read_group,
-                                                      binning_group, annotation_group, base_group],
-                                             epilog=
-                                             '''
-                                                                    ......:::::: DIVERSITY ::::::......
-
-                                             aviary diversity -c R1.fastq.gz R2.fastq.gz --genome-fasta-directory input_bins/
-
-                                             ''')
-
-    diversity_options.add_argument(
-        '-a', '--assembly',
-        help='FASTA file containing scaffolded contigs of one or more metagenome assemblies wishing to be passed to QUAST',
-        dest="assembly",
-        nargs="*",
-        required=False,
-    )
-
-    add_workflow_arg(diversity_options, ['lorikeet'])
-
-    diversity_options.add_argument(
-        '--perform-strain-analysis', '--perform_strain_analysis',
-        help=argparse.SUPPRESS,
-        type=str2bool,
-        nargs='?',
-        const=True,
-        dest='strain_analysis',
-        default=True
-    )
 
     ##########################  ~ CLUSTER ~   ###########################
 
@@ -1069,22 +997,6 @@ def main():
 
     add_workflow_arg(build_options, ['build'])
 
-    ##########################  ~ VIRAL ~   ###########################
-
-    viral_options = subparsers.add_parser('viral',
-                                          description='The incomplete binning pipeline',
-                                          formatter_class=CustomHelpFormatter,
-                                          parents=[mag_group, short_read_group, long_read_group, annotation_group, base_group],
-                                          epilog=
-                                          '''
-                                                  ......:::::: VIRAL ::::::...... 
- 
-                                          aviary viral --genome-fasta-files *.fasta
- 
-                                          ''')
-
-    add_workflow_arg(viral_options, ['create_webpage_genotype'])
-
     ##########################   ~ COMPLETE ~  ###########################
 
     complete_options = subparsers.add_parser('complete',
@@ -1108,7 +1020,7 @@ def main():
         required=False,
     )
 
-    add_workflow_arg(complete_options, ['get_bam_indices', 'recover_mags', 'annotate', 'lorikeet'])
+    add_workflow_arg(complete_options, ['get_bam_indices', 'recover_mags', 'annotate'])
 
     ##########################  ~ ISOLATE ~  ###########################
 

@@ -87,8 +87,8 @@ if __name__ == '__main__':
             bin_definition_files.append(bin_definition_file)
 
     if len(bin_definition_files) == 0:
-        logging.warning("No bins were found, so DAS_tool cannot be run.")
-        sys.exit(0)
+        logging.error("No bins were found, so DAS_tool cannot be run.")
+        raise RuntimeError("No bins were found, so DAS_tool cannot be run.")
 
     logging.info("Bin definition files created: " + str(bin_definition_files))
 

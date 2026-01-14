@@ -364,7 +364,7 @@ def run_polish(
 
 if __name__ == "__main__":
     parser = argparse.ArgumentParser(description='Polish reads using racon or medaka.')
-    parser.add_argument('--short-reads-1', nargs='+', help='Short reads 1')
+    parser.add_argument('--short-reads-1', nargs='*', help='Short reads 1')
     parser.add_argument('--short-reads-2', nargs='+', default='none', help='Short reads 2')
     parser.add_argument('--input-fastq', help='Input fastq file')
     parser.add_argument('--reference', help='Reference fasta file')

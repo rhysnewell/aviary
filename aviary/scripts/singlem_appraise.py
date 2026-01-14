@@ -31,10 +31,12 @@ class SingleMContainer:
     def run(self):
         with open(self.logf, "a") as logf:
             logf.write("generating SingleM commands\n")
+            logf.flush()
             self.create_commands()
             for command in self.commands:
                 logf.write(" ".join(command) + "\n")
             logf.write("running SingleM commands\n")
+            logf.flush()
             self.run_commands(logf)
             self.appraise_otu_tables(logf)
 
@@ -48,19 +50,17 @@ class SingleMContainer:
             --plot {os.path.join(self.output_dir, 'singlem_appraise.svg')} \
             --output-binned-otu-table {os.path.join(self.output_dir, 'binned.otu_table.csv')} \
             --output-unbinned-otu-table {os.path.join(self.output_dir, 'unbinned.otu_table.csv')} \
-            --output-assembled-otu-table {os.path.join(self.output_dir, 'assembled.otu_table.csv')}".split()
+            --output-unaccounted-for-otu-table {os.path.join(self.output_dir, 'unaccounted_for.otu_table.csv')}".split()
         try:
             # create output file: data/singlem_out/singlem_appraisal.tsv
             output_file = os.path.join(self.output_dir, "singlem_appraisal.tsv")
             with open(output_file, "w") as outf:
                 with open(self.logf, "a") as logf:
                     run(appraise_cmd, stdout=outf, stderr=logf)
-            Path("data/singlem_out/metagenome.combined_otu_table.csv").touch()
         except CalledProcessError as e:
             with open(self.logf, "a") as logf:
                 logf.write(str(e))
                 logf.write("\nSingleM appraise failed. Exiting.\n")
-            Path("data/singlem_out/metagenome.combined_otu_table.csv").touch()
    
     def create_commands(self):
         self._create_genome_commands()

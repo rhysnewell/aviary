@@ -30,8 +30,6 @@ coverage_samples_per_split:
     5
 host_filter:
     none
-strain_analysis:
-    False
 unassembled_long:
     none
 mags:
@@ -61,8 +59,6 @@ checkm2_db_folder:
 eggnog_folder:
     none
 singlem_metapackage:
-    none
-virsorter_data:
     none
 email:
     somename@email.co

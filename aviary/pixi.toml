@@ -17,6 +17,7 @@ extern = "*"
 pyopenssl = ">22.1.0"
 pixi = "*"
 pip = "*"
+setuptools = "*"
 
 [tasks]
 postinstall = { cmd = "pip install --no-build-isolation --no-deps --disable-pip-version-check -e ..", cwd = "aviary" }
@@ -213,9 +214,9 @@ das_tool = ">=1.1.2"
 extern = ">=0.4.1"
 
 [feature.rosella.dependencies]
-rosella = ">=0.5.3"
-flight-genome = ">=1.6.3"
-coverm = ">=0.6.1"
+rosella = ">=0.5.5"
+# flight-genome = ">=1.6.3" # a transitive dependency of rosella only?
+# coverm = ">=0.6.1" # a transitive dependency of rosella only?
 
 [feature.maxbin2.dependencies]
 maxbin2 = ">=2.2.7"

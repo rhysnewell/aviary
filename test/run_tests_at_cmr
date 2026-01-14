@@ -6,6 +6,9 @@ import sys
 import tempfile
 import extern
 
+# Setup
+# $ pixi run -e dev postinstall
+# $ pixi run -e dev aviary build # or setup db folder as in README
 # Run from base dir of repo
 # $ pixi run -e dev --manifest-path aviary/pixi.toml python test/run_tests_at_cmr
 #
@@ -21,7 +24,7 @@ def collect_expensive_tests():
     )
     nodeids = [
         line.strip() for line in result.stdout.splitlines()
-        if line.strip() and line.strip().startswith('test/')
+        if line.strip() and line.strip().startswith('test/') and not line.endswith('<module>')
     ]
     return nodeids
 
@@ -52,6 +55,7 @@ cmd = "mqsub -t32 --A100 --segregated-log-files --bg --hours 4 -m 64 -- " \
     "pixi run --frozen --manifest-path aviary/pixi.toml -e dev " \
     "bash -c \"'export TEST_REQUEST_GPU=1 && echo gtdb=$GTDBTK_DATA_PATH && python test/test_integration.py Tests.test_short_read_recovery_semibin'\" " \
     f"&>>{MQSUB_OUT}"
+extern.run(cmd)
 
 # Expensive tests
 expensive_tests = collect_expensive_tests()

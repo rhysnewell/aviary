@@ -18,9 +18,9 @@ def checkm(checkm2_db, bin_folder, bin_ext, refinery_max_iterations, output_fold
         os.makedirs(output_folder)
         Path(output_file).touch()
     else:
-        os.environ["CHECKM2DB"] = f"{checkm2_db}/uniref100.KO.1.dmnd"
+        os.environ["CHECKM2DB"] = checkm2_db
         with open(log, "a") as logf:
-            logf.write(f"Using CheckM2 database {checkm2_db}/uniref100.KO.1.dmnd\n")
+            logf.write(f"Using CheckM2 database {checkm2_db}\n")
             subprocess.run(
                 f"checkm2 predict -i {bin_folder}/ -x {bin_ext} -o {output_folder} -t {threads} --force".split(),
                 env=os.environ,
@@ -28,6 +28,7 @@ def checkm(checkm2_db, bin_folder, bin_ext, refinery_max_iterations, output_fold
                 stderr=subprocess.STDOUT
                 )
         shutil.copy(f"{output_folder}/quality_report.tsv", output_file)
+        shutil.rmtree(output_folder)
 
 
 if __name__ == '__main__':

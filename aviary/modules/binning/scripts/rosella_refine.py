@@ -1,4 +1,5 @@
 #!/usr/bin/env python3
+from importlib import resources
 import pandas as pd
 from subprocess import run, STDOUT
 import shutil
@@ -12,7 +13,7 @@ def parse_args():
     parser = argparse.ArgumentParser(description='Refinery script for iterative bin refinement')
     
     # Input files
-    parser.add_argument('--checkm', required=True, help='Path to the checkm results file')
+    parser.add_argument('--checkm', required=True, help='Path to the checkm2 results file')
     parser.add_argument('--coverage', required=True, help='Path to the coverage file')
     parser.add_argument('--fasta', required=True, help='Path to the assembly fasta file')
     
@@ -34,6 +35,11 @@ def parse_args():
     parser.add_argument('--extension', required=True, help='File extension for bins')
     parser.add_argument('--bin-prefix', required=True, help='Prefix for bin names')
     
+    # CheckM2 parameters
+    parser.add_argument('--checkm2-db-path', required=True, help='Path to CheckM2 database')
+    parser.add_argument('--pixi-run', required=True, help='Pixi run command prefix')
+    parser.add_argument('--binning-scripts-dir', required=True, help='Path to binning scripts directory')
+
     # Log parameter
     parser.add_argument('--log', required=True, help='Path to log file')
     
@@ -43,7 +49,7 @@ def parse_args():
 def refinery(args):
     """
     Main function that performs the refining process iteratively passing bins between
-    rosella refine and checkm until either the max number of iterations is reached
+    rosella refine and checkm2 until either the max number of iterations is reached
     or there are no more contaminated bins
     """
     # These will change
@@ -74,6 +80,9 @@ def refinery(args):
     bin_folder = args.bin_folder
     extension = args.extension
     bin_prefix = args.bin_prefix
+    pixi_run = args.pixi_run
+    BINNING_SCRIPTS_DIR = args.binning_scripts_dir
+    checkm2_db_path = args.checkm2_db_path
 
     try:
         os.makedirs(contaminated_bin_folder)
@@ -91,7 +100,7 @@ def refinery(args):
         current_checkm = pd.read_csv(checkm_path, sep='\t', comment="[")
     except e.EmptyDataError:
         with open(log, "a") as logf:
-            logf.write("No bins found in checkm file\n")
+            logf.write("No bins found in CheckM2 file\n")
             logf.write("Skipping refinement\n")
         if max_iterations == 0:
             for bin in os.listdir(bin_folder):
@@ -149,12 +158,12 @@ def refinery(args):
             for mag in os.listdir(unchanged_bins):
                 shutil.move(f"{unchanged_bins}/{mag}", f"{final_bins}/{os.path.splitext(mag)[0]}.fna")
 
-        # retrieve the checkm results for the refined bins
+        # retrieve the checkm2 results for the refined bins
         try:
             with open(log, "a") as logf:
                 # write white space for legibility
                 logf.write("\n")
-                logf.write(f"INFO: {datetime.datetime.now().strftime('%H:%M:%S')} - CheckM iteration {current_iteration}\n")
+                logf.write(f"INFO: {datetime.datetime.now().strftime('%H:%M:%S')} - CheckM2 iteration {current_iteration}\n")
             # count how many bins in bin_folder, bins end in 'fna'
             bin_count = 0
             for bin_file in os.listdir(bin_folder):
@@ -169,11 +178,11 @@ def refinery(args):
                 break
             else:
                 with open(log, "a") as logf:
-                    logf.write(f"Running CheckM on {bin_count} bins\n")
+                    logf.write(f"Running CheckM2 on {bin_count} bins\n")
 
-            get_checkm_results(bin_folder, threads, pplacer_threads, log, final_refining)
-            # update the checkm results and counter
-            checkm_path = f"{bin_folder}/checkm.out"
+            get_checkm_results(bin_folder, pixi_run, BINNING_SCRIPTS_DIR, checkm2_db_path, threads, log + f"_{current_iteration}_checkm2.log")
+            # update the checkm2 results and counter
+            checkm_path = f"{bin_folder}/quality_report.tsv"
             current_checkm = pd.read_csv(checkm_path, sep='\t', comment='[')
 
             bins_to_keep = current_checkm.copy().loc[current_checkm["Contamination"] <= max_contamination]
@@ -217,7 +226,6 @@ def refinery(args):
     
 
     if final_refining:
-        final_checkm.to_csv("data/checkm.out", sep='\t', index=False)
         final_output_folder = "bins/final_bins"
         if os.path.exists("bins/"): # remove pre-existing output, preventing bin duplication
             shutil.rmtree("bins/")
@@ -227,7 +235,7 @@ def refinery(args):
         elif not os.path.islink(final_output_folder):
             os.rmdir(final_output_folder)
             os.symlink("../" + final_bins, final_output_folder, target_is_directory=True)
-        final_checkm.to_csv("bins/checkm.out", sep='\t', index=False)
+        final_checkm.to_csv("bins/quality_report.tsv", sep='\t', index=False)
     else:
         with open(log, "a") as logf:
             logf.write("Refinery finished.\n")
@@ -339,19 +347,26 @@ def refine(
 
 def get_checkm_results(
         refined_folder,
+        pixi_run,
+        BINNING_SCRIPTS_DIR,
+        checkm2_db_path,
         threads,
-        pplacer_threads,
         log,
-        final_refining=False,
 ):
-    checkm_cmd = f"checkm lineage_wf -t {threads} --pplacer_threads {pplacer_threads} -x fna --tab_table -f {refined_folder}/checkm.out {refined_folder} {refined_folder}/checkm".split()
-    with open(log, "a") as logf:
-        run(checkm_cmd, stdout=logf, stderr=STDOUT)
+    checkm_cmd = f'{pixi_run} -e checkm2 {BINNING_SCRIPTS_DIR}/'+\
+                 f'run_checkm.py '+\
+                 f'--checkm2-db {checkm2_db_path} '+\
+                 f'--bin-folder {refined_folder} '+\
+                 f'--bin-ext fna '+\
+                 f'--refinery-max-iterations 1 '+\
+                 f'--output-folder {refined_folder}/checkm2 '+\
+                 f'--output-file {refined_folder}/quality_report.tsv '+\
+                 f'--threads {threads} '+\
+                 f'--log {log}'
 
-    if final_refining:
-        checkm_qa_cmd = f"checkm qa -o 2 --tab_table -f {refined_folder}/checkm.out {refined_folder}/checkm/lineage.ms {refined_folder}/checkm/".split()
-        with open(log, "a") as logf:
-            run(checkm_qa_cmd, stdout=logf, stderr=STDOUT)
+    with open(log + "_test", "a") as lf:
+        run(checkm_cmd.split(), stdout=lf, stderr=lf)
+
 
 
 if __name__ == '__main__':
