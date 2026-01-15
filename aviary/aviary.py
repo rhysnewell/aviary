@@ -115,7 +115,7 @@ def add_workflow_arg(parser, default, help=None):
 
 def maybe_print_subcommand_help(bird_argparser, subcommand, parser, description):
     help_flags = {'-h', '--help', '--full-help', '--full_help'}
-    if not help_flags.intersection(sys.argv):
+    if not help_flags.intersection(sys.argv) and len(sys.argv) != 2:
         return
 
     bird_argparser._subparser_name_to_parser[subcommand] = parser
