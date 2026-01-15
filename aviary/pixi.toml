@@ -50,13 +50,11 @@ depends-on = [
 [tasks.run-quick-tests-base]
 cmd = "pytest test"
 depends-on = [
-    {task="postinstall", environment = "dev"}
+    {task="postinstall-base", environment = "dev"}
 ]
 
 [tasks.run-quick-tests]
 depends-on = [
-    # run postinstall in the dev environment
-    { task = "postinstall", environment = "dev" },
     # then run the tests in the same env
     {task = "run-quick-tests-base", environment = "dev" }
 ]
