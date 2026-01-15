@@ -297,6 +297,7 @@ class Tests(unittest.TestCase):
             self.assertTrue("move_spades_assembly" not in output)
 
             # Long-read
+            # self.assertTrue("qc_long_reads" not in output) # This is present, but the script doesn't actually do any qc
             self.assertTrue("long_read_assembly" in output)
             self.assertTrue("polish_metagenome_flye" in output)
             self.assertTrue("combine_long_only" in output)

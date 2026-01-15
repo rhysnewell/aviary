@@ -59,11 +59,29 @@ depends-on = [
     {task = "run-quick-tests-base", environment = "dev" }
 ]
 
+[tasks.build]
+cmd = "aviary build"
+depends-on = [
+    { task = "postinstall-base", environment = "dev" }
+]
+
+[tasks.run-tests-at-cmr-base]
+cmd = "test/run_tests_at_cmr"
+depends-on = [
+    {task="build", environment = "dev"}
+]
+
+[tasks.run-tests-at-cmr]
+depends-on = [
+    { task = "run-tests-at-cmr-base", environment = "dev" }
+]
+
 [feature.dev.dependencies]
 pytest = "*"
 ipython = "*"
 toml = "*"
 bird_tool_utils_python = "*"
+snakemake-executor-plugin-cluster-generic = "*" # for run-tests-at-cmr
 
 [feature.dev.activation]
 # Sets metapackage environment variables, which are assumed to be in the db/ of

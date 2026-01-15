@@ -6,13 +6,8 @@ import sys
 import tempfile
 import extern
 
-# Setup
-# $ pixi run -e dev postinstall
-# $ pixi run -e dev aviary build # or setup db folder as in README
-# Run from base dir of repo
-# $ pixi run -e dev --manifest-path aviary/pixi.toml python test/run_tests_at_cmr
-#
-# For now, need to make sure manually that all the mqsub'd jobs finish without error at the end.
+# To invoke this script:
+# $ pixi run run-tests-at-cmr
 
 def collect_expensive_tests():
     """Collect all test nodeids marked as 'expensive'."""
