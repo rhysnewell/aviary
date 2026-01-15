@@ -683,6 +683,35 @@ rule comebin:
         pixi_run + " -e {params.pixi_env} run_comebin.sh -a {input.fasta} -p data/binning_bams -t {threads} -o data/comebin_bins > {resources.log_path} 2>&1 "
         "&& touch {output[0]} {params.really_done} {params.touch}"
 
+rule quickbin:
+    input:
+        large_contigs_done = "data/done/filter_contigs_by_size.done",
+        fasta = "data/large_contigs.fasta",
+        bams_indexed = ancient("data/binning_bams/done")
+    output:
+        done = "data/quickbin_bins/done"
+    threads:
+        config["max_threads"]
+    params:
+        min_contig_size = config["min_contig_size"],
+        min_bin_size = config["min_bin_size"],
+        max_samples = f"maxsamples={config['coverage_samples_per_split']} " if config["coverage_split"] else "",
+        touch = "" if config["strict"] else "|| (mkdir -p data/quickbin_bins && touch data/quickbin_bins/done)",
+    resources:
+        mem_mb = lambda wildcards, attempt: min(int(config["max_memory"])*1024, 512*1024*attempt),
+        runtime = lambda wildcards, attempt: 24*60 + 24*60*attempt,
+        log_path = lambda wildcards, attempt: setup_log(f"{logs_dir}/quickbin", attempt),
+    benchmark:
+        "benchmarks/quickbin.benchmark.txt"
+    shell:
+        "rm -rf data/quickbin_bins/; " + \
+        "mkdir -p data/quickbin_bins && " + \
+        pixi_run + " -e bbmap quickbin.sh in={input.fasta} out=data/quickbin_bins "
+        "mincontig={params.min_contig_size} mincluster={params.min_bin_size} threads={threads} "
+        "data/binning_bams/*.bam > {resources.log_path} 2>&1 "
+        "&& for f in data/quickbin_bins/*.fa; do [ -e \"$f\" ] && mv \"$f\" \"${{f%.fa}}.fna\"; done; "
+        "touch {output[0]} {params.touch}"
+
 
 rule checkm_rosella:
     input:
@@ -959,6 +988,7 @@ rule das_tool:
         rosella_done = [] if "rosella" in config["skip_binners"] else "data/rosella_refined/done",
         semibin_done = [] if "semibin" in config["skip_binners"] else "data/semibin_refined/done",
         comebin_done = [] if "comebin" in config["skip_binners"] else "data/comebin_bins/done",
+        quickbin_done = [] if "quickbin" in config["skip_binners"] else "data/quickbin_bins/done",
         vamb_done = [] if "vamb" in config["skip_binners"] else "data/vamb_bins/done",
         taxvamb_done = [] if "taxvamb" in config["skip_binners"] else "data/taxvamb_bins/done",
     threads:

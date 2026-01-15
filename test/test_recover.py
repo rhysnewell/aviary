@@ -192,6 +192,27 @@ class Tests(unittest.TestCase):
             # Unnecessary
             self.assertTrue("complete_assembly_with_qc" not in output)
 
+    def test_recover_quickbin(self):
+        with tempfile.TemporaryDirectory() as tmpdir:
+            cmd = (
+                f"GTDBTK_DATA_PATH=. "
+                f"CHECKM2DB=. "
+                f"EGGNOG_DATA_DIR=. "
+                f"METABULI_DB_PATH=. "
+                f"SINGLEM_METAPACKAGE_PATH=. "
+                f"aviary recover "
+                f"--assembly {ASSEMBLY} "
+                f"-1 {FORWARD_READS} "
+                f"-2 {REVERSE_READS} "
+                f"--extra-binners quickbin "
+                f"--output {tmpdir}/test "
+                f"--dryrun --tmpdir {tmpdir} "
+                f"--snakemake-cmds \" --quiet\" "
+            )
+            output = extern.run(cmd)
+
+            self.assertTrue("quickbin" in output)
+
     def test_recover_no_singlem(self):
         with tempfile.TemporaryDirectory() as tmpdir:
             cmd = (
