@@ -65,7 +65,7 @@ elif READ_MODE == "long_only":
 else:
     raise Exception("Programming error: unexpected assembly strategy state.")
 
-localrules: pool_reads, reset_to_spades_assembly, remove_final_contigs, complete_assembly_with_qc
+localrules: pool_reads, complete_assembly_with_qc
 
 # onsuccess:
 #     print("Assembly finished, no error")

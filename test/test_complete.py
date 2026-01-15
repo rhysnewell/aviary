@@ -27,7 +27,7 @@ class Tests(unittest.TestCase):
                 f"-2 {REVERSE_READS} "
                 f"--output {tmpdir}/test "
                 f"--dryrun --tmpdir {tmpdir} "
-                f"--snakemake-cmds \" --quiet\" "
+                # f"--snakemake-cmds \" --quiet\" "
             )
             output = extern.run(cmd)
 
@@ -134,7 +134,7 @@ class Tests(unittest.TestCase):
                 f"--assembly {ASSEMBLY} "
                 f"--output {tmpdir}/test "
                 f"--dryrun --tmpdir {tmpdir} "
-                f"--snakemake-cmds \" --quiet\" "
+                # f"--snakemake-cmds \" --quiet\" "
             )
             output = extern.run(cmd)
 
@@ -242,7 +242,7 @@ class Tests(unittest.TestCase):
                 f"--longread-type ont "
                 f"--output {tmpdir}/test "
                 f"--dryrun --tmpdir {tmpdir} "
-                f"--snakemake-cmds \" --quiet\" "
+                # f"--snakemake-cmds \" --quiet\" "
             )
             output = extern.run(cmd)
 
@@ -251,7 +251,7 @@ class Tests(unittest.TestCase):
             #-------------------------------------------------------------------
             # General
             self.assertTrue("complete_assembly " not in output)
-            self.assertTrue("complete_assembly_with_qc" not in output)
+            self.assertTrue("complete_assembly_with_qc" in output)
 
             # Short-read
             self.assertTrue("assemble_short_reads" not in output)
@@ -259,7 +259,7 @@ class Tests(unittest.TestCase):
             self.assertTrue("move_spades_assembly" not in output)
 
             # Long-read
-            self.assertTrue("flye_assembly" in output)
+            self.assertTrue("long_read_assembly" in output)
             self.assertTrue("polish_metagenome_flye" in output)
             self.assertTrue("combine_long_only" not in output)
             self.assertTrue("skip_unicycler " not in output)
@@ -348,7 +348,7 @@ class Tests(unittest.TestCase):
                 f"--longread-type ont "
                 f"--output {tmpdir}/test "
                 f"--dryrun --tmpdir {tmpdir} "
-                f"--snakemake-cmds \" --quiet\" "
+                # f"--snakemake-cmds \" --quiet\" "
             )
             output = extern.run(cmd)
 
@@ -365,7 +365,7 @@ class Tests(unittest.TestCase):
             self.assertTrue("move_spades_assembly" not in output)
 
             # Long-read
-            self.assertTrue("flye_assembly" in output)
+            self.assertTrue("long_read_assembly" in output)
             self.assertTrue("polish_metagenome_flye" in output)
             self.assertTrue("combine_long_only" in output)
             self.assertTrue("skip_unicycler " not in output)
@@ -455,7 +455,7 @@ class Tests(unittest.TestCase):
                 f"--output {tmpdir}/test "
                 f"--skip-binners metabat "
                 f"--dryrun --tmpdir {tmpdir} "
-                f"--snakemake-cmds \" --quiet\" "
+                # f"--snakemake-cmds \" --quiet\" "
             )
             output = extern.run(cmd)
 
@@ -562,7 +562,7 @@ class Tests(unittest.TestCase):
                 f"-2 {REVERSE_READS} "
                 f"--output {tmpdir}/test "
                 f"--dryrun --tmpdir {tmpdir} "
-                f"--snakemake-cmds \" --quiet\" "
+                # f"--snakemake-cmds \" --quiet\" "
             )
             output = extern.run(cmd)
 
@@ -669,7 +669,7 @@ class Tests(unittest.TestCase):
                 f"-2 {REVERSE_READS} "
                 f"--output {tmpdir}/test "
                 f"--dryrun --tmpdir {tmpdir} "
-                f"--snakemake-cmds \" --quiet\" "
+                # f"--snakemake-cmds \" --quiet\" "
             )
             output = extern.run(cmd)
 
@@ -776,7 +776,7 @@ class Tests(unittest.TestCase):
                 f"-2 {REVERSE_READS} "
                 f"--output {tmpdir}/test "
                 f"--dryrun --tmpdir {tmpdir} "
-                f"--snakemake-cmds \" --quiet\" "
+                #f"--snakemake-cmds \" --quiet\" "
             )
             output = extern.run(cmd)
 
@@ -883,7 +883,7 @@ class Tests(unittest.TestCase):
                 f"-2 {REVERSE_READS} "
                 f"--output {tmpdir}/test "
                 f"--dryrun --tmpdir {tmpdir} "
-                f"--snakemake-cmds \" --quiet\" "
+                #f"--snakemake-cmds \" --quiet\" "
             )
             output = extern.run(cmd)
 
@@ -991,7 +991,7 @@ class Tests(unittest.TestCase):
                 f"-2 {REVERSE_READS} "
                 f"--output {tmpdir}/test --tmpdir {tmpdir} "
                 f"--dryrun "
-                f"--snakemake-cmds \" --quiet\" "
+                #f"--snakemake-cmds \" --quiet\" "
             )
             extern.run(cmd)
 
@@ -1016,7 +1016,7 @@ class Tests(unittest.TestCase):
                 f"-2 {REVERSE_READS} "
                 f"--output {tmpdir}/test --tmpdir {tmpdir} "
                 f"--dryrun "
-                f"--snakemake-cmds \" --quiet\" "
+                #f"--snakemake-cmds \" --quiet\" "
             )
             extern.run(cmd)
 
@@ -1042,7 +1042,7 @@ class Tests(unittest.TestCase):
                 f"-2 {REVERSE_READS} "
                 f"--output {tmpdir}/test --tmpdir {tmpdir} "
                 f"--dryrun "
-                f"--snakemake-cmds \" --quiet\" "
+                #f"--snakemake-cmds \" --quiet\" "
             )
             extern.run(cmd)
 

@@ -467,7 +467,7 @@ class Processor:
         conf["eggnog_folder"] = self.eggnog
         conf["singlem_metapackage"] = self.singlem
         conf["metabuli_folder"] = self.metabuli
-        conf["strain_analysis"] = self.strain_analysis
+        # conf["strain_analysis"] = self.strain_analysis
         conf["checkm2_db_folder"] = self.checkm2_db
         conf["use_checkm2_scores"] = self.use_checkm2_scores
         conf["mag_directory"] = self.mag_directory

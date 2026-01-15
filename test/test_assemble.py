@@ -133,6 +133,7 @@ class Tests(unittest.TestCase):
                 f"--longread-type ont",
                 tmpdir,
             )
+            print(output)
 
             # General
             self.assertTrue("complete_assembly " not in output)
