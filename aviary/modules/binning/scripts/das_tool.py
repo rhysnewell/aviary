@@ -80,7 +80,7 @@ if __name__ == '__main__':
         else:
             fix_metabat_cmd = ""
 
-        run(f'Fasta_to_Scaffolds2Bin.sh -i data/{binner} -e {extension} {fix_metabat_cmd} >{bin_definition_file}  2>> {logfile}')
+        run(f'Fasta_to_Contig2Bin.sh -i data/{binner} -e {extension} {fix_metabat_cmd} >{bin_definition_file}  2>> {logfile}')
         if os.path.getsize(bin_definition_file) == 0:
             logging.warning(f'Bin definition file {bin_definition_file} is empty, suggesting that {binner} failed or did not not create any output bins.')
         else:
@@ -95,7 +95,7 @@ if __name__ == '__main__':
 
     scaffold2bin_files = ','.join(bin_definition_files)
 
-    das_tool_command = f'DAS_Tool --search_engine diamond --write_bin_evals 1 --write_bins 1 -t {args.threads} --score_threshold -42 \
+    das_tool_command = f'DAS_Tool --search_engine diamond --write_bin_evals --write_bins -t {args.threads} --score_threshold -42 \
         -i {scaffold2bin_files} \
         -c {args.fasta} \
         -o data/das_tool_bins_pre_refine/das_tool >> {logfile} 2>&1'
