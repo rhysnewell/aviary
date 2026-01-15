@@ -824,7 +824,7 @@ if ASSEMBLY_STRATEGY in ("short_only", "hybrid_unicycler", "hybrid_skip_unicycle
             rm -rf data/short_reads.fastq.gz; 
             rm -rf data/short_unmapped_ref.bam; 
             rm -rf data/short_unmapped_ref.bam.bai; 
-            rm -rf data/short_filter.done; 
+            rm -rf data/short_filter.done; "
             """
 else:
     raise Exception("Programming error: unexpected assembly strategy for completion.")
