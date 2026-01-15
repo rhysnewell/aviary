@@ -4,7 +4,7 @@ import unittest
 import os
 import tempfile
 import extern
-from snakemake import load_configfile
+from snakemake.common.configfile import load_configfile
 
 path_to_data = os.path.join(os.path.dirname(os.path.realpath(__file__)),'data')
 
@@ -97,7 +97,7 @@ class Tests(unittest.TestCase):
                 f"-2 {REVERSE_READS} "
                 f"--output {tmpdir}/test "
                 f"--dryrun --tmpdir {tmpdir} "
-                f"--snakemake-cmds \" --quiet\" "
+                #f"--snakemake-cmds \" --quiet\" "
             )
             output = extern.run(cmd)
 
@@ -152,7 +152,7 @@ class Tests(unittest.TestCase):
                 f"--output {tmpdir}/test "
                 f"--skip-binners metabat "
                 f"--dryrun --tmpdir {tmpdir} "
-                f"--snakemake-cmds \" --quiet\" "
+                #f"--snakemake-cmds \" --quiet\" "
             )
             output = extern.run(cmd)
 
@@ -207,7 +207,7 @@ class Tests(unittest.TestCase):
                 f"-2 {REVERSE_READS} "
                 f"--output {tmpdir}/test "
                 f"--dryrun --tmpdir {tmpdir} "
-                f"--snakemake-cmds \" --quiet\" "
+                #f"--snakemake-cmds \" --quiet\" "
             )
             output = extern.run(cmd)
 
@@ -262,7 +262,7 @@ class Tests(unittest.TestCase):
                 f"-2 {REVERSE_READS} "
                 f"--output {tmpdir}/test "
                 f"--dryrun --tmpdir {tmpdir} "
-                f"--snakemake-cmds \" --quiet\" "
+                #f"--snakemake-cmds \" --quiet\" "
             )
             output = extern.run(cmd)
 
@@ -317,7 +317,7 @@ class Tests(unittest.TestCase):
                 f"-2 {REVERSE_READS} "
                 f"--output {tmpdir}/test "
                 f"--dryrun --tmpdir {tmpdir} "
-                f"--snakemake-cmds \" --quiet\" "
+                #f"--snakemake-cmds \" --quiet\" "
             )
             output = extern.run(cmd)
 
@@ -372,9 +372,10 @@ class Tests(unittest.TestCase):
                 f"-2 {REVERSE_READS} "
                 f"--output {tmpdir}/test "
                 f"--dryrun --tmpdir {tmpdir} "
-                f"--snakemake-cmds \" --quiet\" "
+                #f"--snakemake-cmds \" --quiet\" "
             )
             output = extern.run(cmd)
+            print(output)
 
             # Binners
             self.assertTrue("prepare_binning_files" in output)
@@ -428,7 +429,7 @@ class Tests(unittest.TestCase):
                 f"-2 {REVERSE_READS} "
                 f"--output {tmpdir}/test --tmpdir {tmpdir} "
                 f"--dryrun "
-                f"--snakemake-cmds \" --quiet\" "
+                #f"--snakemake-cmds \" --quiet\" "
             )
             extern.run(cmd)
 
@@ -454,7 +455,7 @@ class Tests(unittest.TestCase):
                 f"-2 {REVERSE_READS} "
                 f"--output {tmpdir}/test --tmpdir {tmpdir} "
                 f"--dryrun "
-                f"--snakemake-cmds \" --quiet\" "
+                #f"--snakemake-cmds \" --quiet\" "
             )
             extern.run(cmd)
 
@@ -481,7 +482,7 @@ class Tests(unittest.TestCase):
                 f"-2 {REVERSE_READS} "
                 f"--output {tmpdir}/test --tmpdir {tmpdir} "
                 f"--dryrun "
-                f"--snakemake-cmds \" --quiet\" "
+                #f"--snakemake-cmds \" --quiet\" "
             )
             extern.run(cmd)
 

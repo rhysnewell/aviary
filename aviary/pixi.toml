@@ -54,7 +54,6 @@ depends-on = [
 ]
 
 [tasks.run-quick-tests]
-args = ["test_name"]
 depends-on = [
     # run postinstall in the dev environment
     { task = "postinstall", environment = "dev" },

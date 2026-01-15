@@ -23,7 +23,7 @@ class Tests(unittest.TestCase):
             f"{extra_args} "
             f"--output {tmpdir}/test "
             f"--dryrun --tmpdir {tmpdir} "
-            f"--snakemake-cmds \" --quiet\" "
+            #f"--snakemake-cmds \" --quiet\" "
         )
         return extern.run(cmd)
     def test_assemble_simple_inputs(self):

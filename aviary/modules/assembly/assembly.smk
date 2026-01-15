@@ -558,7 +558,7 @@ rule metabat_binning_short:
          assembly_cov = "data/short_read_assembly.cov",
          fasta = "data/spades_assembly.fasta"
     output:
-         metabat_done = "data/metabat_bins/done"
+         metabat_done = touch("data/metabat_bins/done")
     threads:
         config["max_threads"]
     resources:
@@ -571,8 +571,7 @@ rule metabat_binning_short:
         "mkdir -p data/metabat_bins &&" + \
         pixi_run + \
         " -e metabat2 metabat --seed 89 --unbinned -m 1500 -l -i {input.fasta} -t {threads} -a {input.assembly_cov}"
-        " -o data/metabat_bins/binned_contigs > {resources.log_path} 2>&1 &&"
-        " touch data/metabat_bins/done"
+        " -o data/metabat_bins/binned_contigs > {resources.log_path} 2>&1"
 
 # Long reads are mapped to the spades assembly
 rule map_long_mega:
@@ -807,27 +806,27 @@ rule complete_assembly_with_qc:
         rm -rf data/short_filter.done; "
         """
 
-rule reset_to_spades_assembly:
-    output:
-         temp('data/reset_spades')
-    shell:
-         'rm -rf data/spades*; '
-         'rm -rf assembly/; '
-         'rm -rf data/final_contigs.fasta; '
-         f'rm -rf {LONG_HIGH_COV_FASTA}; '
-         'rm -rf data/list_of*; '
-         'rm -rf data/binned_reads; '
-         'rm -rf data/final_assemblies; '
-         'rm -rf data/sr_vs*; '
-         'rm -rf data/unicycler*; '
-         'rm -rf data/metabat_bins; '
-         'rm -rf data/cached_bams; '
-         'touch data/reset_spades'
+# rule reset_to_spades_assembly:
+#     output:
+#          temp('data/reset_spades')
+#     shell:
+#          'rm -rf data/spades*; '
+#          'rm -rf assembly/; '
+#          'rm -rf data/final_contigs.fasta; '
+#          f'rm -rf {LONG_HIGH_COV_FASTA}; '
+#          'rm -rf data/list_of*; '
+#          'rm -rf data/binned_reads; '
+#          'rm -rf data/final_assemblies; '
+#          'rm -rf data/sr_vs*; '
+#          'rm -rf data/unicycler*; '
+#          'rm -rf data/metabat_bins; '
+#          'rm -rf data/cached_bams; '
+#          'touch data/reset_spades'
 
-rule remove_final_contigs:
-    output:
-          temp('data/rewind_time')
-    shell:
-         'rm -rf assembly/; '
-         'rm -rf data/final_contigs.fasta; '
-         'touch data/rewind_time; '
+# rule remove_final_contigs:
+#     output:
+#           temp('data/rewind_time')
+#     shell:
+#          'rm -rf assembly/; '
+#          'rm -rf data/final_contigs.fasta; '
+#          'touch data/rewind_time; '
