@@ -113,18 +113,11 @@ def add_workflow_arg(parser, default, help=None):
         default=default,
     )
 
-def maybe_print_subcommand_help(subcommand, parser, description, examples):
+def maybe_print_subcommand_help(bird_argparser, subcommand, parser, description):
     help_flags = {'-h', '--help', '--full-help', '--full_help'}
     if not help_flags.intersection(sys.argv):
         return
 
-    bird_argparser = BirdArgparser(
-        program='Aviary',
-        program_invocation='aviary',
-        version=__version__,
-        examples={subcommand: examples},
-        raw_format=True,
-    )
     bird_argparser._subparser_name_to_parser[subcommand] = parser
     bird_argparser._subparser_name_to_description[subcommand] = description
 
@@ -140,9 +133,15 @@ def main():
         return
 
     ############################ ~ Main Parser ~ ##############################
-    main_parser = argparse.ArgumentParser(prog='aviary',
-                                          formatter_class=CustomHelpFormatter,
-                                          add_help=False)
+    bird_argparser = BirdArgparser(
+        program='Aviary',
+        program_invocation='aviary',
+        version=__version__,
+        examples={},
+        raw_format=True,
+    )
+    main_parser = bird_argparser.parser
+    main_parser.prog = 'aviary'
     main_parser.add_argument('--version',
                              action='version',
                              version=__version__,
@@ -905,6 +904,17 @@ def main():
     ##########################  ~ ASSEMBLE ~  ###########################
 
     assemble_description = 'Step-down hybrid assembly using long and short reads, or assembly using only short or long reads.'
+    assemble_examples = [
+        Example(
+            'Hybrid assembly from paired short reads and long reads:',
+            'aviary assemble -1 reads_1.fq.gz -2 reads_2.fq.gz '
+            '--longreads reads.fastq.gz --long_read_type ont',
+        ),
+        Example(
+            'Short-read-only assembly:',
+            'aviary assemble -1 reads_1.fq.gz -2 reads_2.fq.gz',
+        ),
+    ]
     assemble_options = subparsers.add_parser('assemble',
                                               description=assemble_description,
                                               formatter_class=CustomHelpFormatter,
@@ -924,6 +934,18 @@ def main():
     ##########################  ~ RECOVER ~   ###########################
 
     recover_description = 'The aviary binning pipeline'
+    recover_examples = [
+        Example(
+            'Recover MAGs from an existing assembly with paired reads:',
+            'aviary recover --assembly scaffolds.fasta '
+            '-1 reads_1.fq.gz -2 reads_2.fq.gz',
+        ),
+        Example(
+            'Recover MAGs from an assembly with long reads:',
+            'aviary recover --assembly scaffolds.fasta '
+            '--longreads reads.fastq.gz --long_read_type ont',
+        ),
+    ]
     recover_options = subparsers.add_parser('recover',
                                             description=recover_description,
                                             formatter_class=CustomHelpFormatter,
@@ -1125,40 +1147,23 @@ def main():
     # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~ Parsing input ~~~~~~~~~~~~~~~~~~~~~~~~~~~~ #
     # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ #
     if len(sys.argv) > 1:
+        bird_argparser.examples = {
+            'assemble': assemble_examples,
+            'recover': recover_examples,
+        }
         if sys.argv[1] == 'assemble':
             maybe_print_subcommand_help(
+                bird_argparser,
                 'assemble',
                 assemble_options,
                 assemble_description,
-                [
-                    Example(
-                        'Hybrid assembly from paired short reads and long reads:',
-                        'aviary assemble -1 reads_1.fq.gz -2 reads_2.fq.gz '
-                        '--longreads reads.fastq.gz --long_read_type ont',
-                    ),
-                    Example(
-                        'Short-read-only assembly:',
-                        'aviary assemble -1 reads_1.fq.gz -2 reads_2.fq.gz',
-                    ),
-                ],
             )
         if sys.argv[1] == 'recover':
             maybe_print_subcommand_help(
+                bird_argparser,
                 'recover',
                 recover_options,
                 recover_description,
-                [
-                    Example(
-                        'Recover MAGs from an existing assembly with paired reads:',
-                        'aviary recover --assembly scaffolds.fasta '
-                        '-1 reads_1.fq.gz -2 reads_2.fq.gz',
-                    ),
-                    Example(
-                        'Recover MAGs from an assembly with long reads:',
-                        'aviary recover --assembly scaffolds.fasta '
-                        '--longreads reads.fastq.gz --long_read_type ont',
-                    ),
-                ],
             )
     args = main_parser.parse_args()
     time = datetime.now().strftime('%H:%M:%S %d-%m-%Y')
