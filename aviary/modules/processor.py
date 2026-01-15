@@ -506,6 +506,14 @@ class Processor:
 
         self._validate_config()
 
+        if dryrun and self.longreads != 'none':
+            if self.long_read_assembler == 'flye':
+                print("logs/flye_assembly.log")
+            elif self.long_read_assembler == 'myloasm':
+                print("logs/myloasm_assembly.log")
+            else:
+                raise Exception("Programming error: unexpected long_read_assembler value.")
+
         cores = max(int(self.threads), cores)
         if self.tmpdir is not None:
             os.environ["TMPDIR"] = self.tmpdir

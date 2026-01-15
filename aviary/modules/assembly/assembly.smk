@@ -9,7 +9,12 @@ LONG_ASSEMBLY_FASTA = f"{LONG_ASSEMBLY_DIR}/assembly.fasta"
 LONG_ASSEMBLY_GRAPH = f"{LONG_ASSEMBLY_DIR}/assembly_graph.gfa"
 LONG_ASSEMBLY_INFO = f"{LONG_ASSEMBLY_DIR}/assembly_info.txt"
 LONG_HIGH_COV_FASTA = f"data/{LONG_READ_ASSEMBLER}_high_cov.fasta"
-ASSEMBLER_ENV = "flye" if LONG_READ_ASSEMBLER == "flye" else "myloasm"
+if LONG_READ_ASSEMBLER == "flye":
+    ASSEMBLER_ENV = "flye"
+elif LONG_READ_ASSEMBLER == "myloasm":
+    ASSEMBLER_ENV = "myloasm"
+else:
+    raise Exception("Programming error: unexpected long_read_assembler value.")
 
 def _validate_reads(reads, key):
     if reads == "none":
@@ -778,103 +783,51 @@ else:
 
 
 if ASSEMBLY_STRATEGY == "hybrid_skip_unicycler":
-    if SKIP_QC is False:
-        rule complete_assembly_with_qc:
-            input:
-                short_fasta = "data/spades_assembly.fasta",
-                flye_fasta = LONG_HIGH_COV_FASTA,
-                qc_done = 'data/qc_done'
-            output:
-                fasta = "data/final_contigs.fasta",
-                final_link = 'assembly/final_contigs.fasta',
-                sizes = "www/assembly_stats.txt",
-                unicycler_skipped = temp("data/unicycler_skipped")
-            priority: 1
-            threads:
-                config["max_threads"]
-            shell:
-                f'{pixi_run} -e bbmap bash -e -o pipefail -c "' + \
-                """cat {input.short_fasta} {input.flye_fasta} > {output.fasta}; 
-                touch data/unicycler_skipped; 
-                mkdir -p www/; 
-                stats.sh {output.fasta} > {output.sizes}; 
-                mkdir -p assembly; 
-                cd assembly; 
-                ln -s ../data/final_contigs.fasta ./;"
-                """
-    elif SKIP_QC is True:
-        rule complete_assembly_with_qc:
-            input:
-                short_fasta = "data/spades_assembly.fasta",
-                flye_fasta = LONG_HIGH_COV_FASTA
-            output:
-                fasta = "data/final_contigs.fasta",
-                final_link = 'assembly/final_contigs.fasta',
-                sizes = "www/assembly_stats.txt",
-                unicycler_skipped = temp("data/unicycler_skipped")
-            priority: 1
-            threads:
-                config["max_threads"]
-            shell:
-                f'{pixi_run} -e bbmap bash -e -o pipefail -c "' + \
-                """cat {input.short_fasta} {input.flye_fasta} > {output.fasta}; 
-                touch data/unicycler_skipped; 
-                mkdir -p www/; 
-                stats.sh {output.fasta} > {output.sizes}; 
-                mkdir -p assembly; 
-                cd assembly; 
-                ln -s ../data/final_contigs.fasta ./;"
-                """
-    else:
-        raise Exception("Programming error: unexpected skip_qc value for hybrid skip unicycler.")
+    rule skip_unicycler_with_qc:
+        input:
+            short_fasta = "data/spades_assembly.fasta",
+            flye_fasta = LONG_HIGH_COV_FASTA,
+            qc_done = 'data/qc_done'
+        output:
+            fasta = "data/final_contigs.fasta",
+            unicycler_skipped = temp("data/unicycler_skipped")
+        priority: 1
+        threads:
+            config["max_threads"]
+        shell:
+            f'{pixi_run} -e bbmap bash -e -o pipefail -c "' + \
+            """cat {input.short_fasta} {input.flye_fasta} > {output.fasta}; 
+            touch data/unicycler_skipped;"
+            """
 elif ASSEMBLY_STRATEGY in ("short_only", "hybrid_unicycler", "long_only"):
-    if SKIP_QC is False:
-        rule complete_assembly_with_qc:
-            input:
-                fasta = 'data/final_contigs.fasta',
-                qc_done = 'data/qc_done'
-            output:
-                final_link = 'assembly/final_contigs.fasta',
-                sizes = "www/assembly_stats.txt"
-            shell:
-                f'{pixi_run} -e bbmap bash -e -o pipefail -c "' + \
-                """mkdir -p www/; 
-                stats.sh {input.fasta} > {output.sizes}; 
-                mkdir -p assembly; 
-                cd assembly; 
-                ln -s ../data/final_contigs.fasta ./; 
-                cd ../; 
-                rm -rf data/polishing; 
-                rm -rf data/short_reads.fastq.gz; 
-                rm -rf data/short_unmapped_ref.bam; 
-                rm -rf data/short_unmapped_ref.bam.bai; 
-                rm -rf data/short_filter.done; 
-                """
-    elif SKIP_QC is True:
-        rule complete_assembly_with_qc:
-            input:
-                fasta = 'data/final_contigs.fasta'
-            output:
-                final_link = 'assembly/final_contigs.fasta',
-                sizes = "www/assembly_stats.txt"
-            shell:
-                f'{pixi_run} -e bbmap bash -e -o pipefail -c "' + \
-                """mkdir -p www/; 
-                stats.sh {input.fasta} > {output.sizes}; 
-                mkdir -p assembly; 
-                cd assembly; 
-                ln -s ../data/final_contigs.fasta ./; 
-                cd ../; 
-                rm -rf data/polishing; 
-                rm -rf data/short_reads.fastq.gz; 
-                rm -rf data/short_unmapped_ref.bam; 
-                rm -rf data/short_unmapped_ref.bam.bai; 
-                rm -rf data/short_filter.done; 
-                """
-    else:
-        raise Exception("Programming error: unexpected skip_qc value for complete assembly.")
+    pass
 else:
-    raise Exception("Programming error: unexpected assembly strategy for complete assembly.")
+    raise Exception("Programming error: unexpected assembly strategy for hybrid skip unicycler.")
+
+if ASSEMBLY_STRATEGY in ("short_only", "hybrid_unicycler", "hybrid_skip_unicycler", "long_only"):
+    rule complete_assembly_with_qc:
+        input:
+            fasta = 'data/final_contigs.fasta',
+            qc_done = 'data/qc_done'
+        output:
+            final_link = 'assembly/final_contigs.fasta',
+            sizes = "www/assembly_stats.txt"
+        shell:
+            f'{pixi_run} -e bbmap bash -e -o pipefail -c "' + \
+            """mkdir -p www/; 
+            stats.sh {input.fasta} > {output.sizes}; 
+            mkdir -p assembly; 
+            cd assembly; 
+            ln -s ../data/final_contigs.fasta ./; 
+            cd ../; 
+            rm -rf data/polishing; 
+            rm -rf data/short_reads.fastq.gz; 
+            rm -rf data/short_unmapped_ref.bam; 
+            rm -rf data/short_unmapped_ref.bam.bai; 
+            rm -rf data/short_filter.done; 
+            """
+else:
+    raise Exception("Programming error: unexpected assembly strategy for completion.")
 
 # rule reset_to_spades_assembly:
 #     output:
