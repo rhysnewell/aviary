@@ -3,7 +3,7 @@ from aviary.modules.common import pixi_run, setup_log
 logs_dir = "logs"
 
 
-LONG_READ_ASSEMBLER = config.get("long_read_assembler", "myloasm")
+LONG_READ_ASSEMBLER = config["long_read_assembler"]
 LONG_ASSEMBLY_DIR = f"data/{LONG_READ_ASSEMBLER}"
 LONG_ASSEMBLY_FASTA = f"{LONG_ASSEMBLY_DIR}/assembly.fasta"
 LONG_ASSEMBLY_GRAPH = f"{LONG_ASSEMBLY_DIR}/assembly_graph.gfa"
@@ -30,10 +30,10 @@ def _validate_bool(value, key):
     raise Exception(f"Programming error: config[{key!r}] must be a boolean.")
 
 
-SHORT_READS_1 = config.get("short_reads_1", "none")
-LONG_READS = config.get("long_reads", "none")
-USE_UNICYCLER = _validate_bool(config.get("use_unicycler", False), "use_unicycler")
-SKIP_QC = _validate_bool(config.get("skip_qc", False), "skip_qc")
+SHORT_READS_1 = config['short_reads_1']
+LONG_READS = config['long_reads']
+USE_UNICYCLER = _validate_bool(config["use_unicycler"], "use_unicycler")
+SKIP_QC = _validate_bool(config["skip_qc"], "skip_qc")
 
 SHORT_READS_KIND = _validate_reads(SHORT_READS_1, "short_reads_1")
 LONG_READS_KIND = _validate_reads(LONG_READS, "long_reads")
