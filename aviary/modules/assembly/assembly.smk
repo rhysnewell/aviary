@@ -11,13 +11,56 @@ LONG_ASSEMBLY_INFO = f"{LONG_ASSEMBLY_DIR}/assembly_info.txt"
 LONG_HIGH_COV_FASTA = f"data/{LONG_READ_ASSEMBLER}_high_cov.fasta"
 ASSEMBLER_ENV = "flye" if LONG_READ_ASSEMBLER == "flye" else "myloasm"
 
-localrules: get_high_cov_contigs, short_only, move_spades_assembly, pool_reads, skip_unicycler, skip_unicycler_with_qc, complete_assembly, complete_assembly_with_qc, reset_to_spades_assembly, remove_final_contigs, combine_assemblies, combine_long_only
+def _validate_reads(reads, key):
+    if reads == "none":
+        return "none"
+    if isinstance(reads, list):
+        return "list"
+    raise Exception(f"Programming error: config[{key!r}] must be 'none' or a list of paths.")
 
-ruleorder: filter_illumina_assembly > short_only > combine_long_only
-ruleorder: get_high_cov_contigs > short_only
-ruleorder: skip_unicycler_with_qc > skip_unicycler > combine_assemblies > move_spades_assembly > combine_long_only
-ruleorder: skip_unicycler_with_qc > skip_unicycler > complete_assembly_with_qc > complete_assembly
-ruleorder: skip_unicycler_with_qc > skip_unicycler > combine_assemblies > move_spades_assembly
+
+def _validate_bool(value, key):
+    if isinstance(value, bool):
+        return value
+    raise Exception(f"Programming error: config[{key!r}] must be a boolean.")
+
+
+SHORT_READS_1 = config.get("short_reads_1", "none")
+LONG_READS = config.get("long_reads", "none")
+USE_UNICYCLER = _validate_bool(config.get("use_unicycler", False), "use_unicycler")
+SKIP_QC = _validate_bool(config.get("skip_qc", False), "skip_qc")
+
+SHORT_READS_KIND = _validate_reads(SHORT_READS_1, "short_reads_1")
+LONG_READS_KIND = _validate_reads(LONG_READS, "long_reads")
+
+if LONG_READS_KIND == "none" and SHORT_READS_KIND == "none":
+    raise Exception("Programming error: both long_reads and short_reads_1 are set to 'none'.")
+elif LONG_READS_KIND == "none":
+    READ_MODE = "short_only"
+elif SHORT_READS_KIND == "none":
+    READ_MODE = "long_only"
+elif LONG_READS_KIND == "list" and SHORT_READS_KIND == "list":
+    READ_MODE = "hybrid"
+else:
+    raise Exception("Programming error: unexpected long_reads/short_reads_1 configuration.")
+
+if READ_MODE == "hybrid":
+    if USE_UNICYCLER is True:
+        ASSEMBLY_STRATEGY = "hybrid_unicycler"
+    elif USE_UNICYCLER is False:
+        ASSEMBLY_STRATEGY = "hybrid_skip_unicycler"
+    else:
+        raise Exception("Programming error: unexpected use_unicycler value.")
+elif READ_MODE == "short_only":
+    ASSEMBLY_STRATEGY = "short_only"
+elif READ_MODE == "long_only":
+    if USE_UNICYCLER:
+        raise Exception("Programming error: use_unicycler requires both long and short reads.")
+    ASSEMBLY_STRATEGY = "long_only"
+else:
+    raise Exception("Programming error: unexpected assembly strategy state.")
+
+localrules: pool_reads, reset_to_spades_assembly, remove_final_contigs, complete_assembly_with_qc
 
 # onsuccess:
 #     print("Assembly finished, no error")
@@ -270,111 +313,123 @@ rule polish_meta_racon_ill:
         """
 
 
-# High coverage contigs are identified
-rule get_high_cov_contigs:
-    input:
-        info = LONG_ASSEMBLY_INFO,
-        fasta = "data/assembly.pol.fin.fasta",
-        graph = LONG_ASSEMBLY_GRAPH,
-        paf = "data/polishing/alignment.racon_ill.0.paf"
-    output:
-        fasta = LONG_HIGH_COV_FASTA
-    benchmark:
-        "benchmarks/get_high_cov_contigs.benchmark.txt"
-    params:
-        min_cov_long = int(config["min_cov_long"]),
-        min_cov_short = int(config["min_cov_short"]),
-        exclude_contig_cov = int(config["exclude_contig_cov"]),
-        exclude_contig_size = int(config["exclude_contig_size"]),
-        long_contig_size = int(config["long_contig_size"])
-    run:
-        ill_cov_dict = {}
-        # populate illumina coverage dictionary using PAF
-        with open(input.paf) as paf:
-            for line in paf:
-                query, qlen, qstart, qend, strand, ref, rlen, rstart, rend = line.split()[:9]
-                ref = ref[:-6]
-                if not ref in ill_cov_dict:
-                    ill_cov_dict[ref] = 0.0
-                ill_cov_dict[ref] += (int(rend) - int(rstart)) / int(rlen)
-        count = 0
-        high_cov_set = set()
-        short_edges = {}
-        with open(input.info) as f:
-            # Based on the flye assembly_info.txt, retrieve contigs > long_contig_size
-            f.readline()
-            for line in f:
-                contig_name, contig_length, long_coverage, circular, repeat, multiplicity, alt_group, graph_path = line.split()
-                is_circular = circular == "Y"
-                if int(contig_length) >= params.long_contig_size or is_circular:
-                    high_cov_set.add(contig_name)
-                elif int(contig_length) < params.long_contig_size:
-                    # Take first and last edge in info file for this contig
-                    se1 = graph_path.split(',')[0]
-                    # Filter the '-' sign from edge name
-                    if se1.startswith('-'):
-                        se1 = ("edge_" + se1[1:], True)
-                    else:
-                        se1 = ("edge_" + se1, False)
-                    se2 = graph_path.split(',')[-1]
-                    # Filter the '-' sign from edge name
-                    if se2.startswith('-'):
-                        se2 = ("edge_" + se2[1:], False)
-                    else:
-                        se2 = ("edge_" + se2, True)
-
-                    # Append contig to associated edges in short_edges dict
-                    if not se1 in short_edges:
-                        short_edges[se1] = []
-                    short_edges[se1].append(contig_name)
-                    if not se2 in short_edges:
-                        short_edges[se2] = []
-                    short_edges[se2].append(contig_name)
-                # Filtering:
-                # 1:
-                # exclude contigs with long read coverage less than `exclude_contig_cov` and
-                # shorter than `exclude_contig_size`
-                # 2:
-                # include if a contig is covered by >= min_cov_long long reads place in high cov set
-                # Also place in high coverage set if contig was not covered by illumina reads
-                # Also place in high coverage set if illumina coverage was <= min_cov_short
-                if not (float(long_coverage) <= params.exclude_contig_cov and int(contig_length) <= params.exclude_contig_size):
-                    if float(long_coverage) >= params.min_cov_long or not contig_name in ill_cov_dict \
-                            or ill_cov_dict[contig_name] <= params.min_cov_short:
+if READ_MODE == "hybrid":
+    # High coverage contigs are identified
+    rule get_high_cov_contigs:
+        input:
+            info = LONG_ASSEMBLY_INFO,
+            fasta = "data/assembly.pol.fin.fasta",
+            graph = LONG_ASSEMBLY_GRAPH,
+            paf = "data/polishing/alignment.racon_ill.0.paf"
+        output:
+            fasta = LONG_HIGH_COV_FASTA
+        benchmark:
+            "benchmarks/get_high_cov_contigs.benchmark.txt"
+        params:
+            min_cov_long = int(config["min_cov_long"]),
+            min_cov_short = int(config["min_cov_short"]),
+            exclude_contig_cov = int(config["exclude_contig_cov"]),
+            exclude_contig_size = int(config["exclude_contig_size"]),
+            long_contig_size = int(config["long_contig_size"])
+        run:
+            ill_cov_dict = {}
+            # populate illumina coverage dictionary using PAF
+            with open(input.paf) as paf:
+                for line in paf:
+                    query, qlen, qstart, qend, strand, ref, rlen, rstart, rend = line.split()[:9]
+                    ref = ref[:-6]
+                    if not ref in ill_cov_dict:
+                        ill_cov_dict[ref] = 0.0
+                    ill_cov_dict[ref] += (int(rend) - int(rstart)) / int(rlen)
+            count = 0
+            high_cov_set = set()
+            short_edges = {}
+            with open(input.info) as f:
+                # Based on the flye assembly_info.txt, retrieve contigs > long_contig_size
+                f.readline()
+                for line in f:
+                    contig_name, contig_length, long_coverage, circular, repeat, multiplicity, alt_group, graph_path = line.split()
+                    is_circular = circular == "Y"
+                    if int(contig_length) >= params.long_contig_size or is_circular:
                         high_cov_set.add(contig_name)
+                    elif int(contig_length) < params.long_contig_size:
+                        # Take first and last edge in info file for this contig
+                        se1 = graph_path.split(',')[0]
+                        # Filter the '-' sign from edge name
+                        if se1.startswith('-'):
+                            se1 = ("edge_" + se1[1:], True)
+                        else:
+                            se1 = ("edge_" + se1, False)
+                        se2 = graph_path.split(',')[-1]
+                        # Filter the '-' sign from edge name
+                        if se2.startswith('-'):
+                            se2 = ("edge_" + se2[1:], False)
+                        else:
+                            se2 = ("edge_" + se2, True)
 
-        filtered_contigs = set()
-        # Populate filtered contigs with short contigs that were connected to two edges in short_edges dict in the correct
-        # orientation: edge_1 + to edge_2 - and edge_1 != edge_2. So the start of a sequences complements links to
-        #               the end of a sequences reverse complement.
-        with open(input.graph) as f:
-            for line in f:
-                if line.startswith("L"):
-                    if (line.split()[1], line.split()[2] == '+') in short_edges \
-                            and (line.split()[3], line.split()[4] == '-') in short_edges \
-                            and not line.split()[1] == line.split()[3]: # and not line.split()[5] == '0M':
-                        for i in short_edges[(line.split()[1], line.split()[2] == '+')]:
-                            filtered_contigs.add(i)
-                        for i in short_edges[(line.split()[3], line.split()[4] == '-')]:
-                            filtered_contigs.add(i)
+                        # Append contig to associated edges in short_edges dict
+                        if not se1 in short_edges:
+                            short_edges[se1] = []
+                        short_edges[se1].append(contig_name)
+                        if not se2 in short_edges:
+                            short_edges[se2] = []
+                        short_edges[se2].append(contig_name)
+                    # Filtering:
+                    # 1:
+                    # exclude contigs with long read coverage less than `exclude_contig_cov` and
+                    # shorter than `exclude_contig_size`
+                    # 2:
+                    # include if a contig is covered by >= min_cov_long long reads place in high cov set
+                    # Also place in high coverage set if contig was not covered by illumina reads
+                    # Also place in high coverage set if illumina coverage was <= min_cov_short
+                    if not (float(long_coverage) <= params.exclude_contig_cov and int(contig_length) <= params.exclude_contig_size):
+                        if float(long_coverage) >= params.min_cov_long or not contig_name in ill_cov_dict \
+                                or ill_cov_dict[contig_name] <= params.min_cov_short:
+                            high_cov_set.add(contig_name)
 
-        # Remove contigs that were filtered from the high coverage set
-        for i in filtered_contigs:
-            try:
-                high_cov_set.remove(i)
-            except KeyError:
-                pass
+            filtered_contigs = set()
+            # Populate filtered contigs with short contigs that were connected to two edges in short_edges dict in the correct
+            # orientation: edge_1 + to edge_2 - and edge_1 != edge_2. So the start of a sequences complements links to
+            #               the end of a sequences reverse complement.
+            with open(input.graph) as f:
+                for line in f:
+                    if line.startswith("L"):
+                        if (line.split()[1], line.split()[2] == '+') in short_edges \
+                                and (line.split()[3], line.split()[4] == '-') in short_edges \
+                                and not line.split()[1] == line.split()[3]: # and not line.split()[5] == '0M':
+                            for i in short_edges[(line.split()[1], line.split()[2] == '+')]:
+                                filtered_contigs.add(i)
+                            for i in short_edges[(line.split()[3], line.split()[4] == '-')]:
+                                filtered_contigs.add(i)
 
-        # Write high coverage contigs
-        with open(input.fasta) as f, open(output.fasta, 'w') as o:
-            write_line = False
-            for line in f:
-                if line.startswith('>') and line.split()[0][1:-6] in high_cov_set:
-                    write_line = True
-                elif line.startswith('>'):
-                    write_line = False
-                if write_line:
-                    o.write(line)
+            # Remove contigs that were filtered from the high coverage set
+            for i in filtered_contigs:
+                try:
+                    high_cov_set.remove(i)
+                except KeyError:
+                    pass
+
+            # Write high coverage contigs
+            with open(input.fasta) as f, open(output.fasta, 'w') as o:
+                write_line = False
+                for line in f:
+                    if line.startswith('>') and line.split()[0][1:-6] in high_cov_set:
+                        write_line = True
+                    elif line.startswith('>'):
+                        write_line = False
+                    if write_line:
+                        o.write(line)
+elif READ_MODE == "short_only":
+    # If only short reads are provided
+    rule short_only:
+        input:
+            fastq = config['short_reads_1'] if config["skip_qc"] else "data/short_reads.fastq.gz",
+        output:
+            fasta = touch(LONG_HIGH_COV_FASTA),
+elif READ_MODE == "long_only":
+    pass
+else:
+    raise Exception("Programming error: unexpected read mode for assembly.")
 
 
 # Illumina reads are filtered against the nanopore assembly.
@@ -425,13 +480,6 @@ rule filter_illumina_assembly:
 #         ln {input.unassembled_long} {output.long_reads}
 #         """
 
-
-# If only short reads are provided
-rule short_only:
-    input:
-        fastq = config['short_reads_1'] if config["skip_qc"] else "data/short_reads.fastq.gz",
-    output:
-        fasta = touch(LONG_HIGH_COV_FASTA),
 
 # Short reads that did not map to the long read assembly are hybrid assembled with metaspades
 # If no long reads were provided, long_reads.fastq.gz will be empty
@@ -514,16 +562,21 @@ rule assemble_short_reads:
         --log {resources.log_path}
         """
 
-rule move_spades_assembly:
-    input:
-        assembly = "data/short_read_assembly/scaffolds.fasta"
-    output:
-        out = "data/final_contigs.fasta"
-    priority: 1
-    resources:
-        log_path = lambda wildcards, attempt: setup_log(f"{logs_dir}/move_spades_assembly", attempt),
-    shell:
-        "bash -c 'cp {input.assembly} {output.out} && rm -rf data/short_read_assembly' &> {resources.log_path}"
+if ASSEMBLY_STRATEGY == "short_only":
+    rule move_spades_assembly:
+        input:
+            assembly = "data/short_read_assembly/scaffolds.fasta"
+        output:
+            out = "data/final_contigs.fasta"
+        priority: 1
+        log:
+            "logs/move_spades_assembly.log"
+        shell:
+            "bash -c 'cp {input.assembly} {output.out} && rm -rf data/short_read_assembly' &> {log}"
+elif ASSEMBLY_STRATEGY in ("hybrid_unicycler", "hybrid_skip_unicycler", "long_only"):
+    pass
+else:
+    raise Exception("Programming error: unexpected assembly strategy for short-read assembly move.")
 
 
 # Short reads are mapped to the spades assembly and jgi_summarize_bam_contig_depths from metabat
@@ -682,129 +735,146 @@ rule assemble_pools:
 
 # The long read high coverage assembly from flye and hybrid assembly from unicycler are combined.
 # Long and short reads are mapped to this combined assembly.
-rule combine_assemblies:
-    input:
-        short_fasta = "data/unicycler_combined.fa",
-        flye_fasta = LONG_HIGH_COV_FASTA
-    output:
-        output_fasta = "data/final_contigs.fasta",
-    priority: 1
-    shell:
-        f'{pixi_run} {ASSEMBLY_SCRIPTS_DIR}/'+\
-        """combine_assemblies.py \
-        --flye-fasta {input.flye_fasta} \
-        --short-fasta {input.short_fasta} \
-        --output-fasta {output.output_fasta}
-        """
+if ASSEMBLY_STRATEGY == "hybrid_unicycler":
+    rule combine_assemblies:
+        input:
+            short_fasta = "data/unicycler_combined.fa",
+            flye_fasta = LONG_HIGH_COV_FASTA
+        output:
+            output_fasta = "data/final_contigs.fasta",
+        priority: 1
+        shell:
+            f'{pixi_run} {ASSEMBLY_SCRIPTS_DIR}/'+\
+            """combine_assemblies.py \
+            --flye-fasta {input.flye_fasta} \
+            --short-fasta {input.short_fasta} \
+            --output-fasta {output.output_fasta}
+            """
+elif ASSEMBLY_STRATEGY in ("short_only", "hybrid_skip_unicycler", "long_only"):
+    pass
+else:
+    raise Exception("Programming error: unexpected assembly strategy for combine_assemblies.")
 
 
+if ASSEMBLY_STRATEGY == "long_only":
+    rule combine_long_only:
+        input:
+            long_reads = "data/long_reads.fastq.gz",
+            flye_fasta = "data/assembly.pol.rac.fasta"
+        output:
+            output_fasta = "data/final_contigs.fasta",
+            # long_bam = "data/final_long.sort.bam"
+        priority: 1
+        shell:
+            f'{pixi_run} {ASSEMBLY_SCRIPTS_DIR}/'+\
+            """combine_assemblies.py \
+            --flye-fasta {input.flye_fasta} \
+            --output-fasta {output.output_fasta}
+            """
+elif ASSEMBLY_STRATEGY in ("short_only", "hybrid_unicycler", "hybrid_skip_unicycler"):
+    pass
+else:
+    raise Exception("Programming error: unexpected assembly strategy for long-read-only combine.")
 
-rule combine_long_only:
-    input:
-        long_reads = "data/long_reads.fastq.gz",
-        flye_fasta = "data/assembly.pol.rac.fasta"
-    output:
-        output_fasta = "data/final_contigs.fasta",
-        # long_bam = "data/final_long.sort.bam"
-    priority: 1
-    shell:
-        f'{pixi_run} {ASSEMBLY_SCRIPTS_DIR}/'+\
-        """combine_assemblies.py \
-        --flye-fasta {input.flye_fasta} \
-        --output-fasta {output.output_fasta}
-        """
 
-
-
-rule skip_unicycler:
-    input:
-        short_fasta = "data/spades_assembly.fasta",
-        flye_fasta = LONG_HIGH_COV_FASTA
-    output:
-        fasta = "data/final_contigs.fasta",
-        final_link = 'assembly/final_contigs.fasta',
-        sizes = "www/assembly_stats.txt",
-        unicycler_skipped = temp("data/unicycler_skipped")
-    priority: 1
-    threads:
-        config["max_threads"]
-    shell:
-        f'{pixi_run} -e bbmap bash -e -o pipefail -c "' + \
-        """cat {input.short_fasta} {input.flye_fasta} > {output.fasta}; 
-        touch data/unicycler_skipped; 
-        mkdir -p www/; 
-        stats.sh {output.fasta} > {output.sizes}; 
-        mkdir -p assembly; 
-        cd assembly; 
-        ln -s ../data/final_contigs.fasta ./;"
-        """
-
-rule skip_unicycler_with_qc:
-    input:
-        short_fasta = "data/spades_assembly.fasta",
-        flye_fasta = LONG_HIGH_COV_FASTA,
-        qc_done = 'data/qc_done'
-    output:
-        fasta = "data/final_contigs.fasta",
-        final_link = 'assembly/final_contigs.fasta',
-        sizes = "www/assembly_stats.txt",
-        unicycler_skipped = temp("data/unicycler_skipped")
-    priority: 1
-    threads:
-        config["max_threads"]
-    shell:
-        f'{pixi_run} -e bbmap bash -e -o pipefail -c "' + \
-        """cat {input.short_fasta} {input.flye_fasta} > {output.fasta}; 
-        touch data/unicycler_skipped; 
-        mkdir -p www/; 
-        stats.sh {output.fasta} > {output.sizes}; 
-        mkdir -p assembly; 
-        cd assembly; 
-        ln -s ../data/final_contigs.fasta ./;"
-        """
-
-rule complete_assembly:
-    input:
-        fasta = 'data/final_contigs.fasta'
-    output:
-        final_link = 'assembly/final_contigs.fasta',
-        sizes = "www/assembly_stats.txt"
-    shell:
-        f'{pixi_run} -e bbmap bash -e -o pipefail -c "' + \
-        """mkdir -p www/; 
-        stats.sh {input.fasta} > {output.sizes}; 
-        mkdir -p assembly; 
-        cd assembly; 
-        ln -s ../data/final_contigs.fasta ./; 
-        cd ../; 
-        rm -rf data/polishing; 
-        rm -rf data/short_reads.fastq.gz; 
-        rm -rf data/short_unmapped_ref.bam; 
-        rm -rf data/short_unmapped_ref.bam.bai; 
-        rm -rf data/short_filter.done;
-        """
-
-rule complete_assembly_with_qc:
-    input:
-        fasta = 'data/final_contigs.fasta',
-        qc_done = 'data/qc_done'
-    output:
-        final_link = 'assembly/final_contigs.fasta',
-        sizes = "www/assembly_stats.txt"
-    shell:
-        f'{pixi_run} -e bbmap bash -e -o pipefail -c "' + \
-        """mkdir -p www/; 
-        stats.sh {input.fasta} > {output.sizes}; 
-        mkdir -p assembly; 
-        cd assembly; 
-        ln -s ../data/final_contigs.fasta ./; 
-        cd ../; 
-        rm -rf data/polishing; 
-        rm -rf data/short_reads.fastq.gz; 
-        rm -rf data/short_unmapped_ref.bam; 
-        rm -rf data/short_unmapped_ref.bam.bai; 
-        rm -rf data/short_filter.done; "
-        """
+if ASSEMBLY_STRATEGY == "hybrid_skip_unicycler":
+    if SKIP_QC is False:
+        rule complete_assembly_with_qc:
+            input:
+                short_fasta = "data/spades_assembly.fasta",
+                flye_fasta = LONG_HIGH_COV_FASTA,
+                qc_done = 'data/qc_done'
+            output:
+                fasta = "data/final_contigs.fasta",
+                final_link = 'assembly/final_contigs.fasta',
+                sizes = "www/assembly_stats.txt",
+                unicycler_skipped = temp("data/unicycler_skipped")
+            priority: 1
+            threads:
+                config["max_threads"]
+            shell:
+                f'{pixi_run} -e bbmap bash -e -o pipefail -c "' + \
+                """cat {input.short_fasta} {input.flye_fasta} > {output.fasta}; 
+                touch data/unicycler_skipped; 
+                mkdir -p www/; 
+                stats.sh {output.fasta} > {output.sizes}; 
+                mkdir -p assembly; 
+                cd assembly; 
+                ln -s ../data/final_contigs.fasta ./;"
+                """
+    elif SKIP_QC is True:
+        rule complete_assembly_with_qc:
+            input:
+                short_fasta = "data/spades_assembly.fasta",
+                flye_fasta = LONG_HIGH_COV_FASTA
+            output:
+                fasta = "data/final_contigs.fasta",
+                final_link = 'assembly/final_contigs.fasta',
+                sizes = "www/assembly_stats.txt",
+                unicycler_skipped = temp("data/unicycler_skipped")
+            priority: 1
+            threads:
+                config["max_threads"]
+            shell:
+                f'{pixi_run} -e bbmap bash -e -o pipefail -c "' + \
+                """cat {input.short_fasta} {input.flye_fasta} > {output.fasta}; 
+                touch data/unicycler_skipped; 
+                mkdir -p www/; 
+                stats.sh {output.fasta} > {output.sizes}; 
+                mkdir -p assembly; 
+                cd assembly; 
+                ln -s ../data/final_contigs.fasta ./;"
+                """
+    else:
+        raise Exception("Programming error: unexpected skip_qc value for hybrid skip unicycler.")
+elif ASSEMBLY_STRATEGY in ("short_only", "hybrid_unicycler", "long_only"):
+    if SKIP_QC is False:
+        rule complete_assembly_with_qc:
+            input:
+                fasta = 'data/final_contigs.fasta',
+                qc_done = 'data/qc_done'
+            output:
+                final_link = 'assembly/final_contigs.fasta',
+                sizes = "www/assembly_stats.txt"
+            shell:
+                f'{pixi_run} -e bbmap bash -e -o pipefail -c "' + \
+                """mkdir -p www/; 
+                stats.sh {input.fasta} > {output.sizes}; 
+                mkdir -p assembly; 
+                cd assembly; 
+                ln -s ../data/final_contigs.fasta ./; 
+                cd ../; 
+                rm -rf data/polishing; 
+                rm -rf data/short_reads.fastq.gz; 
+                rm -rf data/short_unmapped_ref.bam; 
+                rm -rf data/short_unmapped_ref.bam.bai; 
+                rm -rf data/short_filter.done; 
+                """
+    elif SKIP_QC is True:
+        rule complete_assembly_with_qc:
+            input:
+                fasta = 'data/final_contigs.fasta'
+            output:
+                final_link = 'assembly/final_contigs.fasta',
+                sizes = "www/assembly_stats.txt"
+            shell:
+                f'{pixi_run} -e bbmap bash -e -o pipefail -c "' + \
+                """mkdir -p www/; 
+                stats.sh {input.fasta} > {output.sizes}; 
+                mkdir -p assembly; 
+                cd assembly; 
+                ln -s ../data/final_contigs.fasta ./; 
+                cd ../; 
+                rm -rf data/polishing; 
+                rm -rf data/short_reads.fastq.gz; 
+                rm -rf data/short_unmapped_ref.bam; 
+                rm -rf data/short_unmapped_ref.bam.bai; 
+                rm -rf data/short_filter.done; 
+                """
+    else:
+        raise Exception("Programming error: unexpected skip_qc value for complete assembly.")
+else:
+    raise Exception("Programming error: unexpected assembly strategy for complete assembly.")
 
 # rule reset_to_spades_assembly:
 #     output:
