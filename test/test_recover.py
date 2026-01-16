@@ -207,7 +207,7 @@ class Tests(unittest.TestCase):
                 f"--extra-binners quickbin "
                 f"--output {tmpdir}/test "
                 f"--dryrun --tmpdir {tmpdir} "
-                f"--snakemake-cmds \" --quiet\" "
+                # f"--snakemake-cmds \" --quiet\" "
             )
             output = extern.run(cmd)
 
