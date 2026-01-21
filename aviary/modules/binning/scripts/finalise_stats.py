@@ -3,16 +3,8 @@ from Bio import SeqIO
 import os
 from glob import glob
 
-<<<<<<< HEAD
-def find_circular(checkm_output, assembly_info_path, checkm1=True):
-    if checkm1:
-        bin_column = "Bin Id"
-    else:
-        bin_column = "Name"
-=======
-def find_circular(checkm_output):
+def find_circular(checkm_output, assembly_info_path):
     bin_column = "Name"
->>>>>>> origin/pixi
 
     circular_contigs = []
     circular_bps = []
@@ -84,7 +76,7 @@ if __name__ == "__main__":
     assembly_info_path = os.path.join(assembly_dir, "assembly_info.txt")
 
     if os.path.isfile(assembly_info_path):
-        checkm_output = find_circular(checkm_output, assembly_info_path, is_checkm1)
+        checkm_output = find_circular(checkm_output, assembly_info_path)
 
     taxa = get_taxonomy(checkm_output.columns[0])
 
