@@ -24,7 +24,7 @@ jobs:
           mkdir -p aviary/.pixi
           echo "Contents of aviary directory:"
           ls -la aviary
-          pixi run -e dev --manifest-path aviary/pixi.toml postinstall
+          pixi run -e dev postinstall
           pixi run -e dev pixi info
 
       - name: Show environment info
@@ -70,7 +70,7 @@ jobs:
           echo "Contents of aviary directory:"
           ls -la aviary
           # --manifest-path aviary/pixi.toml only needed first time to create symlinks
-          pixi run -e dev --manifest-path aviary/pixi.toml postinstall
+          pixi run -e dev postinstall
           pixi run -e dev pixi info
 
       - name: Show environment info
