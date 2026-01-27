@@ -402,7 +402,7 @@ def main():
     )
 
     qc_options.add_argument(
-        '--disable-adpater-trimming', '--disable_adpater_trimming',
+        '--disable-adapter-trimming', '--disable_adapter_trimming',
         help='Disable adapter trimming of short reads',
         type=str2bool,
         nargs='?',
