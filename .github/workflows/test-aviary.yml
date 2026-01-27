@@ -18,6 +18,8 @@ jobs:
 
       - name: Create dev environment
         run: |
+          pwd
+          ls -la
           pixi run -e dev postinstall
           pixi run -e dev pixi info
 
