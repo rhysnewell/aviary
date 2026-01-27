@@ -25,16 +25,9 @@ bird_tool_utils_python = "*"
 postinstall-base = { cmd = "pip install --no-build-isolation --no-deps --disable-pip-version-check -e ..", cwd = "aviary" }
 update_deps = { cmd = "python ../admin/build_dep_defs_from_pixi.py", depends-on = ["postinstall"] }
 
-[tasks.create-pixi-symlinks]
-# When we first checkout aviary from git, we cannot have .pixi -> aviary/.pixi
-# because that directory does not yet exist. So we instead create the symlinks
-# during postinstall. Then using --manifest-path is only needed once.
-cmd = 'ln -sf aviary/.pixi ../.pixi && ln -sf aviary/pixi.toml ../pixi.toml && ln -sf aviary/pixi.lock ../pixi.lock'
-
 [tasks.postinstall]
 # install into both standard and dev envs
 depends-on = [
-    { task = "create-pixi-symlinks" },
     { task = "postinstall-base", environment = "main" },
     { task = "postinstall-base", environment = "dev" }
 ]
@@ -43,14 +36,14 @@ depends-on = [
 args = ["test_name"]
 cmd = "pytest test --run-expensive -k {{ test_name }}"
 depends-on = [
-    {task = "postinstall", environment = "dev" }
+    {task = "postinstall-base", environment = "dev" }
 ]
 
 [tasks.run-a-test]
 args = ["test_name"]
 depends-on = [
     # run postinstall in the dev environment
-    { task = "postinstall", environment = "dev" },
+    { task = "postinstall-base", environment = "dev" },
     # then run the tests in the same env
     {task = "run-a-test-base", environment = "dev", args = [ "{{ test_name }}" ] }
 ]
