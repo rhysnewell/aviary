@@ -62,6 +62,9 @@ pip install aviary-genome
 
 ### Option 3: Install from source
 
+This method can be somewhat complicated, as you can see below, but it allows for easier/faster development and debugging of aviary itself.
+
+#### Clone
 To install from source, we recommend using [pixi](https://pixi.sh/). First clone
 the aviary repository from GitHub:
 
@@ -70,21 +73,30 @@ git clone https://github.com/rhysnewell/aviary.git
 cd aviary
 ```
 
-Then install the main environment using pixi:
+#### Symlink aviary/.pixi to faster disk (optional)
+Then install the main environment using pixi. *However*, before doing this, consider symlinking the `aviary/.pixi` directory to a faster disk (skip this step and a directory will be silently created in the next step).
 
+For those at CMR, setup a link to a faster disk by running:
+```bash
+cd aviary && pixi_cmr_init.py && cd -
+```
+
+#### Post-installation of aviary
+Then run postinstall so `aviary` can be run as a script:
 ```bash
 pixi run postinstall
 ```
 
-Then aviary can be run using `pixi run` (or via `pixi shell`).
+When installed from source this way, aviary is installed in an "editable" way (similar to `pip install -e .`), meaning that any changes made to aviary source are immediately available via the `aviary` command. This is useful for development and debugging.
 
+#### Running aviary from source
+Then aviary can be run using `pixi run` (or via `pixi shell`).
 ```bash
 pixi run aviary --help
 ```
 
-When installed this way, aviary is installed in an "editable" way (similar to `pip install -e .`), meaning that any changes made to aviary source are immediately available via the `aviary` command. This is useful for development and debugging.
-
-When run this way, the databases required for aviary (e.g. `CHECKM2DB`) can be symlinked from a `db/` directory in the aviary repository. An activation hook then ensures that these are available when in the pixi environments. To do this, create a `db/` directory in the aviary repository and symlink the required databases into it. For example, as of writing:
+#### Databases when running from source
+As well as the standard method for defining database paths (e.g. `CHECKM2DB`), databases can be symlinked from a `db/` directory in the aviary repository. An activation hook then ensures that these are available when in the pixi environments. To do this, create a `db/` directory in the aviary repository and symlink the required databases into it. For example, as of writing:
 
 ```bash
 $ ls db -l
@@ -98,7 +110,7 @@ lrwxrwxrwx - woodcrob 23 Apr 07:55 S4.3.0.GTDB_r220.metapackage_20240523.smpkg.z
 
 To check the expected database symlink names, see `admin/set_env_vars.sh` in the
 aviary repository. The advantage of this approach is that locations of the
-databases are not tracked in the repository, since they are specific to the
+databases are not tracked in the repository, which is advantageous as they are specific to the
 computing cluster of the user.
 
 ## Checking installation

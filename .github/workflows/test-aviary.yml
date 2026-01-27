@@ -20,6 +20,7 @@ jobs:
         run: |
           pwd
           ls -la
+          mkdir aviary/.pixi # Otherwise .pixi in checkout is a dead link.
           pixi run -e dev postinstall
           pixi run -e dev pixi info
 
