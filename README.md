@@ -73,21 +73,34 @@ git clone https://github.com/rhysnewell/aviary.git
 cd aviary
 ```
 
-#### Symlink aviary/.pixi to faster disk (optional)
-Then install the main environment using pixi. *However*, before doing this, consider symlinking the `aviary/.pixi` directory to a faster disk (skip this step and a directory will be silently created in the next step).
+#### Create aviary/.pixi (possibly symlinked to faster disk)
+In the source directory, create the `aviary/.pixi` directory to hold pixi environments. Without this, `.pixi` is symlinked to `aviary/.pixi` within the checkout, which does not exist. So `pixi run ..` trips over that dead link.
 
-For those at CMR, setup a link to a faster disk by running:
+This can be done by simply running:
+```bash
+mkdir -p aviary/.pixi
+```
+
+For those at CMR, you can instead run:
 ```bash
 cd aviary && pixi_cmr_init.py && cd -
 ```
 
+
+
 #### Post-installation of aviary
-Then run postinstall so `aviary` can be run as a script:
+Then run postinstall so `aviary` can be run as a script. The `postinstall` task creates symlinks in the parent directory to allow running aviary directly via `pixi run aviary ...` in subsequent uses.
 ```bash
 pixi run postinstall
 ```
 
 When installed from source this way, aviary is installed in an "editable" way (similar to `pip install -e .`), meaning that any changes made to aviary source are immediately available via the `aviary` command. This is useful for development and debugging.
+
+If you see something like the following error, you might have missed the previous step?
+```
+Error:   × Failed to create .pixi/ directory at .../aviary/.pixi
+  ╰─▶ File exists (os error 17)
+```
 
 #### Running aviary from source
 Then aviary can be run using `pixi run` (or via `pixi shell`).
