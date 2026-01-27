@@ -175,6 +175,9 @@ class Tests(unittest.TestCase):
         })
 
         observed = process_classifications(df, conversion_dict, coverm_out)
+        # Normalize column index dtype across pandas versions (string vs object)
+        expected.columns = expected.columns.astype(object)
+        observed.columns = observed.columns.astype(object)
         pdt.assert_frame_equal(expected, observed)
 
 
