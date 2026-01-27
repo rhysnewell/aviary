@@ -19,6 +19,7 @@ pyopenssl = ">22.1.0"
 pixi = "*"
 pip = "*"
 setuptools = "*"
+bird_tool_utils_python = "*"
 
 [tasks]
 postinstall-base = { cmd = "pip install --no-build-isolation --no-deps --disable-pip-version-check -e ..", cwd = "aviary" }
@@ -190,8 +191,9 @@ pilon = ">=1.23"
 [feature.minimap2.dependencies]
 samtools = ">=1.9"
 minimap2 = ">=2.18"
-fastp = "*"
+fastp = "*" # Required at least for qc_short_reads - maybe should be its own env?
 pigz = "*"
+ipython = "*"
 
 [feature.spades.dependencies]
 python = ">=3.12.0"  # Keep things consistent to aid debugging.

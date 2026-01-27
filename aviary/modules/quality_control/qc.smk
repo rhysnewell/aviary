@@ -15,7 +15,6 @@ rule qc_short_reads:
         short_reads_1 = config["short_reads_1"],
         short_reads_2 = config["short_reads_2"],
     output:
-        bam = temp("data/short_unmapped_ref.bam"),
         fastq = "data/short_reads.fastq.gz",
         filtered = "data/short_filter.done"
     params:
@@ -27,7 +26,12 @@ rule qc_short_reads:
         extra_fastp_params = config['extra_fastp_params'],
         coassemble = config["coassemble"],
         host_filter = [] if config["host_filter"] == ["none"] else config["host_filter"],
-        skip_qc = config["skip_qc"]
+        skip_qc = config["skip_qc"],
+        # There appears to be a bug in snakemake where temp() files generated in
+        # aqua profile are deleted during the job, but the master process then
+        # sees them as missing, causing aviary to fail. So we just make it a param,
+        # and clean up manually.
+        bam = "data/short_unmapped_ref.bam",
     threads:
         config["max_threads"]
     resources:
@@ -44,7 +48,7 @@ rule qc_short_reads:
           --coassemble {params.coassemble} \
           --short-reads-1 {input.short_reads_1} \
           --short-reads-2 {input.short_reads_2} \
-          --output-bam {output.bam} \
+          --output-bam {params.bam} \
           --output-fastq {output.fastq} \
           --output-filtered {output.filtered} \
           --quality-cutoff {params.quality_cutoff} \
@@ -54,7 +58,8 @@ rule qc_short_reads:
           --extra-fastp-params "{params.extra_fastp_params}" \
           --host-filter {params.host_filter} \
           --threads {threads} \
-          --log {resources.log_path}
+          --log {resources.log_path} && \
+        rm -f {params.bam}
         """
 
 rule qc_long_reads:
