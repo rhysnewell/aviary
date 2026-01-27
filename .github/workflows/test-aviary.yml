@@ -18,17 +18,22 @@ jobs:
 
       - name: Create dev environment
         run: |
-          pixi run --manifest-path aviary/pixi.toml -e dev postinstall
-          pixi run --manifest-path aviary/pixi.toml -e dev pixi info
+          pixi run -e dev postinstall
+          pixi run -e dev pixi info
 
       - name: Show environment info
         run: |
-          pixi run --manifest-path aviary/pixi.toml -e dev pixi list
+          pixi run -e dev pixi list
 
       - name: Run tests with Pixi
         run: |
-          pixi run --manifest-path aviary/pixi.toml -e dev aviary -h
-          pixi run --manifest-path aviary/pixi.toml -e dev pytest -v
+          pixi run -e dev aviary -h
+          pixi run -e dev pytest -v
+
+      - name: Ensure main env sanity
+        run: |
+          pixi run postinstall
+          pixi run aviary -h
 
   # Run after removing lock file so dependences are unlocked
   pixi_test_dependencies_optimistic:
@@ -52,14 +57,19 @@ jobs:
 
       - name: Create dev environment
         run: |
-          pixi run --manifest-path aviary/pixi.toml -e dev postinstall
-          pixi run --manifest-path aviary/pixi.toml -e dev pixi info
+          pixi run -e dev postinstall
+          pixi run -e dev pixi info
 
       - name: Show environment info
         run: |
-          pixi run --manifest-path aviary/pixi.toml -e dev pixi list
+          pixi run -e dev pixi list
 
       - name: Run tests with Pixi
         run: |
-          pixi run --manifest-path aviary/pixi.toml -e dev aviary -h
-          pixi run --manifest-path aviary/pixi.toml -e dev pytest -v
+          pixi run -e dev aviary -h
+          pixi run -e dev pytest -v
+
+      - name: Ensure main env sanity
+        run: |
+          pixi run postinstall
+          pixi run aviary -h
