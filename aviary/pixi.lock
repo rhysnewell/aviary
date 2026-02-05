@@ -3290,7 +3290,7 @@ environments:
       - conda: https://conda.anaconda.org/conda-forge/linux-64/cyrus-sasl-2.1.28-hd9c7081_0.conda
       - conda: https://conda.anaconda.org/conda-forge/noarch/decorator-5.2.1-pyhd8ed1ab_0.conda
       - conda: https://conda.anaconda.org/bioconda/noarch/dendropy-5.0.8-pyhdfd78af_1.tar.bz2
-      - conda: https://conda.anaconda.org/bioconda/linux-64/diamond-2.1.19-h13889ed_0.conda
+      - conda: https://conda.anaconda.org/bioconda/linux-64/diamond-2.1.21-h13889ed_0.conda
       - conda: https://conda.anaconda.org/bioconda/linux-64/expressbetadiversity-1.0.10-h9948957_6.tar.bz2
       - conda: https://conda.anaconda.org/conda-forge/noarch/extern-0.4.1-py_0.tar.bz2
       - conda: https://conda.anaconda.org/bioconda/noarch/fastalite-0.4.1-pyh7cba7a3_0.tar.bz2
@@ -3467,7 +3467,7 @@ environments:
       - conda: https://conda.anaconda.org/conda-forge/linux-64/scipy-1.17.0-py312h54fa4ab_1.conda
       - conda: https://conda.anaconda.org/bioconda/noarch/seqmagick-0.8.6-pyhdfd78af_0.tar.bz2
       - conda: https://conda.anaconda.org/conda-forge/noarch/setuptools-80.10.1-pyh332efcf_0.conda
-      - conda: https://conda.anaconda.org/bioconda/noarch/singlem-0.20.3-pyhdfd78af_1.conda
+      - conda: https://conda.anaconda.org/bioconda/noarch/singlem-0.20.3-pyhdfd78af_2.conda
       - conda: https://conda.anaconda.org/conda-forge/noarch/six-1.17.0-pyhe01879c_1.conda
       - conda: https://conda.anaconda.org/bioconda/linux-64/skani-0.3.1-ha6fb395_0.conda
       - conda: https://conda.anaconda.org/bioconda/linux-64/smafa-0.8.0-hc1c3326_1.tar.bz2
@@ -6115,18 +6115,6 @@ packages:
   license_family: GPL3
   size: 3639975
   timestamp: 1744807978935
-- conda: https://conda.anaconda.org/bioconda/linux-64/diamond-2.1.19-h13889ed_0.conda
-  sha256: 47598932c35ea23658664a767469de88b8cdf0b86181a19f9791fe5a1da7514d
-  md5: 8f574ec6095ccb7334458e40da3d9259
-  depends:
-  - libgcc >=13
-  - libsqlite >=3.51.2,<4.0a0
-  - libstdcxx >=13
-  - libzlib >=1.3.1,<2.0a0
-  license: GPL-3.0-or-later
-  license_family: GPL3
-  size: 3005743
-  timestamp: 1768660484147
 - conda: https://conda.anaconda.org/bioconda/linux-64/diamond-2.1.21-h13889ed_0.conda
   sha256: a0803a209124e610a6c042072cec996ccf2477c7263e403756b943bd3ddc9db8
   md5: 54e124408e256d004462c2a8c62d67ca
@@ -16638,14 +16626,14 @@ packages:
   license_family: MIT
   size: 133692
   timestamp: 1762506927030
-- conda: https://conda.anaconda.org/bioconda/noarch/singlem-0.20.3-pyhdfd78af_1.conda
-  sha256: 614e4f10fb76e1c28af066922f4640423531a49dca5200503f2a8fba6006973d
-  md5: d65465a257f0cdb55838e699ef18f536
+- conda: https://conda.anaconda.org/bioconda/noarch/singlem-0.20.3-pyhdfd78af_2.conda
+  sha256: cc2a49e55fb1748c28398e0a42f4ce3869c8682be77ec378b4d3b0432cef4e28
+  md5: 67f929c5e296853a54f3f16acf9bb218
   depends:
   - biopython 1.86.*
   - bird_tool_utils_python 0.6.*
   - cd-hit 4.8.*
-  - diamond 2.1.19.*
+  - diamond >=2.1.21
   - expressbetadiversity 1.0.*
   - extern 0.4.*
   - fastalite 0.4.*
@@ -16679,8 +16667,8 @@ packages:
   license_family: GPL3
   purls:
   - pkg:pypi/singlem?source=hash-mapping
-  size: 170006
-  timestamp: 1768959096660
+  size: 169443
+  timestamp: 1769473336490
 - conda: https://conda.anaconda.org/conda-forge/noarch/six-1.16.0-pyh6c4a22f_0.tar.bz2
   sha256: a85c38227b446f42c5b90d9b642f2c0567880c15d72492d8da074a59c8f91dd6
   md5: e5f25f8dbc060e9a8d912e432202afc2
