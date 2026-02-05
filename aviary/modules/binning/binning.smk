@@ -1189,9 +1189,13 @@ rule singlem_appraise:
         singlem = "data/singlem_out/singlem_appraisal.tsv"
     params:
         package_path = config['singlem_metapackage'],
-    threads: min(config["max_threads"], 48)
+    threads: min(config["max_threads"], 4) # Should not generally take a long time
     resources:
-        mem_mb = lambda wildcards, attempt: min(int(config["max_memory"])*1024, 8*1024*attempt),
+        # 16G since failed with 8G when running (with SingleM v0.20.3)
+        # ```
+        # aviary complete --long-reads ~/m/arctic/data/20250211_long/fastq/A2A_WRIGLEY_W_PE_4_30.fastq.gz --coupled ~/m/arctic/data/20230327/flat/A2A_WRIGLEY_W_PE_4_30.1.fastq.gz ~/m/arctic/data/20230327/flat/A2A_WRIGLEY_W_PE_4_30.2.fastq.gz --output ~/s/arctic-aviary-testing2 -t 32
+        # ```
+        mem_mb = lambda wildcards, attempt: min(int(config["max_memory"])*1024, 16*1024*attempt),
         runtime = lambda wildcards, attempt: 12*60*attempt,
         log_path = lambda wildcards, attempt: setup_log(f"{logs_dir}/singlem_appraise", attempt),
     shell:
@@ -1202,7 +1206,7 @@ rule singlem_appraise:
         --pipe-results {input.pipe_results} \
         --threads {threads} \
         --package-path {params.package_path} \
-        --log {resources.log_path}
+        &> {resources.log_path}
         """
 
 rule recover_mags:
