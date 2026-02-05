@@ -1152,12 +1152,35 @@ rule singlem_pipe_reads:
         --package-path {params.package_path}
         """
 
+rule filter_bins_for_singlem:
+    input:
+        checkm = "bins/quality_report.tsv",
+        bins_dir = "bins/final_bins"
+    output:
+        filtered_bins = directory("data/singlem_out/filtered_bins")
+    params:
+        min_completeness = 50,
+        max_contamination = 5
+    threads: 1
+    resources:
+        mem_mb = lambda wildcards, attempt: min(int(config["max_memory"])*1024, 4*1024*attempt),
+        runtime = lambda wildcards, attempt: 2*60*attempt,
+    shell:
+        f'{pixi_run} -e default python {BINNING_SCRIPTS_DIR}/'+\
+        """filter_bins_for_singlem.py \
+        --checkm {input.checkm} \
+        --bins-dir {input.bins_dir} \
+        --output-dir {output.filtered_bins} \
+        --min-completeness {params.min_completeness} \
+        --max-contamination {params.max_contamination}
+        """
+
 rule singlem_appraise:
     input:
         pipe_results = "data/singlem_out/metagenome.combined_otu_table.csv",
         assembly = config["fasta"],
         # gtdbtk_done = "data/gtdbtk/done",
-        genomes_folder = "bins/final_bins"
+        genomes_folder = "data/singlem_out/filtered_bins"
     output:
         binned = "data/singlem_out/binned.otu_table.csv",
         unbinned = "data/singlem_out/unbinned.otu_table.csv",

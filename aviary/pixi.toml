@@ -11,6 +11,7 @@ snakemake = "9.*" # Current target, v10 not released yet
 "ruamel.yaml" = ">=0.15.99"
 numpy = "*"
 pandas = "*"
+polars = "*"
 biopython = "*"
 pigz = ">=2.6"
 parallel = "*"
