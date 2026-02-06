@@ -1,5 +1,6 @@
 BASE_SCRIPTS_DIR = os.path.join(os.path.dirname(os.path.abspath(workflow.snakefile)), '..', '..', 'scripts')
 BINNING_SCRIPTS_DIR = os.path.join(os.path.dirname(os.path.abspath(workflow.snakefile)), 'scripts')
+FILTERED_BINS_DIR = "data/filtered_bins"
 
 from aviary.modules.common import pixi_run, setup_log
 logs_dir = "logs"
@@ -43,6 +44,9 @@ onstart:
 
 if config['fasta'] == 'none':
     config['fasta'] = 'assembly/final_contigs.fasta'
+
+if config['mag_directory'] == 'none' and not config.get('binning_only', False):
+    config['mag_directory'] = FILTERED_BINS_DIR
 
 import os
 import sys
@@ -1096,7 +1100,7 @@ rule refine_dastool:
 
 rule get_abundances:
     input:
-        "bins/final_bins"
+        FILTERED_BINS_DIR
     threads:
         config["max_threads"]
     resources:
@@ -1111,6 +1115,7 @@ rule get_abundances:
         --long-reads {config[long_reads]} \
         --short-reads-1 {config[short_reads_1]} \
         --short-reads-2 {config[short_reads_2]} \
+        --bins-dir {input} \
         --long-read-type {config[long_read_type]} \
         --threads {threads} \
         --log {resources.log_path}
@@ -1152,12 +1157,12 @@ rule singlem_pipe_reads:
         --package-path {params.package_path}
         """
 
-rule filter_bins_for_singlem:
+rule filter_bins_for_quality:
     input:
         checkm = "bins/quality_report.tsv",
         bins_dir = "bins/final_bins"
     output:
-        filtered_bins = directory("data/singlem_out/filtered_bins")
+        filtered_bins = directory(FILTERED_BINS_DIR)
     params:
         min_completeness = 50,
         max_contamination = 5
@@ -1167,7 +1172,7 @@ rule filter_bins_for_singlem:
         runtime = lambda wildcards, attempt: 2*60*attempt,
     shell:
         f'{pixi_run} -e default python {BINNING_SCRIPTS_DIR}/'+\
-        """filter_bins_for_singlem.py \
+        """filter_bins_for_quality.py \
         --checkm {input.checkm} \
         --bins-dir {input.bins_dir} \
         --output-dir {output.filtered_bins} \
@@ -1180,7 +1185,7 @@ rule singlem_appraise:
         pipe_results = "data/singlem_out/metagenome.combined_otu_table.csv",
         assembly = config["fasta"],
         # gtdbtk_done = "data/gtdbtk/done",
-        genomes_folder = "data/singlem_out/filtered_bins"
+        genomes_folder = FILTERED_BINS_DIR
     output:
         binned = "data/singlem_out/binned.otu_table.csv",
         unbinned = "data/singlem_out/unbinned.otu_table.csv",
