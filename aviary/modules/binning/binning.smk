@@ -1199,7 +1199,7 @@ rule singlem_appraise:
         runtime = lambda wildcards, attempt: 12*60*attempt,
         log_path = lambda wildcards, attempt: setup_log(f"{logs_dir}/singlem_appraise", attempt),
     shell:
-        f'{pixi_run} -e singlem {BASE_SCRIPTS_DIR}/'+\
+        f'{pixi_run} -e singlem-appraise {BASE_SCRIPTS_DIR}/'+\
         """singlem_appraise.py \
         --assembly {input.assembly} \
         --genomes-folder {input.genomes_folder} \

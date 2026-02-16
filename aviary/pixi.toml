@@ -96,6 +96,7 @@ dev = ["dev", "main"]
 # Overall environments
 metabuli = ['metabuli']
 singlem = ['singlem']
+singlem-appraise = ['singlem-appraise']
 # QC
 chopper = ["chopper"]
 fastqc = ["fastqc"]
@@ -143,6 +144,11 @@ diamond = ">=2.1.21"
 
 [feature.singlem.pypi-dependencies]
 bird-tool-utils = "*"
+
+[feature.singlem-appraise.dependencies]
+# We use singlem v0.19 here because 0.20 introduced a major performance
+# regression for --genome-fasta-files input.
+singlem = "==0.19.0"
 
 [feature.chopper.dependencies]
 chopper = ">=0.6"

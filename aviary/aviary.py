@@ -722,7 +722,7 @@ def main():
         type=str2bool,
         nargs='?',
         const=True,
-        default=False,
+        default=True,
     )
 
     ####################################################################

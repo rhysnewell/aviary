@@ -61,7 +61,7 @@ class SingleMContainer:
     
     def _create_genome_commands(self):
         threads = self.threads
-        command = f"singlem pipe --no-assign-taxonomy --threads {threads} --genome-fasta-directory {self.genomes_dir} --otu-table {self.intermediate_dir}/metagenome.genomes_otu_table.csv"
+        command = f"singlem pipe --no-assign-taxonomy --threads {threads} --genome-fasta-files {self.genomes_dir}/*fna --otu-table {self.intermediate_dir}/metagenome.genomes_otu_table.csv"
         self.commands.append(command)
 
 
