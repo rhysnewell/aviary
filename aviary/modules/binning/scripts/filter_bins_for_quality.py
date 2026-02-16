@@ -14,7 +14,7 @@ def filter_bins(checkm_path, bins_dir, output_dir, min_completeness, max_contami
     filtered = (
         checkm_output.filter(
             (pl.col("Completeness") >= min_completeness)
-            & (pl.col("Contamination") < max_contamination)
+            & (pl.col("Contamination") <= max_contamination)
         )
         .get_column(bin_column)
         .to_list()
@@ -37,7 +37,7 @@ def filter_bins(checkm_path, bins_dir, output_dir, min_completeness, max_contami
 
 if __name__ == "__main__":
     parser = argparse.ArgumentParser(
-        description="Filter bins for SingleM using CheckM2 completeness/contamination thresholds."
+        description="Filter bins for quality using CheckM2 completeness/contamination thresholds."
     )
     parser.add_argument("--checkm", required=True, help="Path to CheckM2 quality report TSV")
     parser.add_argument("--bins-dir", required=True, help="Directory containing final bin .fna files")

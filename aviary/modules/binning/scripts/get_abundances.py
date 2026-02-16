@@ -13,10 +13,11 @@ def run_coverm(
     strain_analysis: bool,
     output_dir: str,
     log: str,
+    bins_dir: str,
 ):
     strain_analysis_flag = f"--bam-file-cache-directory {output_dir} --discard-unmapped" if strain_analysis else ""
 
-    coverm_cmd = f"coverm genome -t {threads} {strain_analysis_flag} -d bins/final_bins/ -m relative_abundance covered_fraction {read_type} {reads} -p {minimap2_type} --output-file {output_file} --min-covered-fraction 0.0 -x fna".split()
+    coverm_cmd = f"coverm genome -t {threads} {strain_analysis_flag} -d {bins_dir} -m relative_abundance covered_fraction {read_type} {reads} -p {minimap2_type} --output-file {output_file} --min-covered-fraction 0.0 -x fna".split()
 
     with open(log, "a") as logf:
         run(coverm_cmd, stdout=logf, stderr=STDOUT)
@@ -29,6 +30,7 @@ def get_abundances(
     threads: int,
     strain_analysis: bool,
     log: str,
+    bins_dir: str,
 ):
     if long_reads != "none":
         if long_read_type in ["ont", "ont_hq"]:
@@ -41,6 +43,7 @@ def get_abundances(
                 strain_analysis=strain_analysis,
                 output_dir="data/reads_mapped_to_mags/long/",
                 log=log,
+                bins_dir=bins_dir,
             )
 
         elif long_read_type in ["rs", "sq", "ccs", "hifi"]:
@@ -53,6 +56,7 @@ def get_abundances(
                 strain_analysis=strain_analysis,
                 output_dir="data/reads_mapped_to_mags/long/",
                 log=log,
+                bins_dir=bins_dir,
             )
 
         else:
@@ -65,6 +69,7 @@ def get_abundances(
                 strain_analysis=strain_analysis,
                 output_dir="data/reads_mapped_to_mags/long/",
                 log=log,
+                bins_dir=bins_dir,
             )
 
     if short_reads_2 != 'none':
@@ -82,6 +87,7 @@ def get_abundances(
             strain_analysis=strain_analysis,
             output_dir="data/reads_mapped_to_mags/short/",
             log=log,
+            bins_dir=bins_dir,
         )
 
     elif short_reads_1 != 'none':
@@ -94,6 +100,7 @@ def get_abundances(
             strain_analysis=strain_analysis,
             output_dir="data/reads_mapped_to_mags/short/",
             log=log,
+            bins_dir=bins_dir,
         )
 
     # Concatenate the two coverage files if both long and short exist
@@ -119,6 +126,7 @@ if __name__ == '__main__':
     parser.add_argument("--threads", type=int, required=True, help="Number of threads to use.")
     parser.add_argument("--strain-analysis", type=lambda x: x.lower() == 'true', nargs='?', const=True, default=False, help="Enable strain analysis (True/False).")
     parser.add_argument("--log", type=str, required=True, help="Path to log file.")
+    parser.add_argument("--bins-dir", type=str, required=True, help="Directory containing bins to quantify.")
 
     args = parser.parse_args()
 
@@ -133,4 +141,5 @@ if __name__ == '__main__':
         threads=args.threads,
         strain_analysis=args.strain_analysis,
         log=args.log,
+        bins_dir=args.bins_dir,
     )
