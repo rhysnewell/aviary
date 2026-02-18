@@ -109,7 +109,7 @@ class Tests(unittest.TestCase):
             # Extras
             self.assertTrue("gtdbtk" in output)
             self.assertTrue("get_abundances" in output)
-            self.assertTrue("singlem_pipe_reads" in output)
+            self.assertFalse("singlem_pipe_reads" in output)
             self.assertTrue("filter_bins_for_quality" in output)
             self.assertTrue("singlem_appraise" in output)
             self.assertTrue("finalise_stats" in output)
@@ -217,7 +217,7 @@ class Tests(unittest.TestCase):
             # Extras
             self.assertTrue("gtdbtk" in output)
             self.assertTrue("get_abundances" in output)
-            self.assertTrue("singlem_pipe_reads" in output)
+            self.assertFalse("singlem_pipe_reads" in output)
             self.assertTrue("filter_bins_for_quality" in output)
             self.assertTrue("singlem_appraise" in output)
             self.assertTrue("finalise_stats" in output)
@@ -326,7 +326,7 @@ class Tests(unittest.TestCase):
             # Extras
             self.assertTrue("gtdbtk" in output)
             self.assertTrue("get_abundances" in output)
-            self.assertTrue("singlem_pipe_reads" in output)
+            self.assertFalse("singlem_pipe_reads" in output)
             self.assertTrue("filter_bins_for_quality" in output)
             self.assertTrue("singlem_appraise" in output)
             self.assertTrue("finalise_stats" in output)
@@ -433,7 +433,7 @@ class Tests(unittest.TestCase):
             # Extras
             self.assertTrue("gtdbtk" in output)
             self.assertTrue("get_abundances" in output)
-            self.assertTrue("singlem_pipe_reads" in output)
+            self.assertFalse("singlem_pipe_reads" in output)
             self.assertTrue("filter_bins_for_quality" in output)
             self.assertTrue("singlem_appraise" in output)
             self.assertTrue("finalise_stats" in output)
@@ -541,7 +541,7 @@ class Tests(unittest.TestCase):
             # Extras
             self.assertTrue("gtdbtk" in output)
             self.assertTrue("get_abundances" in output)
-            self.assertTrue("singlem_pipe_reads" in output)
+            self.assertFalse("singlem_pipe_reads" in output)
             self.assertTrue("filter_bins_for_quality" in output)
             self.assertTrue("singlem_appraise" in output)
             self.assertTrue("finalise_stats" in output)
@@ -649,7 +649,7 @@ class Tests(unittest.TestCase):
             # Extras
             self.assertTrue("gtdbtk" in output)
             self.assertTrue("get_abundances" in output)
-            self.assertTrue("singlem_pipe_reads" not in output)
+            self.assertFalse("singlem_pipe_reads" in output)
             self.assertTrue("filter_bins_for_quality" in output)
             self.assertTrue("singlem_appraise" not in output)
             self.assertTrue("finalise_stats" in output)
@@ -757,7 +757,7 @@ class Tests(unittest.TestCase):
             # Extras
             self.assertTrue("gtdbtk" in output)
             self.assertTrue("get_abundances" not in output)
-            self.assertTrue("singlem_pipe_reads" in output)
+            self.assertFalse("singlem_pipe_reads" in output)
             self.assertTrue("filter_bins_for_quality" in output)
             self.assertTrue("singlem_appraise" in output)
             self.assertTrue("finalise_stats" in output)
@@ -865,7 +865,7 @@ class Tests(unittest.TestCase):
             # Extras
             self.assertTrue("gtdbtk" not in output)
             self.assertTrue("get_abundances" in output)
-            self.assertTrue("singlem_pipe_reads" in output)
+            self.assertFalse("singlem_pipe_reads" in output)
             self.assertTrue("filter_bins_for_quality" in output)
             self.assertTrue("singlem_appraise" in output)
             self.assertTrue("finalise_stats" in output)
@@ -973,7 +973,7 @@ class Tests(unittest.TestCase):
             # Extras
             self.assertTrue("gtdbtk" not in output)
             self.assertTrue("get_abundances" not in output)
-            self.assertTrue("singlem_pipe_reads" not in output)
+            self.assertFalse("singlem_pipe_reads" in output)
             self.assertTrue("filter_bins_for_quality" not in output)
             self.assertTrue("singlem_appraise" not in output)
             self.assertTrue("finalise_stats" in output)
