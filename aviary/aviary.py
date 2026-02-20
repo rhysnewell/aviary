@@ -725,6 +725,22 @@ def main():
         default=True,
     )
 
+    binning_options.add_argument(
+        '--min-completeness', '--min_completeness',
+        help='Minimum CheckM2 completeness percentage for annotation',
+        dest='min_completeness',
+        type=float,
+        default=50.0,
+    )
+
+    binning_options.add_argument(
+        '--max-contamination', '--max_contamination',
+        help='Maximum CheckM2 contamination percentage for annotation',
+        dest='max_contamination',
+        type=float,
+        default=5.0,
+    )
+
     ####################################################################
     mag_group = argparse.ArgumentParser(formatter_class=CustomHelpFormatter,
                                         add_help=False)

@@ -128,6 +128,8 @@ class Processor:
             self.skip_abundances = args.skip_abundances
             self.skip_taxonomy = args.skip_taxonomy
             self.skip_singlem = args.skip_singlem
+            self.filter_bins_min_completeness = args.min_completeness
+            self.filter_bins_max_contamination = args.max_contamination
             if args.binning_only:
                 self.skip_abundances = True
                 self.skip_taxonomy = True
@@ -174,6 +176,8 @@ class Processor:
             self.binning_only = False
             self.skip_taxonomy = False
             self.skip_singlem = False
+            self.filter_bins_min_completeness = 50.0
+            self.filter_bins_max_contamination = 5.0
 
         try:
             self.assembly = args.assembly
@@ -338,15 +342,17 @@ class Processor:
 
         # Aviary cluster arguments
         try:
-            if args.min_completeness == 'none':
+            min_completeness = args.min_completeness
+            if min_completeness == 'none':
                 self.min_completeness = ' '
             else:
-                self.min_completeness = f'--min-completeness {args.min_completeness}'
+                self.min_completeness = f'--min-completeness {min_completeness}'
 
-            if args.max_contamination == 'none':
+            max_contamination = args.max_contamination
+            if max_contamination == 'none':
                 self.max_contamination = ' '
             else:
-                self.max_contamination = f'--max-contamination {args.max_contamination}'
+                self.max_contamination = f'--max-contamination {max_contamination}'
 
             self.precluster_ani = fraction_to_percent(args.precluster_ani)
             self.ani = fraction_to_percent(args.ani)
@@ -477,6 +483,8 @@ class Processor:
         conf["previous_runs"] = self.previous_runs
         conf["min_completeness"] = self.min_completeness
         conf["max_contamination"] = self.max_contamination
+        conf["filter_bins_min_completeness"] = self.filter_bins_min_completeness
+        conf["filter_bins_max_contamination"] = self.filter_bins_max_contamination
         conf["ani"] = self.ani
         conf["precluster_ani"] = self.precluster_ani
         conf["precluster_method"] = self.precluster_method

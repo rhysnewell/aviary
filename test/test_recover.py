@@ -444,6 +444,8 @@ class Tests(unittest.TestCase):
                 f"SINGLEM_METAPACKAGE_PATH=. "
                 f"aviary recover "
                 f"--refinery-max-iterations 3 "
+                f"--min-completeness 62 "
+                f"--max-contamination 3 "
                 f"--max-threads 8 "
                 f"--assembly {ASSEMBLY} "
                 f"-1 {FORWARD_READS} "
@@ -460,6 +462,8 @@ class Tests(unittest.TestCase):
 
             self.assertEqual(config["refinery_max_iterations"], 3)
             self.assertEqual(config["pplacer_threads"], 8)
+            self.assertEqual(config["filter_bins_min_completeness"], 62.0)
+            self.assertEqual(config["filter_bins_max_contamination"], 3.0)
 
     def test_recover_config_many_threads(self):
         with tempfile.TemporaryDirectory() as tmpdir:
@@ -486,6 +490,8 @@ class Tests(unittest.TestCase):
 
             self.assertEqual(config["refinery_max_iterations"], 5)
             self.assertEqual(config["pplacer_threads"], 8)
+            self.assertEqual(config["filter_bins_min_completeness"], 50.0)
+            self.assertEqual(config["filter_bins_max_contamination"], 5.0)
 
     def test_recover_config_many_pplacer_threads(self):
         with tempfile.TemporaryDirectory() as tmpdir:
@@ -513,6 +519,8 @@ class Tests(unittest.TestCase):
 
             self.assertEqual(config["refinery_max_iterations"], 5)
             self.assertEqual(config["pplacer_threads"], 32)
+            self.assertEqual(config["filter_bins_min_completeness"], 50.0)
+            self.assertEqual(config["filter_bins_max_contamination"], 5.0)
 
 if __name__ == '__main__':
     unittest.main()

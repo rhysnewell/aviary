@@ -1164,8 +1164,8 @@ rule filter_bins_for_quality:
     output:
         filtered_bins = directory(FILTERED_BINS_DIR)
     params:
-        min_completeness = 50,
-        max_contamination = 5
+        min_completeness = config["filter_bins_min_completeness"],
+        max_contamination = config["filter_bins_max_contamination"]
     threads: 1
     resources:
         mem_mb = lambda wildcards, attempt: min(int(config["max_memory"])*1024, 4*1024*attempt),
