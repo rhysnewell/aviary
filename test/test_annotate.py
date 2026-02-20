@@ -71,5 +71,21 @@ class Tests(unittest.TestCase):
         self.assertTrue(os.path.isfile(f"{output_dir}/aviary_out/data/eggnog/SemiBin_1.emapper.annotations"))
         self.assertGreater(os.path.getsize(f"{output_dir}/aviary_out/data/eggnog/SemiBin_1.emapper.annotations"), 0)
 
+
+def test_gtdbtk_rule_clears_existing_output_folder():
+    annotation_smk = os.path.join(
+        os.path.dirname(__file__), "..", "aviary", "modules", "annotation", "annotation.smk"
+    )
+
+    with open(annotation_smk) as f:
+        contents = f.read()
+
+    rm_index = contents.find("rm -rf data/gtdbtk")
+    classify_index = contents.find("gtdbtk classify_wf")
+
+    assert rm_index != -1
+    assert classify_index != -1
+    assert rm_index < classify_index
+
 if __name__ == "__main__":
     unittest.main()
