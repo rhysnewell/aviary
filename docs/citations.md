@@ -26,6 +26,7 @@ modules are added to aviary.
 - **metaSPAdes**: Nurk, S., Meleshko, D., Korobeynikov, A., & Pevzner, P.A. (2017). metaSPAdes: a new versatile metagenomic assembler. Genome research, 27(5), 824-834. https://doi.org/10.1101/gr.213959.116
 - **Unicycler**: Wick, R.R., Judd, L.M., Gorrie, C.L. & Holt, K.E. Unicycler: Resolving bacterial genome assemblies from short and long sequencing reads. PLOS Computational Biology 13, e1005595 (2017). https://doi.org/10.1371/journal.pcbi.1005595
 - **MEGAHIT**: Li, D., Liu, C.-M., Luo, R., Sadakane, K. & Lam, T.-W. MEGAHIT: an ultra-fast single-node solution for large and complex metagenomics assembly via succinct de Bruijn graph. Bioinformatics 31, 1674–1676 (2015). https://doi.org/10.1093/bioinformatics/btv033
+- **myloasm**: Shaw, J., Marin, M.G. & Li, H. High-resolution metagenome assembly for modern long reads with myloasm. bioRxiv (2025). https://doi.org/10.1101/2025.09.05.674543
 
 ## Read mapping
 - **Minimap2**: Li, H. Minimap2: pairwise alignment for nucleotide sequences. Bioinformatics 34, 3094–3100 (2018). https://doi.org/10.1093/bioinformatics/bty191
@@ -37,6 +38,7 @@ modules are added to aviary.
 - **MetaBAT**: Kang, D.D., Froula, J., Egan, R. & Wang, Z. MetaBAT, an efficient tool for accurately reconstructing single genomes from complex microbial communities. PeerJ 3, e1165 (2015). https://doi.org/10.7717/peerj.1165
 - **MetaBAT2**: Kang, D.D. et al. MetaBAT 2: an adaptive binning algorithm for robust and efficient genome reconstruction from metagenome assemblies. PeerJ 7, (2019). https://doi.org/10.7717/peerj.7359
 - **DAS Tool**: Sieber, C.M.K. et al. Recovery of genomes from metagenomes via a dereplication, aggregation and scoring strategy. Nature Microbiology 3, 836–843 (2018). https://doi.org/10.1038/s41564-018-0171-1
+- **QuickBin**: Bushnell, B. & Villada, J.C. Deployable high-fidelity metagenome binning at scale with QuickBin. bioRxiv (2026). https://doi.org/10.64898/2026.01.08.698506
 - **SemiBin2**: Pan, S., Zhao, X.M., & Coelho, L.P. (2023). SemiBin2: self-supervised contrastive learning leads to better MAGs for short-and long-read sequencing, Bioinformatics, Volume 39, Issue Supplement_1, June 2023, Pages i21–i29. https://doi.org/10.1093/bioinformatics/btad209
 - **MaxBin 2.0**: Wu, Y.-W., Simmons, B.A. & Singer, S.W. MaxBin 2.0: an automated binning algorithm to recover genomes from multiple metagenomic datasets. Bioinformatics 32, 605–607 (2016). https://doi.org/10.1093/bioinformatics/btv638
 - **Rosella**: Newell, R. J. P., Tyson, G. W., & Woodcroft, B. J. (2023). Rosella: Metagenomic binning using UMAP and HDBSCAN. Available at https://github.com/rhysnewell/rosella
