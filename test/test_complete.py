@@ -111,7 +111,7 @@ class Tests(unittest.TestCase):
             self.assertTrue("get_abundances" in output)
             self.assertFalse("singlem_pipe_reads" in output)
             self.assertTrue("filter_bins_for_quality" in output)
-            self.assertTrue("singlem_appraise" in output)
+            self.assertFalse("singlem_appraise" in output)
             self.assertTrue("finalise_stats" in output)
             self.assertTrue("recover_mags" in output)
 
@@ -219,7 +219,7 @@ class Tests(unittest.TestCase):
             self.assertTrue("get_abundances" in output)
             self.assertFalse("singlem_pipe_reads" in output)
             self.assertTrue("filter_bins_for_quality" in output)
-            self.assertTrue("singlem_appraise" in output)
+            self.assertFalse("singlem_appraise" in output)
             self.assertTrue("finalise_stats" in output)
             self.assertTrue("recover_mags" in output)
 
@@ -328,7 +328,7 @@ class Tests(unittest.TestCase):
             self.assertTrue("get_abundances" in output)
             self.assertFalse("singlem_pipe_reads" in output)
             self.assertTrue("filter_bins_for_quality" in output)
-            self.assertTrue("singlem_appraise" in output)
+            self.assertFalse("singlem_appraise" in output)
             self.assertTrue("finalise_stats" in output)
             self.assertTrue("recover_mags" in output)
 
@@ -435,7 +435,7 @@ class Tests(unittest.TestCase):
             self.assertTrue("get_abundances" in output)
             self.assertFalse("singlem_pipe_reads" in output)
             self.assertTrue("filter_bins_for_quality" in output)
-            self.assertTrue("singlem_appraise" in output)
+            self.assertFalse("singlem_appraise" in output)
             self.assertTrue("finalise_stats" in output)
             self.assertTrue("recover_mags" in output)
 
@@ -543,7 +543,7 @@ class Tests(unittest.TestCase):
             self.assertTrue("get_abundances" in output)
             self.assertFalse("singlem_pipe_reads" in output)
             self.assertTrue("filter_bins_for_quality" in output)
-            self.assertTrue("singlem_appraise" in output)
+            self.assertFalse("singlem_appraise" in output)
             self.assertTrue("finalise_stats" in output)
             self.assertTrue("recover_mags" in output)
 
@@ -651,7 +651,7 @@ class Tests(unittest.TestCase):
             self.assertTrue("get_abundances" in output)
             self.assertFalse("singlem_pipe_reads" in output)
             self.assertTrue("filter_bins_for_quality" in output)
-            self.assertTrue("singlem_appraise" not in output)
+            self.assertFalse("singlem_appraise" in output)
             self.assertTrue("finalise_stats" in output)
             self.assertTrue("recover_mags" in output)
 
@@ -759,7 +759,7 @@ class Tests(unittest.TestCase):
             self.assertTrue("get_abundances" not in output)
             self.assertFalse("singlem_pipe_reads" in output)
             self.assertTrue("filter_bins_for_quality" in output)
-            self.assertTrue("singlem_appraise" in output)
+            self.assertFalse("singlem_appraise" in output)
             self.assertTrue("finalise_stats" in output)
             self.assertTrue("recover_mags" in output)
 
@@ -867,7 +867,7 @@ class Tests(unittest.TestCase):
             self.assertTrue("get_abundances" in output)
             self.assertFalse("singlem_pipe_reads" in output)
             self.assertTrue("filter_bins_for_quality" in output)
-            self.assertTrue("singlem_appraise" in output)
+            self.assertFalse("singlem_appraise" in output)
             self.assertTrue("finalise_stats" in output)
             self.assertTrue("recover_mags" in output)
 
@@ -975,7 +975,7 @@ class Tests(unittest.TestCase):
             self.assertTrue("get_abundances" not in output)
             self.assertFalse("singlem_pipe_reads" in output)
             self.assertTrue("filter_bins_for_quality" not in output)
-            self.assertTrue("singlem_appraise" not in output)
+            self.assertFalse("singlem_appraise" in output)
             self.assertTrue("finalise_stats" in output)
             self.assertTrue("recover_mags" in output)
 
