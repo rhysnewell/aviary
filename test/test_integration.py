@@ -292,7 +292,7 @@ class Tests(unittest.TestCase):
 
         for i, size in enumerate([80000, 50000, 20000]):
             for end in [1, 2]:
-                cmd = f"zcat {data}/wgsim.{end}.fq.gz | head -n {size} > {output_dir}/wgsim_{i}.{end}.fq.gz"
+                cmd = f"zcat {data}/wgsim.{end}.fq.gz | head -n {size} | gzip > {output_dir}/wgsim_{i}.{end}.fq.gz"
                 subprocess.run(cmd, shell=True, check=True)
 
         cmd = (
