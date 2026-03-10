@@ -245,6 +245,8 @@ fastani = "*"
 [feature.das-tool.dependencies]
 das_tool = ">=1.1.2"
 extern = ">=0.4.1"
+diamond = ">=2.1.21"
+
 
 [feature.rosella.dependencies]
 rosella = ">=0.5.5"
@@ -289,9 +291,11 @@ channels = ["nvidia", "pytorch"]
 channel-priority = "disabled"
 
 [feature.comebin-gpu.dependencies]
+# Pin mkl to <2024.1 to fix iJIT_NotifyEvent symbol error
+# pytorch 1.10.2 is incompatible with mkl >= 2024.1
 pytorch = { version = "==1.10.2", channel = "pytorch" }
 pytorch-cuda = { version = "==11.8", channel = "pytorch" }
-mkl = ">=2024.0"
+mkl = "==2024.0.0"
 
 [feature.eggnog.dependencies]
 eggnog-mapper =  ">=2.1.8"
