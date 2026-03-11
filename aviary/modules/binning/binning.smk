@@ -710,8 +710,7 @@ rule quickbin:
     shell:
         "rm -rf data/quickbin_bins/; " + \
         "mkdir -p data/quickbin_bins && " + \
-        # FIXME: currently debugging so pointing to local bioinfo dir
-        pixi_run + " -e bbmap ~/bioinfo/BBTools/quickbin.sh in={input.fasta} out=data/quickbin_bins "
+        pixi_run + " -e bbmap quickbin.sh in={input.fasta} out=data/quickbin_bins "
         "mincontig={params.min_contig_size} mincluster={params.min_bin_size} threads={threads} "
         "data/binning_bams/*.bam > {resources.log_path} 2>&1 "
         "&& for f in data/quickbin_bins/*.fa; do [ -e \"$f\" ] && mv \"$f\" \"${{f%.fa}}.fna\"; done; "
