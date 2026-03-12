@@ -236,6 +236,8 @@ def refinery(args):
             os.rmdir(final_output_folder)
             os.symlink("../" + final_bins, final_output_folder, target_is_directory=True)
         final_checkm.to_csv("bins/quality_report.tsv", sep='\t', index=False)
+        with open(log, "a") as logf:
+            logf.write("Refinery finished.\n")
     else:
         with open(log, "a") as logf:
             logf.write("Refinery finished.\n")
