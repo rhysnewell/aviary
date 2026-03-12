@@ -23,6 +23,7 @@ def get_coverage(
 ):
     if tmpdir: os.environ["TMPDIR"] = tmpdir
     os.makedirs(working_dir, exist_ok=True)
+    os.makedirs(bam_cache, exist_ok=True)
 
     if long_reads != "none" and not path_exists(f"{working_dir}/long_cov.tsv"):
         if long_read_type in ["ont", "ont_hq"]:
