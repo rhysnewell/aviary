@@ -44,7 +44,7 @@ def setup_output_dir(output_dir):
 
 @pytest.mark.expensive
 class Tests(unittest.TestCase):
-    def test_default(self):
+    def test_annotate_default(self):
         output_dir = os.path.join("example", "test_annotate_default")
         setup_output_dir(output_dir)
         cmd = (
