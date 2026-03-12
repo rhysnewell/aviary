@@ -37,6 +37,9 @@ if os.environ.get("TEST_REQUEST_GPU", "0") == "1":
 else:
     request_gpu = ""
 
+singlem_metapackage = os.environ.get("SINGLEM_METAPACKAGE_PATH", "")
+singlem_args = f"--skip-singlem false --singlem-metapackage-path {singlem_metapackage}" if singlem_metapackage else ""
+
 def setup_output_dir(output_dir):
     try:
         shutil.rmtree(output_dir)
@@ -265,6 +268,7 @@ class Tests(unittest.TestCase):
             f"-o {output_dir}/aviary_out "
             f"-1 {data}/wgsim.1.fq.gz "
             f"-2 {data}/wgsim.2.fq.gz "
+            f"{singlem_args} "
             f"-n 32 -t 32 "
             f"--strict "
         )
@@ -279,12 +283,13 @@ class Tests(unittest.TestCase):
         self.assertTrue(os.path.isfile(f"{output_dir}/aviary_out/data/final_contigs.fasta"))
         self.assertTrue(os.path.islink(f"{output_dir}/aviary_out/assembly/final_contigs.fasta"))
 
-        self.assertTrue(os.path.islink(f"{output_dir}/aviary_out/diversity"))
-        self.assertTrue(os.path.isfile(f"{output_dir}/aviary_out/diversity/metagenome.combined_otu_table.csv"))
-        self.assertTrue(os.path.getsize(f"{output_dir}/aviary_out/diversity/metagenome.combined_otu_table.csv") > 0)
-        self.assertTrue(os.path.isfile(f"{output_dir}/aviary_out/diversity/singlem_appraisal.tsv"))
-        self.assertTrue(os.path.getsize(f"{output_dir}/aviary_out/diversity/singlem_appraisal.tsv") > 0)
-        self.assertTrue(os.path.isfile(f"{output_dir}/aviary_out/diversity/singlem_appraise.svg"))
+        if singlem_metapackage:
+            self.assertTrue(os.path.islink(f"{output_dir}/aviary_out/diversity"))
+            self.assertTrue(os.path.isfile(f"{output_dir}/aviary_out/diversity/metagenome.combined_otu_table.csv"))
+            self.assertTrue(os.path.getsize(f"{output_dir}/aviary_out/diversity/metagenome.combined_otu_table.csv") > 0)
+            self.assertTrue(os.path.isfile(f"{output_dir}/aviary_out/diversity/singlem_appraisal.tsv"))
+            self.assertTrue(os.path.getsize(f"{output_dir}/aviary_out/diversity/singlem_appraisal.tsv") > 0)
+            self.assertTrue(os.path.isfile(f"{output_dir}/aviary_out/diversity/singlem_appraise.svg"))
 
     def test_long_read_recovery_split(self):
         output_dir = os.path.join("example", "test_long_read_recovery_split")
@@ -307,6 +312,7 @@ class Tests(unittest.TestCase):
             f"--coverage-samples-per-job 2 "
             f"--min-read-size 10 --min-mean-q 1 "
             f"-n 32 -t 32 "
+            f"{singlem_args} "
         )
         subprocess.run(cmd, shell=True, check=True)
 
@@ -314,12 +320,13 @@ class Tests(unittest.TestCase):
         self.assertTrue(os.path.isfile(f"{output_dir}/aviary_out/data/final_contigs.fasta"))
         self.assertTrue(os.path.islink(f"{output_dir}/aviary_out/assembly/final_contigs.fasta"))
 
-        self.assertTrue(os.path.islink(f"{output_dir}/aviary_out/diversity"))
-        self.assertTrue(os.path.isfile(f"{output_dir}/aviary_out/diversity/metagenome.combined_otu_table.csv"))
-        self.assertTrue(os.path.getsize(f"{output_dir}/aviary_out/diversity/metagenome.combined_otu_table.csv") > 0)
-        self.assertTrue(os.path.isfile(f"{output_dir}/aviary_out/diversity/singlem_appraisal.tsv"))
-        self.assertTrue(os.path.getsize(f"{output_dir}/aviary_out/diversity/singlem_appraisal.tsv") > 0)
-        self.assertTrue(os.path.isfile(f"{output_dir}/aviary_out/diversity/singlem_appraise.svg"))
+        if singlem_metapackage:
+            self.assertTrue(os.path.islink(f"{output_dir}/aviary_out/diversity"))
+            self.assertTrue(os.path.isfile(f"{output_dir}/aviary_out/diversity/metagenome.combined_otu_table.csv"))
+            self.assertTrue(os.path.getsize(f"{output_dir}/aviary_out/diversity/metagenome.combined_otu_table.csv") > 0)
+            self.assertTrue(os.path.isfile(f"{output_dir}/aviary_out/diversity/singlem_appraisal.tsv"))
+            self.assertTrue(os.path.getsize(f"{output_dir}/aviary_out/diversity/singlem_appraisal.tsv") > 0)
+            self.assertTrue(os.path.isfile(f"{output_dir}/aviary_out/diversity/singlem_appraise.svg"))
 
     def test_long_read_recovery_default(self):
         output_dir = os.path.join("example", "test_long_read_recovery")
@@ -334,6 +341,7 @@ class Tests(unittest.TestCase):
             f"--min-read-size 10 --min-mean-q 1 "
             f"-n 32 -t 32 "
             f"--strict "
+            f"{singlem_args} "
         )
         subprocess.run(cmd, shell=True, check=True)
 
@@ -341,12 +349,13 @@ class Tests(unittest.TestCase):
         self.assertTrue(os.path.isfile(f"{output_dir}/aviary_out/data/final_contigs.fasta"))
         self.assertTrue(os.path.islink(f"{output_dir}/aviary_out/assembly/final_contigs.fasta"))
 
-        self.assertTrue(os.path.islink(f"{output_dir}/aviary_out/diversity"))
-        self.assertTrue(os.path.isfile(f"{output_dir}/aviary_out/diversity/metagenome.combined_otu_table.csv"))
-        self.assertTrue(os.path.getsize(f"{output_dir}/aviary_out/diversity/metagenome.combined_otu_table.csv") > 0)
-        self.assertTrue(os.path.isfile(f"{output_dir}/aviary_out/diversity/singlem_appraisal.tsv"))
-        self.assertTrue(os.path.getsize(f"{output_dir}/aviary_out/diversity/singlem_appraisal.tsv") > 0)
-        self.assertTrue(os.path.isfile(f"{output_dir}/aviary_out/diversity/singlem_appraise.svg"))
+        if singlem_metapackage:
+            self.assertTrue(os.path.islink(f"{output_dir}/aviary_out/diversity"))
+            self.assertTrue(os.path.isfile(f"{output_dir}/aviary_out/diversity/metagenome.combined_otu_table.csv"))
+            self.assertTrue(os.path.getsize(f"{output_dir}/aviary_out/diversity/metagenome.combined_otu_table.csv") > 0)
+            self.assertTrue(os.path.isfile(f"{output_dir}/aviary_out/diversity/singlem_appraisal.tsv"))
+            self.assertTrue(os.path.getsize(f"{output_dir}/aviary_out/diversity/singlem_appraisal.tsv") > 0)
+            self.assertTrue(os.path.isfile(f"{output_dir}/aviary_out/diversity/singlem_appraise.svg"))
 
     def test_long_read_only_recovery(self):
         output_dir = os.path.join("example", "test_long_read_only_recovery")
@@ -357,6 +366,7 @@ class Tests(unittest.TestCase):
             f"-l {data}/pbsim.fq.gz "
             f"--longread-type ont "
             f"--min-read-size 10 --min-mean-q 1 "
+            f"{singlem_args} "
             f"-n 32 -t 32 "
             f"--strict "
         )
@@ -367,12 +377,13 @@ class Tests(unittest.TestCase):
         self.assertTrue(os.path.isfile(f"{output_dir}/aviary_out/data/final_contigs.fasta"))
         self.assertTrue(os.path.islink(f"{output_dir}/aviary_out/assembly/final_contigs.fasta"))
 
-        self.assertTrue(os.path.islink(f"{output_dir}/aviary_out/diversity"))
-        self.assertTrue(os.path.isfile(f"{output_dir}/aviary_out/diversity/metagenome.combined_otu_table.csv"))
-        self.assertTrue(os.path.getsize(f"{output_dir}/aviary_out/diversity/metagenome.combined_otu_table.csv") > 0)
-        self.assertTrue(os.path.isfile(f"{output_dir}/aviary_out/diversity/singlem_appraisal.tsv"))
-        self.assertTrue(os.path.getsize(f"{output_dir}/aviary_out/diversity/singlem_appraisal.tsv") > 0)
-        self.assertTrue(os.path.isfile(f"{output_dir}/aviary_out/diversity/singlem_appraise.svg"))
+        if singlem_metapackage:
+            self.assertTrue(os.path.islink(f"{output_dir}/aviary_out/diversity"))
+            self.assertTrue(os.path.isfile(f"{output_dir}/aviary_out/diversity/metagenome.combined_otu_table.csv"))
+            self.assertTrue(os.path.getsize(f"{output_dir}/aviary_out/diversity/metagenome.combined_otu_table.csv") > 0)
+            self.assertTrue(os.path.isfile(f"{output_dir}/aviary_out/diversity/singlem_appraisal.tsv"))
+            self.assertTrue(os.path.getsize(f"{output_dir}/aviary_out/diversity/singlem_appraisal.tsv") > 0)
+            self.assertTrue(os.path.isfile(f"{output_dir}/aviary_out/diversity/singlem_appraise.svg"))
 
     def test_short_read_recovery_fast(self):
         output_dir = os.path.join("example", "test_short_read_recovery_fast")
@@ -658,6 +669,7 @@ class Tests(unittest.TestCase):
             f"-1 {data}/wgsim.1.fq.gz "
             f"-2 {data}/wgsim.2.fq.gz "
             f"{request_gpu} "
+            f"{singlem_args} "
             f"-n 32 -t 32 "
             f"--strict "
         )
@@ -672,12 +684,13 @@ class Tests(unittest.TestCase):
         self.assertTrue(os.path.isfile(f"{output_dir}/aviary_out/data/final_contigs.fasta"))
         self.assertTrue(os.path.islink(f"{output_dir}/aviary_out/assembly/final_contigs.fasta"))
 
-        self.assertTrue(os.path.islink(f"{output_dir}/aviary_out/diversity"))
-        self.assertTrue(os.path.isfile(f"{output_dir}/aviary_out/diversity/metagenome.combined_otu_table.csv"))
-        self.assertTrue(os.path.getsize(f"{output_dir}/aviary_out/diversity/metagenome.combined_otu_table.csv") > 0)
-        self.assertTrue(os.path.isfile(f"{output_dir}/aviary_out/diversity/singlem_appraisal.tsv"))
-        self.assertTrue(os.path.getsize(f"{output_dir}/aviary_out/diversity/singlem_appraisal.tsv") > 0)
-        self.assertTrue(os.path.isfile(f"{output_dir}/aviary_out/diversity/singlem_appraise.svg"))
+        if singlem_metapackage:
+            self.assertTrue(os.path.islink(f"{output_dir}/aviary_out/diversity"))
+            self.assertTrue(os.path.isfile(f"{output_dir}/aviary_out/diversity/metagenome.combined_otu_table.csv"))
+            self.assertTrue(os.path.getsize(f"{output_dir}/aviary_out/diversity/metagenome.combined_otu_table.csv") > 0)
+            self.assertTrue(os.path.isfile(f"{output_dir}/aviary_out/diversity/singlem_appraisal.tsv"))
+            self.assertTrue(os.path.getsize(f"{output_dir}/aviary_out/diversity/singlem_appraisal.tsv") > 0)
+            self.assertTrue(os.path.isfile(f"{output_dir}/aviary_out/diversity/singlem_appraise.svg"))
 
         gtdbtk_path = f"{output_dir}/aviary_out/taxonomy/gtdbtk.bac120.summary.tsv"
         self.assertTrue(os.path.isfile(gtdbtk_path))
