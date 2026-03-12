@@ -84,6 +84,9 @@ def get_snakefile(file="Snakefile"):
 
 ###############################################################################
 ################################ - Classes - ##################################
+# Subcommands that do not require short or long reads.
+# Add new subcommand names here to allow them to run without reads.
+SUBCOMMANDS_WITHOUT_READS = ['annotate', 'cluster']
 
 class Processor:
     def __init__(self, args):
@@ -95,6 +98,11 @@ class Processor:
         self.workflows = args.workflow
         self.request_gpu = args.request_gpu
         self.strict = args.strict
+
+        try:
+            self.skip_reads_check = args.skip_reads_check
+        except AttributeError:
+            self.skip_reads_check = any(w in SUBCOMMANDS_WITHOUT_READS for w in self.workflows)
 
         try:
             self.pplacer_threads = min(int(args.pplacer_threads), int(self.threads), 48)
@@ -436,6 +444,7 @@ class Processor:
         conf["quality_cutoff"] = self.quality_cutoff
         conf["extra_fastp_params"] = self.extra_fastp_params
         conf["skip_qc"] = self.skip_qc
+        conf["skip_reads_check"] = self.skip_reads_check
         conf["gsa"] = self.gold_standard
         conf["gsa_mappings"] = self.gsa_mappings
         conf["skip_binners"] = self.skip_binners
@@ -490,6 +499,7 @@ class Processor:
         conf["precluster_method"] = self.precluster_method
         conf["pggb_params"] = self.pggb_params
         conf["tmpdir"] = self.tmpdir
+            
 
         with open(self.config, "w") as f:
             yaml.dump(conf, f)
