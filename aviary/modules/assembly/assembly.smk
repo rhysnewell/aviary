@@ -804,7 +804,7 @@ elif ASSEMBLY_STRATEGY in ("short_only", "hybrid_unicycler", "long_only"):
 else:
     raise Exception("Programming error: unexpected assembly strategy for hybrid skip unicycler.")
 
-if ASSEMBLY_STRATEGY in ("short_only", "hybrid_unicycler", "hybrid_skip_unicycler", "long_only"):
+if ASSEMBLY_STRATEGY == "short_only":
     rule complete_assembly_with_qc:
         input:
             fasta = 'data/final_contigs.fasta',
@@ -826,6 +826,33 @@ if ASSEMBLY_STRATEGY in ("short_only", "hybrid_unicycler", "hybrid_skip_unicycle
             rm -rf data/short_unmapped_ref.bam.bai; 
             rm -rf data/short_filter.done; "
             """
+elif ASSEMBLY_STRATEGY in ("hybrid_unicycler", "hybrid_skip_unicycler", "long_only"):
+    rule complete_assembly_with_qc:
+        input:
+            fasta = 'data/final_contigs.fasta',
+            graph = LONG_ASSEMBLY_GRAPH,
+            qc_done = 'data/qc_done'
+        output:
+            final_link = 'assembly/final_contigs.fasta',
+            graph_link = 'assembly/assembly_graph.gfa',
+            sizes = "www/assembly_stats.txt"
+        shell:
+            f'{pixi_run} -e bbmap bash -e -o pipefail -c "' + \
+            """mkdir -p www/;
+            stats.sh {input.fasta} > {output.sizes};
+            mkdir -p assembly;
+            cd assembly;
+            ln -s ../data/final_contigs.fasta ./;
+            ln -sf ../""" + LONG_ASSEMBLY_GRAPH + """ ./assembly_graph.gfa;
+            cd ../;
+            rm -rf data/polishing;
+            rm -rf data/short_reads.fastq.gz;
+            rm -rf data/short_unmapped_ref.bam;
+            rm -rf data/short_unmapped_ref.bam.bai;
+            rm -rf data/short_filter.done; "
+            """
+elif ASSEMBLY_STRATEGY == "none":
+    pass
 else:
     raise Exception("Programming error: unexpected assembly strategy for completion.")
 
