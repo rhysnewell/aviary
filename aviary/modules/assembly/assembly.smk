@@ -39,7 +39,9 @@ SHORT_READS_KIND = _validate_reads(SHORT_READS_1, "short_reads_1")
 LONG_READS_KIND = _validate_reads(LONG_READS, "long_reads")
 
 if LONG_READS_KIND == "none" and SHORT_READS_KIND == "none":
-    raise Exception("Programming error: both long_reads and short_reads_1 are set to 'none'.")
+    if not config.get("skip_reads_check", False):
+        raise Exception("Programming error: both long_reads and short_reads_1 are set to 'none'.")
+    READ_MODE = "none"
 elif LONG_READS_KIND == "none":
     READ_MODE = "short_only"
 elif SHORT_READS_KIND == "none":
@@ -62,6 +64,8 @@ elif READ_MODE == "long_only":
     if USE_UNICYCLER:
         raise Exception("Programming error: use_unicycler requires both long and short reads.")
     ASSEMBLY_STRATEGY = "long_only"
+elif READ_MODE == "none":
+    ASSEMBLY_STRATEGY = "none"
 else:
     raise Exception("Programming error: unexpected assembly strategy state.")
 
@@ -433,6 +437,8 @@ elif READ_MODE == "short_only":
             fasta = touch(LONG_HIGH_COV_FASTA),
 elif READ_MODE == "long_only":
     pass
+elif READ_MODE == "none":
+    pass
 else:
     raise Exception("Programming error: unexpected read mode for assembly.")
 
@@ -579,6 +585,8 @@ if ASSEMBLY_STRATEGY == "short_only":
         shell:
             "bash -c 'cp {input.assembly} {output.out} && rm -rf data/short_read_assembly' &> {log}"
 elif ASSEMBLY_STRATEGY in ("hybrid_unicycler", "hybrid_skip_unicycler", "long_only"):
+    pass
+elif ASSEMBLY_STRATEGY == "none":
     pass
 else:
     raise Exception("Programming error: unexpected assembly strategy for short-read assembly move.")
@@ -757,6 +765,8 @@ if ASSEMBLY_STRATEGY == "hybrid_unicycler":
             """
 elif ASSEMBLY_STRATEGY in ("short_only", "hybrid_skip_unicycler", "long_only"):
     pass
+elif ASSEMBLY_STRATEGY == "none":
+    pass
 else:
     raise Exception("Programming error: unexpected assembly strategy for combine_assemblies.")
 
@@ -777,6 +787,8 @@ if ASSEMBLY_STRATEGY == "long_only":
             --output-fasta {output.output_fasta}
             """
 elif ASSEMBLY_STRATEGY in ("short_only", "hybrid_unicycler", "hybrid_skip_unicycler"):
+    pass
+elif ASSEMBLY_STRATEGY == "none":
     pass
 else:
     raise Exception("Programming error: unexpected assembly strategy for long-read-only combine.")
@@ -801,6 +813,8 @@ if ASSEMBLY_STRATEGY == "hybrid_skip_unicycler":
             """
 elif ASSEMBLY_STRATEGY in ("short_only", "hybrid_unicycler", "long_only"):
     pass
+elif ASSEMBLY_STRATEGY == "none":
+    pass
 else:
     raise Exception("Programming error: unexpected assembly strategy for hybrid skip unicycler.")
 
@@ -814,16 +828,16 @@ if ASSEMBLY_STRATEGY == "short_only":
             sizes = "www/assembly_stats.txt"
         shell:
             f'{pixi_run} -e bbmap bash -e -o pipefail -c "' + \
-            """mkdir -p www/; 
-            stats.sh {input.fasta} > {output.sizes}; 
-            mkdir -p assembly; 
-            cd assembly; 
-            ln -s ../data/final_contigs.fasta ./; 
-            cd ../; 
-            rm -rf data/polishing; 
-            rm -rf data/short_reads.fastq.gz; 
-            rm -rf data/short_unmapped_ref.bam; 
-            rm -rf data/short_unmapped_ref.bam.bai; 
+            """mkdir -p www/;
+            stats.sh {input.fasta} > {output.sizes};
+            mkdir -p assembly;
+            cd assembly;
+            ln -s ../data/final_contigs.fasta ./;
+            cd ../;
+            rm -rf data/polishing;
+            rm -rf data/short_reads.fastq.gz;
+            rm -rf data/short_unmapped_ref.bam;
+            rm -rf data/short_unmapped_ref.bam.bai;
             rm -rf data/short_filter.done; "
             """
 elif ASSEMBLY_STRATEGY in ("hybrid_unicycler", "hybrid_skip_unicycler", "long_only"):
