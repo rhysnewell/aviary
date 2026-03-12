@@ -257,23 +257,34 @@ def run_polish(
             excluded_reads = set()
             with open(paf) as f, open(os.path.join(output_dir, "filtered.%s.%d.paf" % (output_prefix, rounds)), 'w') as paf_file:
                 for line in f:
-                    qname, qlen, qstart, qstop, strand, ref, rlen, rstart, rstop = line.split()[:9]
+                    fields = line.split('\t')
+                    qname, qlen, qstart, qstop, strand, ref, rlen, rstart, rstop = fields[:9]
                     qlen, qstart, qstop, rlen, rstart, rstop = map(int, [qlen, qstart, qstop, rlen, rstart, rstop])
+                    # minimap2 -x sr on interleaved PE reads doubles existing /1 /2 suffixes
+                    # (e.g. read/1 -> PAF qname read/1/1). Strip the extra suffix so qnames
+                    # match the original fastq read names for seqkit and racon.
+                    if illumina and (qname.endswith('/1') or qname.endswith('/2')):
+                        norm_qname = qname[:-2]
+                        fields[0] = norm_qname
+                        norm_line = '\t'.join(fields)
+                    else:
+                        norm_qname = qname
+                        norm_line = line
                     if ref in low_cov:
-                        paf_file.write(line)
-                        included_reads.add(qname)
+                        paf_file.write(norm_line)
+                        included_reads.add(norm_qname)
                     elif ref in high_cov:
                         # Down sample reads from high coverage contigs
                         sample_rate = max_cov / cov_dict[ref]
-                        if qname in excluded_reads:
+                        if norm_qname in excluded_reads:
                             pass
-                        elif qname in included_reads:
-                            paf_file.write(line)
+                        elif norm_qname in included_reads:
+                            paf_file.write(norm_line)
                         elif random.random() < sample_rate:
-                            included_reads.add(qname)
-                            paf_file.write(line)
+                            included_reads.add(norm_qname)
+                            paf_file.write(norm_line)
                         else:
-                            excluded_reads.add(qname)
+                            excluded_reads.add(norm_qname)
             with open(os.path.join(output_dir, "reads.%s.%d.lst" % (output_prefix, rounds)), "w") as o:
                 for i in included_reads:
                     o.write(i + '\n')
