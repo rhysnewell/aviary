@@ -229,7 +229,7 @@ rule gtdbtk:
         "rm -rf data/gtdbtk && "
         f'{pixi_run} -e gtdbtk '
         "gtdbtk classify_wf --skip_ani_screen --cpus {threads} --pplacer_cpus {params.pplacer_threads} --extension {params.extension} "
-        "--genome_dir {input.mag_folder} --out_dir data/gtdbtk "
+        "--genome_dir {input.mag_folder} --out_dir data/gtdbtk --scratch_dir {resources.tmpdir} "
         "> {resources.log_path} 2>&1 "
 
 rule annotate:
