@@ -60,17 +60,7 @@ def get_abundances(
             )
 
         else:
-            run_coverm(
-                reads=" ".join(long_reads),
-                minimap2_type="minimap2-ont",
-                output_file="data/long_abundances.tsv",
-                read_type="--single",
-                threads=threads,
-                strain_analysis=strain_analysis,
-                output_dir="data/reads_mapped_to_mags/long/",
-                log=log,
-                bins_dir=bins_dir,
-            )
+            raise Exception("Unexpected long_read_type: {}".format(long_read_type))
 
     if short_reads_2 != 'none':
         reads_str = []
@@ -134,9 +124,9 @@ if __name__ == '__main__':
         pass
 
     get_abundances(
-        long_reads=args.long_reads,
-        short_reads_1=args.short_reads_1,
-        short_reads_2=args.short_reads_2,
+        long_reads="none" if args.long_reads == ["none"] or args.long_reads == [] else args.long_reads,
+        short_reads_1="none" if args.short_reads_1 == ["none"] or args.short_reads_1 == [] else args.short_reads_1,
+        short_reads_2="none" if args.short_reads_2 == ["none"] or args.short_reads_2 == [] else args.short_reads_2,
         long_read_type=args.long_read_type,
         threads=args.threads,
         strain_analysis=args.strain_analysis,
