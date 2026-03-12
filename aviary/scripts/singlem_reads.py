@@ -12,13 +12,13 @@ import glob
 
 class ReadContainer:
     def __init__(self, long_reads, short_reads_1, short_reads_2):
-        if long_reads == "none":
+        if long_reads == "none" or long_reads == ["none"]:
             long_reads = []
 
-        if short_reads_1 == "none":
+        if short_reads_1 == "none" or short_reads_1 == ["none"]:
             short_reads_1 = []
-        
-        if short_reads_2 == "none":
+
+        if short_reads_2 == "none" or short_reads_2 == ["none"]:
             short_reads_2 = []
 
         self.long_reads = long_reads
