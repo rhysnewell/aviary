@@ -29,7 +29,7 @@ onstart:
     ## pplacer deadlocks on too many threads
     pplacer_threads = min(48, int(config["pplacer_threads"]))
 
-    if long_reads == "none" and short_reads_1 == "none":
+    if long_reads == "none" and short_reads_1 == "none" and not config.get("skip_reads_check", False):
         sys.exit("Need at least one of long_reads or short_reads_1")
     if long_reads != "none" and not os.path.exists(long_reads[0]):
         sys.exit("long_reads does not point to a file")
