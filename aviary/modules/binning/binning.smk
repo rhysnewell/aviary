@@ -711,6 +711,7 @@ rule quickbin:
         "rm -rf data/quickbin_bins/; " + \
         "mkdir -p data/quickbin_bins && " + \
         pixi_run + " -e bbmap quickbin.sh in={input.fasta} out=data/quickbin_bins "
+        "-Xmx{resources.mem_mb}m "
         "mincontig={params.min_contig_size} mincluster={params.min_bin_size} threads={threads} "
         "data/binning_bams/*.bam > {resources.log_path} 2>&1 "
         "&& for f in data/quickbin_bins/*.fa; do [ -e \"$f\" ] && mv \"$f\" \"${{f%.fa}}.fna\"; done; "
