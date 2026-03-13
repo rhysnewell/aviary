@@ -321,7 +321,7 @@ rule filter_contigs_by_size:
     shell:
         # use seqtkit
         f"{pixi_run} -e seqkit "
-        "seqkit seq -m {params.min_contig_size} {input.fasta} > {output.fasta} 2> {resources.log_path}"
+        "seqkit seq --only-id -m {params.min_contig_size} {input.fasta} > {output.fasta} 2> {resources.log_path}"
 
 
 rule vamb:
