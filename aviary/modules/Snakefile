@@ -2,11 +2,21 @@
 # ruleorder: filtlong_no_reference > link_reads
 
 onsuccess:
-    shell("chmod g+w {log}")
+    import os
+    log_list = log if isinstance(log, list) else [log]
+    flat_logs = [item for sublist in log_list for item in (sublist if isinstance(sublist, list) else [sublist])]
+    for l in flat_logs:
+        if isinstance(l, str) and os.path.exists(l):
+            shell("chmod g+w " + l)
     print("Aviary finished, no error")
 
 onerror:
-    shell("chmod g+w {log}")
+    import os
+    log_list = log if isinstance(log, list) else [log]
+    flat_logs = [item for sublist in log_list for item in (sublist if isinstance(sublist, list) else [sublist])]
+    for l in flat_logs:
+        if isinstance(l, str) and os.path.exists(l):
+            shell("chmod g+w " + l)
     print("An error occurred")
 
 onstart:
