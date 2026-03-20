@@ -7,6 +7,7 @@ LONG_READ_ASSEMBLER = config["long_read_assembler"]
 LONG_ASSEMBLY_DIR = f"data/{LONG_READ_ASSEMBLER}"
 LONG_ASSEMBLY_FASTA = f"{LONG_ASSEMBLY_DIR}/assembly.fasta"
 LONG_ASSEMBLY_GRAPH = f"{LONG_ASSEMBLY_DIR}/assembly_graph.gfa"
+SHORT_ASSEMBLY_GRAPH = "data/short_read_assembly/assembly_graph_with_scaffolds.gfa"
 LONG_ASSEMBLY_INFO = f"{LONG_ASSEMBLY_DIR}/assembly_info.txt"
 LONG_HIGH_COV_FASTA = f"data/{LONG_READ_ASSEMBLER}_high_cov.fasta"
 if LONG_READ_ASSEMBLER == "flye":
@@ -539,7 +540,8 @@ rule assemble_short_reads:
         # We cannot mark the output_folder as temp as then it gets deleted,
         # causing the "TypeError: '>' not supported between instances of
         # 'TBDString' and 'int'" error
-        output_folder = directory("data/short_read_assembly/")
+        output_folder = directory("data/short_read_assembly/"),
+        graph = SHORT_ASSEMBLY_GRAPH
         # reads1 = temporary("data/short_reads.1.fastq.gz"),
         # reads2 = temporary("data/short_reads.2.fastq.gz")
     params:
@@ -583,7 +585,7 @@ if ASSEMBLY_STRATEGY == "short_only":
         log:
             "logs/move_spades_assembly.log"
         shell:
-            "bash -c 'cp {input.assembly} {output.out} && rm -rf data/short_read_assembly' &> {log}"
+            "bash -c 'cp {input.assembly} {output.out}' &> {log}"
 elif ASSEMBLY_STRATEGY in ("hybrid_unicycler", "hybrid_skip_unicycler", "long_only"):
     pass
 elif ASSEMBLY_STRATEGY == "none":
@@ -822,9 +824,11 @@ if ASSEMBLY_STRATEGY == "short_only":
     rule complete_assembly_with_qc:
         input:
             fasta = 'data/final_contigs.fasta',
+            graph = SHORT_ASSEMBLY_GRAPH,
             qc_done = 'data/qc_done'
         output:
             final_link = 'assembly/final_contigs.fasta',
+            graph_link = 'assembly/assembly_graph.gfa',
             sizes = "www/assembly_stats.txt"
         shell:
             f'{pixi_run} -e bbmap bash -e -o pipefail -c "' + \
@@ -833,6 +837,7 @@ if ASSEMBLY_STRATEGY == "short_only":
             mkdir -p assembly;
             cd assembly;
             ln -s ../data/final_contigs.fasta ./;
+            ln -sf ../""" + SHORT_ASSEMBLY_GRAPH + """ ./assembly_graph.gfa;
             cd ../;
             rm -rf data/polishing;
             rm -rf data/short_reads.fastq.gz;

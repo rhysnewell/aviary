@@ -182,7 +182,6 @@ rule prepare_binning_files_gather:
         mem_mb = lambda wildcards, attempt: min(int(config["max_memory"])*1024, 16*1024*attempt),
         runtime = lambda wildcards, attempt: 24*60*attempt,
     run:
-        import pandas as pd
 
         maxbin_cov = []
         for maxbin in input.maxbin_coverages:
