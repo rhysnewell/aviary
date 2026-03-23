@@ -30,7 +30,7 @@ if os.path.exists(MQSUB_OUT):
 
 # GPU testing - taxvamb
 print("mqsub GPU testing - taxvamb ..")
-cmd = "mqsub -t32 --A100 --segregated-log-files --bg --hours 4 -m 64 -- " \
+cmd = "mqsub -t32 --A100 --segregated-log-files --bg --hours 4 -m 128 -- " \
     "pixi run -e dev " \
     "bash -c \"'export TEST_REQUEST_GPU=1 && echo gtdb=$GTDBTK_DATA_PATH && python test/test_integration.py Tests.test_short_read_recovery_taxvamb'\" " \
     f"&>>{MQSUB_OUT}"
@@ -38,7 +38,7 @@ extern.run(cmd)
 
 # GPU testing - comebin
 print("mqsub GPU testing - comebin ..")
-cmd = "mqsub -t32 --A100 --segregated-log-files --bg --hours 4 -m 64 -- " \
+cmd = "mqsub -t32 --A100 --segregated-log-files --bg --hours 4 -m 128 -- " \
     "pixi run -e dev " \
     "bash -c \"'export TEST_REQUEST_GPU=1 && echo gtdb=$GTDBTK_DATA_PATH && python test/test_integration.py Tests.test_short_read_recovery_comebin'\" " \
     f"&>>{MQSUB_OUT}"
@@ -46,7 +46,7 @@ extern.run(cmd)
 
 # GPU testing - semibin
 print("mqsub GPU testing - semibin ..")
-cmd = "mqsub -t32 --A100 --segregated-log-files --bg --hours 4 -m 64 -- " \
+cmd = "mqsub -t32 --A100 --segregated-log-files --bg --hours 4 -m 128 -- " \
     "pixi run -e dev " \
     "bash -c \"'export TEST_REQUEST_GPU=1 && echo gtdb=$GTDBTK_DATA_PATH && python test/test_integration.py Tests.test_short_read_recovery_semibin'\" " \
     f"&>>{MQSUB_OUT}"
@@ -60,7 +60,7 @@ if not expensive_tests:
 for test in expensive_tests:
     print(f"mqsub Expensive test: {test} ..")
     cmd = (
-        "mqsub -t 16 -m 64 --hours 4 --segregated-log-files --bg -- "
+        "mqsub -t 16 -m 128 --hours 4 --segregated-log-files --bg -- "
         f"pixi run -e dev pytest --run-expensive {test} &>>{MQSUB_OUT}"
     )
     extern.run(cmd)
