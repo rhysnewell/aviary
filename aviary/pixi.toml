@@ -209,6 +209,7 @@ spades = ">=4.0.0"
 megahit = ">=1.2.9"
 pyyaml = ">=6.0.2"
 joblib = ">=1.4.2"
+agtools = ">=1.0.0"
 
 [feature.pysam.dependencies]
 python = ">=3.6"
