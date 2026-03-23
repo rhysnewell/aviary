@@ -152,7 +152,7 @@ rule nanoplot:
         log_path = lambda wildcards, attempt: setup_log(f"{logs_dir}/nanoplot", attempt),
     shell:
         f"{pixi_run} -e nanoplot "
-        "NanoPlot -o www/nanoplot -p longReads -t {threads} --fastq {input.long} > {resources.log_path} 2>&1; touch {output.output}"
+        "flock $HOME/.nanoplot_chrome.lock NanoPlot -o www/nanoplot -p longReads -t {threads} --fastq {input.long} > {resources.log_path} 2>&1; touch {output.output}"
 
 rule metaquast:
     """
