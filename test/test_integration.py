@@ -412,7 +412,8 @@ class Tests(unittest.TestCase):
         self.assertFalse(os.path.isfile(f"{output_dir}/aviary_out/data/final_contigs.fasta"))
 
     def test_short_read_recovery_semibin(self):
-        output_dir = os.path.join("example", "test_short_read_recovery_semibin")
+        suffix = "_gpu" if os.environ.get("TEST_REQUEST_GPU") == "1" else ""
+        output_dir = os.path.join("example", f"test_short_read_recovery_semibin{suffix}")
         setup_output_dir(output_dir)
 
         cmd = f"ln -sr {data}/wgsim.1.fq.gz {output_dir}/wgsim2.1.fq.gz && ln -sr {data}/wgsim.2.fq.gz {output_dir}/wgsim2.2.fq.gz"
@@ -514,8 +515,17 @@ class Tests(unittest.TestCase):
         self.assertFalse(os.path.isfile(f"{output_dir}/aviary_out/data/final_contigs.fasta"))
 
     def test_short_read_recovery_taxvamb(self):
-        output_dir = os.path.join("example", "test_short_read_recovery_taxvamb")
+        suffix = "_gpu" if os.environ.get("TEST_REQUEST_GPU") == "1" else ""
+        output_dir = os.path.join("example", f"test_short_read_recovery_taxvamb{suffix}")
+        logs_dir = os.path.join(output_dir, "aviary_out", "logs")
+        logs_backup = logs_dir + ".bak"
+        if os.path.exists(logs_dir):
+            shutil.copytree(logs_dir, logs_backup)
         setup_output_dir(output_dir)
+        if os.path.exists(logs_backup):
+            os.makedirs(os.path.join(output_dir, "aviary_out"), exist_ok=True)
+            shutil.copytree(logs_backup, logs_dir)
+            shutil.rmtree(logs_backup)
 
         # Create inflated assembly file
         cmd = f"cat {data}/assembly.fasta > {output_dir}/assembly.fasta"
@@ -551,8 +561,17 @@ class Tests(unittest.TestCase):
         self.assertFalse(os.path.isfile(f"{output_dir}/aviary_out/data/final_contigs.fasta"))
 
     def test_short_read_recovery_comebin(self):
-        output_dir = os.path.join("example", "test_short_read_recovery_comebin")
+        suffix = "_gpu" if os.environ.get("TEST_REQUEST_GPU") == "1" else ""
+        output_dir = os.path.join("example", f"test_short_read_recovery_comebin{suffix}")
+        logs_dir = os.path.join(output_dir, "aviary_out", "logs")
+        logs_backup = logs_dir + ".bak"
+        if os.path.exists(logs_dir):
+            shutil.copytree(logs_dir, logs_backup)
         setup_output_dir(output_dir)
+        if os.path.exists(logs_backup):
+            os.makedirs(os.path.join(output_dir, "aviary_out"), exist_ok=True)
+            shutil.copytree(logs_backup, logs_dir)
+            shutil.rmtree(logs_backup)
 
         # Create inflated assembly file
         cmd = f"cat {data}/assembly.fasta > {output_dir}/assembly.fasta"
