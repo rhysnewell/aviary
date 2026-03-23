@@ -453,7 +453,7 @@ rule taxvamb:
         "benchmarks/taxvamb.benchmark.txt"
     shell:
         # Specify -o since we are not doing binsplitting
-        "rm -rf data/taxvamb_bins/; " + \
+        "rm -rf data/taxvamb_bins/; unset CUDA_VISIBLE_DEVICES; " + \
         pixi_run + " -e {params.pixi_env} bash -e -o pipefail -c 'OPENBLAS_NUM_THREADS={threads} OMP_NUM_THREADS={threads} MKL_NUM_THREADS={threads} NUMEXPR_NUM_THREADS={threads} vamb bin taxvamb --outdir data/taxvamb_bins/ -p {threads} --fasta {input.fasta} "
         "--abundance_tsv {input.coverage} --taxonomy {input.taxonomy} "
         "--minfasta {params.min_bin_size} -m {params.min_contig_size} {params.gpu_flag} -o > {resources.log_path} 2>&1' "
@@ -645,6 +645,7 @@ rule semibin:
     benchmark:
         "benchmarks/semibin.benchmark.txt"
     shell:
+        "unset CUDA_VISIBLE_DEVICES; " + \
         pixi_run + " -e {params.pixi_env} bash -e -o pipefail -c '"
         "rm -rf data/semibin_bins/; "
         "mkdir -p data/semibin_bins/output_bins/ && "
@@ -682,7 +683,7 @@ rule comebin:
     benchmark:
         "benchmarks/comebin.benchmark.txt"
     shell:
-        "rm -rf data/comebin_bins/; " + \
+        "rm -rf data/comebin_bins/; unset CUDA_VISIBLE_DEVICES; " + \
         pixi_run + " -e {params.pixi_env} run_comebin.sh -a {input.fasta} -p data/binning_bams -t {threads} -o data/comebin_bins > {resources.log_path} 2>&1 "
         "&& touch {output[0]} {params.really_done} {params.touch}"
 
