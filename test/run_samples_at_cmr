@@ -18,7 +18,7 @@ import subprocess
 
 DATA_DIR = "/work/microbiome/aviary_module_benchmarking/data/test_data"
 COMMIT = subprocess.Popen(["git", "rev-parse", "HEAD"], stdout=subprocess.PIPE, text=True).communicate()[0].strip()
-OUTPUT_DIR = f"{os.environ['PIXI_PROJECT_ROOT']}/aviary_tests_samples/{COMMIT}"
+OUTPUT_DIR = f"/work/microbiome/aviary_module_benchmarking/aviary_test_samples/{COMMIT}"
 ASSEMBLERS = {
     "megahit": "--use-megahit",
     "metaspades": "",
