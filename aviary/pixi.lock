@@ -432,8 +432,8 @@ environments:
       - conda: https://conda.anaconda.org/bioconda/linux-64/bedtools-2.30.0-h468198e_3.tar.bz2
       - conda: https://conda.anaconda.org/bioconda/noarch/biolib-0.1.6-py_0.tar.bz2
       - conda: https://conda.anaconda.org/conda-forge/linux-64/biopython-1.76-py37h516909a_0.tar.bz2
-      - conda: https://conda.anaconda.org/conda-forge/linux-64/blas-2.137-mkl.conda
-      - conda: https://conda.anaconda.org/conda-forge/linux-64/blas-devel-3.9.0-37_hcf00494_mkl.conda
+      - conda: https://conda.anaconda.org/conda-forge/linux-64/blas-2.121-mkl.conda
+      - conda: https://conda.anaconda.org/conda-forge/linux-64/blas-devel-3.9.0-21_linux64_mkl.conda
       - conda: https://conda.anaconda.org/conda-forge/linux-64/brotli-1.2.0-hed03a55_1.conda
       - conda: https://conda.anaconda.org/conda-forge/linux-64/brotli-bin-1.2.0-hb03c661_1.conda
       - conda: https://conda.anaconda.org/bioconda/linux-64/bwa-0.7.17-he4a0461_11.tar.bz2
