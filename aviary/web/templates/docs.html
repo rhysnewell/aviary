@@ -1,0 +1,1627 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Aviary — How to Use</title>
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+    :root {
+      --bg:          #0d1117;
+      --surface:     #161b22;
+      --surface2:    #1c2333;
+      --border:      #30363d;
+      --text:        #c9d1d9;
+      --muted:       #8b949e;
+      --text-dim:    #8b949e;
+      --text-bright: #f0f6fc;
+      --teal:        #1abc9c;
+      --teal-dim:    rgba(26,188,156,.15);
+      --teal-glow:   rgba(26,188,156,.15);
+      --blue:        #58a6ff;
+      --yellow:      #e3b341;
+      --red:         #f85149;
+      --green:       #3fb950;
+      --purple:      #bc8cff;
+      --sidebar-w:   220px;
+      --topbar-h:    56px;
+      --header-h:    56px;
+    }
+
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", sans-serif;
+      background: var(--bg);
+      color: var(--text);
+      display: flex;
+      height: 100vh;
+      overflow: hidden;
+    }
+
+    /* ------------------------------------------------------------------ */
+    /* Sidebar                                                              */
+    /* ------------------------------------------------------------------ */
+    .sidebar {
+      width: var(--sidebar-w);
+      background: var(--surface);
+      border-right: 1px solid var(--border);
+      display: flex;
+      flex-direction: column;
+      flex-shrink: 0;
+      overflow: hidden;
+    }
+
+    .sidebar-logo {
+      height: var(--header-h);
+      padding: 0 16px;
+      border-bottom: 1px solid var(--border);
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      flex-shrink: 0;
+    }
+
+    .sidebar-logo img {
+      width: 32px; height: 32px;
+      object-fit: contain;
+      border-radius: 6px;
+    }
+
+    .sidebar-logo-text .title {
+      font-size: 1.1rem;
+      font-weight: 700;
+      color: var(--text-bright);
+    }
+
+    .sidebar-logo-text .subtitle {
+      font-size: 0.68rem;
+      color: var(--teal);
+      letter-spacing: 0.08em;
+      text-transform: uppercase;
+      margin-top: 1px;
+    }
+
+    .nav-section-header { padding: 12px 16px 4px; font-size: 0.62rem; font-weight: 700; letter-spacing: 0.1em; text-transform: uppercase; color: var(--muted); flex-shrink: 0; }
+    .nav-item {
+      display: flex; align-items: center; gap: 10px;
+      padding: 8px 16px; font-size: 0.82rem; font-weight: 500; color: var(--muted);
+      text-decoration: none; transition: background .12s, color .12s, border-color .12s;
+      border-left: 2px solid transparent; flex-shrink: 0; user-select: none;
+    }
+    .nav-item:hover { color: var(--text); background: rgba(255,255,255,.04); }
+    .nav-item.active { color: var(--teal); background: var(--teal-dim); border-left-color: var(--teal); }
+    .nav-item svg { flex-shrink: 0; }
+    .sidebar-nav-divider { height: 1px; background: var(--border); margin: 6px 0; flex-shrink: 0; }
+    .nav-divider { height: 1px; background: var(--border); margin: 6px 16px; }
+
+    .sidebar-search {
+      padding: 10px 12px;
+      border-bottom: 1px solid var(--border);
+      flex-shrink: 0;
+    }
+
+    .search-wrap {
+      position: relative;
+    }
+
+    .search-wrap svg {
+      position: absolute;
+      left: 9px;
+      top: 50%;
+      transform: translateY(-50%);
+      color: var(--text-dim);
+      pointer-events: none;
+    }
+
+    #search-input {
+      width: 100%;
+      background: var(--bg);
+      border: 1px solid var(--border);
+      border-radius: 6px;
+      padding: 7px 10px 7px 30px;
+      color: var(--text);
+      font-size: 0.8rem;
+      outline: none;
+      transition: border-color 0.15s;
+    }
+
+    #search-input:focus {
+      border-color: var(--teal);
+      box-shadow: 0 0 0 3px var(--teal-glow);
+    }
+
+    #search-input::placeholder { color: var(--text-dim); }
+
+    .toc-nav {
+      flex: 1;
+      overflow-y: auto;
+      padding: 8px 0 16px;
+    }
+
+    .toc-section-label {
+      padding: 10px 16px 4px;
+      font-size: 0.62rem;
+      font-weight: 600;
+      letter-spacing: 0.1em;
+      text-transform: uppercase;
+      color: var(--text-dim);
+    }
+
+    .toc-link {
+      display: block;
+      padding: 5px 16px 5px 20px;
+      font-size: 0.8rem;
+      color: var(--text-dim);
+      text-decoration: none;
+      border-left: 2px solid transparent;
+      transition: color 0.12s, background 0.12s, border-color 0.12s;
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+    }
+
+    .toc-link:hover {
+      color: var(--text);
+      background: var(--surface2);
+    }
+
+    .toc-link.active {
+      color: var(--teal);
+      border-left-color: var(--teal);
+      background: var(--teal-glow);
+      font-weight: 500;
+    }
+
+    .toc-link.hidden { display: none; }
+
+    .sidebar-footer {
+      margin-top: auto;
+      padding: 10px 12px;
+      border-top: 1px solid var(--border);
+      flex-shrink: 0;
+    }
+
+    .back-link {
+      display: flex;
+      align-items: center;
+      gap: 6px;
+      color: var(--text-dim);
+      text-decoration: none;
+      font-size: 0.8rem;
+      padding: 6px 8px;
+      border-radius: 6px;
+      transition: color 0.12s, background 0.12s;
+    }
+
+    .back-link:hover {
+      color: var(--text);
+      background: var(--surface2);
+    }
+
+    /* ------------------------------------------------------------------ */
+    /* Main content                                                         */
+    /* ------------------------------------------------------------------ */
+    .main {
+      flex: 1;
+      display: flex;
+      flex-direction: column;
+      overflow: hidden;
+      min-width: 0;
+    }
+
+    .topbar {
+      height: var(--header-h);
+      background: var(--surface);
+      border-bottom: 1px solid var(--border);
+      display: flex;
+      align-items: center;
+      padding: 0 24px;
+      flex-shrink: 0;
+      gap: 16px;
+    }
+
+    .topbar-title {
+      font-size: 1rem;
+      font-weight: 600;
+      color: var(--text-bright);
+    }
+
+    .topbar-meta {
+      font-size: 0.78rem;
+      color: var(--text-dim);
+    }
+
+    .topbar-pill {
+      background: var(--teal-glow);
+      color: var(--teal);
+      border: 1px solid rgba(26,188,156,.3);
+      border-radius: 20px;
+      padding: 2px 10px;
+      font-size: 0.72rem;
+      font-weight: 600;
+      letter-spacing: 0.04em;
+    }
+
+    .content-scroll {
+      flex: 1;
+      overflow-y: auto;
+      padding: 32px 40px 60px;
+    }
+
+    /* ------------------------------------------------------------------ */
+    /* No-results banner                                                    */
+    /* ------------------------------------------------------------------ */
+    #no-results {
+      display: none;
+      text-align: center;
+      padding: 60px 20px;
+      color: var(--text-dim);
+    }
+
+    #no-results .icon { font-size: 2.5rem; margin-bottom: 12px; }
+    #no-results p { font-size: 0.9rem; }
+
+    /* ------------------------------------------------------------------ */
+    /* Doc sections                                                         */
+    /* ------------------------------------------------------------------ */
+    .doc-section {
+      margin-bottom: 48px;
+      scroll-margin-top: 20px;
+    }
+
+    .doc-section.hidden { display: none; }
+
+    .doc-section h2 {
+      font-size: 1.35rem;
+      font-weight: 700;
+      color: var(--text-bright);
+      padding-bottom: 10px;
+      border-bottom: 1px solid var(--border);
+      margin-bottom: 20px;
+      display: flex;
+      align-items: center;
+      gap: 12px;
+    }
+
+    .section-num {
+      background: var(--surface2);
+      border: 1px solid var(--border);
+      color: var(--teal);
+      font-size: 0.72rem;
+      font-weight: 700;
+      padding: 2px 8px;
+      border-radius: 4px;
+      letter-spacing: 0.04em;
+      flex-shrink: 0;
+    }
+
+    .doc-section h3 {
+      font-size: 1rem;
+      font-weight: 600;
+      color: var(--text-bright);
+      margin: 24px 0 10px;
+    }
+
+    .doc-section p {
+      font-size: 0.88rem;
+      line-height: 1.7;
+      color: var(--text);
+      margin-bottom: 12px;
+    }
+
+    /* ------------------------------------------------------------------ */
+    /* Intro header                                                         */
+    /* ------------------------------------------------------------------ */
+    .doc-intro {
+      margin-bottom: 40px;
+      padding: 24px 28px;
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: 10px;
+      border-left: 3px solid var(--teal);
+    }
+
+    .doc-intro h1 {
+      font-size: 1.6rem;
+      font-weight: 800;
+      color: var(--text-bright);
+      margin-bottom: 8px;
+    }
+
+    .doc-intro p {
+      font-size: 0.9rem;
+      color: var(--text-dim);
+      line-height: 1.6;
+      margin-bottom: 14px;
+    }
+
+    .intro-authors {
+      margin-bottom: 16px;
+    }
+
+    .intro-authors-label {
+      font-size: 0.7rem;
+      font-weight: 600;
+      text-transform: uppercase;
+      letter-spacing: 0.08em;
+      color: var(--text-dim);
+      margin-bottom: 8px;
+    }
+
+    .intro-authors-list {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 8px;
+      margin-bottom: 10px;
+    }
+
+    .author-chip {
+      display: inline-flex;
+      align-items: center;
+      gap: 5px;
+      padding: 4px 10px;
+      border-radius: 20px;
+      background: var(--surface2);
+      border: 1px solid var(--border);
+      color: var(--text);
+      font-size: 0.78rem;
+      text-decoration: none;
+      transition: border-color 0.15s, color 0.15s;
+    }
+
+    .author-chip:hover {
+      border-color: var(--teal);
+      color: var(--teal);
+    }
+
+    .intro-cite {
+      font-size: 0.78rem;
+      color: var(--text-dim);
+      line-height: 1.5;
+      padding: 8px 12px;
+      background: var(--surface2);
+      border-radius: 6px;
+      border-left: 2px solid var(--teal-dim);
+    }
+
+    .intro-cite a { color: var(--blue); text-decoration: none; }
+    .intro-cite a:hover { text-decoration: underline; }
+
+    .intro-links {
+      display: flex;
+      gap: 12px;
+      flex-wrap: wrap;
+    }
+
+    .intro-link {
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      color: var(--blue);
+      font-size: 0.82rem;
+      text-decoration: none;
+      transition: color 0.12s;
+    }
+
+    .intro-link:hover { color: var(--teal); text-decoration: underline; }
+
+    /* ------------------------------------------------------------------ */
+    /* Code blocks                                                          */
+    /* ------------------------------------------------------------------ */
+    pre {
+      background: var(--surface2);
+      border: 1px solid var(--border);
+      border-radius: 8px;
+      padding: 16px 18px;
+      overflow-x: auto;
+      margin: 12px 0 16px;
+      position: relative;
+    }
+
+    pre code {
+      font-family: "SF Mono", "Cascadia Code", "Fira Code", Consolas, monospace;
+      font-size: 0.8rem;
+      color: var(--text);
+      background: none;
+      padding: 0;
+      border: none;
+    }
+
+    code {
+      font-family: "SF Mono", "Cascadia Code", "Fira Code", Consolas, monospace;
+      font-size: 0.82em;
+      background: var(--surface2);
+      color: var(--teal);
+      padding: 1px 5px;
+      border-radius: 4px;
+      border: 1px solid var(--border);
+    }
+
+    pre .comment { color: var(--text-dim); font-style: italic; }
+
+    /* Language badge on code blocks */
+    pre[data-lang]::before {
+      content: attr(data-lang);
+      position: absolute;
+      top: 8px;
+      right: 12px;
+      font-size: 0.65rem;
+      font-family: "SF Mono", Consolas, monospace;
+      color: var(--text-dim);
+      letter-spacing: 0.08em;
+      text-transform: uppercase;
+    }
+
+    /* ------------------------------------------------------------------ */
+    /* Tables                                                               */
+    /* ------------------------------------------------------------------ */
+    .table-wrap {
+      overflow-x: auto;
+      margin: 12px 0 16px;
+      border-radius: 8px;
+      border: 1px solid var(--border);
+    }
+
+    table {
+      width: 100%;
+      border-collapse: collapse;
+      font-size: 0.82rem;
+    }
+
+    thead th {
+      background: var(--surface2);
+      color: var(--text-bright);
+      font-weight: 600;
+      text-align: left;
+      padding: 9px 14px;
+      border-bottom: 1px solid var(--border);
+      white-space: nowrap;
+    }
+
+    tbody tr:nth-child(even) { background: rgba(255,255,255,.02); }
+    tbody tr:hover { background: var(--surface2); }
+
+    td {
+      padding: 8px 14px;
+      border-bottom: 1px solid rgba(48,54,61,.5);
+      color: var(--text);
+      vertical-align: top;
+      line-height: 1.5;
+    }
+
+    tbody tr:last-child td { border-bottom: none; }
+
+    td code, th code {
+      font-size: 0.78em;
+    }
+
+    /* ------------------------------------------------------------------ */
+    /* Blockquotes / notes                                                  */
+    /* ------------------------------------------------------------------ */
+    blockquote {
+      background: var(--surface);
+      border-left: 3px solid var(--yellow);
+      border-radius: 0 6px 6px 0;
+      padding: 10px 14px;
+      margin: 12px 0;
+      font-size: 0.85rem;
+      color: var(--text-dim);
+      line-height: 1.6;
+    }
+
+    blockquote strong { color: var(--yellow); }
+    blockquote code   { font-size: 0.78em; }
+
+    blockquote.tip    { border-left-color: var(--teal); }
+    blockquote.tip strong { color: var(--teal); }
+
+    /* ------------------------------------------------------------------ */
+    /* Output tree / file listing                                           */
+    /* ------------------------------------------------------------------ */
+    .file-tree {
+      background: var(--surface2);
+      border: 1px solid var(--border);
+      border-radius: 8px;
+      padding: 14px 18px;
+      margin: 12px 0 16px;
+      font-family: "SF Mono", "Cascadia Code", Consolas, monospace;
+      font-size: 0.78rem;
+      line-height: 1.8;
+      color: var(--text-dim);
+    }
+
+    .file-tree .dir  { color: var(--blue); }
+    .file-tree .note { color: var(--text-dim); }
+
+    /* ------------------------------------------------------------------ */
+    /* Numbered tips list                                                   */
+    /* ------------------------------------------------------------------ */
+    .tips-list {
+      list-style: none;
+      display: flex;
+      flex-direction: column;
+      gap: 10px;
+      margin: 8px 0;
+    }
+
+    .tips-list li {
+      display: flex;
+      gap: 12px;
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: 8px;
+      padding: 12px 14px;
+      font-size: 0.85rem;
+      line-height: 1.6;
+      align-items: flex-start;
+    }
+
+    .tip-num {
+      background: var(--surface2);
+      color: var(--teal);
+      font-weight: 700;
+      font-size: 0.72rem;
+      border-radius: 4px;
+      padding: 2px 7px;
+      flex-shrink: 0;
+      margin-top: 2px;
+    }
+
+    /* ------------------------------------------------------------------ */
+    /* Subcommand cards                                                     */
+    /* ------------------------------------------------------------------ */
+    .cmd-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fill, minmax(220px, 1fr));
+      gap: 10px;
+      margin: 12px 0 16px;
+    }
+
+    .cmd-card {
+      display: block;
+      position: relative;
+      text-decoration: none;
+      color: inherit;
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: 8px;
+      padding: 12px 14px;
+      transition: border-color 0.15s, background 0.15s;
+    }
+
+    .cmd-card:hover {
+      border-color: var(--teal);
+      background: var(--surface2);
+      cursor: pointer;
+    }
+
+    .cmd-card::after {
+      content: '↗';
+      position: absolute;
+      top: 10px;
+      right: 12px;
+      font-size: 0.7rem;
+      color: var(--text-dim);
+      opacity: 0;
+      transition: opacity 0.15s;
+    }
+
+    .cmd-card:hover::after {
+      opacity: 1;
+    }
+
+    .cmd-card code {
+      font-size: 0.85rem;
+      font-weight: 700;
+      display: block;
+      margin-bottom: 4px;
+    }
+
+    .cmd-card p {
+      font-size: 0.78rem;
+      color: var(--text-dim);
+      margin: 0;
+      line-height: 1.4;
+    }
+
+    /* ------------------------------------------------------------------ */
+    /* Inline highlight for search matches                                  */
+    /* ------------------------------------------------------------------ */
+    mark {
+      background: rgba(227,179,65,.3);
+      color: var(--yellow);
+      border-radius: 2px;
+      padding: 0 1px;
+    }
+
+    /* ------------------------------------------------------------------ */
+    /* Misc                                                                 */
+    /* ------------------------------------------------------------------ */
+    hr { border: none; border-top: 1px solid var(--border); margin: 28px 0; }
+
+    .badge {
+      display: inline-block;
+      background: var(--surface2);
+      border: 1px solid var(--border);
+      border-radius: 4px;
+      padding: 1px 6px;
+      font-size: 0.72rem;
+      color: var(--text-dim);
+      font-weight: 600;
+    }
+
+    .badge.required { border-color: rgba(248,81,73,.5); color: var(--red); }
+    .badge.optional { border-color: rgba(91,166,255,.4); color: var(--blue); }
+    .badge.default  { border-color: rgba(63,185,80,.4);  color: var(--green); }
+
+    ::-webkit-scrollbar { width: 6px; height: 6px; }
+    ::-webkit-scrollbar-track { background: transparent; }
+    ::-webkit-scrollbar-thumb { background: var(--border); border-radius: 3px; }
+    ::-webkit-scrollbar-thumb:hover { background: #484f58; }
+    #page-loading { display:none; position:fixed; inset:0; z-index:9999; background:var(--bg); align-items:center; justify-content:center; }
+    #page-loading.visible { display:flex; }
+    #page-loading img { width:min(340px,55vw); opacity:0; animation:splash-fade .3s ease forwards; }
+    @keyframes splash-fade { from{opacity:0;transform:scale(.96)} to{opacity:1;transform:scale(1)} }
+  </style>
+</head>
+<body>
+<div id="page-loading"><img src="/logo" alt="Aviary"></div>
+
+<!-- ====================================================================== -->
+<!-- Sidebar                                                                  -->
+<!-- ====================================================================== -->
+<aside class="sidebar">
+  <div class="sidebar-logo">
+    <a href="/" style="text-decoration:none;display:flex;align-items:center;gap:10px;"><img src="/logo" alt="Aviary logo" onerror="this.style.display='none'">
+    <div class="sidebar-logo-text">
+      <div class="title">Aviary</div>
+      <div class="subtitle">Metagenomics</div>
+    </div></a>
+  </div>
+
+  <a class="nav-item" href="/dashboard">
+    <svg width="15" height="15" viewBox="0 0 16 16" fill="currentColor"><path d="M0 2a2 2 0 0 1 2-2h12a2 2 0 0 1 2 2v1a2 2 0 0 1-2 2H2a2 2 0 0 1-2-2V2zm15 2a1 1 0 0 0 1-1V2a1 1 0 0 0-1-1H1a1 1 0 0 0-1 1v1a1 1 0 0 0 1 1h14zM0 8a2 2 0 0 1 2-2h12a2 2 0 0 1 2 2v1a2 2 0 0 1-2 2H2a2 2 0 0 1-2-2V8zm15 2a1 1 0 0 0 1-1V8a1 1 0 0 0-1-1H1a1 1 0 0 0-1 1v1a1 1 0 0 0 1 1h14zm-13-1a1 1 0 1 0 0-2 1 1 0 0 0 0 2zm2 0a1 1 0 1 0 0-2 1 1 0 0 0 0 2zm2 0a1 1 0 1 0 0-2 1 1 0 0 0 0 2z"/></svg>
+    <span class="nav-item-text">Pipeline Monitor</span>
+  </a>
+  <a class="nav-item" href="/dashboard?view=summary">
+    <svg width="15" height="15" viewBox="0 0 16 16" fill="currentColor"><path d="M4 11H2v3h2v-3zm5-4H7v7h2V7zm5-5v12h-2V2h2zm-2-1a1 1 0 0 0-1 1v12a1 1 0 0 0 1 1h2a1 1 0 0 0 1-1V2a1 1 0 0 0-1-1h-2zM6 7a1 1 0 0 1 1-1h2a1 1 0 0 1 1 1v7a1 1 0 0 1-1 1H7a1 1 0 0 1-1-1V7zm-5 4a1 1 0 0 1 1-1h2a1 1 0 0 1 1 1v3a1 1 0 0 1-1 1H2a1 1 0 0 1-1-1v-3z"/></svg>
+    <span class="nav-item-text">Bin Quality Report</span>
+  </a>
+  <a class="nav-item" href="/phylo">
+    <svg width="15" height="15" viewBox="0 0 16 16" fill="currentColor"><path d="M4.5 1a.5.5 0 0 1 .5.5V4h3V1.5a.5.5 0 0 1 1 0V4h1a.5.5 0 0 1 0 1H9v1.293l2.354 2.353a.5.5 0 0 1-.708.708L9 7.707V9h1a.5.5 0 0 1 0 1H9v1.293l2.354 2.353a.5.5 0 0 1-.708.708L9 12.707V14.5a.5.5 0 0 1-1 0V10H5v4.5a.5.5 0 0 1-1 0V12.707l-1.646 1.647a.5.5 0 0 1-.708-.708L3.293 12H2a.5.5 0 0 1 0-1h1.293L2.146 9.854a.5.5 0 1 1 .708-.708L4 10.293V9H3a.5.5 0 0 1 0-1h1V6.707L2.854 5.561a.5.5 0 1 1 .708-.708L5 6.293V5H4a.5.5 0 0 1 0-1h1V1.5a.5.5 0 0 1 .5-.5zM5 5v2h3V5H5zm0 3v2h3V8H5z"/></svg>
+    <span class="nav-item-text">View</span>
+  </a>
+  <div class="sidebar-nav-divider"></div>
+  <a class="nav-item" href="/graph">
+    <svg width="15" height="15" viewBox="0 0 16 16" fill="currentColor"><path d="M0 0h1v16H0zm15 0h1v16h-1zM5 11.5a.5.5 0 0 1 .5-.5h5a.5.5 0 0 1 0 1h-5a.5.5 0 0 1-.5-.5zm-3-4a.5.5 0 0 1 .5-.5h11a.5.5 0 0 1 0 1h-11a.5.5 0 0 1-.5-.5zm6-4a.5.5 0 0 1 .5-.5h5a.5.5 0 0 1 0 1h-5a.5.5 0 0 1-.5-.5z"/></svg>
+    <span class="nav-item-text">Results Visualisation</span>
+  </a>
+  <a class="nav-item" href="/assembly">
+    <svg width="15" height="15" viewBox="0 0 16 16" fill="currentColor"><path d="M8.186 1.113a.5.5 0 0 0-.372 0L1.846 3.5 8 5.961 14.154 3.5 8.186 1.113zM15 4.239l-6.5 2.6v7.922l6.5-2.6V4.24zM7.5 14.762V6.838L1 4.239v7.923l6.5 2.6zM7.443.184a1.5 1.5 0 0 1 1.114 0l7.129 2.852A.5.5 0 0 1 16 3.5v8.662a1 1 0 0 1-.629.928l-7.185 2.874a.5.5 0 0 1-.372 0L.63 13.09a1 1 0 0 1-.63-.928V3.5a.5.5 0 0 1 .314-.464L7.443.184z"/></svg>
+    <span class="nav-item-text">Contig Assembly Graph</span>
+  </a>
+  <a class="nav-item" href="/export">
+    <svg width="15" height="15" viewBox="0 0 16 16" fill="currentColor"><path d="M.5 9.9a.5.5 0 0 1 .5.5v2.5a1 1 0 0 0 1 1h12a1 1 0 0 0 1-1v-2.5a.5.5 0 0 1 1 0v2.5a2 2 0 0 1-2 2H2a2 2 0 0 1-2-2v-2.5a.5.5 0 0 1 .5-.5z"/><path d="M7.646 11.854a.5.5 0 0 0 .708 0l3-3a.5.5 0 0 0-.708-.708L8.5 10.293V1.5a.5.5 0 0 0-1 0v8.793L5.354 8.146a.5.5 0 1 0-.708.708l3 3z"/></svg>
+    <span class="nav-item-text">Export Results</span>
+  </a>
+  <div class="sidebar-nav-divider"></div>
+  <a class="nav-item active" href="/docs">
+    <svg width="15" height="15" viewBox="0 0 16 16" fill="currentColor"><path d="M1 2.828c.885-.37 2.154-.769 3.388-.893 1.33-.134 2.458.063 3.112.752v9.746c-.935-.53-2.12-.603-3.213-.493-1.18.12-2.37.461-3.287.811V2.828zm7.5-.141c.654-.689 1.782-.886 3.112-.752 1.234.124 2.503.523 3.388.893v9.923c-.918-.35-2.107-.692-3.287-.81-1.094-.111-2.278-.039-3.213.492V2.687zM8 1.783C7.015.936 5.587.81 4.287.94c-1.514.153-3.042.672-3.994 1.105A.5.5 0 0 0 0 2.5v11a.5.5 0 0 0 .707.455c.882-.4 2.303-.881 3.68-1.02 1.409-.142 2.59.087 3.223.877a.5.5 0 0 0 .78 0c.633-.79 1.814-1.019 3.222-.877 1.378.139 2.8.62 3.681 1.02A.5.5 0 0 0 16 13.5v-11a.5.5 0 0 0-.293-.455c-.952-.433-2.48-.952-3.994-1.105C10.413.809 8.985.936 8 1.783z"/></svg>
+    <span class="nav-item-text">Documentation</span>
+  </a>
+  <a class="nav-item" href="/guide">
+    <svg width="15" height="15" viewBox="0 0 16 16" fill="currentColor"><path d="M8 15A7 7 0 1 1 8 1a7 7 0 0 1 0 14zm0 1A8 8 0 1 0 8 0a8 8 0 0 0 0 16z"/><path d="M5.255 5.786a.237.237 0 0 0 .241.247h.825c.138 0 .248-.113.266-.25.09-.656.54-1.134 1.342-1.134.686 0 1.314.343 1.314 1.168 0 .635-.374.927-.965 1.371-.673.489-1.206 1.06-1.168 1.987l.003.217a.25.25 0 0 0 .25.246h.811a.25.25 0 0 0 .25-.25v-.105c0-.718.273-.927 1.01-1.486.609-.463 1.244-.977 1.244-2.056 0-1.511-1.276-2.241-2.673-2.241-1.267 0-2.655.59-2.75 2.286zm1.557 5.763c0 .533.425.927 1.01.927.609 0 1.028-.394 1.028-.927 0-.552-.42-.94-1.029-.94-.584 0-1.009.388-1.009.94z"/></svg>
+    <span class="nav-item-text">User Guide</span>
+  </a>
+  <div class="nav-divider" style="margin: 4px 0 0;"></div>
+
+  <div class="sidebar-search">
+    <div class="search-wrap">
+      <svg width="13" height="13" viewBox="0 0 16 16" fill="currentColor">
+        <path d="M11.742 10.344a6.5 6.5 0 1 0-1.397 1.398h-.001c.03.04.062.078.098.115l3.85 3.85a1 1 0 0 0 1.415-1.414l-3.85-3.85a1.007 1.007 0 0 0-.115-.099zm-5.242 1.406a5.5 5.5 0 1 1 0-11 5.5 5.5 0 0 1 0 11z"/>
+      </svg>
+      <input id="search-input" type="text" placeholder="Search documentation…" autocomplete="off">
+    </div>
+  </div>
+
+  <nav class="toc-nav" id="toc-nav">
+    <div class="toc-section-label">Contents</div>
+    <a class="toc-link active" href="#intro"           data-section="intro">Overview</a>
+    <a class="toc-link"        href="#installation"    data-section="s1">1. Installation</a>
+    <a class="toc-link"        href="#subcommands"     data-section="s2">2. Subcommands</a>
+    <a class="toc-link"        href="#databases"       data-section="s3">3. Required Databases</a>
+    <a class="toc-link"        href="#configure"       data-section="s4">4. Configure</a>
+    <a class="toc-link"        href="#assemble"        data-section="s5">5. Assemble</a>
+    <a class="toc-link"        href="#qc"              data-section="s6">6. QC / Read Filtering</a>
+    <a class="toc-link"        href="#recover"         data-section="s7">7. Recover</a>
+    <a class="toc-link"        href="#annotate"        data-section="s8">8. Annotate</a>
+    <a class="toc-link"        href="#complete"        data-section="s9">9. Complete</a>
+    <a class="toc-link"        href="#cluster"         data-section="s10">10. Cluster</a>
+    <a class="toc-link"        href="#batch"           data-section="s11">11. Batch</a>
+    <a class="toc-link"        href="#diversity"       data-section="s12">12. Diversity</a>
+    <a class="toc-link"        href="#isolate"         data-section="s13">13. Isolate</a>
+    <a class="toc-link"        href="#common-flags"    data-section="s14">14. Common Flags</a>
+    <a class="toc-link"        href="#hpc"             data-section="s15">15. HPC / Cluster</a>
+    <a class="toc-link"        href="#workflow"        data-section="s16">16. Full Walkthrough</a>
+    <a class="toc-link"        href="#outputs"         data-section="s17">17. Key Output Files</a>
+    <a class="toc-link"        href="#debugging"       data-section="s18">18. Debugging &amp; Testing</a>
+    <a class="toc-link"        href="#tips"            data-section="s19">19. Tips &amp; Gotchas</a>
+  </nav>
+
+  <div class="sidebar-footer" style="padding:12px 16px;border-top:1px solid var(--border);font-size:11px;color:var(--muted);margin-top:auto;flex-shrink:0;">Aviary Web Interface</div>
+</aside>
+
+<!-- ====================================================================== -->
+<!-- Main                                                                     -->
+<!-- ====================================================================== -->
+<div class="main">
+
+  <div class="topbar">
+    <div class="topbar-title">How to use Aviary</div>
+    <span class="topbar-meta">Comprehensive metagenomics pipeline reference</span>
+    <span class="topbar-pill">v0.12.0</span>
+  </div>
+
+  <div class="content-scroll" id="content-scroll">
+
+    <div id="no-results">
+      <div class="icon">🔍</div>
+      <p>No sections match your search.</p>
+    </div>
+
+    <!-- ================================================================ -->
+    <!-- Intro                                                             -->
+    <!-- ================================================================ -->
+    <div class="doc-intro" id="intro">
+      <h1>Aviary</h1>
+      <p>
+        Comprehensive Snakemake-based metagenomics pipeline: <strong>assembly → binning → annotation → dereplication</strong>.
+        Supports short-read, long-read, and hybrid workflows. Each module runs independently or as a chained pipeline.
+      </p>
+      <div class="intro-authors">
+        <div class="intro-authors-label">Authors</div>
+        <div class="intro-authors-list">
+          <a class="author-chip" href="https://orcid.org/0000-0002-1300-6116" target="_blank" rel="noopener">
+            <img src="https://orcid.org/sites/default/files/images/orcid_16x16.png" alt="ORCID" width="14" height="14">
+            Rhys J. P. Newell
+          </a>
+          <a class="author-chip" href="https://orcid.org/0000-0001-9806-5846" target="_blank" rel="noopener">
+            <img src="https://orcid.org/sites/default/files/images/orcid_16x16.png" alt="ORCID" width="14" height="14">
+            Samuel T. N. Aroney
+          </a>
+          <a class="author-chip" href="https://orcid.org/0000-0002-4919-1448" target="_blank" rel="noopener">
+            <img src="https://orcid.org/sites/default/files/images/orcid_16x16.png" alt="ORCID" width="14" height="14">
+            Julian Zaugg
+          </a>
+          <a class="author-chip" href="https://orcid.org/0000-0002-4456-150X" target="_blank" rel="noopener">
+            <img src="https://orcid.org/sites/default/files/images/orcid_16x16.png" alt="ORCID" width="14" height="14">
+            Peter Sternes
+          </a>
+          <a class="author-chip" href="https://orcid.org/0000-0001-8559-9427" target="_blank" rel="noopener">
+            <img src="https://orcid.org/sites/default/files/images/orcid_16x16.png" alt="ORCID" width="14" height="14">
+            Gene W. Tyson
+          </a>
+          <a class="author-chip" href="https://orcid.org/0000-0003-0670-7480" target="_blank" rel="noopener">
+            <img src="https://orcid.org/sites/default/files/images/orcid_16x16.png" alt="ORCID" width="14" height="14">
+            Ben J. Woodcroft
+          </a>
+        </div>
+        <div class="intro-cite">
+          <strong>Cite:</strong> Newell et al. <em>Aviary: Hybrid assembly and genome recovery from metagenomes.</em>
+          Zenodo, 2024. <a href="https://doi.org/10.5281/zenodo.10158086" target="_blank" rel="noopener">doi:10.5281/zenodo.10158086</a>
+        </div>
+      </div>
+
+      <div class="intro-links">
+        <a class="intro-link" href="https://github.com/rhysnewell/aviary" target="_blank" rel="noopener">
+          <svg width="13" height="13" viewBox="0 0 16 16" fill="currentColor"><path d="M8 0C3.58 0 0 3.58 0 8c0 3.54 2.29 6.53 5.47 7.59.4.07.55-.17.55-.38 0-.19-.01-.82-.01-1.49-2.01.37-2.53-.49-2.69-.94-.09-.23-.48-.94-.82-1.13-.28-.15-.68-.52-.01-.53.63-.01 1.08.58 1.23.82.72 1.21 1.87.87 2.33.66.07-.52.28-.87.51-1.07-1.78-.2-3.64-.89-3.64-3.95 0-.87.31-1.59.82-2.15-.08-.2-.36-1.02.08-2.12 0 0 .67-.21 2.2.82.64-.18 1.32-.27 2-.27.68 0 1.36.09 2 .27 1.53-1.04 2.2-.82 2.2-.82.44 1.1.16 1.92.08 2.12.51.56.82 1.27.82 2.15 0 3.07-1.87 3.75-3.65 3.95.29.25.54.73.54 1.48 0 1.07-.01 1.93-.01 2.2 0 .21.15.46.55.38A8.013 8.013 0 0 0 16 8c0-4.42-3.58-8-8-8z"/></svg>
+          GitHub
+        </a>
+        <a class="intro-link" href="https://rhysnewell.github.io/aviary" target="_blank" rel="noopener">
+          <svg width="13" height="13" viewBox="0 0 16 16" fill="currentColor"><path d="M1 2.5A1.5 1.5 0 0 1 2.5 1h3A1.5 1.5 0 0 1 7 2.5v3A1.5 1.5 0 0 1 5.5 7h-3A1.5 1.5 0 0 1 1 5.5v-3zm8 0A1.5 1.5 0 0 1 10.5 1h3A1.5 1.5 0 0 1 15 2.5v3A1.5 1.5 0 0 1 13.5 7h-3A1.5 1.5 0 0 1 9 5.5v-3zm-8 8A1.5 1.5 0 0 1 2.5 9h3A1.5 1.5 0 0 1 7 10.5v3A1.5 1.5 0 0 1 5.5 15h-3A1.5 1.5 0 0 1 1 13.5v-3zm8 0A1.5 1.5 0 0 1 10.5 9h3a1.5 1.5 0 0 1 1.5 1.5v3a1.5 1.5 0 0 1-1.5 1.5h-3A1.5 1.5 0 0 1 9 13.5v-3z"/></svg>
+          Documentation
+        </a>
+        <a class="intro-link" href="https://doi.org/10.5281/zenodo.10158086" target="_blank" rel="noopener">
+          <svg width="13" height="13" viewBox="0 0 16 16" fill="currentColor"><path d="M4.715 6.542 3.343 7.914a3 3 0 1 0 4.243 4.243l1.828-1.829A3 3 0 0 0 8.586 5.5L8 6.086a1.002 1.002 0 0 0-.154.199 2 2 0 0 1 .861 3.337L6.88 11.45a2 2 0 1 1-2.83-2.83l.793-.792a4.018 4.018 0 0 1-.128-1.287z"/><path d="M6.586 4.672A3 3 0 0 0 7.414 9.5l.775-.776a2 2 0 0 1-.896-3.346L9.12 3.55a2 2 0 1 1 2.83 2.83l-.793.792c.112.42.155.855.128 1.287l1.372-1.372a3 3 0 1 0-4.243-4.243L6.586 4.672z"/></svg>
+          doi:10.5281/zenodo.10158086
+        </a>
+      </div>
+    </div>
+
+    <!-- ================================================================ -->
+    <!-- 1. Installation                                                   -->
+    <!-- ================================================================ -->
+    <section class="doc-section" id="installation" data-section="s1">
+      <h2><span class="section-num">01</span>Installation</h2>
+
+      <pre data-lang="bash"><code><span class="comment"># Set conda channels first (required)</span>
+conda config --add channels defaults
+conda config --add channels bioconda
+conda config --add channels conda-forge
+
+<span class="comment"># Option A — Bioconda</span>
+conda create -n aviary -c bioconda aviary
+<span class="comment"># OR into an existing environment:</span>
+conda install -c bioconda aviary
+
+<span class="comment"># Option B — Pip</span>
+pip install aviary-genome
+
+<span class="comment"># Option C — Source with pixi (recommended for development)</span>
+git clone https://github.com/rhysnewell/aviary.git
+cd aviary
+pixi run postinstall     <span class="comment"># installs all dependencies</span>
+
+<span class="comment"># Editable install for development</span>
+pip install -e .</code></pre>
+    </section>
+
+    <!-- ================================================================ -->
+    <!-- 2. Subcommands                                                    -->
+    <!-- ================================================================ -->
+    <section class="doc-section" id="subcommands" data-section="s2">
+      <h2><span class="section-num">02</span>Quick Reference — Subcommands</h2>
+
+      <pre data-lang="bash"><code>aviary --version            <span class="comment"># show installed version</span>
+aviary --help               <span class="comment"># top-level help</span>
+aviary &lt;subcommand&gt; --help  <span class="comment"># help for a specific subcommand</span></code></pre>
+
+      <div class="cmd-grid">
+        <a class="cmd-card" href="#assemble"><code>aviary assemble</code><p>QC + de novo assembly (short, long, or hybrid reads)</p></a>
+        <a class="cmd-card" href="#recover"><code>aviary recover</code><p>MAG recovery from an assembly using multiple binning algorithms</p></a>
+        <a class="cmd-card" href="#annotate"><code>aviary annotate</code><p>Functional (EggNOG) + taxonomic (GTDB-tk) annotation of MAGs</p></a>
+        <a class="cmd-card" href="#complete"><code>aviary complete</code><p>Runs assemble → recover → annotate in sequence</p></a>
+        <a class="cmd-card" href="#batch"><code>aviary batch</code><p>Runs the full pipeline on every sample listed in a batch TSV/CSV</p></a>
+        <a class="cmd-card" href="#cluster"><code>aviary cluster</code><p>Dereplicate and combine MAGs across multiple Aviary runs</p></a>
+        <a class="cmd-card" href="#diversity"><code>aviary diversity</code><p>Strain diversity analysis using Lorikeet</p></a>
+        <a class="cmd-card" href="#isolate"><code>aviary isolate</code><p>Isolate (single-organism) hybrid assembly</p></a>
+        <a class="cmd-card" href="#configure"><code>aviary configure</code><p>Set database paths and environment variables</p></a>
+      </div>
+    </section>
+
+    <!-- ================================================================ -->
+    <!-- 3. Required Databases                                             -->
+    <!-- ================================================================ -->
+    <section class="doc-section" id="databases" data-section="s3">
+      <h2><span class="section-num">03</span>Required Databases</h2>
+
+      <div class="table-wrap">
+        <table>
+          <thead><tr><th>Database</th><th>Tool</th><th>Size</th><th>Required?</th></tr></thead>
+          <tbody>
+            <tr><td>GTDB</td><td>GTDB-tk (taxonomy)</td><td>~85 GB</td><td>Yes — for taxonomy in recover/annotate</td></tr>
+            <tr><td>EggNOG</td><td>EggNOG-mapper</td><td>~50 GB</td><td>Yes — for functional annotation</td></tr>
+            <tr><td>CheckM2</td><td>CheckM2 (quality)</td><td>~3 GB</td><td>Yes — for MAG QC</td></tr>
+            <tr><td>SingleM</td><td>SingleM (profiling)</td><td>~14 GB</td><td>Yes — for recovery assessment</td></tr>
+            <tr><td>Metabuli</td><td>TaxVAMB binner</td><td>varies</td><td>Optional — only for taxvamb binner</td></tr>
+          </tbody>
+        </table>
+      </div>
+
+      <p>Use <code>aviary configure --download</code> to auto-install all databases.</p>
+
+      <h3>Environment variable paths</h3>
+      <pre data-lang="bash"><code>export GTDBTK_DATA_PATH=/path/to/gtdb/db/
+export EGGNOG_DATA_DIR=/path/to/eggnog/
+export SINGLEM_METAPACKAGE_PATH=/path/to/singlem.smpkg/
+export CHECKM2DB=/path/to/checkm2db/
+export CONDA_ENV_PATH=/path/to/conda/envs/</code></pre>
+
+      <blockquote class="tip"><strong>Tip:</strong> Point <code>GTDBTK_DATA_PATH</code> to the <code>db/</code> folder <em>inside</em> the GTDB download directory, not the download root itself.</blockquote>
+    </section>
+
+    <!-- ================================================================ -->
+    <!-- 4. Configure                                                      -->
+    <!-- ================================================================ -->
+    <section class="doc-section" id="configure" data-section="s4">
+      <h2><span class="section-num">04</span>Configure</h2>
+
+      <pre data-lang="bash"><code>aviary configure \
+  -o logs/ \
+  --eggnog-db-path /path/to/eggnog/ \
+  --gtdb-path /path/to/gtdb/ \
+  --checkm2-db-path /path/to/checkm2/ \
+  --singlem-metapackage-path /path/to/singlem/ \
+  --metabuli-db-path /path/to/metabuli/ \   <span class="comment"># optional, for taxvamb</span>
+  --download                                 <span class="comment"># auto-download missing databases</span>
+
+<span class="comment"># Set a persistent tmpdir</span>
+aviary configure --tmpdir /scratch/tmp/</code></pre>
+
+      <div class="table-wrap">
+        <table>
+          <thead><tr><th>Flag</th><th>Description</th></tr></thead>
+          <tbody>
+            <tr><td><code>-o</code></td><td>Output / log directory</td></tr>
+            <tr><td><code>--eggnog-db-path</code></td><td>EggNOG functional annotation database path</td></tr>
+            <tr><td><code>--gtdb-path</code></td><td>GTDB taxonomy database path</td></tr>
+            <tr><td><code>--checkm2-db-path</code></td><td>CheckM2 quality assessment database path</td></tr>
+            <tr><td><code>--singlem-metapackage-path</code></td><td>SingleM marker gene database path</td></tr>
+            <tr><td><code>--metabuli-db-path</code></td><td>Metabuli database (optional; required for taxvamb)</td></tr>
+            <tr><td><code>--download</code></td><td>Auto-download all missing databases</td></tr>
+            <tr><td><code>--tmpdir</code></td><td>Persist a custom TMPDIR for all future runs</td></tr>
+          </tbody>
+        </table>
+      </div>
+    </section>
+
+    <!-- ================================================================ -->
+    <!-- 5. Assemble                                                       -->
+    <!-- ================================================================ -->
+    <section class="doc-section" id="assemble" data-section="s5">
+      <h2><span class="section-num">05</span>Assemble</h2>
+      <p>QC runs automatically before assembly unless <code>--skip-qc</code> is set.</p>
+
+      <pre data-lang="bash"><code><span class="comment"># Short-read only (metaSPAdes by default)</span>
+aviary assemble -1 sample_R1.fastq.gz -2 sample_R2.fastq.gz -o output_dir/ --n-cores 16
+
+<span class="comment"># Short-read with MEGAHIT (faster, lower memory)</span>
+aviary assemble -1 sample_R1.fastq.gz -2 sample_R2.fastq.gz -o output_dir/ --n-cores 16 --use-megahit
+
+<span class="comment"># Long-read only (myloasm default)</span>
+aviary assemble -l sample.fastq.gz -z ont -o output_dir/ --n-cores 16
+
+<span class="comment"># Long-read with Flye</span>
+aviary assemble -l sample.fastq.gz -z ont --long-read-assembler flye -o output_dir/ --n-cores 16
+
+<span class="comment"># Hybrid (short + long reads)</span>
+aviary assemble -1 sample_R1.fastq.gz -2 sample_R2.fastq.gz -l sample.fastq.gz -z ont -o output_dir/ --n-cores 16
+
+<span class="comment"># Host contamination removal</span>
+aviary assemble -1 sample_R1.fastq.gz -2 sample_R2.fastq.gz -r host_genome.fasta -o output_dir/ --n-cores 16
+
+<span class="comment"># Co-assembly of multiple samples</span>
+aviary assemble -1 s1_R1.fq.gz s2_R1.fq.gz -2 s1_R2.fq.gz s2_R2.fq.gz --coassemble -o output_dir/ --n-cores 16</code></pre>
+
+      <h3>Read input flags</h3>
+      <div class="table-wrap">
+        <table>
+          <thead><tr><th>Flag</th><th>Description</th></tr></thead>
+          <tbody>
+            <tr><td><code>-1 PATH ..</code></td><td>Forward short reads</td></tr>
+            <tr><td><code>-2 PATH ..</code></td><td>Reverse short reads</td></tr>
+            <tr><td><code>-i / --interleaved PATH ..</code></td><td>Interleaved short read files</td></tr>
+            <tr><td><code>-c / --coupled PATH ..</code></td><td>Coupled forward/reverse list</td></tr>
+            <tr><td><code>-l / --longreads PATH ..</code></td><td>Nanopore or PacBio reads</td></tr>
+            <tr><td><code>-z / --longread-type TYPE</code></td><td><code>ont</code> | <code>ont_hq</code> | <code>rs</code> | <code>sq</code> | <code>ccs</code> | <code>hifi</code> (default: <code>ont</code>)</td></tr>
+          </tbody>
+        </table>
+      </div>
+
+      <h3>Assembly flags</h3>
+      <div class="table-wrap">
+        <table>
+          <thead><tr><th>Flag</th><th>Description</th><th>Default</th></tr></thead>
+          <tbody>
+            <tr><td><code>--long-read-assembler</code></td><td><code>myloasm</code> | <code>flye</code></td><td><code>myloasm</code></td></tr>
+            <tr><td><code>--use-megahit</code></td><td>Use MEGAHIT instead of metaSPAdes for short reads</td><td>off</td></tr>
+            <tr><td><code>--use-unicycler</code></td><td>Use Unicycler for metaSPAdes reassembly</td><td>off</td></tr>
+            <tr><td><code>--coassemble</code></td><td>Co-assemble multiple input read sets</td><td>off</td></tr>
+            <tr><td><code>-k / --kmer-sizes</code></td><td>Kmer sizes for SPAdes (odd integers &lt;128)</td><td>auto</td></tr>
+          </tbody>
+        </table>
+      </div>
+
+      <h3>Contig filtering flags (applied post-assembly)</h3>
+      <div class="table-wrap">
+        <table>
+          <thead><tr><th>Flag</th><th>Description</th><th>Default</th></tr></thead>
+          <tbody>
+            <tr><td><code>--min-cov-long</code></td><td>Minimum long read coverage for contigs</td><td>5</td></tr>
+            <tr><td><code>--min-cov-short</code></td><td>Minimum short read coverage for contigs</td><td>5</td></tr>
+            <tr><td><code>--exclude-contig-cov</code></td><td>Exclude contigs with coverage ≤ this value</td><td>10</td></tr>
+            <tr><td><code>--exclude-contig-size</code></td><td>Exclude contigs shorter than this bp</td><td>2500</td></tr>
+            <tr><td><code>--include-contig-size</code></td><td>Always include contigs longer than this bp</td><td>10000</td></tr>
+          </tbody>
+        </table>
+      </div>
+
+      <h3>Expected outputs</h3>
+      <div class="file-tree">
+        <span class="dir">assembly/</span><br>
+        &nbsp;&nbsp;final_contigs.fasta        <span class="note">← assembled contigs (use as --assembly for recover)</span><br>
+        <span class="dir">www/</span><br>
+        &nbsp;&nbsp;assembly_stats.txt         <span class="note">← assembly summary statistics</span><br>
+        &nbsp;&nbsp;<span class="dir">fastqc/</span>                    <span class="note">← FastQC short-read QC reports</span><br>
+        &nbsp;&nbsp;<span class="dir">nanoplot/</span>                  <span class="note">← NanoPlot long-read QC reports</span>
+      </div>
+    </section>
+
+    <!-- ================================================================ -->
+    <!-- 6. QC / Read Filtering                                            -->
+    <!-- ================================================================ -->
+    <section class="doc-section" id="qc" data-section="s6">
+      <h2><span class="section-num">06</span>QC / Read Filtering Flags</h2>
+      <p>Applies to <code>assemble</code>, <code>recover</code>, and <code>complete</code>. QC runs automatically — use these flags to tune or skip it.</p>
+
+      <div class="table-wrap">
+        <table>
+          <thead><tr><th>Flag</th><th>Description</th><th>Default</th></tr></thead>
+          <tbody>
+            <tr><td><code>--skip-qc</code></td><td>Skip all QC steps</td><td>off</td></tr>
+            <tr><td><code>-r / --host-filter PATH ..</code></td><td>Host reference fasta(s) to remove host reads</td><td>—</td></tr>
+            <tr><td><code>--min-read-size INT</code></td><td>Minimum long read size for Filtlong</td><td>100</td></tr>
+            <tr><td><code>--min-mean-q FLOAT</code></td><td>Minimum long read mean quality</td><td>10</td></tr>
+            <tr><td><code>--min-short-read-length INT</code></td><td>Minimum short read length to keep</td><td>15</td></tr>
+            <tr><td><code>--max-short-read-length INT</code></td><td>Maximum short read length (0 = no max)</td><td>0</td></tr>
+            <tr><td><code>--disable-adapter-trimming</code></td><td>Disable fastp adapter trimming</td><td>off</td></tr>
+            <tr><td><code>--unqualified-percent-limit FLOAT</code></td><td>Max % bases allowed unqualified</td><td>40</td></tr>
+            <tr><td><code>--quality-cutoff INT</code></td><td>Short read quality threshold</td><td>15</td></tr>
+            <tr><td><code>--extra-fastp-params STR</code></td><td>Extra params passed to fastp as string</td><td>—</td></tr>
+          </tbody>
+        </table>
+      </div>
+    </section>
+
+    <!-- ================================================================ -->
+    <!-- 7. Recover                                                        -->
+    <!-- ================================================================ -->
+    <section class="doc-section" id="recover" data-section="s7">
+      <h2><span class="section-num">07</span>Recover — Extract MAGs</h2>
+
+      <h3>Default binners</h3>
+      <div class="table-wrap">
+        <table>
+          <thead><tr><th>Binner</th><th>Type</th><th>GPU?</th><th>Notes</th></tr></thead>
+          <tbody>
+            <tr><td>Rosella</td><td>short+long</td><td>No</td><td>CoverM-based differential coverage binner (default lead binner)</td></tr>
+            <tr><td>MetaBAT2</td><td>short</td><td>No</td><td>Coverage-based</td></tr>
+            <tr><td>MaxBin2</td><td>short</td><td>No</td><td>Coverage + tetra-nucleotide frequency</td></tr>
+            <tr><td>CONCOCT</td><td>short</td><td>No</td><td>Gaussian mixture model</td></tr>
+            <tr><td>SemiBin2</td><td>short+long</td><td>Yes</td><td>Deep learning, self-supervised</td></tr>
+          </tbody>
+        </table>
+      </div>
+      <p><strong>DAS_Tool</strong> is always run to produce a final consensus bin set from all binner outputs.</p>
+
+      <pre data-lang="bash"><code><span class="comment"># Short reads only</span>
+aviary recover --assembly assembly.fasta -1 sample_R1.fastq.gz -2 sample_R2.fastq.gz -o output_dir/ --n-cores 16 --max-threads 32
+
+<span class="comment"># With long reads for coverage (improves binning)</span>
+aviary recover --assembly assembly.fasta -1 sample_R1.fastq.gz -2 sample_R2.fastq.gz -l sample.fastq.gz -z ont -o output_dir/ --n-cores 16
+
+<span class="comment"># GPU-accelerated binners (taxvamb, comebin, semibin)</span>
+aviary recover --assembly assembly.fasta -1 sample_R1.fastq.gz -2 sample_R2.fastq.gz -o output_dir/ --n-cores 16 --request-gpu
+
+<span class="comment"># Add extra binners beyond defaults</span>
+aviary recover --assembly assembly.fasta -1 sample_R1.fastq.gz -2 sample_R2.fastq.gz -o output_dir/ --n-cores 16 --extra-binners taxvamb comebin
+
+<span class="comment"># Skip specific binners</span>
+aviary recover --assembly assembly.fasta -1 sample_R1.fastq.gz -2 sample_R2.fastq.gz -o output_dir/ --n-cores 16 --skip-binners concoct maxbin
+
+<span class="comment"># Binning only — skip annotation</span>
+aviary recover --assembly assembly.fasta -1 sample_R1.fastq.gz -2 sample_R2.fastq.gz -o output_dir/ --n-cores 16 --binning-only
+
+<span class="comment"># Target a specific Snakemake rule</span>
+aviary recover --assembly assembly.fasta -1 sample_R1.fastq.gz -2 sample_R2.fastq.gz -o output_dir/ -w rosella --max-threads 12</code></pre>
+
+      <h3>Recover flags</h3>
+      <div class="table-wrap">
+        <table>
+          <thead><tr><th>Flag</th><th>Description</th><th>Default</th></tr></thead>
+          <tbody>
+            <tr><td><code>--assembly PATH</code></td><td>Input assembled contigs (.fasta) — required</td><td>—</td></tr>
+            <tr><td><code>-1 / -2</code></td><td>Short reads for coverage calculation</td><td>—</td></tr>
+            <tr><td><code>-l / --longreads</code></td><td>Long reads for coverage calculation</td><td>—</td></tr>
+            <tr><td><code>--request-gpu</code></td><td>Enable GPU-accelerated binners (taxvamb, comebin, semibin)</td><td>off</td></tr>
+            <tr><td><code>--binning-only</code></td><td>Stop after binning; skip quality check and annotation</td><td>off</td></tr>
+            <tr><td><code>--strict</code></td><td>Fail immediately if any binner errors</td><td>off</td></tr>
+            <tr><td><code>--extra-binners LIST</code></td><td>Add extra binners: <code>maxbin</code> | <code>concoct</code> | <code>comebin</code> | <code>taxvamb</code></td><td>—</td></tr>
+            <tr><td><code>--skip-binners LIST</code></td><td>Skip specific binners from the default set</td><td>—</td></tr>
+            <tr><td><code>--min-contig-size INT</code></td><td>Minimum contig size for binning (bp)</td><td>1500</td></tr>
+            <tr><td><code>--min-bin-size INT</code></td><td>Minimum MAG size (bp)</td><td>200000</td></tr>
+            <tr><td><code>--semibin-model NAME</code></td><td>SemiBin2 environment model</td><td>global</td></tr>
+            <tr><td><code>--skip-abundances</code></td><td>Skip CoverM post-binning abundance calculations</td><td>off</td></tr>
+            <tr><td><code>--skip-taxonomy</code></td><td>Skip GTDB-tk taxonomy assignment</td><td>off</td></tr>
+            <tr><td><code>--skip-singlem</code></td><td>Skip SingleM recovery assessment</td><td>off</td></tr>
+            <tr><td><code>-w / --workflow RULE</code></td><td>Target a specific Snakemake rule (all prerequisites still run)</td><td>—</td></tr>
+          </tbody>
+        </table>
+      </div>
+
+      <h3>Expected outputs</h3>
+      <div class="file-tree">
+        <span class="dir">bins/</span><br>
+        &nbsp;&nbsp;<span class="dir">final_bins/</span>                  <span class="note">← final consensus MAG FASTA files</span><br>
+        &nbsp;&nbsp;bin_info.tsv                 <span class="note">← taxonomy, QC, size, N50 for all MAGs</span><br>
+        &nbsp;&nbsp;checkm_minimal.tsv           <span class="note">← minimal CheckM2 summary</span><br>
+        &nbsp;&nbsp;coverm_abundances.tsv        <span class="note">← CoverM relative abundance per MAG per sample</span><br>
+        <span class="dir">diversity/singlem_out/</span>           <span class="note">← SingleM read-based community profiling</span><br>
+        <span class="dir">taxonomy/</span>                        <span class="note">← GTDB-tk raw output</span><br>
+        <span class="dir">benchmarks/</span>                      <span class="note">← Snakemake rule benchmarks</span><br>
+        <span class="dir">logs/</span>                            <span class="note">← Rule-level logs — check here first on errors</span>
+      </div>
+    </section>
+
+    <!-- ================================================================ -->
+    <!-- 8. Annotate                                                       -->
+    <!-- ================================================================ -->
+    <section class="doc-section" id="annotate" data-section="s8">
+      <h2><span class="section-num">08</span>Annotate</h2>
+
+      <pre data-lang="bash"><code>aviary annotate \
+  -d recover/bins/final_bins/ \
+  -o output_dir/ \
+  --n-cores 16</code></pre>
+
+      <div class="table-wrap">
+        <table>
+          <thead><tr><th>Flag</th><th>Description</th><th>Default</th></tr></thead>
+          <tbody>
+            <tr><td><code>-d / --genome-fasta-directory</code></td><td>Directory containing MAG FASTA files</td><td>—</td></tr>
+            <tr><td><code>-x / --fasta-extension</code></td><td>File extension of MAG files</td><td><code>fna</code></td></tr>
+          </tbody>
+        </table>
+      </div>
+
+      <blockquote><strong>Note:</strong> The default extension is <code>.fna</code>, not <code>.fasta</code>. If your bins have a different extension (e.g. <code>.fa</code>, <code>.fasta</code>), always set <code>-x</code> accordingly.</blockquote>
+
+      <h3>Expected outputs</h3>
+      <div class="file-tree">
+        <span class="dir">annotation/</span><br>
+        &nbsp;&nbsp;<span class="dir">eggnog/</span>      <span class="note">← EggNOG-mapper functional annotation output</span><br>
+        &nbsp;&nbsp;<span class="dir">gtdbtk/</span>      <span class="note">← GTDB-tk taxonomic classification output</span>
+      </div>
+    </section>
+
+    <!-- ================================================================ -->
+    <!-- 9. Complete                                                       -->
+    <!-- ================================================================ -->
+    <section class="doc-section" id="complete" data-section="s9">
+      <h2><span class="section-num">09</span>Complete — Assemble + Recover + Annotate</h2>
+      <blockquote><strong>Note:</strong> <code>complete</code> does NOT include <code>cluster</code> (dereplication). Run that separately after all samples.</blockquote>
+
+      <pre data-lang="bash"><code><span class="comment"># Short reads only</span>
+aviary complete -1 sample_R1.fastq.gz -2 sample_R2.fastq.gz -o output_dir/ --n-cores 16
+
+<span class="comment"># Hybrid with myloasm (default)</span>
+aviary complete -1 sample_R1.fastq.gz -2 sample_R2.fastq.gz -l sample.fastq.gz -z ont -o output_dir/ --n-cores 16
+
+<span class="comment"># Hybrid with Flye</span>
+aviary complete -1 sample_R1.fastq.gz -2 sample_R2.fastq.gz -l sample.fastq.gz -z ont --long-read-assembler flye -o output_dir/ --n-cores 16
+
+<span class="comment"># With GPU binners</span>
+aviary complete -1 sample_R1.fastq.gz -2 sample_R2.fastq.gz -l sample.fastq.gz -z ont -o output_dir/ --n-cores 16 --request-gpu
+
+<span class="comment"># Preview the workflow without running</span>
+aviary complete -1 sample_R1.fastq.gz -2 sample_R2.fastq.gz -o output_dir/ --dry-run</code></pre>
+    </section>
+
+    <!-- ================================================================ -->
+    <!-- 10. Cluster                                                       -->
+    <!-- ================================================================ -->
+    <section class="doc-section" id="cluster" data-section="s10">
+      <h2><span class="section-num">10</span>Cluster — Dereplicate MAGs</h2>
+      <p>Run this <strong>once, after all samples are processed</strong>, to dereplicate the combined MAG set.</p>
+
+      <pre data-lang="bash"><code>aviary cluster \
+  -i run1/ run2/ run3/ \
+  -o cluster_output/ \
+  --n-cores 16</code></pre>
+
+      <div class="table-wrap">
+        <table>
+          <thead><tr><th>Flag</th><th>Description</th><th>Default</th></tr></thead>
+          <tbody>
+            <tr><td><code>-i / --input-runs PATH ..</code></td><td>Space-separated previous Aviary output directories</td><td>—</td></tr>
+            <tr><td><code>--ani FLOAT</code></td><td>ANI threshold for dereplication</td><td>97</td></tr>
+            <tr><td><code>--precluster-ani FLOAT</code></td><td>Minimum ANI for preclustering</td><td>95</td></tr>
+            <tr><td><code>--precluster-method NAME</code></td><td>Rough ANI method: <code>dashing</code> | <code>finch</code></td><td>dashing</td></tr>
+            <tr><td><code>--min-completeness FLOAT</code></td><td>Exclude genomes below this completeness %</td><td>—</td></tr>
+            <tr><td><code>--max-contamination FLOAT</code></td><td>Exclude genomes above this contamination %</td><td>—</td></tr>
+            <tr><td><code>--use-checkm2-scores</code></td><td>Use CheckM2 scores for representative selection</td><td>off</td></tr>
+          </tbody>
+        </table>
+      </div>
+
+      <h3>Expected outputs</h3>
+      <div class="file-tree">
+        <span class="dir">dereplicated_bins/</span>   <span class="note">← final dereplicated representative MAG FASTA files</span>
+      </div>
+    </section>
+
+    <!-- ================================================================ -->
+    <!-- 11. Batch                                                         -->
+    <!-- ================================================================ -->
+    <section class="doc-section" id="batch" data-section="s11">
+      <h2><span class="section-num">11</span>Batch — Multiple Samples</h2>
+
+      <pre data-lang="bash"><code>aviary batch \
+  --batch-file samples.tsv \
+  -o batch_output/ \
+  --n-cores 16</code></pre>
+
+      <p>The batch file is a TSV or CSV with one sample per row. Aviary will run each sample individually and then cluster the final output. See format example at <code>https://rhysnewell.github.io/aviary/examples/example_batch.tsv</code>.</p>
+    </section>
+
+    <!-- ================================================================ -->
+    <!-- 12. Diversity                                                     -->
+    <!-- ================================================================ -->
+    <section class="doc-section" id="diversity" data-section="s12">
+      <h2><span class="section-num">12</span>Diversity — Strain Analysis</h2>
+
+      <pre data-lang="bash"><code>aviary diversity \
+  -d bins/final_bins/ \
+  -1 sample_R1.fastq.gz \
+  -2 sample_R2.fastq.gz \
+  -o output_dir/ \
+  --n-cores 16</code></pre>
+
+      <p>Runs Lorikeet for strain-resolved variant calling and genotyping.</p>
+    </section>
+
+    <!-- ================================================================ -->
+    <!-- 13. Isolate                                                       -->
+    <!-- ================================================================ -->
+    <section class="doc-section" id="isolate" data-section="s13">
+      <h2><span class="section-num">13</span>Isolate — Single-Organism Assembly</h2>
+      <p>Separate workflow from metagenomics — for isolated pure culture sequencing.</p>
+
+      <pre data-lang="bash"><code>aviary isolate \
+  -1 sample_R1.fastq.gz \
+  -2 sample_R2.fastq.gz \
+  -l sample.fastq.gz \
+  -z ont \
+  -o output_dir/ \
+  --n-cores 16</code></pre>
+
+      <div class="table-wrap">
+        <table>
+          <thead><tr><th>Flag</th><th>Description</th><th>Default</th></tr></thead>
+          <tbody>
+            <tr><td><code>--genome-size</code></td><td>Approximate genome size in bp</td><td>5000000</td></tr>
+            <tr><td><code>--guppy-model</code></td><td>Guppy model for Medaka polishing</td><td>r941_min_high_g360</td></tr>
+          </tbody>
+        </table>
+      </div>
+    </section>
+
+    <!-- ================================================================ -->
+    <!-- 14. Common Flags                                                  -->
+    <!-- ================================================================ -->
+    <section class="doc-section" id="common-flags" data-section="s14">
+      <h2><span class="section-num">14</span>Common Flags</h2>
+      <p>These flags apply across most subcommands.</p>
+
+      <div class="table-wrap">
+        <table>
+          <thead><tr><th>Flag</th><th>Description</th><th>Default</th></tr></thead>
+          <tbody>
+            <tr><td><code>-n / --n-cores INT</code></td><td>Max CPU cores (total for Snakemake)</td><td>16</td></tr>
+            <tr><td><code>--max-threads INT</code></td><td>Max threads for any single process</td><td>8</td></tr>
+            <tr><td><code>-m / --max-memory INT</code></td><td>Max memory in GB</td><td>250</td></tr>
+            <tr><td><code>-p / --pplacer-threads INT</code></td><td>Threads for pplacer (avoid high values — deadlock risk)</td><td>8</td></tr>
+            <tr><td><code>-o / --output PATH</code></td><td>Output directory</td><td>./</td></tr>
+            <tr><td><code>--request-gpu</code></td><td>Enable GPU-accelerated steps (taxvamb, comebin, semibin)</td><td>off</td></tr>
+            <tr><td><code>--dry-run</code></td><td>Show workflow steps without executing</td><td>off</td></tr>
+            <tr><td><code>-w / --workflow RULE</code></td><td>Target a specific Snakemake rule (all prerequisites still run)</td><td>—</td></tr>
+            <tr><td><code>--snakemake-cmds STR</code></td><td>Extra arguments passed directly to Snakemake</td><td>—</td></tr>
+            <tr><td><code>--snakemake-profile NAME/PATH</code></td><td>Snakemake cluster profile for HPC submission</td><td>—</td></tr>
+            <tr><td><code>--local-cores INT</code></td><td>Max cores for local-only steps</td><td>16</td></tr>
+            <tr><td><code>--cluster-retries INT</code></td><td>Retry failed cluster jobs N times (memory/time auto-scaled)</td><td>0</td></tr>
+            <tr><td><code>--tmpdir PATH</code></td><td>Directory for temporary files</td><td>/tmp</td></tr>
+            <tr><td><code>--clean</code></td><td>Clean up temp files after run</td><td>True</td></tr>
+            <tr><td><code>--rerun-triggers VALUE</code></td><td>What triggers rule reruns</td><td>mtime</td></tr>
+          </tbody>
+        </table>
+      </div>
+
+      <h3>Thread control explained</h3>
+      <ul style="list-style:none;display:flex;flex-direction:column;gap:6px;margin:8px 0 12px">
+        <li style="font-size:.85rem;color:var(--text)"><code>-t / --threads</code> — threads <strong>per program</strong> (how many each tool gets)</li>
+        <li style="font-size:.85rem;color:var(--text)"><code>-n / --n-cores</code> — total cores Snakemake can use; if &gt; <code>--threads</code>, multiple rules run in parallel</li>
+        <li style="font-size:.85rem;color:var(--text)"><code>-p / --pplacer-threads</code> — pplacer gets its own limit (deadlocks on too many threads)</li>
+      </ul>
+
+      <h3>Unlock a directory after a crash</h3>
+      <pre data-lang="bash"><code>aviary complete -1 sample_R1.fastq.gz -2 sample_R2.fastq.gz -o output_dir/ --snakemake-cmds '--unlock'</code></pre>
+
+      <h3>Resume an interrupted run</h3>
+      <p>Snakemake automatically skips completed steps. Just re-run the exact same command.</p>
+    </section>
+
+    <!-- ================================================================ -->
+    <!-- 15. HPC                                                           -->
+    <!-- ================================================================ -->
+    <section class="doc-section" id="hpc" data-section="s15">
+      <h2><span class="section-num">15</span>HPC / Cluster Job Submission</h2>
+
+      <h3>PBS / qsub (e.g. aqua cluster)</h3>
+      <pre data-lang="bash"><code><span class="comment"># Inline qsub submission — note the trailing space inside the quotes (argparse quirk)</span>
+aviary complete -1 sample_R1.fastq.gz -2 sample_R2.fastq.gz -o output_dir/ --n-cores 16 \
+  --snakemake-cmds '--cluster "qsub -V" '
+
+<span class="comment"># Using a named Snakemake profile</span>
+aviary complete -1 sample_R1.fastq.gz -2 sample_R2.fastq.gz -o output_dir/ --n-cores 16 \
+  --snakemake-profile aqua \
+  --cluster-retries 2</code></pre>
+
+      <h3>Example PBS profile <code>~/.config/snakemake/aqua/config.yaml</code></h3>
+      <pre data-lang="yaml"><code>cluster: qsub
+cluster-status: qstat
+jobs: 10000
+cluster-cancel: qdel</code></pre>
+
+      <blockquote><strong>PBS quirk:</strong> Add <code>-V</code> to your qsub command to pass environment variables to jobs. Without <code>-V</code>, pysam fails to activate properly in submitted jobs.</blockquote>
+
+      <h3>SLURM</h3>
+      <pre data-lang="bash"><code>aviary complete -1 sample_R1.fastq.gz -2 sample_R2.fastq.gz -o output_dir/ --n-cores 16 \
+  --snakemake-profile /path/to/slurm-profile/</code></pre>
+
+      <h3>Example SLURM wrapper script</h3>
+      <pre data-lang="bash"><code>#!/bin/bash
+#SBATCH --job-name=aviary
+#SBATCH --ntasks=1
+#SBATCH --cpus-per-task=16
+#SBATCH --mem=64G
+#SBATCH --time=48:00:00
+#SBATCH --output=aviary_%j.log
+
+conda activate aviary
+aviary complete -1 sample_R1.fastq.gz -2 sample_R2.fastq.gz -o output_dir/ --n-cores 16</code></pre>
+
+      <pre data-lang="bash"><code>sbatch submit_aviary.sh</code></pre>
+
+      <h3>Cluster retry behaviour</h3>
+      <p>With <code>--cluster-retries N</code>, failed jobs are automatically resubmitted up to N times. Each retry increases the requested memory and wall time. Set <code>--max-memory</code> and <code>--max-threads</code> to cap these values.</p>
+
+      <blockquote><strong>Note on job resources:</strong> Job CPU and memory requirements were empirically derived from 1,000 Aviary runs. Binner rules are standardised at 24 CPUs. Memory is set to the nearest power of 2 above max RSS. These are capped by <code>--max-memory</code> / <code>--max-threads</code>.</blockquote>
+    </section>
+
+    <!-- ================================================================ -->
+    <!-- 16. Full Workflow Walkthrough                                     -->
+    <!-- ================================================================ -->
+    <section class="doc-section" id="workflow" data-section="s16">
+      <h2><span class="section-num">16</span>Full Workflow Walkthrough</h2>
+
+      <h3>Step-by-step (maximum control)</h3>
+      <pre data-lang="bash"><code><span class="comment"># Step 1 — Configure databases (once per system)</span>
+aviary configure -o logs/ \
+  --eggnog-db-path /path/to/db/eggnog/ \
+  --gtdb-path /path/to/db/gtdb/ \
+  --checkm2-db-path /path/to/db/checkm2/ \
+  --singlem-metapackage-path /path/to/db/singlem/ \
+  --download
+
+<span class="comment"># Step 2 — QC + Assembly</span>
+aviary assemble -1 sample_R1.fastq.gz -2 sample_R2.fastq.gz -l sample.fastq.gz -z ont -o 01_assemble/ --n-cores 16
+
+<span class="comment"># Step 3 — MAG Recovery</span>
+aviary recover \
+  --assembly 01_assemble/assembly/final_contigs.fasta \
+  -1 sample_R1.fastq.gz -2 sample_R2.fastq.gz \
+  -l sample.fastq.gz -z ont \
+  -o 02_recover/ --n-cores 16 --max-threads 32 --request-gpu
+
+<span class="comment"># Step 4 — Annotate MAGs</span>
+aviary annotate -d 02_recover/bins/final_bins/ -o 03_annotate/ --n-cores 16
+
+<span class="comment"># Step 5 — Dereplicate (after all samples are done)</span>
+aviary cluster -i 02_recover/ run2/ run3/ -o 04_cluster/ --n-cores 16</code></pre>
+
+      <h3>Single-command alternative (steps 2–4)</h3>
+      <pre data-lang="bash"><code>aviary complete \
+  -1 sample_R1.fastq.gz -2 sample_R2.fastq.gz \
+  -l sample.fastq.gz -z ont \
+  -o output_dir/ --n-cores 16 --request-gpu
+
+<span class="comment"># Then run cluster (step 5) separately after all samples are done</span>
+aviary cluster -i output_dir/ run2/ run3/ -o cluster/ --n-cores 16</code></pre>
+    </section>
+
+    <!-- ================================================================ -->
+    <!-- 17. Key Output Files                                              -->
+    <!-- ================================================================ -->
+    <section class="doc-section" id="outputs" data-section="s17">
+      <h2><span class="section-num">17</span>Key Output Files</h2>
+
+      <h3>After <code>assemble</code></h3>
+      <div class="file-tree">
+        output_dir/<span class="dir">assembly/</span>final_contigs.fasta   <span class="note">← use as --assembly in recover</span>
+      </div>
+
+      <h3>After <code>recover</code></h3>
+      <div class="file-tree">
+        output_dir/<span class="dir">bins/final_bins/</span>*.fna           <span class="note">← final MAG FASTA files (use downstream)</span><br>
+        output_dir/bins/bin_info.tsv                                        <span class="note">← taxonomy, completeness, contamination, size, N50</span><br>
+        output_dir/bins/checkm_minimal.tsv                                  <span class="note">← minimal CheckM2 QC summary</span><br>
+        output_dir/bins/coverm_abundances.tsv                               <span class="note">← relative abundance per MAG per sample</span><br>
+        output_dir/<span class="dir">diversity/singlem_out/</span>          <span class="note">← SingleM community profiling</span><br>
+        output_dir/<span class="dir">taxonomy/</span>                       <span class="note">← raw GTDB-tk output</span><br>
+        output_dir/<span class="dir">benchmarks/</span>                     <span class="note">← per-rule resource benchmarks</span><br>
+        output_dir/<span class="dir">logs/</span>                           <span class="note">← per-rule logs — always check here first on errors</span>
+      </div>
+
+      <h3>After <code>annotate</code></h3>
+      <div class="file-tree">
+        output_dir/<span class="dir">annotation/eggnog/</span>              <span class="note">← EggNOG-mapper functional annotation</span><br>
+        output_dir/<span class="dir">annotation/gtdbtk/</span>              <span class="note">← GTDB-tk taxonomic annotation</span>
+      </div>
+
+      <h3>After <code>cluster</code></h3>
+      <div class="file-tree">
+        output_dir/<span class="dir">dereplicated_bins/</span>              <span class="note">← final dereplicated representative MAGs</span>
+      </div>
+    </section>
+
+    <!-- ================================================================ -->
+    <!-- 18. Debugging & Testing                                           -->
+    <!-- ================================================================ -->
+    <section class="doc-section" id="debugging" data-section="s18">
+      <h2><span class="section-num">18</span>Debugging &amp; Testing</h2>
+
+      <h3>Finding error messages</h3>
+      <p>All log files are in <code>output_dir/logs/</code>. Each file is named after the rule that generated it.</p>
+      <pre data-lang="bash"><code><span class="comment"># Example: SPAdes ran out of memory</span>
+cat output_dir/logs/run_spades.log
+
+<span class="comment"># List all log files</span>
+ls output_dir/logs/</code></pre>
+
+      <h3>run_tests_at_cmr — full expensive test suite</h3>
+      <blockquote><strong>Must be run from a GPU interactive session.</strong> Start one with: <code>mqinteractive gpu</code></blockquote>
+      <pre data-lang="bash"><code><span class="comment"># Recommended: submit via mqsub to control resources</span>
+mqsub -t 32 -m 250 --hours 12 pixi run run-tests-at-cmr
+
+<span class="comment"># OR: run directly (each test still submits its own job)</span>
+pixi run run-tests-at-cmr</code></pre>
+      <ul style="list-style:none;display:flex;flex-direction:column;gap:4px;margin:8px 0 12px;font-size:.84rem">
+        <li>• Collects all <code>@expensive</code> and <code>@qsub</code> pytest tests</li>
+        <li>• Submits each as a separate <code>mqsub</code> job (16 threads, 64 GB, 4 h)</li>
+        <li>• GPU tests (taxvamb, comebin, semibin) are submitted with <code>--A100</code></li>
+        <li>• Waits for all jobs and reports failures</li>
+      </ul>
+
+      <h3>run_samples_at_cmr — benchmark across 9 real samples</h3>
+      <pre data-lang="bash"><code>pixi run -e dev postinstall                    <span class="comment"># install dev environment</span>
+pixi run -e dev aviary build                   <span class="comment"># build aviary in dev environment</span>
+pixi run -e dev python test/run_samples_at_cmr</code></pre>
+      <ul style="list-style:none;display:flex;flex-direction:column;gap:4px;margin:8px 0 12px;font-size:.84rem">
+        <li>• Runs <code>aviary recover --binning-only</code> on 9 samples (Gut/Soil/Ocean) with both MEGAHIT and MetaSPAdes</li>
+        <li>• Jobs dispatched via GNU parallel (<code>-j 18</code>) with aqua Snakemake profile</li>
+        <li>• Output: timestamped directory per git commit under <code>$PIXI_PROJECT_ROOT/aviary_test_samples/&lt;COMMIT&gt;/</code></li>
+        <li>• Summary: <code>{OUTPUT_DIR}/summary.tsv</code> (columns: Env, Sample, Assembler, Score, Genomes)</li>
+        <li>• Quality threshold: <code>completeness − (5 × contamination) ≥ 50</code></li>
+      </ul>
+
+      <h3>Running tests locally</h3>
+      <pre data-lang="bash"><code>pixi run -e dev pytest test/                                       <span class="comment"># standard tests only</span>
+pixi run -e dev pytest test/ --run-expensive                       <span class="comment"># include expensive tests</span>
+pixi run -e dev pytest test/ --run-qsub                            <span class="comment"># include qsub tests</span>
+pixi run -e dev pytest test/ --profile /path/to/snakemake-profile/ <span class="comment"># use a cluster profile</span></code></pre>
+    </section>
+
+    <!-- ================================================================ -->
+    <!-- 19. Tips & Gotchas                                                -->
+    <!-- ================================================================ -->
+    <section class="doc-section" id="tips" data-section="s19">
+      <h2><span class="section-num">19</span>Tips, Gotchas &amp; Common Errors</h2>
+
+      <ul class="tips-list">
+        <li><span class="tip-num">01</span><span><strong>/tmp filling up</strong> is the most common error (<code>Error in prepare_binning_files</code>). CoverM mapping during binning uses <code>/tmp</code>. Fix: <code>--tmpdir /scratch/tmp/</code> or <code>aviary configure --tmpdir /scratch/tmp/</code>.</span></li>
+        <li><span class="tip-num">02</span><span><strong>SPAdes "Error code: -9"</strong> almost always means out of memory. Increase with <code>-m</code> (GB).</span></li>
+        <li><span class="tip-num">03</span><span><strong>qsub + pysam ModuleNotFoundError:</strong> Add <code>-V</code> to your qsub command to pass environment variables: <code>--snakemake-cmds '--cluster "qsub -V" '</code></span></li>
+        <li><span class="tip-num">04</span><span><strong>Trailing space in <code>--snakemake-cmds</code>:</strong> The space after <code>qsub</code> in <code>'--cluster qsub '</code> is required due to a Python argparse quirk.</span></li>
+        <li><span class="tip-num">05</span><span><strong><code>--request-gpu</code> on a local machine:</strong> First install the <code>cuda</code> package into your conda environment. GPU-capable programs will detect it automatically.</span></li>
+        <li><span class="tip-num">06</span><span><strong>Resuming a run:</strong> Snakemake automatically skips completed rules. Just re-run the exact same command with the same <code>-o</code> output directory.</span></li>
+        <li><span class="tip-num">07</span><span><strong>Default fasta extension for <code>annotate</code> is <code>.fna</code></strong>, not <code>.fasta</code>. If your bins have a different extension, always specify <code>-x</code>.</span></li>
+        <li><span class="tip-num">08</span><span><strong><code>aviary complete</code> does NOT run <code>cluster</code>.</strong> You must always run <code>aviary cluster</code> separately after all samples have been processed.</span></li>
+        <li><span class="tip-num">09</span><span><strong><code>--binning-only</code></strong> in recover skips CheckM2 QC and GTDB-tk — useful when you want fast MAG binning and plan to run <code>aviary annotate</code> separately.</span></li>
+        <li><span class="tip-num">10</span><span><strong><code>--cluster-retries</code></strong> is highly recommended on HPC. Failed jobs are retried with progressively more memory and time, up to <code>--max-memory</code> / <code>--max-threads</code> caps.</span></li>
+        <li><span class="tip-num">11</span><span><strong>Setting GTDB path:</strong> Point <code>GTDBTK_DATA_PATH</code> to the <code>db/</code> folder <em>inside</em> the GTDB download directory, not the download root itself.</span></li>
+        <li><span class="tip-num">12</span><span><strong>GPU binners require a GPU node.</strong> If using <code>--request-gpu</code> with a PBS/SLURM profile, ensure the profile is configured to submit GPU jobs to a GPU partition/queue.</span></li>
+      </ul>
+    </section>
+
+  </div><!-- /.content-scroll -->
+</div><!-- /.main -->
+
+<script>
+// ---------------------------------------------------------------------------
+// Search
+// ---------------------------------------------------------------------------
+const searchInput  = document.getElementById('search-input');
+const tocLinks     = document.querySelectorAll('.toc-link[data-section]');
+const sections     = document.querySelectorAll('.doc-section[data-section], .doc-intro');
+const noResults    = document.getElementById('no-results');
+
+searchInput.addEventListener('input', () => {
+  const q = searchInput.value.trim().toLowerCase();
+  let anyVisible = false;
+
+  sections.forEach(sec => {
+    if (!q) {
+      sec.classList.remove('hidden');
+      anyVisible = true;
+      return;
+    }
+    const text = sec.textContent.toLowerCase();
+    if (text.includes(q)) {
+      sec.classList.remove('hidden');
+      anyVisible = true;
+    } else {
+      sec.classList.add('hidden');
+    }
+  });
+
+  // Hide/show TOC links to match
+  tocLinks.forEach(link => {
+    if (!q) {
+      link.classList.remove('hidden');
+      return;
+    }
+    const sId   = link.getAttribute('data-section');
+    const intro = (sId === 'intro');
+    const sec   = intro
+      ? document.getElementById('intro')
+      : document.querySelector(`.doc-section[data-section="${sId}"]`);
+    if (sec && !sec.classList.contains('hidden')) {
+      link.classList.remove('hidden');
+    } else {
+      link.classList.add('hidden');
+    }
+  });
+
+  noResults.style.display = (q && !anyVisible) ? 'block' : 'none';
+});
+
+// Clear search on Escape
+searchInput.addEventListener('keydown', e => {
+  if (e.key === 'Escape') {
+    searchInput.value = '';
+    searchInput.dispatchEvent(new Event('input'));
+    searchInput.blur();
+  }
+});
+
+// ---------------------------------------------------------------------------
+// Active TOC highlight on scroll
+// ---------------------------------------------------------------------------
+const scroll = document.getElementById('content-scroll');
+const allSections = [
+  document.getElementById('intro'),
+  ...Array.from(document.querySelectorAll('.doc-section'))
+];
+
+function updateActiveToc() {
+  const scrollTop = scroll.scrollTop + 80;
+  let active = allSections[0];
+
+  for (const sec of allSections) {
+    if (sec && sec.offsetTop <= scrollTop) {
+      active = sec;
+    }
+  }
+
+  tocLinks.forEach(link => link.classList.remove('active'));
+
+  if (active) {
+    const id = active.id;
+    const dsec = active.getAttribute('data-section');
+    const match = dsec
+      ? document.querySelector(`.toc-link[data-section="${dsec}"]`)
+      : document.querySelector(`.toc-link[href="#intro"]`);
+    if (match) match.classList.add('active');
+  }
+}
+
+scroll.addEventListener('scroll', updateActiveToc, { passive: true });
+
+// Smooth scroll from TOC clicks and cmd-card links
+const internalLinks = document.querySelectorAll('.toc-link[data-section], .cmd-card[href]');
+internalLinks.forEach(link => {
+  link.addEventListener('click', e => {
+    e.preventDefault();
+    const href = link.getAttribute('href');
+    const target = document.querySelector(href);
+    if (target) {
+      target.scrollIntoView({ behavior: 'smooth', block: 'start' });
+    }
+  });
+});
+
+(function(){var s=document.getElementById('page-loading');document.querySelectorAll('a[href^="/"]').forEach(function(a){if(a.target!=='_blank')a.addEventListener('click',function(){s.classList.add('visible');});});window.addEventListener('pageshow',function(){s.classList.remove('visible');});})();
+</script>
+
+</body>
+</html>

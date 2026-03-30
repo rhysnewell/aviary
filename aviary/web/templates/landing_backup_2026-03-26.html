@@ -1,0 +1,737 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Aviary — Metagenomics Pipeline</title>
+  <link rel="icon" href="/logo" type="image/png">
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+    :root {
+      --teal:     #2ec4b6;
+      --forest:   #3a8c5a;
+      --leaf:     #5cb87a;
+      --leaf-lt:  #8fffb2;
+      --node-sz:  76px;
+    }
+
+    html, body {
+      width: 100%; height: 100%;
+      overflow: hidden;
+      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+      background: #061a0d;
+    }
+
+    #cvs { position: fixed; inset: 0; z-index: 0; }
+
+    #net {
+      position: fixed; inset: 0; z-index: 1;
+      pointer-events: none; overflow: visible;
+    }
+
+    /* ── Hub ─────────────────────────────────────────────── */
+    #hub {
+      position: fixed; top: 50%; left: 50%;
+      transform: translate(-50%, -50%);
+      z-index: 10;
+      display: flex; align-items: center; justify-content: center;
+      pointer-events: none;
+      animation: hub-in 0.8s ease both;
+    }
+    @keyframes hub-in { from { opacity: 0; } to { opacity: 1; } }
+
+    .aura {
+      position: absolute; border-radius: 50%;
+      top: 50%; left: 50%; transform: translate(-50%,-50%);
+      pointer-events: none;
+    }
+    .aura-1 {
+      width: 520px; height: 520px;
+      background: radial-gradient(circle,
+        rgba(58,140,90,0.13) 0%,
+        rgba(46,196,182,0.05) 42%,
+        transparent 70%);
+      animation: aura-pulse 5s ease-in-out infinite;
+    }
+    @keyframes aura-pulse {
+      0%,100% { transform: translate(-50%,-50%) scale(1.00); opacity: 0.65; }
+      50%      { transform: translate(-50%,-50%) scale(1.12); opacity: 1.00; }
+    }
+
+    .logo-wrap {
+      position: relative; z-index: 2;
+      width: 330px; height: 330px;
+      display: flex; align-items: center; justify-content: center;
+    }
+
+    /* Vine orbit ring */
+    .orbit {
+      position: absolute; border-radius: 50%;
+      border: 1px solid transparent;
+    }
+    .orbit-1 {
+      inset: -20px;
+      border-top-color:   rgba(92,184,122,0.55);
+      border-right-color: rgba(58,140,90,0.15);
+      animation: spin 12s linear infinite;
+    }
+    .orbit-1::after {
+      content: ''; position: absolute; top: 0; left: 50%;
+      width: 6px; height: 6px; border-radius: 50%;
+      background: var(--leaf-lt);
+      box-shadow: 0 0 6px var(--leaf-lt), 0 0 14px var(--leaf);
+      transform: translateX(-50%) translateY(-50%);
+    }
+    @keyframes spin { to { transform: rotate(360deg); } }
+
+    .logo-wrap img {
+      width: 320px; height: 320px;
+      object-fit: contain; border-radius: 24px;
+      filter:
+        drop-shadow(0 0 14px rgba(58,140,90,0.65))
+        drop-shadow(0 0 36px rgba(46,196,182,0.25));
+      animation: logo-float 5s ease-in-out infinite;
+      position: relative; z-index: 3;
+    }
+    @keyframes logo-float {
+      0%,100% { transform: translateY(0px); }
+      50%      { transform: translateY(-8px); }
+    }
+
+    /* ── Hub text ────────────────────────────────────────── */
+    #hub-text {
+      position: fixed;
+      left: 50%; top: calc(50% + 185px);
+      transform: translateX(-50%);
+      z-index: 10;
+      display: flex; flex-direction: column;
+      align-items: center; gap: 7px;
+      pointer-events: none;
+      animation: text-in 1.2s ease both;
+    }
+    @keyframes text-in {
+      from { opacity: 0; transform: translateX(-50%) translateY(10px); }
+      to   { opacity: 1; transform: translateX(-50%) translateY(0); }
+    }
+
+    .hub-title {
+      font-size: 2.2rem; font-weight: 800;
+      letter-spacing: 0.22em; text-transform: uppercase;
+      color: #ffffff;
+      text-shadow:
+        0 0 6px #fff,
+        0 0 16px rgba(92,184,122,0.90),
+        0 0 38px rgba(46,196,182,0.55),
+        0 0 70px rgba(58,140,90,0.35);
+    }
+    .hub-sub {
+      font-size: 0.70rem; letter-spacing: 0.32em;
+      text-transform: uppercase;
+      color: var(--leaf); opacity: 0.75;
+    }
+
+    /* ── Nodes ───────────────────────────────────────────── */
+    a.node {
+      position: fixed; z-index: 8;
+      display: flex; flex-direction: column;
+      align-items: center; gap: 10px;
+      text-decoration: none;
+      transform: translate(-50%, -50%);
+      cursor: pointer;
+      transition: transform 0.28s cubic-bezier(0.34, 1.56, 0.64, 1);
+      opacity: 0;
+      animation: node-in 0.6s ease forwards;
+    }
+    @keyframes node-in { from { opacity: 0; } to { opacity: 1; } }
+
+    a.node:hover { transform: translate(-50%, -50%) scale(1.28); }
+
+    .disc {
+      width: var(--node-sz); height: var(--node-sz);
+      border-radius: 50%;
+      border: 1.5px solid rgba(92,184,122,0.35);
+      background: radial-gradient(circle at 38% 38%,
+        rgba(58,140,90,0.12) 0%, rgba(2,11,5,0.97) 65%);
+      display: flex; align-items: center; justify-content: center;
+      transition: border-color 0.28s, background 0.28s, box-shadow 0.28s;
+      box-shadow:
+        0 0 10px rgba(58,140,90,0.10),
+        inset 0 0 12px rgba(58,140,90,0.06);
+    }
+    .disc svg {
+      width: 28px; height: 28px; fill: none;
+      stroke: var(--teal); stroke-width: 1.5;
+      stroke-linecap: round; stroke-linejoin: round;
+      opacity: 0.75; transition: stroke 0.28s, opacity 0.28s;
+    }
+
+    a.node:hover .disc {
+      border-color: rgba(143,255,178,0.80);
+      background: radial-gradient(circle at 38% 38%,
+        rgba(92,184,122,0.22) 0%, rgba(2,11,8,0.97) 70%);
+      box-shadow:
+        0 0 22px rgba(143,255,178,0.45),
+        0 0 44px rgba(58,140,90,0.22),
+        inset 0 0 18px rgba(92,184,122,0.10);
+    }
+    a.node:hover .disc svg { stroke: #c8ffe0; opacity: 1; }
+
+    .node-lbl {
+      font-size: 0.68rem; font-weight: 600;
+      letter-spacing: 0.11em; text-transform: uppercase;
+      color: rgba(120,185,140,0.60);
+      white-space: nowrap; text-align: center;
+      transition: color 0.28s, text-shadow 0.28s;
+    }
+    a.node:hover .node-lbl {
+      color: #c8ffe0;
+      text-shadow: 0 0 8px rgba(92,184,122,0.6);
+    }
+
+    /* ── SVG vine lines ──────────────────────────────────── */
+    .spoke {
+      stroke: rgba(80,185,110,0.52);
+      stroke-width: 1; fill: none;
+      transition: stroke 0.28s, stroke-width 0.28s;
+    }
+    .seg {
+      stroke: rgba(80,185,110,0.35);
+      stroke-width: 1; fill: none;
+      transition: stroke 0.28s, stroke-width 0.28s;
+    }
+    .spoke.lit { stroke: rgba(163,255,198,0.95); stroke-width: 1.5; }
+    .seg.lit   { stroke: rgba(163,255,198,0.65); stroke-width: 1.5; }
+  </style>
+</head>
+<body>
+
+<canvas id="cvs"></canvas>
+<svg id="net" width="100%" height="100%"></svg>
+
+<div id="hub">
+  <div class="aura aura-1"></div>
+  <div class="logo-wrap">
+    <div class="orbit orbit-1"></div>
+    <img src="/logo" alt="Aviary" onerror="this.style.display='none'">
+  </div>
+</div>
+
+<div id="hub-text">
+  <div class="hub-title">Aviary</div>
+  <div class="hub-sub">Metagenomics Pipeline</div>
+</div>
+
+<script>
+/* ============================================================
+   NODES
+============================================================ */
+const NODES = [
+  { label: 'Monitor',       href: '/dashboard', icon: 'monitor'  },
+  { label: 'Assembly',      href: '/assembly',  icon: 'assembly' },
+  { label: 'Results',       href: '/graph',     icon: 'results'  },
+  { label: 'Phylogenetics', href: '/phylo',     icon: 'phylo'    },
+  { label: 'Export',        href: '/export',    icon: 'export'   },
+  { label: 'Guide',         href: '/guide',     icon: 'guide'    },
+  { label: 'Docs',          href: '/docs',      icon: 'docs'     },
+];
+
+const ICONS = {
+  monitor: `
+    <rect x="2" y="3" width="20" height="14" rx="2"/>
+    <line x1="8" y1="21" x2="16" y2="21"/>
+    <line x1="12" y1="17" x2="12" y2="21"/>
+    <polyline points="6,9 10,13 14,9 18,12"/>`,
+  assembly: `
+    <circle cx="12" cy="12" r="2.2"/>
+    <circle cx="4"  cy="6"  r="1.8"/>
+    <circle cx="20" cy="6"  r="1.8"/>
+    <circle cx="4"  cy="18" r="1.8"/>
+    <circle cx="20" cy="18" r="1.8"/>
+    <line x1="5.8"  y1="7"   x2="10.3" y2="10.6"/>
+    <line x1="18.2" y1="7"   x2="13.7" y2="10.6"/>
+    <line x1="5.8"  y1="17"  x2="10.3" y2="13.4"/>
+    <line x1="18.2" y1="17"  x2="13.7" y2="13.4"/>`,
+  results: `
+    <line x1="18" y1="20" x2="18" y2="10"/>
+    <line x1="12" y1="20" x2="12" y2="4"/>
+    <line x1="6"  y1="20" x2="6"  y2="14"/>
+    <line x1="2"  y1="20" x2="22" y2="20"/>`,
+  phylo: `
+    <line x1="12" y1="3"  x2="12" y2="8"/>
+    <line x1="12" y1="8"  x2="7"  y2="13"/>
+    <line x1="12" y1="8"  x2="17" y2="13"/>
+    <line x1="7"  y1="13" x2="5"  y2="18"/>
+    <line x1="7"  y1="13" x2="9"  y2="18"/>
+    <line x1="17" y1="13" x2="15" y2="18"/>
+    <line x1="17" y1="13" x2="19" y2="18"/>
+    <circle cx="12" cy="3"  r="1.5" fill="currentColor" stroke="none"/>
+    <circle cx="5"  cy="18" r="1.5" fill="currentColor" stroke="none"/>
+    <circle cx="9"  cy="18" r="1.5" fill="currentColor" stroke="none"/>
+    <circle cx="15" cy="18" r="1.5" fill="currentColor" stroke="none"/>
+    <circle cx="19" cy="18" r="1.5" fill="currentColor" stroke="none"/>`,
+  export: `
+    <path d="M21 15v4a2 2 0 01-2 2H5a2 2 0 01-2-2v-4"/>
+    <polyline points="7,10 12,15 17,10"/>
+    <line x1="12" y1="15" x2="12" y2="3"/>`,
+  guide: `
+    <circle cx="12" cy="12" r="10"/>
+    <polygon points="16.24,7.76 14.12,14.12 7.76,16.24 9.88,9.88"/>`,
+  docs: `
+    <path d="M14 2H6a2 2 0 00-2 2v16a2 2 0 002 2h12a2 2 0 002-2V8z"/>
+    <polyline points="14,2 14,8 20,8"/>
+    <line x1="8"  y1="13" x2="16" y2="13"/>
+    <line x1="8"  y1="17" x2="16" y2="17"/>
+    <line x1="8"  y1="9"  x2="10" y2="9"/>`,
+};
+
+/* ============================================================
+   CANVAS — forest atmosphere, fireflies
+============================================================ */
+const cvs = document.getElementById('cvs');
+const ctx = cvs.getContext('2d');
+let W, H, pts = [], stars = [], fireflies = [];
+let tf = 0, _lastFloatT = 0;
+
+function resizeCvs() { W = cvs.width = innerWidth; H = cvs.height = innerHeight; }
+
+function mkPt() {
+  return {
+    x: Math.random()*W, y: Math.random()*H,
+    vx: (Math.random()-0.5)*0.14, vy: (Math.random()-0.5)*0.14,
+    r: Math.random()*1.2+0.3, a: Math.random()*0.18+0.04,
+  };
+}
+function mkStar() {
+  return {
+    x: Math.random()*W, y: Math.random()*H,
+    r: Math.random()*1.4+0.4,
+    base: Math.random()*0.30+0.08, phase: Math.random()*Math.PI*2,
+  };
+}
+function mkFirefly() {
+  return {
+    x: Math.random()*W, y: Math.random()*H,
+    vx: (Math.random()-0.5)*0.28, vy: (Math.random()-0.5)*0.28,
+    phase: Math.random()*Math.PI*2, speed: Math.random()*0.8+0.4,
+  };
+}
+function initPts() {
+  pts       = Array.from({length: 40}, mkPt);
+  stars     = Array.from({length: 40}, mkStar);
+  fireflies = Array.from({length: 18}, mkFirefly);
+}
+
+function drawCvs() {
+  const g = ctx.createRadialGradient(W/2,H/2,0, W/2,H/2, Math.max(W,H)*0.7);
+  g.addColorStop(0,   '#0e2e14');
+  g.addColorStop(0.4, '#09200f');
+  g.addColorStop(1,   '#061a0d');
+  ctx.fillStyle = g;
+  ctx.fillRect(0, 0, W, H);
+
+  // Stars
+  stars.forEach(s => {
+    const a = s.base + 0.22*Math.sin(tf*1.4+s.phase);
+    ctx.beginPath();
+    ctx.arc(s.x, s.y, s.r, 0, Math.PI*2);
+    ctx.fillStyle = `rgba(200,240,225,${Math.max(0,a)})`;
+    ctx.fill();
+  });
+
+  // Particle connections
+  for (let i = 0; i < pts.length; i++) {
+    for (let j = i+1; j < pts.length; j++) {
+      const dx=pts[i].x-pts[j].x, dy=pts[i].y-pts[j].y;
+      const d=Math.sqrt(dx*dx+dy*dy);
+      if (d<100) {
+        ctx.beginPath();
+        ctx.moveTo(pts[i].x, pts[i].y);
+        ctx.lineTo(pts[j].x, pts[j].y);
+        ctx.strokeStyle=`rgba(80,180,110,${0.10*(1-d/100)})`;
+        ctx.lineWidth=0.5; ctx.stroke();
+      }
+    }
+  }
+  pts.forEach(p => {
+    ctx.beginPath();
+    ctx.arc(p.x, p.y, p.r, 0, Math.PI*2);
+    ctx.fillStyle=`rgba(80,170,110,${p.a})`; ctx.fill();
+  });
+
+  // Fireflies
+  fireflies.forEach(f => {
+    const a  = 0.25+0.65*Math.abs(Math.sin(tf*f.speed+f.phase));
+    const r  = 1.4+0.9*Math.abs(Math.sin(tf*f.speed*0.7+f.phase));
+    const grd = ctx.createRadialGradient(f.x,f.y,0, f.x,f.y,r*5);
+    grd.addColorStop(0, `rgba(170,255,120,${a*0.5})`);
+    grd.addColorStop(1, 'rgba(170,255,120,0)');
+    ctx.beginPath(); ctx.arc(f.x,f.y,r*5,0,Math.PI*2);
+    ctx.fillStyle=grd; ctx.fill();
+    ctx.beginPath(); ctx.arc(f.x,f.y,r,0,Math.PI*2);
+    ctx.fillStyle=`rgba(200,255,140,${a})`; ctx.fill();
+  });
+}
+
+function tickPts() {
+  pts.forEach(p => {
+    p.x+=p.vx; p.y+=p.vy;
+    if(p.x<0)p.x=W; if(p.x>W)p.x=0;
+    if(p.y<0)p.y=H; if(p.y>H)p.y=0;
+  });
+  stars.forEach(s => {
+    s.x+=(Math.random()-0.5)*0.03; s.y+=(Math.random()-0.5)*0.03;
+    if(s.x<0)s.x=W; if(s.x>W)s.x=0;
+    if(s.y<0)s.y=H; if(s.y>H)s.y=0;
+  });
+  fireflies.forEach(f => {
+    f.x+=f.vx+Math.sin(tf*0.5+f.phase)*0.3;
+    f.y+=f.vy+Math.cos(tf*0.4+f.phase)*0.3;
+    if(f.x<0)f.x=W; if(f.x>W)f.x=0;
+    if(f.y<0)f.y=H; if(f.y>H)f.y=0;
+  });
+}
+
+/* ============================================================
+   LAYOUT
+============================================================ */
+let CX, CY, R;
+function calcLayout() {
+  CX = innerWidth/2; CY = innerHeight/2;
+  R  = Math.min(innerWidth, innerHeight)*0.355;
+}
+function basePos(i) {
+  const a = (i/NODES.length)*Math.PI*2 - Math.PI/2;
+  return { x: CX+R*Math.cos(a), y: CY+R*Math.sin(a) };
+}
+
+/* ============================================================
+   NODES
+============================================================ */
+const nodeEls = [];
+const floatPh = NODES.map((_,i) => (i/NODES.length)*Math.PI*2);
+
+function buildNodes() {
+  NODES.forEach((n,i) => {
+    const el = document.createElement('a');
+    el.className = 'node';
+    el.href = n.href;
+    el.style.animationDelay = `${0.15+i*0.09}s`;
+    el.innerHTML = `
+      <div class="disc">
+        <svg viewBox="0 0 24 24" style="color:var(--teal)">${ICONS[n.icon]}</svg>
+      </div>
+      <span class="node-lbl">${n.label}</span>`;
+    document.body.appendChild(el);
+    nodeEls.push(el);
+    el.addEventListener('mouseenter', () => setHover(i, true));
+    el.addEventListener('mouseleave', () => setHover(i, false));
+  });
+}
+function posNodes() {
+  nodeEls.forEach((el,i) => {
+    const p=basePos(i);
+    el.style.left=p.x+'px'; el.style.top=p.y+'px';
+  });
+}
+
+/* ============================================================
+   SVG NETWORK
+============================================================ */
+const svg = document.getElementById('net');
+const NS  = 'http://www.w3.org/2000/svg';
+let spokes=[], segs=[], rippleEls=[], branchGroups=[];
+let lastRipple=0;
+const hoverProgress = NODES.map(()=>0);
+const hoverAnimIds  = NODES.map(()=>null);
+
+function buildSvg() {
+  svg.innerHTML='';
+  spokes=[]; segs=[]; rippleEls=[];
+
+  const defs = document.createElementNS(NS,'defs');
+  defs.innerHTML=`
+    <filter id="glow4" x="-50%" y="-50%" width="200%" height="200%">
+      <feGaussianBlur stdDeviation="3.5" result="b"/>
+      <feMerge><feMergeNode in="b"/><feMergeNode in="SourceGraphic"/></feMerge>
+    </filter>`;
+  svg.appendChild(defs);
+
+  // Decorative vine rings
+  [R*0.50, R, R+36].forEach((r,idx) => {
+    const c = document.createElementNS(NS,'circle');
+    c.setAttribute('cx',CX); c.setAttribute('cy',CY); c.setAttribute('r',r);
+    c.setAttribute('fill','none');
+    c.setAttribute('stroke',`rgba(80,185,110,${idx===1?0.45:0.20})`);
+    c.setAttribute('stroke-width','1');
+    if(idx===2) c.setAttribute('stroke-dasharray','3 9');
+    svg.appendChild(c);
+  });
+
+  // Decorative birds near 3 nodes
+  [1, 3, 5].forEach(ni => {
+    const a  = (ni/NODES.length)*Math.PI*2 - Math.PI/2;
+    const bx = CX+(R+68)*Math.cos(a);
+    const by = CY+(R+68)*Math.sin(a);
+    const rot = a*180/Math.PI+90;
+    const bird = document.createElementNS(NS,'path');
+    bird.setAttribute('d','M -9 0 Q -4 -5 0 0 Q 4 -5 9 0');
+    bird.setAttribute('stroke','rgba(163,255,198,0.72)');
+    bird.setAttribute('stroke-width','1.2');
+    bird.setAttribute('fill','none');
+    bird.setAttribute('stroke-linecap','round');
+    bird.setAttribute('transform',`translate(${bx},${by}) rotate(${rot})`);
+    svg.appendChild(bird);
+  });
+
+  // Ring segments
+  NODES.forEach((_,i) => {
+    const j=(i+1)%NODES.length;
+    const p1=basePos(i), p2=basePos(j);
+    const el=document.createElementNS(NS,'line');
+    el.setAttribute('x1',p1.x); el.setAttribute('y1',p1.y);
+    el.setAttribute('x2',p2.x); el.setAttribute('y2',p2.y);
+    el.setAttribute('class','seg');
+    svg.appendChild(el);
+    segs.push({el,i,j});
+  });
+
+  // Spokes — curved bezier for organic vine feel
+  NODES.forEach((_,i) => {
+    const p = basePos(i);
+    const wobble = Math.sin(i*1.8+0.5)*22;
+    const perpX  = -(p.y-CY)/R*wobble;
+    const perpY  =  (p.x-CX)/R*wobble;
+    const cpx=(CX+p.x)/2+perpX, cpy=(CY+p.y)/2+perpY;
+    const el=document.createElementNS(NS,'path');
+    el.setAttribute('d',`M ${CX} ${CY} Q ${cpx} ${cpy} ${p.x} ${p.y}`);
+    el.setAttribute('class','spoke');
+    svg.appendChild(el);
+    spokes.push(el);
+  });
+
+  // Node glow dots
+  NODES.forEach((_,i) => {
+    const p=basePos(i);
+    const d=document.createElementNS(NS,'circle');
+    d.setAttribute('cx',p.x); d.setAttribute('cy',p.y); d.setAttribute('r',2.5);
+    d.setAttribute('fill','rgba(120,220,150,0.80)');
+    d.setAttribute('filter','url(#glow4)');
+    svg.appendChild(d);
+  });
+
+  // Leaf hover system — 4 cascading levels
+  branchGroups=[];
+  const BL=[38,26,18,12];
+  const BS=[1.10,0.32,0.20,0.15];
+  const BW=[1.0,0.75,0.55,0.38];
+  const STEM_C=['rgba(160,210,120,0.80)','rgba(120,175,90,0.65)',
+                'rgba(90,148,68,0.50)','rgba(70,125,55,0.35)'];
+  const LEAF_C=['rgba(110,195,80,0.82)','rgba(85,165,65,0.74)',
+                'rgba(65,140,52,0.66)','rgba(95,185,70,0.80)'];
+  const LEAF_RX=[7.0,5.5,4.0,5.2];
+  const LEAF_RY=[2.8,2.2,1.8,2.3];
+  const LVL_START=[0.00,0.25,0.50,0.72];
+  const LVL_WIN  =[0.45,0.42,0.38,0.28];
+
+  NODES.forEach((_,i) => {
+    const a  = (i/NODES.length)*Math.PI*2 - Math.PI/2;
+    const p  = basePos(i);
+    const ox = p.x+Math.cos(a)*42;
+    const oy = p.y+Math.sin(a)*42;
+    const group=[];
+
+    function mkLeaf(x1,y1,x2,y2,lvl) {
+      const len=BL[lvl];
+      const ln=document.createElementNS(NS,'line');
+      ln.setAttribute('x1',x1); ln.setAttribute('y1',y1);
+      ln.setAttribute('x2',x2); ln.setAttribute('y2',y2);
+      ln.setAttribute('stroke',STEM_C[lvl]);
+      ln.setAttribute('stroke-width',BW[lvl]);
+      ln.setAttribute('stroke-dasharray',len);
+      ln.setAttribute('stroke-dashoffset',len);
+      svg.appendChild(ln);
+      const ang=Math.atan2(y2-y1,x2-x1);
+      const leaf=document.createElementNS(NS,'ellipse');
+      leaf.setAttribute('cx','0'); leaf.setAttribute('cy','0');
+      leaf.setAttribute('rx','0'); leaf.setAttribute('ry','0');
+      leaf.setAttribute('fill',LEAF_C[lvl]);
+      leaf.setAttribute('transform',`translate(${x2},${y2}) rotate(${ang*180/Math.PI})`);
+      svg.appendChild(leaf);
+      group.push({
+        line:ln, dot:leaf, fullLen:len,
+        targetRx:LEAF_RX[lvl], targetRy:LEAF_RY[lvl],
+        startT:LVL_START[lvl], winLen:LVL_WIN[lvl],
+        dx1:x1-p.x, dy1:y1-p.y, dx2:x2-p.x, dy2:y2-p.y,
+        depth:lvl, angle:ang, angleDeg:ang*180/Math.PI,
+        phase:Math.random()*Math.PI*2
+      });
+      return {ex:x2,ey:y2};
+    }
+
+    [-BS[0],BS[0]].forEach(o1=>{
+      const a1=a+o1;
+      const {ex:x1,ey:y1}=mkLeaf(ox,oy, ox+Math.cos(a1)*BL[0], oy+Math.sin(a1)*BL[0], 0);
+      [-BS[1],BS[1]].forEach(o2=>{
+        const a2=a1+o2;
+        const {ex:x2,ey:y2}=mkLeaf(x1,y1, x1+Math.cos(a2)*BL[1], y1+Math.sin(a2)*BL[1], 1);
+        [-BS[2],BS[2]].forEach(o3=>{
+          const a3=a2+o3;
+          const {ex:x3,ey:y3}=mkLeaf(x2,y2, x2+Math.cos(a3)*BL[2], y2+Math.sin(a3)*BL[2], 2);
+          [-BS[3],BS[3]].forEach(o4=>{
+            const a4=a3+o4;
+            mkLeaf(x3,y3, x3+Math.cos(a4)*BL[3], y3+Math.sin(a4)*BL[3], 3);
+          });
+        });
+      });
+    });
+
+    branchGroups.push(group);
+  });
+
+  // Outer decorative ring
+  const outerCount=42, outerR=R+95;
+  const outerRing=document.createElementNS(NS,'circle');
+  outerRing.setAttribute('cx',CX); outerRing.setAttribute('cy',CY);
+  outerRing.setAttribute('r',outerR);
+  outerRing.setAttribute('fill','none');
+  outerRing.setAttribute('stroke','rgba(80,185,110,0.28)');
+  outerRing.setAttribute('stroke-width','1');
+  svg.appendChild(outerRing);
+
+  for(let k=0;k<outerCount;k++){
+    const oa=(k/outerCount)*Math.PI*2-Math.PI/2;
+    const ox=CX+outerR*Math.cos(oa), oy=CY+outerR*Math.sin(oa);
+    const ni=Math.round(k*NODES.length/outerCount)%NODES.length;
+    const na=(ni/NODES.length)*Math.PI*2-Math.PI/2;
+    const lx=CX+(R+98)*Math.cos(na), ly=CY+(R+98)*Math.sin(na);
+    const ln=document.createElementNS(NS,'line');
+    ln.setAttribute('x1',lx); ln.setAttribute('y1',ly);
+    ln.setAttribute('x2',ox); ln.setAttribute('y2',oy);
+    ln.setAttribute('stroke','rgba(80,185,110,0.30)');
+    ln.setAttribute('stroke-width','0.5');
+    svg.appendChild(ln);
+    const dotR=k%5===0?3.2:k%3===0?2.4:1.8;
+    const dot=document.createElementNS(NS,'circle');
+    dot.setAttribute('cx',ox); dot.setAttribute('cy',oy); dot.setAttribute('r',dotR);
+    dot.setAttribute('fill',`rgba(120,220,150,${k%5===0?0.80:0.55})`);
+    svg.appendChild(dot);
+  }
+
+  // Ripple pool
+  for(let i=0;i<3;i++){
+    const r=document.createElementNS(NS,'circle');
+    r.setAttribute('cx',CX); r.setAttribute('cy',CY); r.setAttribute('r',0);
+    r.setAttribute('fill','none');
+    r.setAttribute('stroke','rgba(92,184,122,0)');
+    r.setAttribute('stroke-width','1');
+    svg.appendChild(r);
+    rippleEls.push({el:r,radius:0,alpha:0,active:false});
+  }
+}
+
+function setHover(i, on) {
+  spokes[i].classList.toggle('lit', on);
+  segs.forEach(s=>{if(s.i===i||s.j===i)s.el.classList.toggle('lit',on);});
+  animateBranches(i, on);
+}
+
+/* ============================================================
+   LEAF ANIMATION
+============================================================ */
+function easeOut(t){ return 1-Math.pow(1-t,3); }
+
+function animateBranches(idx, expanding) {
+  if(hoverAnimIds[idx]) cancelAnimationFrame(hoverAnimIds[idx]);
+  const start=hoverProgress[idx], end=expanding?1:0;
+  const duration=1000*Math.abs(end-start);
+  if(duration===0) return;
+  const t0=performance.now();
+  function step(now){
+    const raw  =Math.min((now-t0)/duration,1);
+    const eased=expanding?easeOut(raw):1-easeOut(1-raw);
+    hoverProgress[idx]=start+(end-start)*eased;
+    const prog=hoverProgress[idx];
+    branchGroups[idx].forEach(b=>{
+      const local=Math.max(0,Math.min(1,(prog-b.startT)/b.winLen));
+      b.line.setAttribute('stroke-dashoffset',b.fullLen*(1-local));
+      b.dot.setAttribute('rx',local*b.targetRx);
+      b.dot.setAttribute('ry',local*b.targetRy);
+    });
+    if(raw<1){
+      hoverAnimIds[idx]=requestAnimationFrame(step);
+    } else {
+      hoverProgress[idx]=end; hoverAnimIds[idx]=null;
+    }
+  }
+  hoverAnimIds[idx]=requestAnimationFrame(step);
+}
+
+/* ============================================================
+   FLOAT + LEAF SWAY
+============================================================ */
+function tickFloat(now) {
+  const dt=Math.min((now-_lastFloatT)/1000,0.05);
+  _lastFloatT=now;
+  tf+=dt*0.55;
+  nodeEls.forEach((el,i)=>{
+    const p =basePos(i);
+    const dy=Math.sin(tf+floatPh[i])*6;
+    const dx=Math.cos(tf*0.65+floatPh[i])*3;
+    el.style.left=(p.x+dx)+'px';
+    el.style.top =(p.y+dy)+'px';
+
+    if(hoverProgress[i]>0 && branchGroups[i]){
+      branchGroups[i].forEach(b=>{
+        const sway=Math.sin(tf*1.55+b.phase)*b.depth*1.2;
+        const px=-Math.sin(b.angle)*sway;
+        const py= Math.cos(b.angle)*sway;
+        const ax1=p.x+b.dx1+dx, ay1=p.y+b.dy1+dy;
+        const ax2=p.x+b.dx2+dx+px, ay2=p.y+b.dy2+dy+py;
+        b.line.setAttribute('x1',ax1); b.line.setAttribute('y1',ay1);
+        b.line.setAttribute('x2',ax2); b.line.setAttribute('y2',ay2);
+        // Leaf follows endpoint with gentle rotation sway
+        const rotSway=b.angleDeg+Math.sin(tf*1.55+b.phase)*b.depth*5;
+        b.dot.setAttribute('transform',`translate(${ax2},${ay2}) rotate(${rotSway})`);
+      });
+    }
+  });
+}
+
+/* ============================================================
+   RIPPLE
+============================================================ */
+let rippleIdx=0;
+function tickRipples(now){
+  if(now-lastRipple>2600){
+    const rp=rippleEls[rippleIdx%rippleEls.length];
+    rp.radius=30; rp.alpha=0.38; rp.active=true;
+    rippleIdx++; lastRipple=now;
+  }
+  rippleEls.forEach(rp=>{
+    if(!rp.active) return;
+    rp.radius+=2.8; rp.alpha-=0.008;
+    if(rp.alpha<=0){rp.active=false;rp.alpha=0;}
+    rp.el.setAttribute('r',rp.radius);
+    rp.el.setAttribute('stroke',`rgba(92,184,122,${Math.max(0,rp.alpha)})`);
+  });
+}
+
+/* ============================================================
+   LOOP + INIT
+============================================================ */
+function loop(now){
+  tickPts(); drawCvs(); tickFloat(now); tickRipples(now);
+  requestAnimationFrame(loop);
+}
+
+resizeCvs(); calcLayout(); initPts();
+buildNodes(); posNodes(); buildSvg();
+requestAnimationFrame(loop);
+
+window.addEventListener('resize',()=>{
+  resizeCvs(); calcLayout(); posNodes(); buildSvg();
+});
+</script>
+</body>
+</html>
