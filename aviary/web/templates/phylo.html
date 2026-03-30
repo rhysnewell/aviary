@@ -1,0 +1,2703 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Aviary — Phylogenetic Identification</title>
+  <link rel="icon" href="/logo" type="image/png">
+  <script src="https://d3js.org/d3.v7.min.js"></script>
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+    :root {
+      --bg:          #0d1117;
+      --surface:     #161b22;
+      --surface2:    #1c2333;
+      --border:      #30363d;
+      --text:        #c9d1d9;
+      --muted:       #8b949e;
+      --text-dim:    #8b949e;
+      --text-bright: #f0f6fc;
+      --teal:        #1abc9c;
+      --teal-dim:    rgba(26,188,156,.15);
+      --teal-glow:   rgba(26,188,156,.15);
+      --blue:        #58a6ff;
+      --yellow:      #e3b341;
+      --red:         #f85149;
+      --green:       #3fb950;
+      --purple:      #bc8cff;
+      --radius:      6px;
+      --sidebar-w:   220px;
+      --topbar-h:    56px;
+      --header-h:    56px;
+      --controls-w:  280px;
+    }
+
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+      background: var(--bg);
+      color: var(--text);
+      display: flex;
+      flex-direction: column;
+      height: 100vh;
+      overflow: hidden;
+    }
+
+    /* ---- Topbar ---- */
+    .topbar {
+      height: var(--header-h);
+      background: var(--surface);
+      border-bottom: 1px solid var(--border);
+      display: flex;
+      align-items: center;
+      padding: 0 20px;
+      gap: 14px;
+      flex-shrink: 0;
+      z-index: 10;
+    }
+
+    .topbar-logo {
+      display: flex;
+      align-items: center;
+      gap: 9px;
+      text-decoration: none;
+    }
+
+    .topbar-logo img {
+      width: 28px; height: 28px;
+      object-fit: contain;
+      border-radius: 5px;
+    }
+
+    .topbar-logo-text .title {
+      font-size: 1rem;
+      font-weight: 700;
+      color: var(--text-bright);
+      letter-spacing: 0.02em;
+    }
+
+    .topbar-logo-text .subtitle {
+      font-size: 0.6rem;
+      color: var(--teal);
+      letter-spacing: 0.1em;
+      text-transform: uppercase;
+    }
+
+    .topbar-sep { width: 1px; height: 28px; background: var(--border); }
+
+    .topbar-title {
+      font-size: 0.95rem;
+      font-weight: 600;
+      color: var(--text-bright);
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+
+    .topbar-badge {
+      font-size: 0.65rem;
+      padding: 2px 8px;
+      border-radius: 20px;
+      background: var(--teal-glow);
+      color: var(--teal);
+      font-weight: 600;
+      border: 1px solid rgba(26,188,156,.3);
+    }
+
+    .topbar-right {
+      margin-left: auto;
+      display: flex;
+      align-items: center;
+      gap: 10px;
+    }
+
+    .btn {
+      display: inline-flex;
+      align-items: center;
+      gap: 5px;
+      padding: 5px 12px;
+      border-radius: 6px;
+      font-size: 0.78rem;
+      font-weight: 500;
+      border: 1px solid var(--border);
+      background: var(--surface2);
+      color: var(--text);
+      cursor: pointer;
+      transition: background .15s;
+      text-decoration: none;
+    }
+
+    .btn:hover { background: var(--border); }
+    .btn-teal {
+      background: var(--teal-glow);
+      border-color: rgba(26,188,156,.4);
+      color: var(--teal);
+    }
+    .btn-teal:hover { background: rgba(26,188,156,.25); }
+
+    /* ---- Main layout ---- */
+    .main {
+      flex: 1;
+      display: flex;
+      overflow: hidden;
+    }
+
+    /* ---- Controls panel ---- */
+    .controls {
+      width: var(--controls-w);
+      background: var(--surface);
+      border-right: 1px solid var(--border);
+      display: flex;
+      flex-direction: column;
+      flex-shrink: 0;
+      overflow-y: auto;
+    }
+
+    .ctrl-section {
+      border-bottom: 1px solid var(--border);
+      padding: 14px 16px;
+    }
+
+    .ctrl-section-title {
+      font-size: 0.65rem;
+      font-weight: 700;
+      letter-spacing: 0.1em;
+      text-transform: uppercase;
+      color: var(--text-dim);
+      margin-bottom: 10px;
+    }
+
+    /* ── Sunburst selected-taxon panel ── */
+    .sb-title   { font-size: 0.88rem; font-weight: 700; color: var(--text-bright); margin-bottom: 2px; word-break: break-word; }
+    .sb-rank    { font-size: 0.6rem;  font-weight: 700; letter-spacing: 0.1em; text-transform: uppercase; color: var(--muted); margin-bottom: 8px; }
+    .sb-tax-row { display: flex; gap: 6px; font-size: 0.74rem; margin-bottom: 3px; line-height: 1.3; }
+    .sb-rank-lbl{ color: var(--muted); font-weight: 600; min-width: 16px; flex-shrink: 0; }
+    .sb-tax-name{ color: var(--text); }
+    .sb-stat    { display: flex; justify-content: space-between; font-size: 0.8rem; margin-top: 7px; padding-top: 7px; border-top: 1px solid var(--border); color: var(--muted); }
+    .sb-stat-val{ font-weight: 700; color: var(--text-bright); }
+    .sb-hint    { font-size: 0.67rem; color: var(--muted); margin-top: 8px; font-style: italic; }
+
+    .mode-btn {
+      flex: 1;
+      padding: 5px 8px;
+      font-size: 0.72rem;
+      font-weight: 600;
+      border: 1px solid var(--border);
+      border-radius: var(--radius);
+      background: var(--surface2);
+      color: var(--muted);
+      cursor: pointer;
+      transition: background 0.15s, color 0.15s, border-color 0.15s;
+    }
+    .mode-btn:hover { background: var(--surface); color: var(--text); }
+    .mode-btn-active {
+      background: var(--teal-dim);
+      color: var(--teal);
+      border-color: rgba(26,188,156,.4);
+    }
+
+    .ctrl-row {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      margin-bottom: 8px;
+      font-size: 0.8rem;
+    }
+
+    .ctrl-row:last-child { margin-bottom: 0; }
+    .ctrl-label { color: var(--text-dim); font-size: 0.78rem; }
+    .ctrl-val   { color: var(--text-bright); font-weight: 600; font-size: 0.78rem; }
+
+    .ctrl-select {
+      background: var(--surface2);
+      border: 1px solid var(--border);
+      color: var(--text);
+      font-size: 0.78rem;
+      padding: 4px 8px;
+      border-radius: 5px;
+      cursor: pointer;
+      outline: none;
+      width: 100%;
+      margin-top: 4px;
+    }
+
+    .ctrl-select:focus { border-color: var(--teal); }
+
+    .ctrl-input {
+      background: var(--surface2);
+      border: 1px solid var(--border);
+      color: var(--text);
+      font-size: 0.85rem;
+      padding: 7px 10px;
+      border-radius: 5px;
+      outline: none;
+      width: 100%;
+      margin-top: 4px;
+    }
+
+    .ctrl-input:focus { border-color: var(--teal); }
+
+    .ctrl-slider {
+      width: 100%;
+      margin-top: 4px;
+      accent-color: var(--teal);
+    }
+
+    /* Quality filter checkboxes */
+    .qual-filters {
+      display: flex;
+      flex-direction: column;
+      gap: 6px;
+      margin-top: 6px;
+    }
+
+    .qual-filter-row {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      font-size: 0.78rem;
+      cursor: pointer;
+      user-select: none;
+    }
+
+    .qual-filter-row input[type="checkbox"] {
+      accent-color: var(--teal);
+      width: 14px; height: 14px;
+    }
+
+    .qual-dot {
+      width: 8px; height: 8px;
+      border-radius: 50%;
+      flex-shrink: 0;
+    }
+
+    /* Legend */
+    .legend-item {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      margin-bottom: 6px;
+      font-size: 0.75rem;
+      color: var(--text-dim);
+    }
+
+    .legend-swatch {
+      width: 12px; height: 12px;
+      border-radius: 2px;
+      flex-shrink: 0;
+    }
+
+    .legend-name {
+      flex: 1;
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+      color: var(--text);
+    }
+
+    .legend-count {
+      font-size: 0.68rem;
+      color: var(--text-dim);
+      font-variant-numeric: tabular-nums;
+    }
+
+    /* Legend bar chart (singlem mode) */
+    .legend-item-singlem {
+      display: flex;
+      align-items: flex-start;
+      gap: 8px;
+      margin-bottom: 8px;
+    }
+    .legend-item-singlem .legend-swatch {
+      margin-top: 2px;
+    }
+    .legend-item-body {
+      flex: 1;
+      min-width: 0;
+    }
+    .legend-item-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: baseline;
+      gap: 6px;
+      margin-bottom: 3px;
+    }
+    .legend-bar-track {
+      height: 5px;
+      border-radius: 3px;
+      background: var(--border);
+      overflow: hidden;
+    }
+    .legend-bar-fill {
+      height: 100%;
+      border-radius: 3px;
+      transition: width 0.35s ease;
+    }
+    .legend-pct {
+      font-size: 0.7rem;
+      font-weight: 700;
+      font-variant-numeric: tabular-nums;
+      white-space: nowrap;
+      flex-shrink: 0;
+    }
+
+    /* Stats cards */
+    .stats-grid {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 8px;
+    }
+
+    .stat-card {
+      background: var(--surface2);
+      border-radius: 7px;
+      padding: 10px 12px;
+      border: 1px solid var(--border);
+    }
+
+    .stat-val {
+      font-size: 1.4rem;
+      font-weight: 700;
+      line-height: 1.1;
+      color: var(--text-bright);
+    }
+
+    .stat-val.teal   { color: var(--teal); }
+    .stat-val.green  { color: var(--green); }
+    .stat-val.yellow { color: var(--yellow); }
+    .stat-val.red    { color: var(--red); }
+
+    .stat-label {
+      font-size: 0.62rem;
+      font-weight: 600;
+      color: var(--text-dim);
+      text-transform: uppercase;
+      letter-spacing: 0.06em;
+      margin-top: 2px;
+    }
+
+    /* ---- Tree canvas area ---- */
+    .tree-area {
+      flex: 1;
+      position: relative;
+      overflow: hidden;
+      background: var(--bg);
+    }
+
+    .tree-svg {
+      width: 100%;
+      height: 100%;
+      cursor: grab;
+    }
+
+    .tree-svg:active { cursor: grabbing; }
+
+    /* SVG node styles (set via JS but defined here for reference) */
+
+    /* ---- Tooltip ---- */
+    .tooltip {
+      position: fixed;
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: 8px;
+      padding: 10px 14px;
+      font-size: 0.78rem;
+      pointer-events: none;
+      z-index: 1000;
+      min-width: 220px;
+      max-width: 340px;
+      box-shadow: 0 8px 24px rgba(0,0,0,.5);
+      display: none;
+    }
+
+    .tt-title {
+      font-size: 0.85rem;
+      font-weight: 700;
+      color: var(--text-bright);
+      margin-bottom: 6px;
+    }
+
+    .tt-rank {
+      font-size: 0.65rem;
+      font-weight: 600;
+      letter-spacing: 0.1em;
+      text-transform: uppercase;
+      color: var(--teal);
+      margin-bottom: 8px;
+    }
+
+    .tt-row {
+      display: flex;
+      justify-content: space-between;
+      padding: 3px 0;
+      border-bottom: 1px solid rgba(48,54,61,.5);
+      font-size: 0.75rem;
+    }
+
+    .tt-row:last-child { border-bottom: none; }
+    .tt-key { color: var(--text-dim); }
+    .tt-val { color: var(--text-bright); font-weight: 600; }
+
+    .tt-path {
+      font-size: 0.65rem;
+      color: var(--text-dim);
+      margin-top: 8px;
+      line-height: 1.5;
+      word-break: break-all;
+    }
+
+    /* ---- Loading / error overlay ---- */
+    .overlay {
+      position: absolute;
+      inset: 0;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      background: var(--bg);
+      gap: 14px;
+      z-index: 5;
+    }
+
+    .overlay.hidden { display: none; }
+
+    .overlay-icon { font-size: 2.5rem; }
+
+    .overlay h3 {
+      font-size: 1rem;
+      color: var(--text-bright);
+    }
+
+    .overlay p {
+      font-size: 0.82rem;
+      color: var(--text-dim);
+      text-align: center;
+      max-width: 340px;
+    }
+
+    .spinner {
+      width: 32px; height: 32px;
+      border: 3px solid var(--border);
+      border-top-color: var(--teal);
+      border-radius: 50%;
+      animation: spin .7s linear infinite;
+    }
+
+    @keyframes spin { to { transform: rotate(360deg); } }
+
+    /* ---- Controls bottom bar ---- */
+    .tree-controls {
+      position: absolute;
+      bottom: 16px;
+      right: 16px;
+      display: flex;
+      flex-direction: column;
+      gap: 6px;
+    }
+
+    .tc-btn {
+      width: 34px; height: 34px;
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: 7px;
+      color: var(--text);
+      font-size: 1rem;
+      cursor: pointer;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      transition: background .15s;
+    }
+
+    .tc-btn:hover { background: var(--surface2); color: var(--text-bright); }
+
+    /* Breadcrumb in topbar */
+    .breadcrumb {
+      display: flex;
+      align-items: center;
+      gap: 6px;
+      font-size: 0.78rem;
+      color: var(--text-dim);
+    }
+
+    .breadcrumb a {
+      color: var(--teal);
+      text-decoration: none;
+    }
+
+    .breadcrumb a:hover { text-decoration: underline; }
+
+    /* Sample filter checkboxes */
+    .sample-filter-row {
+      display: flex;
+      align-items: center;
+      gap: 7px;
+      padding: 4px 0;
+      border-bottom: 1px solid rgba(48,54,61,.4);
+      font-size: 0.75rem;
+      cursor: pointer;
+      user-select: none;
+    }
+
+    .sample-filter-row:last-child { border-bottom: none; }
+
+    .sample-filter-row input[type="checkbox"] {
+      accent-color: var(--teal);
+      width: 13px; height: 13px;
+      flex-shrink: 0;
+    }
+
+    .sample-filter-name {
+      flex: 1;
+      color: var(--text);
+      overflow: hidden;
+      text-overflow: ellipsis;
+      white-space: nowrap;
+    }
+
+    .sample-filter-asm {
+      font-size: 0.65rem;
+      padding: 1px 6px;
+      border-radius: 10px;
+      background: var(--teal-glow);
+      color: var(--teal);
+      flex-shrink: 0;
+    }
+
+    .sample-filter-count {
+      font-size: 0.68rem;
+      color: var(--text-dim);
+      flex-shrink: 0;
+    }
+
+    /* Batch grouping in sample filter */
+    .sf-batch { margin-bottom: 4px; }
+
+    .sf-batch-header {
+      display: flex;
+      align-items: center;
+      gap: 6px;
+      padding: 4px 2px;
+      cursor: pointer;
+      user-select: none;
+      border-radius: 4px;
+      font-size: 0.72rem;
+      font-weight: 700;
+      color: var(--text-bright);
+    }
+
+    .sf-batch-header:hover { background: var(--surface2); }
+
+    .sf-batch-arrow {
+      font-size: 0.55rem;
+      color: var(--text-dim);
+      transition: transform 0.15s;
+      flex-shrink: 0;
+    }
+
+    .sf-batch-header.open .sf-batch-arrow { transform: rotate(90deg); }
+
+    .sf-batch-count {
+      font-size: 0.65rem;
+      color: var(--text-dim);
+      margin-left: auto;
+    }
+
+    .sf-batch-body { display: none; padding-left: 10px; }
+    .sf-batch-body.open { display: block; }
+
+    .mini-link-btn {
+      background: none;
+      border: none;
+      color: var(--teal);
+      font-size: 0.68rem;
+      cursor: pointer;
+      padding: 0;
+      text-decoration: underline;
+    }
+
+    .mini-link-btn:hover { opacity: .7; }
+
+    /* ---- Sidebar ---- */
+    .layout { display: flex; flex: 1; overflow: hidden; }
+    .sidebar {
+      width: var(--sidebar-w); min-width: var(--sidebar-w);
+      background: var(--surface); border-right: 1px solid var(--border);
+      display: flex; flex-direction: column; flex-shrink: 0; overflow-y: auto;
+    }
+    .sidebar-logo {
+      height: var(--topbar-h); padding: 0 16px;
+      border-bottom: 1px solid var(--border);
+      display: flex; align-items: center; gap: 10px; flex-shrink: 0;
+    }
+    .sidebar-logo img { width: 30px; height: 30px; object-fit: contain; border-radius: 6px; }
+    .sidebar-logo-text .title { font-size: 1.15rem; font-weight: 700; color: var(--text); letter-spacing: 0.02em; }
+    .sidebar-logo-text .subtitle { font-size: 0.68rem; color: var(--teal); letter-spacing: 0.08em; text-transform: uppercase; margin-top: 1px; }
+    .nav-section-header { padding: 12px 16px 4px; font-size: 0.62rem; font-weight: 700; letter-spacing: 0.1em; text-transform: uppercase; color: var(--muted); flex-shrink: 0; }
+    .nav-item {
+      display: flex; align-items: center; gap: 10px;
+      padding: 8px 16px; font-size: 0.82rem; font-weight: 500; color: var(--muted);
+      text-decoration: none; transition: background .12s, color .12s, border-color .12s;
+      border-left: 2px solid transparent; flex-shrink: 0; user-select: none;
+    }
+    .nav-item:hover { color: var(--text); background: rgba(255,255,255,.04); }
+    .nav-item.active { color: var(--teal); background: var(--teal-dim); border-left-color: var(--teal); }
+    .nav-item svg { flex-shrink: 0; }
+    .sidebar-nav-divider { height: 1px; background: var(--border); margin: 6px 0; flex-shrink: 0; }
+    .sidebar-footer {
+      padding: 12px 16px; border-top: 1px solid var(--border);
+      font-size: 11px; color: var(--muted); margin-top: auto; flex-shrink: 0;
+    }
+
+    ::-webkit-scrollbar { width: 5px; }
+    ::-webkit-scrollbar-track { background: transparent; }
+    ::-webkit-scrollbar-thumb { background: var(--border); border-radius: 3px; }
+    #page-loading { display:none; position:fixed; inset:0; z-index:9999; background:var(--bg); align-items:center; justify-content:center; }
+    #page-loading.visible { display:flex; }
+    #page-loading img { width:min(340px,55vw); opacity:0; animation:splash-fade .3s ease forwards; }
+    @keyframes splash-fade { from{opacity:0;transform:scale(.96)} to{opacity:1;transform:scale(1)} }
+  </style>
+</head>
+<body>
+<div id="page-loading"><img src="/logo" alt="Aviary"></div>
+
+<!-- Topbar -->
+<div class="topbar">
+  <div class="topbar-title" style="font-size:15px;font-weight:600;flex:1;">Phylogenetic Identification <span style="color:var(--text-dim);font-weight:400;font-size:12px;margin-left:8px;">Taxonomy classification from GTDB-Tk bin assignments</span></div>
+  <div class="topbar-right">
+    <span id="root-label" style="font-size:0.72rem;color:var(--text-dim);max-width:260px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;"></span>
+    <button class="btn" onclick="resetZoom()">
+      <svg width="13" height="13" viewBox="0 0 16 16" fill="currentColor"><path d="M11.742 10.344a6.5 6.5 0 1 0-1.397 1.398h-.001q.044.06.098.115l3.85 3.85a1 1 0 0 0 1.415-1.414l-3.85-3.85a1 1 0 0 0-.115-.1zM12 6.5a5.5 5.5 0 1 1-11 0 5.5 5.5 0 0 1 11 0"/></svg>
+      Reset View
+    </button>
+    <button class="btn" onclick="zoomIn()" title="Zoom in (or scroll up)">
+      <svg width="13" height="13" viewBox="0 0 16 16" fill="currentColor"><path d="M8 4a.5.5 0 0 1 .5.5v3h3a.5.5 0 0 1 0 1h-3v3a.5.5 0 0 1-1 0v-3h-3a.5.5 0 0 1 0-1h3v-3A.5.5 0 0 1 8 4"/></svg>
+      Zoom In
+    </button>
+    <button class="btn" onclick="zoomOut()" title="Zoom out (or scroll down)">
+      <svg width="13" height="13" viewBox="0 0 16 16" fill="currentColor"><path d="M4 8a.5.5 0 0 1 .5-.5h7a.5.5 0 0 1 0 1h-7A.5.5 0 0 1 4 8"/></svg>
+      Zoom Out
+    </button>
+    <button class="btn" onclick="expandAll()">Expand All</button>
+    <button class="btn" onclick="collapseToPhylum()">Collapse</button>
+    <div class="topbar-sep"></div>
+    <div style="position:relative">
+      <button class="btn btn-teal" onclick="toggleDownloadMenu(event)">
+        <svg width="13" height="13" viewBox="0 0 16 16" fill="currentColor"><path d="M.5 9.9a.5.5 0 0 1 .5.5v2.5a1 1 0 0 0 1 1h12a1 1 0 0 0 1-1v-2.5a.5.5 0 0 1 1 0v2.5a2 2 0 0 1-2 2H2a2 2 0 0 1-2-2v-2.5a.5.5 0 0 1 .5-.5"/><path d="M7.646 11.854a.5.5 0 0 0 .708 0l3-3a.5.5 0 0 0-.708-.708L8.5 10.293V1.5a.5.5 0 0 0-1 0v8.793L5.354 8.146a.5.5 0 1 0-.708.708z"/></svg>
+        Download
+      </button>
+      <div id="download-menu" style="display:none;position:absolute;right:0;top:calc(100% + 6px);background:var(--surface);border:1px solid var(--border);border-radius:8px;padding:6px;min-width:160px;z-index:200;box-shadow:0 8px 24px rgba(0,0,0,.5)">
+        <button class="btn" style="width:100%;justify-content:flex-start;margin-bottom:4px" onclick="downloadSVG();closeDownloadMenu()">
+          <svg width="12" height="12" viewBox="0 0 16 16" fill="currentColor"><path d="M14 4.5V14a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2V2a2 2 0 0 1 2-2h5.5zm-3 0A1.5 1.5 0 0 1 9.5 3V1L14 5.5z"/></svg>
+          Export as SVG
+        </button>
+        <button class="btn" style="width:100%;justify-content:flex-start" onclick="downloadPNG();closeDownloadMenu()">
+          <svg width="12" height="12" viewBox="0 0 16 16" fill="currentColor"><path d="M6.002 5.5a1.5 1.5 0 1 1-3 0 1.5 1.5 0 0 1 3 0"/><path d="M2.002 1a2 2 0 0 0-2 2v10a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V3a2 2 0 0 0-2-2zm12 1a1 1 0 0 1 1 1v6.5l-3.777-1.947a.5.5 0 0 0-.577.093l-3.71 3.71-2.66-1.772a.5.5 0 0 0-.63.062L1.002 12V3a1 1 0 0 1 1-1z"/></svg>
+          Export as PNG
+        </button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- Layout -->
+<div class="layout">
+
+<!-- Sidebar -->
+<nav class="sidebar">
+  <div class="sidebar-logo">
+    <a href="/" style="text-decoration:none;display:flex;align-items:center;gap:10px;"><img src="/logo" alt="Aviary" onerror="this.style.display='none'">
+    <div class="sidebar-logo-text"><div class="title">Aviary</div><div class="subtitle">Metagenomics</div></div></a>
+  </div>
+  <a class="nav-item" href="/dashboard">
+    <svg width="15" height="15" viewBox="0 0 16 16" fill="currentColor"><path d="M0 2a2 2 0 0 1 2-2h12a2 2 0 0 1 2 2v1a2 2 0 0 1-2 2H2a2 2 0 0 1-2-2V2zm15 2a1 1 0 0 0 1-1V2a1 1 0 0 0-1-1H1a1 1 0 0 0-1 1v1a1 1 0 0 0 1 1h14zM0 8a2 2 0 0 1 2-2h12a2 2 0 0 1 2 2v1a2 2 0 0 1-2 2H2a2 2 0 0 1-2-2V8zm15 2a1 1 0 0 0 1-1V8a1 1 0 0 0-1-1H1a1 1 0 0 0-1 1v1a1 1 0 0 0 1 1h14zm-13-1a1 1 0 1 0 0-2 1 1 0 0 0 0 2zm2 0a1 1 0 1 0 0-2 1 1 0 0 0 0 2zm2 0a1 1 0 1 0 0-2 1 1 0 0 0 0 2z"/></svg>
+    <span class="nav-item-text">Pipeline Monitor</span>
+  </a>
+  <a class="nav-item" href="/dashboard?view=summary">
+    <svg width="15" height="15" viewBox="0 0 16 16" fill="currentColor"><path d="M4 11H2v3h2v-3zm5-4H7v7h2V7zm5-5v12h-2V2h2zm-2-1a1 1 0 0 0-1 1v12a1 1 0 0 0 1 1h2a1 1 0 0 0 1-1V2a1 1 0 0 0-1-1h-2zM6 7a1 1 0 0 1 1-1h2a1 1 0 0 1 1 1v7a1 1 0 0 1-1 1H7a1 1 0 0 1-1-1V7zm-5 4a1 1 0 0 1 1-1h2a1 1 0 0 1 1 1v3a1 1 0 0 1-1 1H2a1 1 0 0 1-1-1v-3z"/></svg>
+    <span class="nav-item-text">Bin Quality Report</span>
+  </a>
+  <a class="nav-item active" href="/phylo">
+    <svg width="15" height="15" viewBox="0 0 16 16" fill="currentColor"><path d="M4.5 1a.5.5 0 0 1 .5.5V4h3V1.5a.5.5 0 0 1 1 0V4h1a.5.5 0 0 1 0 1H9v1.293l2.354 2.353a.5.5 0 0 1-.708.708L9 7.707V9h1a.5.5 0 0 1 0 1H9v1.293l2.354 2.353a.5.5 0 0 1-.708.708L9 12.707V14.5a.5.5 0 0 1-1 0V10H5v4.5a.5.5 0 0 1-1 0V12.707l-1.646 1.647a.5.5 0 0 1-.708-.708L3.293 12H2a.5.5 0 0 1 0-1h1.293L2.146 9.854a.5.5 0 1 1 .708-.708L4 10.293V9H3a.5.5 0 0 1 0-1h1V6.707L2.854 5.561a.5.5 0 1 1 .708-.708L5 6.293V5H4a.5.5 0 0 1 0-1h1V1.5a.5.5 0 0 1 .5-.5zM5 5v2h3V5H5zm0 3v2h3V8H5z"/></svg>
+    <span class="nav-item-text">View</span>
+  </a>
+  <div class="sidebar-nav-divider"></div>
+  <a class="nav-item" href="/graph">
+    <svg width="15" height="15" viewBox="0 0 16 16" fill="currentColor"><path d="M0 0h1v16H0zm15 0h1v16h-1zM5 11.5a.5.5 0 0 1 .5-.5h5a.5.5 0 0 1 0 1h-5a.5.5 0 0 1-.5-.5zm-3-4a.5.5 0 0 1 .5-.5h11a.5.5 0 0 1 0 1h-11a.5.5 0 0 1-.5-.5zm6-4a.5.5 0 0 1 .5-.5h5a.5.5 0 0 1 0 1h-5a.5.5 0 0 1-.5-.5z"/></svg>
+    <span class="nav-item-text">Results Visualisation</span>
+  </a>
+  <a class="nav-item" href="/assembly">
+    <svg width="15" height="15" viewBox="0 0 16 16" fill="currentColor"><path d="M8.186 1.113a.5.5 0 0 0-.372 0L1.846 3.5 8 5.961 14.154 3.5 8.186 1.113zM15 4.239l-6.5 2.6v7.922l6.5-2.6V4.24zM7.5 14.762V6.838L1 4.239v7.923l6.5 2.6zM7.443.184a1.5 1.5 0 0 1 1.114 0l7.129 2.852A.5.5 0 0 1 16 3.5v8.662a1 1 0 0 1-.629.928l-7.185 2.874a.5.5 0 0 1-.372 0L.63 13.09a1 1 0 0 1-.63-.928V3.5a.5.5 0 0 1 .314-.464L7.443.184z"/></svg>
+    <span class="nav-item-text">Contig Assembly Graph</span>
+  </a>
+  <a class="nav-item" href="/export">
+    <svg width="15" height="15" viewBox="0 0 16 16" fill="currentColor"><path d="M.5 9.9a.5.5 0 0 1 .5.5v2.5a1 1 0 0 0 1 1h12a1 1 0 0 0 1-1v-2.5a.5.5 0 0 1 1 0v2.5a2 2 0 0 1-2 2H2a2 2 0 0 1-2-2v-2.5a.5.5 0 0 1 .5-.5z"/><path d="M7.646 11.854a.5.5 0 0 0 .708 0l3-3a.5.5 0 0 0-.708-.708L8.5 10.293V1.5a.5.5 0 0 0-1 0v8.793L5.354 8.146a.5.5 0 1 0-.708.708l3 3z"/></svg>
+    <span class="nav-item-text">Export Results</span>
+  </a>
+  <div class="sidebar-nav-divider"></div>
+  <a class="nav-item" href="/docs">
+    <svg width="15" height="15" viewBox="0 0 16 16" fill="currentColor"><path d="M1 2.828c.885-.37 2.154-.769 3.388-.893 1.33-.134 2.458.063 3.112.752v9.746c-.935-.53-2.12-.603-3.213-.493-1.18.12-2.37.461-3.287.811V2.828zm7.5-.141c.654-.689 1.782-.886 3.112-.752 1.234.124 2.503.523 3.388.893v9.923c-.918-.35-2.107-.692-3.287-.81-1.094-.111-2.278-.039-3.213.492V2.687zM8 1.783C7.015.936 5.587.81 4.287.94c-1.514.153-3.042.672-3.994 1.105A.5.5 0 0 0 0 2.5v11a.5.5 0 0 0 .707.455c.882-.4 2.303-.881 3.68-1.02 1.409-.142 2.59.087 3.223.877a.5.5 0 0 0 .78 0c.633-.79 1.814-1.019 3.222-.877 1.378.139 2.8.62 3.681 1.02A.5.5 0 0 0 16 13.5v-11a.5.5 0 0 0-.293-.455c-.952-.433-2.48-.952-3.994-1.105C10.413.809 8.985.936 8 1.783z"/></svg>
+    <span class="nav-item-text">Documentation</span>
+  </a>
+  <a class="nav-item" href="/guide">
+    <svg width="15" height="15" viewBox="0 0 16 16" fill="currentColor"><path d="M8 15A7 7 0 1 1 8 1a7 7 0 0 1 0 14zm0 1A8 8 0 1 0 8 0a8 8 0 0 0 0 16z"/><path d="M5.255 5.786a.237.237 0 0 0 .241.247h.825c.138 0 .248-.113.266-.25.09-.656.54-1.134 1.342-1.134.686 0 1.314.343 1.314 1.168 0 .635-.374.927-.965 1.371-.673.489-1.206 1.06-1.168 1.987l.003.217a.25.25 0 0 0 .25.246h.811a.25.25 0 0 0 .25-.25v-.105c0-.718.273-.927 1.01-1.486.609-.463 1.244-.977 1.244-2.056 0-1.511-1.276-2.241-2.673-2.241-1.267 0-2.655.59-2.75 2.286zm1.557 5.763c0 .533.425.927 1.01.927.609 0 1.028-.394 1.028-.927 0-.552-.42-.94-1.029-.94-.584 0-1.009.388-1.009.94z"/></svg>
+    <span class="nav-item-text">User Guide</span>
+  </a>
+  <div class="sidebar-footer">Aviary Web Interface</div>
+</nav>
+
+<!-- Main -->
+<div class="main">
+
+  <!-- Controls panel -->
+  <div class="controls">
+
+    <!-- Stats -->
+    <div class="ctrl-section">
+      <div class="ctrl-section-title">Overview</div>
+      <div class="stats-grid">
+        <div class="stat-card">
+          <div class="stat-val teal" id="stat-total">—</div>
+          <div class="stat-label" id="label-total">Total MAGs</div>
+        </div>
+        <div class="stat-card">
+          <div class="stat-val" id="stat-phyla">—</div>
+          <div class="stat-label">Phyla</div>
+        </div>
+        <div class="stat-card">
+          <div class="stat-val green" id="stat-hq">—</div>
+          <div class="stat-label" id="label-hq">High Quality</div>
+        </div>
+        <div class="stat-card">
+          <div class="stat-val yellow" id="stat-mq">—</div>
+          <div class="stat-label" id="label-mq">Med Quality</div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Layout -->
+    <div class="ctrl-section" id="ctrl-layout">
+      <div class="ctrl-section-title">Layout</div>
+      <select class="ctrl-select" id="layout-select" onchange="setLayout(this.value)">
+        <option value="sunburst" selected>Sunburst</option>
+        <option value="radial">Radial Tree</option>
+        <option value="horizontal">Horizontal Cladogram</option>
+      </select>
+    </div>
+
+    <!-- Selected taxon (sunburst click info) -->
+    <div class="ctrl-section" id="ctrl-selected" style="display:none">
+      <div class="ctrl-section-title">Selected Taxon</div>
+      <div id="sb-selected-panel">
+        <div class="ctrl-label" style="font-style:italic">Click any arc to inspect</div>
+      </div>
+    </div>
+
+    <!-- View depth -->
+    <div class="ctrl-section" id="ctrl-depth">
+      <div class="ctrl-section-title">Initial View Depth</div>
+      <div class="ctrl-label" style="margin-bottom:6px">Expand tree to this rank on load</div>
+      <select class="ctrl-select" id="depth-select" onchange="setInitialDepth(this.value)">
+        <option value="2">Phylum</option>
+        <option value="3" selected>Class</option>
+        <option value="4">Order</option>
+        <option value="5">Family</option>
+        <option value="6">Genus</option>
+        <option value="all">All (fully expanded)</option>
+      </select>
+      <label style="display:flex;align-items:center;gap:7px;margin-top:10px;cursor:pointer;user-select:none">
+        <input type="checkbox" id="show-labels-cb" onchange="toggleShowLabels(this.checked)"
+               style="accent-color:var(--teal);width:13px;height:13px;flex-shrink:0">
+        <span class="ctrl-label" style="margin:0">Include names</span>
+      </label>
+    </div>
+
+    <!-- Quality filter -->
+    <div class="ctrl-section" id="ctrl-quality">
+      <div class="ctrl-section-title">Quality Filter</div>
+      <div class="qual-filters">
+        <label class="qual-filter-row">
+          <input type="checkbox" id="qf-high" checked onchange="applyFilters()">
+          <span class="qual-dot" style="background:var(--green)"></span>
+          High Quality (≥90% comp, ≤5% cont)
+        </label>
+        <label class="qual-filter-row">
+          <input type="checkbox" id="qf-medium" checked onchange="applyFilters()">
+          <span class="qual-dot" style="background:var(--yellow)"></span>
+          Medium Quality (≥50% comp, ≤10% cont)
+        </label>
+        <label class="qual-filter-row">
+          <input type="checkbox" id="qf-low" checked onchange="applyFilters()">
+          <span class="qual-dot" style="background:var(--red)"></span>
+          Low Quality
+        </label>
+      </div>
+    </div>
+
+    <!-- Sample / Assembler filter -->
+    <div class="ctrl-section">
+      <div class="ctrl-section-title" style="display:flex;align-items:center;justify-content:space-between">
+        Samples &amp; Runs
+        <span style="display:flex;gap:6px">
+          <button class="mini-link-btn" onclick="selectAllSamples(true)">All</button>
+          <button class="mini-link-btn" onclick="selectAllSamples(false)">None</button>
+        </span>
+      </div>
+      <div id="sample-filter-list" style="margin-top:6px;max-height:180px;overflow-y:auto"></div>
+    </div>
+
+    <!-- Search -->
+    <div class="ctrl-section">
+      <div class="ctrl-section-title">Search Taxonomy</div>
+      <input type="text" class="ctrl-input" id="tax-search" placeholder="e.g. Bacteroides, Firmicutes…" oninput="highlightSearch(this.value)">
+    </div>
+
+    <!-- Display -->
+    <div class="ctrl-section">
+      <div class="ctrl-section-title">Display</div>
+      <div class="ctrl-label" style="margin-bottom:4px">Label size</div>
+      <input type="range" class="ctrl-slider" id="font-size-slider" min="0.5" max="2.5" step="0.1" value="1.0" oninput="setLabelFontSize(this.value)">
+      <div style="display:flex;justify-content:space-between;font-size:0.68rem;color:var(--muted);margin-bottom:10px">
+        <span>Small</span><span id="font-size-val">1.0×</span><span>Large</span>
+      </div>
+      <div class="ctrl-label" style="margin-bottom:4px">Font style</div>
+      <select class="ctrl-select" id="font-family-select" onchange="setLabelFontFamily(this.value)">
+        <option value="">System default</option>
+        <option value="serif">Serif</option>
+        <option value="Georgia,serif">Georgia</option>
+        <option value="'SF Mono','Fira Code',monospace">Monospace</option>
+        <option value="'Courier New',monospace">Courier New</option>
+        <option value="'Times New Roman',serif">Times New Roman</option>
+      </select>
+    </div>
+
+    <!-- Phylum Legend -->
+    <div class="ctrl-section">
+      <div class="ctrl-section-title">Phylum Legend</div>
+      <div id="legend-list"></div>
+    </div>
+
+  </div>
+
+  <!-- Tree canvas -->
+  <div class="tree-area">
+
+    <div class="overlay" id="loading-overlay">
+      <div class="spinner"></div>
+      <h3>Building Phylogenetic Tree…</h3>
+      <p>Parsing taxonomy across all samples</p>
+    </div>
+    <div class="overlay hidden" id="error-overlay">
+      <div class="overlay-icon">⚠️</div>
+      <h3>No taxonomy data found</h3>
+      <p id="error-msg">Run the web interface with a valid output root that contains bin_info.tsv files with GTDB-Tk classification data.</p>
+    </div>
+    <svg class="tree-svg" id="tree-svg"></svg>
+
+    <!-- Zoom controls -->
+    <div class="tree-controls">
+      <button class="tc-btn" title="Zoom in" onclick="zoomBy(1.3)">+</button>
+      <button class="tc-btn" title="Zoom out" onclick="zoomBy(0.77)">−</button>
+      <button class="tc-btn" title="Reset" onclick="resetZoom()" style="font-size:0.8rem;">⌂</button>
+    </div>
+  </div>
+</div><!-- /.main -->
+</div><!-- /.layout -->
+
+<!-- Tooltip -->
+<div class="tooltip" id="tooltip"></div>
+
+<script>
+// ============================================================
+// Config & colour palette
+// ============================================================
+const PHYLUM_COLORS = {
+  "Proteobacteria":    "#58a6ff",
+  "Firmicutes_A":      "#3fb950",
+  "Firmicutes":        "#56d364",
+  "Bacteroidota":      "#e3b341",
+  "Actinobacteriota":  "#bc8cff",
+  "Cyanobacteria":     "#79c0ff",
+  "Planctomycetota":   "#f0883e",
+  "Acidobacteriota":   "#ffa657",
+  "Verrucomicrobiota": "#ff7b72",
+  "Chloroflexota":     "#d2a8ff",
+  "Nitrospirota":      "#7ee787",
+  "Gemmatimonadota":   "#a5d6ff",
+  "Myxococcota":       "#f85149",
+  "Fusobacteriota":    "#e08e45",
+  "Spirochaetota":     "#ffa198",
+  "Patescibacteria":   "#768390",
+  "Desulfobacterota_A":"#94a3b8",
+  "Marinimicrobia":    "#22d3ee",
+  "Methanobacteriota": "#a78bfa",
+  "Thermoproteota":    "#fb923c",
+  "Halobacteriota":    "#f472b6",
+  "Hadarchaeota":      "#c084fc",
+  "default":           "#8b949e",
+};
+
+// Rank-based radii — simulate evolutionary distance tiers
+const RANK_RADIUS = {
+  root: 0, domain: 55, phylum: 120, class: 185,
+  order: 238, family: 280, genus: 315, species: 345,
+};
+const MAX_RADIUS = 345;
+
+// Opacity per rank — inner nodes more prominent
+const RANK_OPACITY = {
+  root: 1.0, domain: 1.0, phylum: 0.92, class: 0.82,
+  order: 0.72, family: 0.65, genus: 0.60, species: 0.55,
+};
+
+function phylumColor(node) {
+  if (node.data.rank === "root" || node.data.rank === "domain") return "#e3b341";
+  const key = node.data._key || "";
+  const parts = key.split(";");
+  if (parts.length >= 2) {
+    const phylum = parts[1].replace(/^p__/, "");
+    return PHYLUM_COLORS[phylum] || PHYLUM_COLORS.default;
+  }
+  if (node.data.rank === "phylum") {
+    return PHYLUM_COLORS[node.data.name] || PHYLUM_COLORS.default;
+  }
+  return PHYLUM_COLORS.default;
+}
+
+// ============================================================
+// State
+// ============================================================
+let allBins      = [];
+let allProfiles  = [];   // singlem profile rows (replaces allBins when data_source === "singlem")
+let dataSource   = "gtdbtk";  // "singlem" | "gtdbtk"
+let rawTree      = null;
+let filteredTree = null;
+let activeLayout = "sunburst";
+let svgSel, gSel, zoom;
+let sbZoom = null;   // zoom instance for sunburst mode
+let sbW = 0, sbH = 0; // sunburst canvas size (for reset)
+let root;
+// Tracks the centered initial transform so resetZoom snaps back correctly
+let currentInitTransform = d3.zoomIdentity;
+// Persistent user expand/collapse overrides (survive re-renders)
+const userExpanded  = new Set();
+const userCollapsed = new Set();
+// Controls default auto-collapse depth on fresh (non-preserve) renders
+let defaultCollapsedDepth = 3;
+// The user's chosen initial depth — persists across layout switches
+let userChosenDepth = 3;
+// When true (expandAll mode) every node label is shown
+let showAllLabels = false;
+// User-controlled: show all labels regardless of expansion state
+let userShowLabels = false;
+// Display settings
+let labelFontScale  = 1.0;
+let labelFontFamily = '';
+
+// ── Phylogram (real GTDB-Tk Newick tree) ──────────────────────────────────
+let treeMode    = "taxonomy";  // "taxonomy" | "phylogram"
+let newickData  = null;
+
+function getNodeFontSize(d) {
+  let base;
+  if (activeLayout === 'radial') {
+    base = d.data.rank === 'root' ? 10 : d.data.rank === 'domain' ? 9 :
+           d.data.rank === 'phylum' ? 8.5 : d.data.rank === 'class' ? 8 : 7;
+  } else {
+    base = d.depth <= 1 ? 9 : d.depth <= 2 ? 8.5 : 7.5;
+  }
+  return (base * labelFontScale) + 'px';
+}
+
+function setLabelFontSize(val) {
+  labelFontScale = parseFloat(val);
+  document.getElementById('font-size-val').textContent = labelFontScale.toFixed(1) + '×';
+  d3.select('#tree-svg').selectAll('text')
+    .filter(d => d && d.data)
+    .attr('font-size', d => getNodeFontSize(d));
+}
+
+function setLabelFontFamily(val) {
+  labelFontFamily = val;
+  d3.select('#tree-svg').selectAll('text')
+    .filter(d => d && d.data)
+    .attr('font-family', labelFontFamily || null);
+}
+
+// ============================================================
+// Tree-mode switching
+// ============================================================
+function setTreeMode(mode) {
+  treeMode = mode;
+  document.getElementById("mode-btn-taxonomy").classList.toggle("mode-btn-active",  mode === "taxonomy");
+  document.getElementById("mode-btn-phylogram").classList.toggle("mode-btn-active", mode === "phylogram");
+
+  const taxOnly = ["ctrl-layout", "ctrl-depth", "ctrl-quality"];
+  taxOnly.forEach(id => {
+    const el = document.getElementById(id);
+    if (el) el.style.display = (mode === "taxonomy") ? "" : "none";
+  });
+
+  if (mode === "phylogram") {
+    if (newickData) renderPhylogram();
+    else loadPhylogram();
+  } else {
+    renderTree();
+  }
+}
+
+// ============================================================
+// Phylogram (GTDB-Tk real Newick tree)
+// ============================================================
+const PHYLUM_COLORS_PHYLO = {
+  Patescibacteriota: "#58a6ff", Proteobacteria:    "#1abc9c",
+  Firmicutes:        "#e3b341", Firmicutes_A:       "#d4a017",
+  Actinobacteriota:  "#bc8cff", Bacteroidota:       "#f85149",
+  Verrucomicrobiota: "#fb8500", Planctomycetota:    "#40c057",
+  Chloroflexota:     "#a8dadc", Desulfobacterota:   "#e07a5f",
+  Spirochaetota:     "#f2cc8f", Cyanobacteria:      "#81b29a",
+  Acidobacteriota:   "#f4a261", Myxococcota:        "#6d6875",
+  Nitrospirota:      "#457b9d", default:            "#8b949e",
+};
+
+function _phylumFromTax(taxonomy) {
+  if (!taxonomy) return "";
+  const p = taxonomy.split(";").map(t => t.trim()).find(t => t.startsWith("p__"));
+  return p ? p.slice(3) : "";
+}
+function _colorForTax(taxonomy) {
+  const ph = _phylumFromTax(taxonomy);
+  return PHYLUM_COLORS_PHYLO[ph] || PHYLUM_COLORS_PHYLO.default;
+}
+
+async function loadPhylogram() {
+  const rootParam = getRootParam();
+  const url = "/api/phylo_newick" + (rootParam ? "?root=" + encodeURIComponent(rootParam) : "");
+  try {
+    const resp = await fetch(url);
+    if (!resp.ok) throw new Error(await resp.text());
+    newickData = await resp.json();
+    if (newickData.error) throw new Error(newickData.error);
+    renderPhylogram();
+  } catch (e) {
+    setupSvg();
+    gSel.append("text")
+      .attr("x", 30).attr("y", 50)
+      .attr("fill", "var(--red)").attr("font-size", "13px")
+      .text("No GTDB-Tk phylogenetic tree found: " + (e.message || String(e)));
+  }
+}
+
+function renderPhylogram() {
+  if (!newickData || !newickData.tree) return;
+  const { W, H } = setupSvg();
+  const margin   = { left: 50, right: 220, top: 40, bottom: 50 };
+  const iW = W - margin.left - margin.right;
+  const iH = H - margin.top  - margin.bottom;
+
+  gSel.attr("transform", `translate(${margin.left},${margin.top})`);
+
+  const layout = _computePhylogramLayout(newickData.tree, iW, iH);
+  _drawPhylogramLinks(layout.nodes, layout.edges);
+  _drawPhylogramNodes(layout.nodes);
+  _drawScaleBar(layout, iH, iW);
+
+  // Fit
+  const bounds = gSel.node().getBBox();
+  if (bounds.width > 0 && bounds.height > 0) {
+    const sc = Math.min((W - margin.left - margin.right) / bounds.width,
+                        (H - margin.top  - margin.bottom) / bounds.height, 1.0);
+    currentInitTransform = d3.zoomIdentity
+      .translate(margin.left - bounds.x * sc, margin.top - bounds.y * sc)
+      .scale(sc);
+    svgSel.call(zoom.transform, currentInitTransform);
+  }
+}
+
+function _computePhylogramLayout(rootData, width, height) {
+  let uid = 0;
+  const nodes = [];
+
+  // Build flat node array (DFS pre-order — parents always before children)
+  function buildNodes(data, parentId) {
+    const id = uid++;
+    const n = { id, data, parentId, children_ids: [], leaf_idx: null, x: 0, y: 0 };
+    nodes.push(n);
+    if (parentId !== null) nodes[parentId].children_ids.push(id);
+    if (data.children && data.children.length > 0) {
+      for (const child of data.children) buildNodes(child, id);
+    }
+    return id;
+  }
+  buildNodes(rootData, null);
+
+  // X position = cumulative branch length from root
+  nodes[0].x = 0;
+  for (let i = 1; i < nodes.length; i++) {
+    const n = nodes[i];
+    nodes[i].x = nodes[n.parentId].x + (n.data.length || 0);
+  }
+  let maxX = 0;
+  for (const n of nodes) maxX = Math.max(maxX, n.x);
+  const xScale = maxX > 0 ? width / maxX : 1;
+  for (const n of nodes) n.x = n.x * xScale;
+
+  // Assign leaf y-indices
+  let leafIdx = 0;
+  for (const n of nodes) {
+    if (n.children_ids.length === 0) n.leaf_idx = leafIdx++;
+  }
+  const nLeaves  = leafIdx;
+  const leafStep = nLeaves > 1 ? height / (nLeaves - 1) : height / 2;
+  for (const n of nodes) {
+    if (n.leaf_idx !== null) n.y = n.leaf_idx * leafStep;
+  }
+
+  // Internal y = midpoint of first/last child y (bottom-up)
+  function setY(id) {
+    const n = nodes[id];
+    if (!n.children_ids.length) return n.y;
+    const ys = n.children_ids.map(setY);
+    n.y = (Math.min(...ys) + Math.max(...ys)) / 2;
+    return n.y;
+  }
+  setY(0);
+
+  // Edges
+  const edges = [];
+  for (let i = 1; i < nodes.length; i++) {
+    edges.push({ source: nodes[nodes[i].parentId], target: nodes[i] });
+  }
+
+  return { nodes, edges, nLeaves, maxX };
+}
+
+function _drawPhylogramLinks(nodes, edges) {
+  const g = gSel.append("g").attr("class", "phylo-links");
+  for (const { source, target } of edges) {
+    const color = target.data.is_user ? _colorForTax(target.data.taxonomy) : "#30363d";
+    const width = target.data.is_user
+      ? Math.max(0.8, Math.min(3.5, 0.6 + (target.data.coverage_pct || 0) * 0.18))
+      : 0.5;
+    // Elbow: vertical at source.x, then horizontal to target
+    g.append("path")
+      .attr("d", `M${source.x},${source.y}V${target.y}H${target.x}`)
+      .attr("fill", "none")
+      .attr("stroke", color)
+      .attr("stroke-opacity", target.data.is_user ? 0.75 : 0.3)
+      .attr("stroke-width", width);
+  }
+}
+
+function _drawPhylogramNodes(nodes) {
+  const g = gSel.append("g").attr("class", "phylo-nodes");
+
+  for (const n of nodes) {
+    const isLeaf      = n.children_ids.length === 0;
+    const isUser      = n.data.is_user;
+    const isCollapsed = n.data.is_collapsed;
+
+    if (isLeaf) {
+      const color = isUser ? _colorForTax(n.data.taxonomy) : (isCollapsed ? "#4a5568" : "#2d3748");
+      const r     = isUser
+        ? Math.max(3, Math.min(11, 3 + (n.data.coverage_pct || 0) * 0.3))
+        : (isCollapsed ? 4 : 2.5);
+
+      g.append("circle")
+        .attr("cx", n.x).attr("cy", n.y).attr("r", r)
+        .attr("fill", isCollapsed ? "#30363d" : color)
+        .attr("fill-opacity", isUser ? 0.9 : 0.55)
+        .attr("stroke", isUser ? color : "none")
+        .attr("stroke-width", isUser ? 1.2 : 0)
+        .style("cursor", "pointer")
+        .on("mouseover", ev => _showPhyloTip(ev, n))
+        .on("mousemove", moveTooltip)
+        .on("mouseout",  hideTooltip);
+
+      // Label
+      let label;
+      if (isCollapsed) {
+        label = n.data.name;
+      } else if (isUser) {
+        const rawName = (n.data.name || "").replace(/[._]/g, " ").trim();
+        const pct     = n.data.coverage_pct;
+        label = rawName + (pct > 0 ? `  ${pct.toFixed(1)}%` : "");
+      } else {
+        label = (n.data.name || "").replace(/^(GB_|RS_)/, "");
+      }
+
+      g.append("text")
+        .attr("x", n.x + r + 5).attr("y", n.y).attr("dy", "0.32em")
+        .attr("font-size", isUser ? "11px" : (isCollapsed ? "9px" : "7.5px"))
+        .attr("font-weight", isUser ? "600" : "400")
+        .attr("fill", isUser ? color : "#4a5568")
+        .attr("fill-opacity", isUser ? 1 : 0.65)
+        .attr("pointer-events", "none")
+        .text(label.length > 50 ? label.slice(0, 49) + "…" : label);
+
+    } else {
+      // Internal node — bootstrap label
+      const support = n.data.support;
+      if (support !== null && support !== undefined) {
+        if (support >= 80) {
+          g.append("circle")
+            .attr("cx", n.x).attr("cy", n.y).attr("r", 2.5)
+            .attr("fill", "#8b949e").attr("fill-opacity", 0.5);
+        }
+        if (support >= 50) {
+          g.append("text")
+            .attr("x", n.x - 3).attr("y", n.y - 5)
+            .attr("text-anchor", "end")
+            .attr("font-size", "7px").attr("fill", "#8b949e").attr("fill-opacity", 0.7)
+            .attr("pointer-events", "none")
+            .text(Math.round(support));
+        }
+      }
+    }
+  }
+}
+
+function _drawScaleBar(layout, iH, iW) {
+  if (!layout.maxX || !iW) return;
+  const subPerPx = layout.maxX / iW;  // substitutions per pixel
+  // Pick a nice round scale bar length
+  const targetPx = 80;
+  const rawSubs  = subPerPx * targetPx;
+  const magnitude = Math.pow(10, Math.floor(Math.log10(rawSubs)));
+  const nice = [1, 2, 5].map(m => m * magnitude).find(v => v / subPerPx >= 40) || magnitude;
+  const barPx = nice / subPerPx;
+
+  const barY = iH + 24;
+  const g = gSel.append("g").attr("class", "scale-bar");
+  g.append("line")
+    .attr("x1", 0).attr("y1", barY).attr("x2", barPx).attr("y2", barY)
+    .attr("stroke", "#8b949e").attr("stroke-width", 1.5);
+  [0, barPx].forEach(x =>
+    g.append("line")
+      .attr("x1", x).attr("y1", barY - 3).attr("x2", x).attr("y2", barY + 3)
+      .attr("stroke", "#8b949e").attr("stroke-width", 1.5));
+  g.append("text")
+    .attr("x", barPx / 2).attr("y", barY + 13)
+    .attr("text-anchor", "middle")
+    .attr("font-size", "9px").attr("fill", "#8b949e")
+    .text(`${nice} substitutions/site`);
+}
+
+function _showPhyloTip(event, n) {
+  const d = n.data;
+  let html = "";
+  if (d.is_user) {
+    const phylum = _phylumFromTax(d.taxonomy);
+    html += `<div class="tt-rank">${phylum || "USER MAG"}</div>`;
+    html += `<div class="tt-title">${(d.name || "").replace(/[._]/g, " ")}</div>`;
+    if (d.taxonomy) {
+      const t = d.taxonomy.replace(/;/g, " › ").replace(/[a-z]__/g, "");
+      html += `<div class="tt-path">${t}</div>`;
+    }
+    if (d.coverage_pct > 0) {
+      html += `<div class="tt-row"><span class="tt-key">Relative abundance</span><span class="tt-val" style="color:var(--teal)">${d.coverage_pct.toFixed(2)}%</span></div>`;
+    } else {
+      html += `<div class="tt-row"><span class="tt-key">Abundance</span><span class="tt-val">—  (no SingleM data)</span></div>`;
+    }
+  } else if (d.is_collapsed) {
+    html += `<div class="tt-rank">REFERENCE CONTEXT</div>`;
+    html += `<div class="tt-title">${d.collapsed_count} reference genomes</div>`;
+    html += `<div class="tt-path">Collapsed for clarity</div>`;
+  } else {
+    html += `<div class="tt-rank">REFERENCE GENOME</div>`;
+    html += `<div class="tt-title">${(d.name || "").replace(/^(GB_|RS_)/, "")}</div>`;
+  }
+  if (d.support !== null && d.support !== undefined) {
+    html += `<div class="tt-row"><span class="tt-key">Bootstrap</span><span class="tt-val">${Math.round(d.support)}</span></div>`;
+  }
+  html += `<div class="tt-row"><span class="tt-key">Branch length</span><span class="tt-val">${(d.length || 0).toFixed(5)}</span></div>`;
+  ttEl.innerHTML = html;
+  ttEl.style.display = "block";
+  moveTooltip(event);
+}
+
+// ============================================================
+// Fetch data
+// ============================================================
+function getRootParam() {
+  const p = new URLSearchParams(window.location.search);
+  return p.get("root") || p.get("output_dir") || localStorage.getItem('aviary-active-root') || "";
+}
+
+async function loadData() {
+  const rootParam = getRootParam();
+  const url = "/api/taxonomy_tree" + (rootParam ? "?root=" + encodeURIComponent(rootParam) : "");
+
+  document.getElementById("root-label").textContent = rootParam || "Auto-detected root";
+
+  try {
+    const resp = await fetch(url);
+    if (!resp.ok) throw new Error(await resp.text());
+    const data = await resp.json();
+    if (data.error) throw new Error(data.error);
+    if (!data.total || data.total === 0) throw new Error("No classified bins/profiles found.");
+
+    dataSource = data.data_source || "gtdbtk";
+
+    if (dataSource === "singlem") {
+      allProfiles = data.profile_rows || [];
+      allBins     = [];
+      buildSampleFilterList(allProfiles);
+    } else {
+      allBins     = data.bins || [];
+      allProfiles = [];
+      buildSampleFilterList(allBins);
+    }
+
+    rawTree = data.tree;
+    updateStats(data);
+    applyFilters();
+    document.getElementById("loading-overlay").classList.add("hidden");
+  } catch (e) {
+    document.getElementById("loading-overlay").classList.add("hidden");
+    document.getElementById("error-overlay").classList.remove("hidden");
+    document.getElementById("error-msg").textContent = e.message || String(e);
+  }
+}
+
+
+
+// ============================================================
+// Stats
+// ============================================================
+function updateStats(data) {
+  let phyla = 0;
+  if (data.tree && data.tree.children) {
+    for (const domain of data.tree.children) phyla += (domain.children || []).length;
+  }
+  document.getElementById("stat-phyla").textContent = phyla;
+
+  if (dataSource === "singlem") {
+    document.getElementById("label-total").textContent = "Samples";
+    document.getElementById("label-hq").textContent    = "Top phylum";
+    document.getElementById("label-mq").textContent    = "Mean RA";
+    const nSamples = new Set((data.profile_rows || []).map(r => r.sample)).size;
+    document.getElementById("stat-total").textContent  = nSamples.toLocaleString();
+
+    let topPhylum = "—", topPct = 0;
+    if (data.tree && data.tree.children) {
+      for (const domain of data.tree.children) {
+        for (const ph of (domain.children || [])) {
+          if ((ph.coverage_pct || 0) > topPct) {
+            topPct = ph.coverage_pct || 0;
+            topPhylum = ph.name;
+          }
+        }
+      }
+    }
+    document.getElementById("stat-hq").textContent = topPhylum;
+    document.getElementById("stat-mq").textContent = topPct.toFixed(1) + "%";
+  } else {
+    document.getElementById("label-total").textContent = "Total MAGs";
+    document.getElementById("label-hq").textContent    = "High Quality";
+    document.getElementById("label-mq").textContent    = "Med Quality";
+    const hq = (data.bins || []).filter(b => b.quality === "high").length;
+    const mq = (data.bins || []).filter(b => b.quality === "medium").length;
+    document.getElementById("stat-total").textContent = (data.total || 0).toLocaleString();
+    document.getElementById("stat-hq").textContent    = hq.toLocaleString();
+    document.getElementById("stat-mq").textContent    = mq.toLocaleString();
+  }
+}
+
+// ============================================================
+// Legend
+// ============================================================
+function buildLegend(tree) {
+  const list = document.getElementById("legend-list");
+  list.innerHTML = "";
+  if (!tree || !tree.children) return;
+
+  const phyla = [];
+  for (const domain of tree.children) {
+    for (const phylum of (domain.children || [])) {
+      phyla.push({ name: phylum.name, full: phylum.full, count: phylum.count,
+                   coverage_pct: phylum.coverage_pct });
+    }
+  }
+
+  if (dataSource === "singlem") {
+    phyla.sort((a, b) => (b.coverage_pct || 0) - (a.coverage_pct || 0));
+  } else {
+    phyla.sort((a, b) => b.count - a.count);
+  }
+
+  const maxPct = phyla.length ? (phyla[0].coverage_pct || 1) : 1;
+
+  for (const p of phyla) {
+    const color = PHYLUM_COLORS[p.name] || PHYLUM_COLORS.default;
+    const div = document.createElement("div");
+
+    if (dataSource === "singlem") {
+      const pct     = p.coverage_pct || 0;
+      const barW    = Math.max(1, (pct / maxPct) * 100);
+      div.className = "legend-item-singlem";
+      div.innerHTML = `
+        <div class="legend-swatch" style="background:${color}"></div>
+        <div class="legend-item-body">
+          <div class="legend-item-header">
+            <span class="legend-name" title="${p.name}">${p.name}</span>
+            <span class="legend-pct" style="color:${color}">${pct.toFixed(2)}%</span>
+          </div>
+          <div class="legend-bar-track">
+            <div class="legend-bar-fill" style="width:${barW}%;background:${color}"></div>
+          </div>
+        </div>`;
+    } else {
+      div.className = "legend-item";
+      div.innerHTML = `
+        <div class="legend-swatch" style="background:${color}"></div>
+        <span class="legend-name" title="${p.name}">${p.name}</span>
+        <span class="legend-count">${p.count}</span>`;
+    }
+    list.appendChild(div);
+  }
+}
+
+// ============================================================
+// Sample filter list builder
+// ============================================================
+let selectedSampleKeys = new Set();
+
+function buildSampleFilterList(rows) {
+  // Works for both bin rows (gtdbtk) and profile rows (singlem)
+  const batches = {};
+  for (const b of rows) {
+    const batchKey  = b.batch || "Unknown";
+    const sampleKey = `${b.sample}::${b.assembler}`;
+    if (!batches[batchKey]) batches[batchKey] = {};
+    if (!batches[batchKey][sampleKey]) batches[batchKey][sampleKey] = { sample: b.sample, assembler: b.assembler, count: 0 };
+    batches[batchKey][sampleKey].count++;
+  }
+
+  // Collect all sample keys for initial selection
+  selectedSampleKeys = new Set();
+  for (const [, samples] of Object.entries(batches)) {
+    for (const k of Object.keys(samples)) selectedSampleKeys.add(k);
+  }
+
+  const list = document.getElementById("sample-filter-list");
+  list.innerHTML = "";
+
+  const sortedBatches = Object.entries(batches).sort(([a], [b]) => b.localeCompare(a)); // newest first
+  const firstBatch = sortedBatches[0]?.[0];
+
+  for (const [batchDate, samples] of sortedBatches) {
+    const isOpen = batchDate === firstBatch;
+    const sampleEntries = Object.entries(samples).sort(([a], [b]) => a.localeCompare(b));
+    const totalBins = sampleEntries.reduce((s, [, g]) => s + g.count, 0);
+
+    const batchDiv = document.createElement("div");
+    batchDiv.className = "sf-batch";
+
+    const header = document.createElement("div");
+    header.className = "sf-batch-header" + (isOpen ? " open" : "");
+    header.innerHTML = `
+      <span class="sf-batch-arrow">▶</span>
+      <span>${batchDate}</span>
+      <span class="sf-batch-count">${sampleEntries.length} sample${sampleEntries.length !== 1 ? "s" : ""} · ${totalBins} bins</span>`;
+    header.addEventListener("click", () => {
+      header.classList.toggle("open");
+      body.classList.toggle("open");
+    });
+
+    const body = document.createElement("div");
+    body.className = "sf-batch-body" + (isOpen ? " open" : "");
+
+    for (const [key, g] of sampleEntries) {
+      const row = document.createElement("label");
+      row.className = "sample-filter-row";
+      row.innerHTML = `
+        <input type="checkbox" checked data-key="${key}" onchange="onSampleToggle()">
+        <span class="sample-filter-name" title="${g.sample}">${g.sample}</span>
+        <span class="sample-filter-asm">${g.assembler}</span>
+        <span class="sample-filter-count">${g.count}</span>`;
+      body.appendChild(row);
+    }
+
+    batchDiv.appendChild(header);
+    batchDiv.appendChild(body);
+    list.appendChild(batchDiv);
+  }
+}
+
+function onSampleToggle() {
+  const checkboxes = document.querySelectorAll("#sample-filter-list input[type=checkbox]");
+  selectedSampleKeys = new Set();
+  for (const cb of checkboxes) {
+    if (cb.checked) selectedSampleKeys.add(cb.dataset.key);
+  }
+  applyFilters();
+}
+
+function selectAllSamples(checked) {
+  const checkboxes = document.querySelectorAll("#sample-filter-list input[type=checkbox]");
+  for (const cb of checkboxes) cb.checked = checked;
+  onSampleToggle();
+}
+
+// ============================================================
+// Client-side tree builder from filtered bin list
+// ============================================================
+function buildTreeFromBins(bins) {
+  const RANKS = ["domain", "phylum", "class", "order", "family", "genus", "species"];
+  const nodes = {};
+  const ROOT_KEY = "__root__";
+  nodes[ROOT_KEY] = { name: "Life", full: "Life", rank: "root", children: new Set(), count: 0, hq: 0, mq: 0, lq: 0 };
+
+  for (const b of bins) {
+    const classification = (b.classification || "").trim();
+    if (!classification) continue;
+
+    const taxa = classification.split(";").map(t => t.trim());
+    let parentKey = ROOT_KEY;
+
+    for (let i = 0; i < taxa.length; i++) {
+      const taxon = taxa[i];
+      if (!taxon || taxon === "d__" || taxon === "p__" || taxon === "c__" ||
+          taxon === "o__" || taxon === "f__" || taxon === "g__" || taxon === "s__") break;
+
+      const nodeKey = taxa.slice(0, i + 1).join(";");
+      if (!nodes[nodeKey]) {
+        const rank = RANKS[i] || "unknown";
+        const display = taxon.length > 3 && taxon[1] === "_" && taxon[2] === "_" ? taxon.slice(3) : taxon;
+        nodes[nodeKey] = { name: display, full: taxon, rank, _key: nodeKey, children: new Set(), count: 0, hq: 0, mq: 0, lq: 0 };
+      }
+      nodes[nodeKey].count++;
+      if (b.quality === "high")        nodes[nodeKey].hq++;
+      else if (b.quality === "medium") nodes[nodeKey].mq++;
+      else                             nodes[nodeKey].lq++;
+
+      nodes[parentKey].children.add(nodeKey);
+      parentKey = nodeKey;
+    }
+  }
+
+  function toDict(key) {
+    const n = nodes[key];
+    const result = { name: n.name, full: n.full, rank: n.rank, _key: key, count: n.count, hq: n.hq, mq: n.mq, lq: n.lq };
+    const children = [...n.children].sort().map(toDict);
+    if (children.length) result.children = children;
+    return result;
+  }
+
+  return toDict(ROOT_KEY);
+}
+
+// ============================================================
+// Build tree from SingleM profile rows (coverage-weighted)
+// ============================================================
+function buildTreeFromProfile(rows) {
+  const RANKS = ["domain", "phylum", "class", "order", "family", "genus", "species"];
+  const nodes  = {};
+  const ROOT_KEY = "__root__";
+  nodes[ROOT_KEY] = { name: "Life", full: "Life", rank: "root", _key: "",
+                      children: new Set(), coverage: 0, samples: new Set() };
+
+  // coverage in profile_rows is already a per-sample RA fraction (normalised server-side).
+  // Accumulate per sample first so we can compute per-node mean RA.
+  const sampleKeys = new Set(rows.map(r => r.sample));
+  const nSamples   = sampleKeys.size || 1;
+
+  for (const r of rows) {
+    let tax = (r.taxonomy || "").trim();
+    if (/^root\s*;/i.test(tax)) tax = tax.replace(/^root\s*;\s*/i, "");
+    // Stop at first empty rank level (matches server-side truncation)
+    const rawTaxa = tax.split("; ").map(t => t.trim()).filter(Boolean);
+    const taxa = [];
+    for (const t of rawTaxa) {
+      if (t.length === 3 && t[1] === "_" && t[2] === "_") break;
+      taxa.push(t);
+    }
+    if (!taxa.length) continue;
+
+    const cov = r.coverage || 0;
+    nodes[ROOT_KEY].coverage += cov;
+    nodes[ROOT_KEY].samples.add(r.sample);
+    let parentKey = ROOT_KEY;
+
+    for (let i = 0; i < taxa.length; i++) {
+      const taxon   = taxa[i];
+      const nodeKey = taxa.slice(0, i + 1).join("; ");
+      if (!nodes[nodeKey]) {
+        const rank    = RANKS[i] || "unknown";
+        const display = taxon.length > 3 && taxon[1] === "_" && taxon[2] === "_"
+          ? taxon.slice(3) : taxon;
+        nodes[nodeKey] = { name: display, full: taxon, rank, _key: nodeKey,
+                           children: new Set(), coverage: 0, samples: new Set() };
+      }
+      nodes[nodeKey].coverage += cov;
+      nodes[nodeKey].samples.add(r.sample);
+      nodes[parentKey].children.add(nodeKey);
+      parentKey = nodeKey;
+    }
+  }
+
+  // Mean RA % = accumulated RA / number of samples in this filtered view
+  for (const n of Object.values(nodes)) {
+    n.coverage_pct   = nSamples > 0 ? Math.round(n.coverage / nSamples * 10000) / 100 : 0;
+    n.sample_count   = n.samples.size;
+  }
+
+  function toDict(key) {
+    const n = nodes[key];
+    const result = {
+      name: n.name, full: n.full, rank: n.rank, _key: n._key,
+      sample_count: n.sample_count, coverage: n.coverage, coverage_pct: n.coverage_pct,
+    };
+    const children = [...n.children].sort().map(toDict);
+    if (children.length) result.children = children;
+    return result;
+  }
+  return toDict(ROOT_KEY);
+}
+
+// ============================================================
+// Filter and rebuild tree
+// ============================================================
+function applyFilters() {
+  if (dataSource === "singlem") {
+    if (!allProfiles.length) return;
+    const filtered = selectedSampleKeys.size
+      ? allProfiles.filter(r => selectedSampleKeys.has(`${r.sample}::${r.assembler}`))
+      : allProfiles;
+
+    filteredTree = filtered.length
+      ? buildTreeFromProfile(filtered)
+      : { name: "Life", full: "Life", rank: "root", count: 0, coverage: 0, coverage_pct: 0 };
+
+    let phyla = 0, topPhylum = "—", topPct = 0;
+    if (filteredTree.children) {
+      for (const d of filteredTree.children) {
+        for (const ph of (d.children || [])) {
+          phyla++;
+          if ((ph.coverage_pct || 0) > topPct) { topPct = ph.coverage_pct; topPhylum = ph.name; }
+        }
+      }
+    }
+    const nFilteredSamples = new Set(filtered.map(r => r.sample)).size;
+    document.getElementById("stat-total").textContent = nFilteredSamples.toLocaleString();
+    document.getElementById("stat-phyla").textContent = phyla;
+    document.getElementById("stat-hq").textContent    = topPhylum;
+    document.getElementById("stat-mq").textContent    = topPct.toFixed(2) + "%";
+    buildLegend(filteredTree);
+    renderTree();
+    return;
+  }
+
+  // GTDB-Tk path (unchanged)
+  if (!allBins.length) return;
+
+  const showHigh   = document.getElementById("qf-high").checked;
+  const showMedium = document.getElementById("qf-medium").checked;
+  const showLow    = document.getElementById("qf-low").checked;
+
+  const filtered = allBins.filter(b => {
+    const key = `${b.sample}::${b.assembler}`;
+    if (!selectedSampleKeys.has(key)) return false;
+    if (b.quality === "high"   && !showHigh)   return false;
+    if (b.quality === "medium" && !showMedium) return false;
+    if (b.quality === "low"    && !showLow)    return false;
+    return true;
+  });
+
+  filteredTree = filtered.length
+    ? buildTreeFromBins(filtered)
+    : { name: "Life", full: "Life", rank: "root", count: 0, hq: 0, mq: 0, lq: 0 };
+
+  const hq = filtered.filter(b => b.quality === "high").length;
+  const mq = filtered.filter(b => b.quality === "medium").length;
+  let phyla = 0;
+  if (filteredTree.children) {
+    for (const domain of filteredTree.children) phyla += (domain.children || []).length;
+  }
+  document.getElementById("stat-total").textContent = filtered.length.toLocaleString();
+  document.getElementById("stat-phyla").textContent = phyla;
+  document.getElementById("stat-hq").textContent    = hq.toLocaleString();
+  document.getElementById("stat-mq").textContent    = mq.toLocaleString();
+
+  buildLegend(filteredTree);
+  renderTree();
+}
+
+// ============================================================
+// Collapse state persistence
+// ============================================================
+// Re-applies user's explicit expand/collapse decisions after a re-render
+// (which rebuilds the d3 hierarchy from scratch).
+function applyCollapseState(root) {
+  root.eachBefore(n => {
+    const key = n.data._key || "";
+    if (!key) return;
+    if (userCollapsed.has(key) && n.children) {
+      n._children = n.children;
+      n.children = null;
+    } else if (userExpanded.has(key) && n._children) {
+      n.children = n._children;
+      n._children = null;
+    }
+  });
+}
+
+// ============================================================
+// Render
+// ============================================================
+// ============================================================
+// Sunburst (adapted from Sandpiper Sunburst3.vue)
+// ============================================================
+
+// 10 vivid base colours — one per phylum-level slot
+const SB_BASE_COLORS = [
+  '#58a6ff','#1abc9c','#e3b341','#bc8cff','#f85149',
+  '#fb8500','#40c057','#a8dadc','#e07a5f','#f2cc8f',
+];
+
+function toSunburstFormat(node, depth, colorOrder, _ctr) {
+  const out = {
+    name:            node.name || "Unknown",
+    condensed_depth: depth,
+    order:           colorOrder,
+    _rank:           node.rank  || "",
+    _cov:            node.coverage_pct || 0,
+    _count:          node.count || 0,
+  };
+
+  const kids = (node.children || []).filter(c =>
+    dataSource === "singlem" ? (c.coverage_pct || 0) > 0 : (c.count || 0) > 0
+  );
+
+  if (!kids.length) {
+    out.size = dataSource === "singlem"
+      ? Math.max(0.001, node.coverage_pct || 0)
+      : Math.max(1,     node.count        || 0);
+  } else {
+    out.children = kids.map(c => {
+      // Each domain and phylum gets its own globally-unique color slot so
+      // all phyla across all domains get distinct hues.
+      const nextOrder = depth < 2 ? _ctr.v++ : colorOrder;
+      return toSunburstFormat(c, depth + 1, nextOrder, _ctr);
+    });
+  }
+  return out;
+}
+
+function sbColor(d) {
+  const depth = d.data.condensed_depth;
+  if (depth === 0) return "var(--surface2)";
+  const base  = SB_BASE_COLORS[d.data.order % SB_BASE_COLORS.length];
+  // Darken progressively with depth so outer rings fade
+  const t = Math.min(0.72, (depth - 1) * 0.13);
+  return d3.interpolateRgb(base, "#0d1117")(t);
+}
+
+function renderSunburst() {
+  if (!filteredTree) return;
+
+  // Show/hide relevant controls
+  const depthEl = document.getElementById("ctrl-depth");
+  if (depthEl) depthEl.style.display = "none";
+  const selEl = document.getElementById("ctrl-selected");
+  if (selEl) selEl.style.display = "";
+
+  const sbData = toSunburstFormat(filteredTree, 0, 0, { v: 0 });
+
+  const { W, H } = setupSvg();
+  const size   = Math.min(W, H) * 0.88;
+  const radius = size / 6;
+
+  const arc = d3.arc()
+    .startAngle(d => d.x0)
+    .endAngle(d => d.x1)
+    .padAngle(d => Math.min((d.x1 - d.x0) / 2, 0.005))
+    .padRadius(radius * 1.5)
+    .innerRadius(d => d.y0 * radius)
+    .outerRadius(d => Math.max(d.y0 * radius, d.y1 * radius - 1));
+
+  const sbRoot = d3.hierarchy(sbData)
+    .sum(d => d.size)
+    .sort((a, b) => b.order - a.order);
+  d3.partition().size([2 * Math.PI, sbRoot.height + 1])(sbRoot);
+  sbRoot.each(d => { d.current = d; });
+
+  gSel.attr("transform", `translate(${W / 2},${H / 2})`);
+
+  const path = gSel.append("g")
+    .selectAll("path")
+    .data(sbRoot.descendants())
+    .join("path")
+    .attr("fill",         d => sbColor(d))
+    .attr("fill-opacity", d => d.children ? 0.72 : 0.52)
+    .attr("d",            d => arc(d.current))
+    .style("cursor", "pointer");
+
+  path
+    .on("dblclick", (_e, p) => _sbZoom(p, sbRoot, path, label, arc, radius))
+    .on("click",    (_e, p) => _sbClick(p, sbRoot))
+    .on("mouseover", (_e, p) => {
+      path.filter(d => d.data.name === p.data.name)
+        .attr("stroke", "#f0f6fc").attr("stroke-width", "1.5px");
+    })
+    .on("mouseout", () => path.attr("stroke", "none"));
+
+  const label = gSel.append("g")
+    .attr("pointer-events", "none")
+    .attr("text-anchor", "middle")
+    .style("user-select", "none")
+    .selectAll("text")
+    .data(sbRoot.descendants())
+    .join("text")
+    .attr("dy", "0.35em")
+    .attr("fill",         d => d.data.condensed_depth <= 1 ? "#f0f6fc" : "#c9d1d9")
+    .attr("fill-opacity", d => +_sbLabelVisible(d.current))
+    .attr("font-size",    d => d.data.condensed_depth <= 1 ? "9px" : d.data.condensed_depth <= 2 ? "8px" : "7px")
+    .attr("transform",    d => _sbLabelXform(d.current, radius))
+    .text(d => { const n = d.data.name || ""; return n.length > 14 ? n.slice(0, 13) + "…" : n; });
+
+  // Centre circle — click to go back to root
+  gSel.append("circle")
+    .datum(sbRoot)
+    .attr("r", radius - 2)
+    .attr("fill", "var(--surface)")
+    .attr("stroke", "var(--teal)")
+    .attr("stroke-width", 1.5)
+    .style("cursor", "pointer")
+    .on("click", (_e, p) => _sbZoom(p, sbRoot, path, label, arc, radius));
+
+  gSel.append("text")
+    .attr("text-anchor", "middle").attr("dy", "-0.2em")
+    .attr("font-size", "11px").attr("fill", "var(--teal)")
+    .attr("font-weight", "600")
+    .attr("pointer-events", "none")
+    .text("↩");
+  gSel.append("text")
+    .attr("text-anchor", "middle").attr("dy", "1.1em")
+    .attr("font-size", "8px").attr("fill", "var(--muted)")
+    .attr("pointer-events", "none")
+    .text("back to all");
+
+  // Zoom with scale + pan for sunburst
+  svgSel.on(".zoom", null);
+  sbW = W; sbH = H;
+  sbZoom = d3.zoom()
+    .scaleExtent([0.3, 5])
+    .on("zoom", e => gSel.attr("transform", e.transform));
+  svgSel.call(sbZoom);
+  svgSel.call(sbZoom.transform, d3.zoomIdentity.translate(W / 2, H / 2));
+}
+
+function _sbLabelVisible(d) {
+  return (d.y1 - d.y0) * (d.x1 - d.x0) > 0.05;
+}
+
+function _sbLabelXform(d, radius) {
+  const x    = (d.x0 + d.x1) / 2 * 180 / Math.PI;
+  const y    = (d.y0 + d.y1) / 2 * radius;
+  const flip = ((x - 90) > 0 && (x - 90) < 180) ? 180 : 0;
+  return `rotate(${x - 90}) translate(${y},0) rotate(${90 + flip})`;
+}
+
+function _sbClick(p, sbRoot) {
+  // Build taxonomy breadcrumb
+  const crumbs = [];
+  let cur = p;
+  while (cur.parent) { crumbs.push(cur); cur = cur.parent; }
+  crumbs.reverse();
+
+  const totalVal = sbRoot.value || 1;
+  const nodeVal  = p.value || 0;
+  const pct      = (nodeVal / totalVal) * 100;
+
+  const RANK_PREFIXES = ['d','p','c','o','f','g','s'];
+  const taxLines = crumbs.map((n, i) =>
+    `<div class="sb-tax-row"><span class="sb-rank-lbl">${RANK_PREFIXES[i] || '?'}:</span><span class="sb-tax-name">${n.data.name}</span></div>`
+  ).join("");
+
+  const metricLabel = dataSource === "singlem" ? "Mean RA" : "MAG fraction";
+  const metricVal   = dataSource === "singlem"
+    ? `${pct.toFixed(2)}%`
+    : `${pct.toFixed(1)}% (${Math.round(nodeVal)} MAGs)`;
+
+  document.getElementById("sb-selected-panel").innerHTML = `
+    <div class="sb-title">${p.data.name}</div>
+    <div class="sb-rank">${(p.data._rank || "").toUpperCase()}</div>
+    ${taxLines}
+    <div class="sb-stat">
+      <span>${metricLabel}</span>
+      <span class="sb-stat-val" style="color:var(--teal)">${metricVal}</span>
+    </div>
+    <div class="sb-hint">Double-click to zoom into this clade</div>
+  `;
+}
+
+function _sbZoom(p, sbRoot, path, label, arc, radius) {
+  sbRoot.each(d => {
+    d.target = {
+      x0: Math.max(0, Math.min(1, (d.x0 - p.x0) / (p.x1 - p.x0))) * 2 * Math.PI,
+      x1: Math.max(0, Math.min(1, (d.x1 - p.x0) / (p.x1 - p.x0))) * 2 * Math.PI,
+      y0: Math.max(0, d.y0 - p.depth),
+      y1: Math.max(0, d.y1 - p.depth),
+    };
+  });
+
+  const t = gSel.transition().duration(750);
+
+  path.transition(t)
+    .tween("data", d => {
+      const i = d3.interpolate(d.current, d.target);
+      return tt => { d.current = i(tt); };
+    })
+    .filter(function(d) { return +this.getAttribute("fill-opacity") || true; })
+    .attr("fill-opacity", d => d.target.depth === 0 ? 0 : (d.children ? 0.72 : 0.52))
+    .attrTween("d", d => () => arc(d.current));
+
+  label.filter(function(d) { return +this.getAttribute("fill-opacity") || _sbLabelVisible(d.target); })
+    .transition(t)
+    .attr("fill-opacity", d => +_sbLabelVisible(d.target))
+    .attrTween("transform", d => () => _sbLabelXform(d.current, radius));
+}
+
+function renderTree() {
+  if (!filteredTree) return;
+  if (activeLayout === "sunburst") renderSunburst();
+  else if (activeLayout === "radial") renderRadial();
+  else renderHorizontal();
+}
+
+function setLayout(val) {
+  activeLayout = val;
+  const isSunburst = val === "sunburst";
+  const depthEl    = document.getElementById("ctrl-depth");
+  if (depthEl) depthEl.style.display = isSunburst ? "none" : "";
+  const selEl = document.getElementById("ctrl-selected");
+  if (selEl) selEl.style.display = isSunburst ? "" : "none";
+  if (!isSunburst) {
+    defaultCollapsedDepth = userChosenDepth;
+    showAllLabels = !isFinite(userChosenDepth);
+    userExpanded.clear();
+    userCollapsed.clear();
+  }
+  renderTree();
+}
+
+// ---- Shared D3 setup ----
+// Captures the current zoom transform BEFORE wiping the SVG so it can be
+// restored after a preserveView re-render.
+function setupSvg() {
+  const svgEl = document.getElementById("tree-svg");
+
+  // Capture existing transform before zoom is reinitialized
+  let prevTransform = null;
+  try {
+    if (svgEl.__zoom) prevTransform = d3.zoomTransform(svgEl);
+  } catch (_) {}
+
+  const W = svgEl.clientWidth  || window.innerWidth  - 280;
+  const H = svgEl.clientHeight || window.innerHeight - 56;
+
+  svgSel = d3.select("#tree-svg");
+  svgSel.selectAll("*").remove();
+
+  zoom = d3.zoom()
+    .scaleExtent([0.05, 12])
+    .on("zoom", (e) => gSel.attr("transform", e.transform));
+
+  svgSel.call(zoom);
+  gSel = svgSel.append("g");
+  return { W, H, prevTransform };
+}
+
+// ---- Tooltip helpers ----
+const ttEl = document.getElementById("tooltip");
+
+function showTooltip(event, d) {
+  const data = d.data;
+  let html = `<div class="tt-rank">${data.rank.toUpperCase()}</div>`;
+  html += `<div class="tt-title">${data.name}</div>`;
+  if (dataSource === "singlem") {
+    html += `<div class="tt-row"><span class="tt-key">Mean relative abundance</span><span class="tt-val" style="color:var(--teal)">${(data.coverage_pct || 0).toFixed(2)}%</span></div>`;
+    if (data.sample_count) html += `<div class="tt-row"><span class="tt-key">Samples with taxon</span><span class="tt-val">${data.sample_count}</span></div>`;
+  } else {
+    html += `<div class="tt-row"><span class="tt-key">MAGs in clade</span><span class="tt-val">${data.count}</span></div>`;
+    if (data.hq !== undefined) {
+      html += `<div class="tt-row"><span class="tt-key">High quality</span><span class="tt-val" style="color:var(--green)">${data.hq}</span></div>`;
+      html += `<div class="tt-row"><span class="tt-key">Medium quality</span><span class="tt-val" style="color:var(--yellow)">${data.mq}</span></div>`;
+      html += `<div class="tt-row"><span class="tt-key">Low quality</span><span class="tt-val" style="color:var(--red)">${data.lq}</span></div>`;
+    }
+  }
+  if (data._key) {
+    html += `<div class="tt-path">${data._key.replace(/;\s*/g, " › ")}</div>`;
+  }
+  ttEl.innerHTML = html;
+  ttEl.style.display = "block";
+  moveTooltip(event);
+}
+
+function moveTooltip(event) {
+  const x = event.clientX + 14;
+  const y = event.clientY - 10;
+  const tw = ttEl.offsetWidth  || 240;
+  const th = ttEl.offsetHeight || 120;
+  ttEl.style.left = (x + tw > window.innerWidth  ? x - tw - 28 : x) + "px";
+  ttEl.style.top  = (y + th > window.innerHeight ? y - th      : y) + "px";
+}
+
+function hideTooltip() { ttEl.style.display = "none"; }
+
+// ---- Collapse / expand ----
+// Records user intent so the state survives re-renders.
+function toggleNode(event, d) {
+  if (d.data.rank === "root") return;
+  const key = d.data._key || "";
+  if (d.children) {
+    d._children = d.children;
+    d.children = null;
+    if (key) { userCollapsed.add(key); userExpanded.delete(key); }
+  } else if (d._children) {
+    d.children = d._children;
+    d._children = null;
+    if (key) { userExpanded.add(key); userCollapsed.delete(key); }
+  }
+  if (activeLayout === "radial") renderRadial(true);
+  else renderHorizontal(true);
+}
+
+// ============================================================
+// Label visibility — collision-aware
+// In expanded mode: always show everything.
+// Normal mode: root / domain / phylum always; class when siblings are spread
+// enough; order and below are tooltip-only.
+// ============================================================
+function shouldShowLabel(node) {
+  if (showAllLabels) return true;
+  if (userShowLabels) return node.depth <= defaultCollapsedDepth;
+  const rank = node.data.rank;
+  if (rank === "root" || rank === "domain" || rank === "phylum") return true;
+  if (rank === "class") {
+    const siblings = node.parent && node.parent.children;
+    if (!siblings || siblings.length <= 1) return true;
+    const sorted = [...siblings].sort((a, b) => a.x - b.x);
+    const idx = sorted.indexOf(node);
+    const gapPrev = idx > 0 ? node.x - sorted[idx - 1].x : Infinity;
+    const gapNext = idx < sorted.length - 1 ? sorted[idx + 1].x - node.x : Infinity;
+    return Math.min(gapPrev, gapNext) > 0.10;
+  }
+  return false;
+}
+
+// ============================================================
+// Radial layout
+// ============================================================
+function renderRadial(preserveView = false) {
+  const { W, H, prevTransform } = setupSvg();
+  const cx = W / 2, cy = H / 2;
+
+  const hierarchy = d3.hierarchy(filteredTree);
+  hierarchy.eachBefore(n => {
+    if (n.parent) {
+      const pk = n.parent.data._key || "";
+      n.data._key = pk ? pk + ";" + n.data.full : n.data.full;
+    } else {
+      n.data._key = "";
+    }
+  });
+
+  // d3.cluster lays out angles; we override radii with RANK_RADIUS
+  const treeLayout = d3.cluster().size([2 * Math.PI, MAX_RADIUS]);
+  root = treeLayout(hierarchy);
+
+  // Override y (radius) per rank to simulate evolutionary distance
+  root.each(n => {
+    const r = RANK_RADIUS[n.data.rank];
+    n.y = r !== undefined ? r : MAX_RADIUS;
+  });
+
+  // Auto-collapse on fresh renders; user overrides applied after
+  if (!preserveView) {
+    root.eachBefore(n => {
+      if (n.depth >= defaultCollapsedDepth && n.children) {
+        n._children = n.children;
+        n.children = null;
+      }
+    });
+  }
+
+  // Re-apply user's explicit expand/collapse decisions
+  applyCollapseState(root);
+
+  drawCladeArcs(root);
+  drawAbundanceRing(root);
+  drawRadialLinks(root);
+  drawRadialNodes(root);
+
+  // FIX: use zoom.transform so D3 tracks the position correctly.
+  // On fresh render, centre the tree. On preserveView, restore the saved transform.
+  if (preserveView && prevTransform) {
+    svgSel.call(zoom.transform, prevTransform);
+  } else {
+    currentInitTransform = d3.zoomIdentity.translate(cx, cy);
+    svgSel.call(zoom.transform, currentInitTransform);
+  }
+}
+
+// ---- Phylum-level clade arc annotations ----
+function drawCladeArcs(root) {
+  const arcsG = gSel.append("g").attr("class", "clade-arcs");
+  const phylumNodes = root.descendants().filter(n => n.data.rank === "phylum");
+
+  for (const pNode of phylumNodes) {
+    const leaves = pNode.leaves();
+    if (leaves.length === 0) continue;
+
+    const angles = leaves.map(l => l.x).sort((a, b) => a - b);
+    const minA = angles[0] - 0.04;
+    const maxA = angles[angles.length - 1] + 0.04;
+    const color = PHYLUM_COLORS[pNode.data.name] || PHYLUM_COLORS.default;
+
+    const arcOuter = MAX_RADIUS + 16;
+    const arcInner = MAX_RADIUS + 10;
+
+    // Arc band — d3.arc uses angles from 12 o'clock, which aligns with D3 radial tree
+    const arcGen = d3.arc()
+      .innerRadius(arcInner)
+      .outerRadius(arcOuter)
+      .startAngle(minA)
+      .endAngle(maxA);
+
+    arcsG.append("path")
+      .attr("d", arcGen)
+      .attr("fill", color)
+      .attr("fill-opacity", 0.22)
+      .attr("stroke", color)
+      .attr("stroke-opacity", 0.55)
+      .attr("stroke-width", 0.6);
+
+    // Label at arc midpoint when span is wide enough
+    const span = maxA - minA;
+    if (span > 0.13) {
+      const mid = (minA + maxA) / 2;
+      const labelR = MAX_RADIUS + 30;
+      // Convert radial (angle from 12 o'clock) to Cartesian
+      const px =  labelR * Math.sin(mid);
+      const py = -labelR * Math.cos(mid);
+      // Rotate text to follow the arc; flip lower half to stay readable
+      let rotDeg = mid * 180 / Math.PI;
+      if (mid > Math.PI) rotDeg -= 180;
+
+      const label = pNode.data.name.length > 14 ? pNode.data.name.slice(0, 13) + "…" : pNode.data.name;
+
+      arcsG.append("text")
+        .attr("transform", `translate(${px},${py}) rotate(${rotDeg})`)
+        .attr("text-anchor", "middle")
+        .attr("dominant-baseline", "middle")
+        .attr("font-size", "6.5px")
+        .attr("fill", color)
+        .attr("fill-opacity", 0.9)
+        .attr("pointer-events", "none")
+        .text(label);
+    }
+  }
+}
+
+// ---- Proportional abundance ring (singlem only) ----
+// A donut-chart ring outside the clade arcs where each arc spans an angle
+// proportional to mean relative abundance, sorted in tree order.
+function drawAbundanceRing(root) {
+  if (dataSource !== "singlem") return;
+
+  const phylumNodes = root.descendants()
+    .filter(n => n.data.rank === "phylum" && (n.data.coverage_pct || 0) > 0)
+    .sort((a, b) => a.x - b.x);   // clockwise tree order
+
+  if (!phylumNodes.length) return;
+
+  const totalPct = phylumNodes.reduce((s, n) => s + (n.data.coverage_pct || 0), 0) || 100;
+  const innerR   = MAX_RADIUS + 28;
+  const outerR   = MAX_RADIUS + 52;
+  const labelR   = outerR + 16;
+
+  const ringG = gSel.append("g").attr("class", "abundance-ring");
+
+  // Ring title at top
+  ringG.append("text")
+    .attr("x", 0).attr("y", -(outerR + 30))
+    .attr("text-anchor", "middle")
+    .attr("font-size", "6px")
+    .attr("letter-spacing", "0.10em")
+    .attr("fill", "rgba(139,148,158,0.65)")
+    .attr("pointer-events", "none")
+    .text("MEAN RELATIVE ABUNDANCE");
+
+  let currentAngle = 0;  // D3 arc convention: 0 = top, clockwise
+
+  for (const pNode of phylumNodes) {
+    const pct   = pNode.data.coverage_pct || 0;
+    const span  = (pct / totalPct) * 2 * Math.PI;
+    if (span < 0.008) { currentAngle += span; continue; }
+
+    const color  = PHYLUM_COLORS[pNode.data.name] || PHYLUM_COLORS.default;
+    const startA = currentAngle;
+    const endA   = currentAngle + span;
+    const midA   = (startA + endA) / 2;
+
+    const arcGen = d3.arc()
+      .innerRadius(innerR)
+      .outerRadius(outerR)
+      .startAngle(startA)
+      .endAngle(endA)
+      .padAngle(0.014);
+
+    ringG.append("path")
+      .attr("d", arcGen)
+      .attr("fill", color)
+      .attr("fill-opacity", 0.72)
+      .attr("stroke", "var(--bg)")
+      .attr("stroke-width", 0.6);
+
+    if (span > 0.16) {
+      // Label position: radial outward from midpoint
+      const px =  labelR * Math.sin(midA);
+      const py = -labelR * Math.cos(midA);
+      let rotDeg = midA * 180 / Math.PI;
+      if (midA > Math.PI) rotDeg -= 180;  // flip lower half upright
+
+      ringG.append("text")
+        .attr("transform", `translate(${px},${py}) rotate(${rotDeg})`)
+        .attr("text-anchor", "middle")
+        .attr("dominant-baseline", "middle")
+        .attr("font-size", "6.5px")
+        .attr("font-weight", "600")
+        .attr("fill", color)
+        .attr("fill-opacity", 0.95)
+        .attr("pointer-events", "none")
+        .text(`${pct.toFixed(1)}%`);
+    }
+
+    currentAngle += span;
+  }
+}
+
+function drawRadialLinks(root) {
+  gSel.selectAll(".links").remove();
+  gSel.append("g").attr("class", "links")
+    .selectAll("path")
+    .data(root.links())
+    .join("path")
+    .attr("fill", "none")
+    .attr("stroke", d => phylumColor(d.target))
+    .attr("stroke-opacity", d => RANK_OPACITY[d.target.data.rank] * 0.45 || 0.35)
+    .attr("stroke-width", d => {
+      if (dataSource === "singlem") {
+        const pct = d.target.data.coverage_pct || 0;
+        return Math.max(0.4, Math.min(5, 0.3 + pct * 0.18));
+      }
+      const depth = d.target.depth;
+      if (depth <= 1) return 2.5;
+      if (depth <= 2) return 1.8;
+      if (depth <= 3) return 1.2;
+      if (depth <= 4) return 0.9;
+      return 0.6;
+    })
+    .attr("d", d3.linkRadial()
+      .angle(d => d.x)
+      .radius(d => d.y));
+}
+
+function drawRadialNodes(root) {
+  gSel.selectAll(".nodes").remove();
+  const nodesG = gSel.append("g").attr("class", "nodes");
+
+  const node = nodesG.selectAll("g")
+    .data(root.descendants())
+    .join("g")
+    .attr("transform", d => `rotate(${d.x * 180 / Math.PI - 90}) translate(${d.y},0)`)
+    .style("cursor", d => d.data.rank === "root" ? "default" : "pointer")
+    .on("click", toggleNode)
+    .on("mouseover", showTooltip)
+    .on("mousemove", moveTooltip)
+    .on("mouseout", hideTooltip);
+
+  // Node circles — sized by rank (GTDB-Tk) or relative abundance (SingleM)
+  node.append("circle")
+    .attr("r", d => {
+      if (dataSource === "singlem" && d.data.rank !== "root") {
+        const pct  = d.data.coverage_pct || 0;
+        const base = d.data.rank === "domain" ? 6 : d.data.rank === "phylum" ? 4.5 : 3;
+        return Math.max(2, Math.min(14, base + pct * 0.32));
+      }
+      if (d.data.rank === "root")   return 6;
+      if (d.data.rank === "domain") return 5;
+      if (d.data.rank === "phylum") return 4.5;
+      if (d.data.rank === "class")  return 3.5;
+      return 2.5;
+    })
+    .attr("fill", d => d.data.rank === "root" ? "#f0f6fc" : phylumColor(d))
+    .attr("fill-opacity", d => {
+      const base = RANK_OPACITY[d.data.rank] || 0.6;
+      return d._children ? base * 0.75 : base;
+    })
+    .attr("stroke", d => d._children ? phylumColor(d) : "none")
+    .attr("stroke-width", 1.5)
+    .attr("stroke-opacity", 0.85);
+
+  // Labels — radially aligned, collision-aware
+  // For singlem phylum/domain nodes, append the mean RA % to the name
+  node.append("text")
+    .attr("dy", "0.31em")
+    .attr("x", d => d.x < Math.PI === !d.children ? 8 : -8)
+    .attr("text-anchor", d => d.x < Math.PI === !d.children ? "start" : "end")
+    .attr("transform", d => d.x >= Math.PI ? "rotate(180)" : null)
+    .attr("font-size", d => getNodeFontSize(d))
+    .attr("font-family", labelFontFamily || null)
+    .attr("fill", d => {
+      if (d.data.rank === "root" || d.data.rank === "domain") return "#f0f6fc";
+      if (d.data.rank === "phylum") return phylumColor(d);
+      return "#8b949e";
+    })
+    .attr("fill-opacity", d => shouldShowLabel(d) ? 1 : 0)
+    .attr("pointer-events", "none")
+    .text(d => {
+      const name   = d.data.name || "";
+      const isAbundNode = dataSource === "singlem" &&
+        (d.data.rank === "phylum" || d.data.rank === "domain") &&
+        d.data.coverage_pct > 0;
+      if (isAbundNode) {
+        const pctStr    = ` ${d.data.coverage_pct.toFixed(1)}%`;
+        const maxName   = (d.depth <= 2 ? 22 : 16) - pctStr.length;
+        const truncated = name.length > maxName ? name.slice(0, maxName - 1) + "…" : name;
+        return truncated + pctStr;
+      }
+      const maxLen = d.depth <= 2 ? 22 : 16;
+      return name.length > maxLen ? name.slice(0, maxLen - 1) + "…" : name;
+    });
+}
+
+// ============================================================
+// Horizontal layout
+// ============================================================
+function renderHorizontal(preserveView = false) {
+  const { W, H, prevTransform } = setupSvg();
+  const margin = { top: 20, right: 160, bottom: 20, left: 80 };
+  const iW = W - margin.left - margin.right;
+  const iH = H - margin.top - margin.bottom;
+
+  const hierarchy = d3.hierarchy(filteredTree);
+  hierarchy.eachBefore(n => {
+    if (n.parent) {
+      const pk = n.parent.data._key || "";
+      n.data._key = pk ? pk + ";" + n.data.full : n.data.full;
+    } else {
+      n.data._key = "";
+    }
+  });
+
+  const nodeCount = hierarchy.descendants().length;
+  const dy = Math.max(12, Math.min(22, iH / nodeCount));
+
+  const treeLayout = d3.cluster().nodeSize([dy, iW / (hierarchy.height + 1)]);
+  root = treeLayout(hierarchy);
+
+  if (!preserveView) {
+    root.eachBefore(n => {
+      if (n.depth >= defaultCollapsedDepth + 1 && n.children) {
+        n._children = n.children;
+        n.children = null;
+      }
+    });
+  }
+
+  applyCollapseState(root);
+
+  // Links
+  gSel.append("g").attr("class", "links")
+    .selectAll("path")
+    .data(root.links())
+    .join("path")
+    .attr("fill", "none")
+    .attr("stroke", d => phylumColor(d.target))
+    .attr("stroke-opacity", d => RANK_OPACITY[d.target.data.rank] * 0.45 || 0.35)
+    .attr("stroke-width", d => {
+      if (dataSource === "singlem") {
+        const pct = d.target.data.coverage_pct || 0;
+        return Math.max(0.4, Math.min(5, 0.3 + pct * 0.18));
+      }
+      const depth = d.target.depth;
+      if (depth <= 1) return 2.5;
+      if (depth <= 2) return 1.8;
+      return depth <= 3 ? 1.2 : 0.8;
+    })
+    .attr("d", d3.linkHorizontal()
+      .x(d => d.y)
+      .y(d => d.x));
+
+  // Nodes
+  const nodesG = gSel.append("g").attr("class", "nodes");
+  const node = nodesG.selectAll("g")
+    .data(root.descendants())
+    .join("g")
+    .attr("transform", d => `translate(${d.y},${d.x})`)
+    .style("cursor", d => d.data.rank === "root" ? "default" : "pointer")
+    .on("click", toggleNode)
+    .on("mouseover", showTooltip)
+    .on("mousemove", moveTooltip)
+    .on("mouseout", hideTooltip);
+
+  node.append("circle")
+    .attr("r", d => {
+      if (dataSource === "singlem" && d.data.rank !== "root") {
+        const pct  = d.data.coverage_pct || 0;
+        const base = d.data.rank === "domain" ? 6 : d.depth <= 2 ? 4.5 : 3;
+        return Math.max(2, Math.min(14, base + pct * 0.32));
+      }
+      return d.data.rank === "root" ? 6 : d.data.rank === "domain" ? 5 : d.depth <= 2 ? 4 : 3;
+    })
+    .attr("fill", d => d.data.rank === "root" ? "#f0f6fc" : phylumColor(d))
+    .attr("fill-opacity", d => {
+      const base = RANK_OPACITY[d.data.rank] || 0.6;
+      return d._children ? base * 0.75 : base;
+    })
+    .attr("stroke", d => d._children ? phylumColor(d) : "none")
+    .attr("stroke-width", 1.5);
+
+  node.append("text")
+    .attr("dy", "0.32em")
+    .attr("x", d => d.children || d._children ? -8 : 8)
+    .attr("text-anchor", d => d.children || d._children ? "end" : "start")
+    .attr("font-size", d => getNodeFontSize(d))
+    .attr("font-family", labelFontFamily || null)
+    .attr("fill", d => d.depth <= 1 ? "#f0f6fc" : d.depth === 2 ? phylumColor(d) : "#8b949e")
+    .attr("fill-opacity", d => shouldShowLabel(d) ? 1 : 0)
+    .attr("pointer-events", "none")
+    .text(d => {
+      const name = d.data.name || "";
+      const isAbundNode = dataSource === "singlem" &&
+        (d.data.rank === "phylum" || d.data.rank === "domain") &&
+        d.data.coverage_pct > 0;
+      if (isAbundNode) {
+        const pctStr  = ` ${d.data.coverage_pct.toFixed(1)}%`;
+        const maxName = (d.depth <= 2 ? 24 : 18) - pctStr.length;
+        const trunc   = name.length > maxName ? name.slice(0, maxName - 1) + "…" : name;
+        return trunc + pctStr;
+      }
+      const maxLen = d.depth <= 2 ? 24 : 18;
+      return name.length > maxLen ? name.slice(0, maxLen - 1) + "…" : name;
+    });
+
+  // Fit tree into view on fresh render; restore on preserve
+  if (preserveView && prevTransform) {
+    svgSel.call(zoom.transform, prevTransform);
+  } else {
+    const bounds = gSel.node().getBBox();
+    const scale = Math.min(iW / bounds.width, iH / bounds.height, 1);
+    currentInitTransform = d3.zoomIdentity
+      .translate(margin.left - bounds.x * scale, margin.top - bounds.y * scale)
+      .scale(scale);
+    svgSel.call(zoom.transform, currentInitTransform);
+  }
+}
+
+// ============================================================
+// Zoom controls
+// ============================================================
+function zoomBy(factor) {
+  if (activeLayout === "sunburst" && sbZoom) {
+    svgSel.transition().duration(250).call(sbZoom.scaleBy, factor);
+  } else if (zoom) {
+    svgSel.transition().duration(250).call(zoom.scaleBy, factor);
+  }
+}
+
+function zoomIn()  { zoomBy(1.4); }
+function zoomOut() { zoomBy(1 / 1.4); }
+
+function resetZoom() {
+  if (activeLayout === "sunburst" && sbZoom) {
+    svgSel.transition().duration(350).call(sbZoom.transform, d3.zoomIdentity.translate(sbW / 2, sbH / 2));
+  } else if (zoom) {
+    svgSel.transition().duration(350).call(zoom.transform, currentInitTransform);
+  }
+}
+
+function expandAll() {
+  if (!filteredTree) return;
+  userExpanded.clear();
+  userCollapsed.clear();
+  defaultCollapsedDepth = Infinity;
+  showAllLabels = true;
+  renderTree();
+}
+
+function collapseToPhylum() {
+  if (!filteredTree) return;
+  userExpanded.clear();
+  userCollapsed.clear();
+  defaultCollapsedDepth = 2;
+  showAllLabels = false;
+  renderTree();
+}
+
+function setInitialDepth(val) {
+  if (!filteredTree) return;
+  userChosenDepth = val === 'all' ? Infinity : parseInt(val);
+  defaultCollapsedDepth = userChosenDepth;
+  showAllLabels = !isFinite(userChosenDepth);
+  userExpanded.clear();
+  userCollapsed.clear();
+  renderTree();
+}
+
+function toggleShowLabels(val) {
+  userShowLabels = val;
+  if (!filteredTree) return;
+  // Update label visibility in-place — no re-render, so tree structure is untouched
+  d3.select('#tree-svg').selectAll('text')
+    .filter(d => d && d.data)
+    .attr('fill-opacity', d => shouldShowLabel(d) ? 1 : 0);
+}
+
+// ============================================================
+// Search highlight
+// ============================================================
+function highlightSearch(query) {
+  if (!gSel) return;
+  const q = query.toLowerCase().trim();
+  gSel.selectAll("circle")
+    .attr("stroke", d => {
+      if (!q) return d._children ? phylumColor(d) : "none";
+      const match = d.data.name && d.data.name.toLowerCase().includes(q);
+      return match ? "#ffffff" : d._children ? phylumColor(d) : "none";
+    })
+    .attr("stroke-width", d => {
+      if (!q) return 1.5;
+      const match = d.data.name && d.data.name.toLowerCase().includes(q);
+      return match ? 3 : 1.5;
+    })
+    .attr("stroke-opacity", d => {
+      if (!q) return d._children ? 0.85 : 0;
+      const match = d.data.name && d.data.name.toLowerCase().includes(q);
+      return match ? 1 : 0;
+    });
+}
+
+// ============================================================
+// Download menu
+// ============================================================
+function toggleDownloadMenu(e) {
+  e.stopPropagation();
+  const menu = document.getElementById("download-menu");
+  menu.style.display = menu.style.display === "none" ? "block" : "none";
+}
+
+function closeDownloadMenu() {
+  document.getElementById("download-menu").style.display = "none";
+}
+
+document.addEventListener("click", (e) => {
+  const menu = document.getElementById("download-menu");
+  if (menu && !menu.contains(e.target)) closeDownloadMenu();
+});
+
+// Build a self-contained SVG string with embedded font and background
+function buildExportSVG() {
+  const svgEl = document.getElementById("tree-svg");
+  const clone = svgEl.cloneNode(true);
+
+  // Embed background and font so the file is standalone
+  const defs = document.createElementNS("http://www.w3.org/2000/svg", "defs");
+  const style = document.createElementNS("http://www.w3.org/2000/svg", "style");
+  style.textContent = `
+    text { font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif; }
+  `;
+  defs.appendChild(style);
+  clone.insertBefore(defs, clone.firstChild);
+
+  // Dark background rect
+  const bg = document.createElementNS("http://www.w3.org/2000/svg", "rect");
+  bg.setAttribute("width", "100%");
+  bg.setAttribute("height", "100%");
+  bg.setAttribute("fill", "#0d1117");
+  clone.insertBefore(bg, clone.firstChild);
+
+  // Explicit size
+  clone.setAttribute("width", svgEl.clientWidth);
+  clone.setAttribute("height", svgEl.clientHeight);
+
+  return new XMLSerializer().serializeToString(clone);
+}
+
+function downloadSVG() {
+  const svgStr = buildExportSVG();
+  const blob = new Blob([svgStr], { type: "image/svg+xml;charset=utf-8" });
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement("a");
+  a.href = url;
+  a.download = "aviary_phylogenetic_identification.svg";
+  document.body.appendChild(a);
+  a.click();
+  document.body.removeChild(a);
+  URL.revokeObjectURL(url);
+}
+
+function downloadPNG() {
+  const svgEl = document.getElementById("tree-svg");
+  const W = svgEl.clientWidth;
+  const H = svgEl.clientHeight;
+  const SCALE = 2;  // 2× for retina / publication quality
+
+  const svgStr = buildExportSVG();
+  const blob = new Blob([svgStr], { type: "image/svg+xml;charset=utf-8" });
+  const url = URL.createObjectURL(blob);
+
+  const img = new Image();
+  img.onload = () => {
+    const canvas = document.createElement("canvas");
+    canvas.width  = W * SCALE;
+    canvas.height = H * SCALE;
+    const ctx = canvas.getContext("2d");
+    ctx.scale(SCALE, SCALE);
+    ctx.fillStyle = "#0d1117";
+    ctx.fillRect(0, 0, W, H);
+    ctx.drawImage(img, 0, 0, W, H);
+    URL.revokeObjectURL(url);
+
+    const pngUrl = canvas.toDataURL("image/png");
+    const a = document.createElement("a");
+    a.href = pngUrl;
+    a.download = "aviary_phylogenetic_identification.png";
+    document.body.appendChild(a);
+    a.click();
+    document.body.removeChild(a);
+  };
+  img.onerror = () => URL.revokeObjectURL(url);
+  img.src = url;
+}
+
+// ============================================================
+// Handle window resize
+// ============================================================
+let resizeTimer;
+window.addEventListener("resize", () => {
+  clearTimeout(resizeTimer);
+  resizeTimer = setTimeout(() => { if (filteredTree) renderTree(); }, 150);
+});
+
+// ============================================================
+// Boot
+// ============================================================
+// Apply initial layout UI state (hide depth selector for sunburst default)
+(function() {
+  const depthEl = document.getElementById("ctrl-depth");
+  const selEl   = document.getElementById("ctrl-selected");
+  if (depthEl) depthEl.style.display = "none";
+  if (selEl)   selEl.style.display   = "";
+})();
+
+loadData();
+
+(function(){var s=document.getElementById('page-loading');document.querySelectorAll('a[href^="/"]').forEach(function(a){if(a.target!=='_blank')a.addEventListener('click',function(){s.classList.add('visible');});});window.addEventListener('pageshow',function(){s.classList.remove('visible');});})();
+</script>
+</body>
+</html>

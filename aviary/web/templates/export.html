@@ -1,0 +1,852 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Aviary — Export Results</title>
+<link rel="icon" href="/logo" type="image/png">
+<style>
+  *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+  :root {
+    --bg:        #0d1117;
+    --surface:   #161b22;
+    --border:    #30363d;
+    --text:      #c9d1d9;
+    --muted:     #8b949e;
+    --teal:      #1abc9c;
+    --teal-dim:  rgba(26,188,156,.15);
+    --yellow:    #e3b341;
+    --red:       #f85149;
+    --green:     #3fb950;
+    --blue:      #58a6ff;
+    --purple:    #bc8cff;
+    --radius:    6px;
+    --sidebar-w: 220px;
+    --topbar-h:  56px;
+  }
+  html, body { height: 100%; overflow: hidden; }
+  body { display: flex; flex-direction: column; background: var(--bg); color: var(--text); font: 13px/1.5 -apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif; }
+
+  /* ── Topbar ───────────────────────────────────────────────── */
+  .topbar {
+    height: var(--topbar-h); min-height: var(--topbar-h);
+    background: var(--surface); border-bottom: 1px solid var(--border);
+    display: flex; align-items: center; gap: 12px; padding: 0 20px;
+    position: sticky; top: 0; z-index: 50; flex-shrink: 0;
+  }
+  .topbar-title { font-size: 15px; font-weight: 600; flex: 1; }
+  .topbar-title span { color: var(--muted); font-weight: 400; font-size: 12px; margin-left: 8px; }
+  .filename-preview {
+    background: var(--bg); border: 1px solid var(--border);
+    border-radius: var(--radius); padding: 4px 10px;
+    font-size: 12px; color: var(--muted); font-family: monospace;
+    min-width: 220px; text-align: center;
+  }
+  .filename-preview b { color: var(--text); }
+
+  /* ── Layout ───────────────────────────────────────────────── */
+  .layout {
+    display: flex; flex: 1; overflow: hidden;
+  }
+
+  /* ── Sidebar ──────────────────────────────────────────────── */
+  .sidebar {
+    width: var(--sidebar-w); min-width: var(--sidebar-w);
+    background: var(--surface); border-right: 1px solid var(--border);
+    display: flex; flex-direction: column; overflow-y: auto; flex-shrink: 0;
+  }
+  .sidebar-logo {
+    height: var(--topbar-h);
+    display: flex; align-items: center; gap: 10px;
+    padding: 0 16px; border-bottom: 1px solid var(--border);
+    flex-shrink: 0;
+  }
+  .sidebar-logo img { width: 32px; height: 32px; object-fit: contain; border-radius: 6px; }
+  .sidebar-logo-text .title { font-size: 1.15rem; font-weight: 700; color: var(--text); letter-spacing: 0.02em; }
+  .sidebar-logo-text .subtitle { font-size: 0.68rem; color: var(--teal); letter-spacing: 0.08em; text-transform: uppercase; margin-top: 1px; }
+  .nav-section-header { padding: 12px 16px 4px; font-size: 0.62rem; font-weight: 700; letter-spacing: 0.1em; text-transform: uppercase; color: var(--muted); flex-shrink: 0; }
+  .nav-item {
+    display: flex; align-items: center; gap: 10px;
+    padding: 8px 16px; font-size: 0.82rem; font-weight: 500; color: var(--muted);
+    text-decoration: none; transition: background .12s, color .12s, border-color .12s;
+    border-left: 2px solid transparent; flex-shrink: 0; user-select: none;
+  }
+  .nav-item:hover { color: var(--text); background: rgba(255,255,255,.04); }
+  .nav-item.active { color: var(--teal); background: var(--teal-dim); border-left-color: var(--teal); }
+  .nav-item svg { flex-shrink: 0; }
+  .sidebar-nav-divider { height: 1px; background: var(--border); margin: 6px 0; flex-shrink: 0; }
+  .sidebar-footer {
+    padding: 12px 16px; border-top: 1px solid var(--border);
+    font-size: 11px; color: var(--muted); margin-top: auto; flex-shrink: 0;
+  }
+
+  /* ── Main content split ───────────────────────────────────── */
+  .main-split {
+    flex: 1; display: flex; overflow: hidden; gap: 0;
+  }
+
+  /* ── Config panel (left) ──────────────────────────────────── */
+  .config-panel {
+    width: 340px; min-width: 340px;
+    background: var(--surface); border-right: 1px solid var(--border);
+    overflow-y: auto; display: flex; flex-direction: column;
+  }
+  .config-section {
+    padding: 16px;
+    border-bottom: 1px solid var(--border);
+  }
+  .config-section:last-child { border-bottom: none; }
+  .section-label {
+    font-size: 10px; font-weight: 700; letter-spacing: .8px;
+    text-transform: uppercase; color: var(--muted); margin-bottom: 10px;
+  }
+
+  /* Toggle (export level) */
+  .toggle-group {
+    display: flex; border: 1px solid var(--border); border-radius: var(--radius); overflow: hidden;
+  }
+  .toggle-btn {
+    flex: 1; padding: 7px 0; font-size: 12px; font-weight: 500;
+    background: none; border: none; color: var(--muted);
+    cursor: pointer; transition: background .15s, color .15s;
+  }
+  .toggle-btn.active { background: var(--teal); color: #0d1117; }
+  .toggle-btn:not(:last-child) { border-right: 1px solid var(--border); }
+
+  /* Format toggle */
+  .fmt-group { display: flex; gap: 6px; }
+  .fmt-btn {
+    padding: 5px 14px; font-size: 12px; font-weight: 600;
+    background: var(--bg); border: 1px solid var(--border);
+    border-radius: var(--radius); color: var(--muted);
+    cursor: pointer; transition: all .15s;
+  }
+  .fmt-btn.active { border-color: var(--teal); color: var(--teal); background: var(--teal-dim); }
+
+  /* Sample list */
+  .sample-list { display: flex; flex-direction: column; gap: 4px; }
+  .batch-header {
+    display: flex; align-items: center; gap: 6px;
+    font-size: 11px; font-weight: 600; color: var(--muted);
+    cursor: pointer; padding: 4px 0; user-select: none;
+    background: none; border: none; width: 100%; text-align: left;
+  }
+  .batch-header:hover { color: var(--text); }
+  .batch-header .chevron { transition: transform .2s; font-size: 10px; }
+  .batch-header.open .chevron { transform: rotate(90deg); }
+  .batch-body { display: flex; flex-direction: column; gap: 2px; padding-left: 4px; }
+  .batch-body.closed { display: none; }
+  .sample-row {
+    display: flex; align-items: center; gap: 8px;
+    padding: 5px 8px; border-radius: 4px; cursor: pointer;
+    transition: background .12s;
+  }
+  .sample-row:hover { background: rgba(255,255,255,.04); }
+  .sample-row input[type=checkbox] { accent-color: var(--teal); cursor: pointer; flex-shrink: 0; }
+  .sample-name { font-size: 12px; flex: 1; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+  .asm-badge {
+    font-size: 10px; padding: 1px 6px; border-radius: 10px;
+    background: rgba(88,166,255,.15); color: var(--blue);
+    border: 1px solid rgba(88,166,255,.2); flex-shrink: 0;
+  }
+  .sel-actions {
+    display: flex; gap: 6px; margin-bottom: 8px;
+  }
+  .sel-action-btn {
+    font-size: 11px; color: var(--teal); background: none;
+    border: none; cursor: pointer; padding: 0;
+  }
+  .sel-action-btn:hover { text-decoration: underline; }
+  .sel-count { font-size: 11px; color: var(--muted); margin-left: auto; }
+
+  /* Columns */
+  .col-group { margin-bottom: 10px; }
+  .col-group-label { font-size: 11px; color: var(--muted); margin-bottom: 5px; font-weight: 500; }
+  .col-checks { display: flex; flex-direction: column; gap: 3px; }
+  .col-check-row {
+    display: flex; align-items: center; gap: 8px;
+    padding: 3px 6px; border-radius: 4px; cursor: pointer;
+    font-size: 12px; transition: background .12s;
+  }
+  .col-check-row:hover { background: rgba(255,255,255,.04); }
+  .col-check-row input[type=checkbox] { accent-color: var(--teal); cursor: pointer; }
+  .col-check-row .col-desc { font-size: 10px; color: var(--muted); margin-left: auto; }
+
+  /* Filters */
+  .filter-row { display: flex; align-items: center; gap: 8px; margin-bottom: 8px; }
+  .filter-label { font-size: 12px; color: var(--muted); width: 120px; flex-shrink: 0; }
+  .filter-input {
+    width: 80px; padding: 4px 8px; font-size: 12px;
+    background: var(--bg); border: 1px solid var(--border);
+    border-radius: var(--radius); color: var(--text);
+    outline: none; transition: border-color .15s;
+  }
+  .filter-input:focus { border-color: var(--teal); }
+  .preset-btns { display: flex; gap: 5px; flex-wrap: wrap; }
+  .preset-btn {
+    padding: 3px 10px; font-size: 11px; border-radius: 10px;
+    border: 1px solid var(--border); background: var(--bg);
+    color: var(--muted); cursor: pointer; transition: all .15s;
+  }
+  .preset-btn:hover { border-color: var(--text); color: var(--text); }
+  .preset-btn.active-hq { border-color: var(--green); color: var(--green); background: rgba(63,185,80,.1); }
+  .preset-btn.active-mq { border-color: var(--yellow); color: var(--yellow); background: rgba(227,179,65,.1); }
+  .preset-btn.active-all { border-color: var(--teal); color: var(--teal); background: var(--teal-dim); }
+
+  /* ── Preview panel (right) ────────────────────────────────── */
+  .preview-panel {
+    flex: 1; display: flex; flex-direction: column; overflow: hidden; background: var(--bg);
+  }
+  .preview-header {
+    display: flex; align-items: center; gap: 10px;
+    padding: 12px 18px; border-bottom: 1px solid var(--border);
+    background: var(--surface); flex-shrink: 0;
+  }
+  .preview-title { font-size: 13px; font-weight: 600; }
+  .row-badge {
+    font-size: 11px; padding: 2px 8px; border-radius: 10px;
+    background: rgba(26,188,156,.15); color: var(--teal);
+    border: 1px solid rgba(26,188,156,.2);
+  }
+  .preview-subtitle { font-size: 11px; color: var(--muted); margin-left: auto; }
+  .preview-table-wrap { flex: 1; overflow: auto; padding: 0; }
+  .preview-table {
+    width: 100%; border-collapse: collapse;
+    font-size: 12px; min-width: max-content;
+  }
+  .preview-table th {
+    position: sticky; top: 0; z-index: 5;
+    background: var(--surface); padding: 8px 12px;
+    text-align: left; font-size: 10px; font-weight: 700;
+    letter-spacing: .5px; text-transform: uppercase;
+    color: var(--muted); border-bottom: 1px solid var(--border);
+    white-space: nowrap;
+  }
+  .preview-table td {
+    padding: 7px 12px; border-bottom: 1px solid rgba(48,54,61,.5);
+    white-space: nowrap; vertical-align: middle;
+  }
+  .preview-table tr:hover td { background: rgba(255,255,255,.02); }
+  .preview-table .td-num { text-align: right; font-variant-numeric: tabular-nums; }
+  .tier-hq { color: var(--green); font-weight: 600; font-size: 10px; }
+  .tier-mq { color: var(--yellow); font-weight: 600; font-size: 10px; }
+  .tier-lq { color: var(--red); font-weight: 600; font-size: 10px; }
+  .preview-empty {
+    display: flex; flex-direction: column; align-items: center; justify-content: center;
+    height: 100%; color: var(--muted); gap: 8px; padding: 40px;
+  }
+  .preview-empty svg { opacity: .3; }
+  .preview-empty p { font-size: 13px; }
+
+  /* ── Download bar ─────────────────────────────────────────── */
+  .download-bar {
+    display: flex; align-items: center; gap: 12px;
+    padding: 12px 18px; border-top: 1px solid var(--border);
+    background: var(--surface); flex-shrink: 0;
+  }
+  .download-info { font-size: 12px; color: var(--muted); flex: 1; }
+  .download-info b { color: var(--text); }
+  .btn-download {
+    padding: 8px 20px; background: var(--teal); color: #0d1117;
+    font-size: 13px; font-weight: 700; border: none;
+    border-radius: var(--radius); cursor: pointer; transition: opacity .15s;
+    display: flex; align-items: center; gap: 6px;
+  }
+  .btn-download:hover:not(:disabled) { opacity: .85; }
+  .btn-download:disabled { opacity: .35; cursor: not-allowed; }
+
+  /* ── Utility ──────────────────────────────────────────────── */
+  .scroll-y { overflow-y: auto; }
+  .no-data-row td { color: var(--muted); text-align: center; padding: 24px; font-style: italic; }
+</style>
+</head>
+<body>
+
+<!-- Topbar -->
+<div class="topbar">
+  <div class="topbar-title">
+    Export Results
+    <span>Configure and download pipeline results</span>
+  </div>
+  <div class="filename-preview" id="filename-preview"><b>aviary_summary_<span id="fn-date"></span>.tsv</b></div>
+  <button class="btn-download" id="topbar-download-btn" onclick="triggerDownload()" disabled>
+    <svg width="14" height="14" viewBox="0 0 16 16" fill="currentColor">
+      <path d="M.5 9.9a.5.5 0 0 1 .5.5v2.5a1 1 0 0 0 1 1h12a1 1 0 0 0 1-1v-2.5a.5.5 0 0 1 1 0v2.5a2 2 0 0 1-2 2H2a2 2 0 0 1-2-2v-2.5a.5.5 0 0 1 .5-.5z"/>
+      <path d="M7.646 11.854a.5.5 0 0 0 .708 0l3-3a.5.5 0 0 0-.708-.708L8.5 10.293V1.5a.5.5 0 0 0-1 0v8.793L5.354 8.146a.5.5 0 1 0-.708.708l3 3z"/>
+    </svg>
+    Download
+  </button>
+</div>
+
+<!-- Layout -->
+<div class="layout">
+
+  <!-- Sidebar navigation -->
+  <nav class="sidebar">
+    <div class="sidebar-logo">
+      <a href="/" style="text-decoration:none;display:flex;align-items:center;gap:10px;"><img src="/logo" alt="Aviary" onerror="this.style.display='none'">
+      <div class="sidebar-logo-text"><div class="title">Aviary</div><div class="subtitle">Metagenomics</div></div></a>
+    </div>
+    <a class="nav-item" href="/dashboard">
+      <svg width="15" height="15" viewBox="0 0 16 16" fill="currentColor"><path d="M0 2a2 2 0 0 1 2-2h12a2 2 0 0 1 2 2v1a2 2 0 0 1-2 2H2a2 2 0 0 1-2-2V2zm15 2a1 1 0 0 0 1-1V2a1 1 0 0 0-1-1H1a1 1 0 0 0-1 1v1a1 1 0 0 0 1 1h14zM0 8a2 2 0 0 1 2-2h12a2 2 0 0 1 2 2v1a2 2 0 0 1-2 2H2a2 2 0 0 1-2-2V8zm15 2a1 1 0 0 0 1-1V8a1 1 0 0 0-1-1H1a1 1 0 0 0-1 1v1a1 1 0 0 0 1 1h14zm-13-1a1 1 0 1 0 0-2 1 1 0 0 0 0 2zm2 0a1 1 0 1 0 0-2 1 1 0 0 0 0 2zm2 0a1 1 0 1 0 0-2 1 1 0 0 0 0 2z"/></svg>
+      <span class="nav-item-text">Pipeline Monitor</span>
+    </a>
+    <a class="nav-item" href="/dashboard?view=summary">
+      <svg width="15" height="15" viewBox="0 0 16 16" fill="currentColor"><path d="M4 11H2v3h2v-3zm5-4H7v7h2V7zm5-5v12h-2V2h2zm-2-1a1 1 0 0 0-1 1v12a1 1 0 0 0 1 1h2a1 1 0 0 0 1-1V2a1 1 0 0 0-1-1h-2zM6 7a1 1 0 0 1 1-1h2a1 1 0 0 1 1 1v7a1 1 0 0 1-1 1H7a1 1 0 0 1-1-1V7zm-5 4a1 1 0 0 1 1-1h2a1 1 0 0 1 1 1v3a1 1 0 0 1-1 1H2a1 1 0 0 1-1-1v-3z"/></svg>
+      <span class="nav-item-text">Bin Quality Report</span>
+    </a>
+    <a class="nav-item" href="/phylo">
+      <svg width="15" height="15" viewBox="0 0 16 16" fill="currentColor"><path d="M4.5 1a.5.5 0 0 1 .5.5V4h3V1.5a.5.5 0 0 1 1 0V4h1a.5.5 0 0 1 0 1H9v1.293l2.354 2.353a.5.5 0 0 1-.708.708L9 7.707V9h1a.5.5 0 0 1 0 1H9v1.293l2.354 2.353a.5.5 0 0 1-.708.708L9 12.707V14.5a.5.5 0 0 1-1 0V10H5v4.5a.5.5 0 0 1-1 0V12.707l-1.646 1.647a.5.5 0 0 1-.708-.708L3.293 12H2a.5.5 0 0 1 0-1h1.293L2.146 9.854a.5.5 0 1 1 .708-.708L4 10.293V9H3a.5.5 0 0 1 0-1h1V6.707L2.854 5.561a.5.5 0 1 1 .708-.708L5 6.293V5H4a.5.5 0 0 1 0-1h1V1.5a.5.5 0 0 1 .5-.5zM5 5v2h3V5H5zm0 3v2h3V8H5z"/></svg>
+      <span class="nav-item-text">View</span>
+    </a>
+    <div class="sidebar-nav-divider"></div>
+    <a class="nav-item" href="/graph">
+      <svg width="15" height="15" viewBox="0 0 16 16" fill="currentColor"><path d="M0 0h1v16H0zm15 0h1v16h-1zM5 11.5a.5.5 0 0 1 .5-.5h5a.5.5 0 0 1 0 1h-5a.5.5 0 0 1-.5-.5zm-3-4a.5.5 0 0 1 .5-.5h11a.5.5 0 0 1 0 1h-11a.5.5 0 0 1-.5-.5zm6-4a.5.5 0 0 1 .5-.5h5a.5.5 0 0 1 0 1h-5a.5.5 0 0 1-.5-.5z"/></svg>
+      <span class="nav-item-text">Results Visualisation</span>
+    </a>
+    <a class="nav-item" href="/assembly">
+      <svg width="15" height="15" viewBox="0 0 16 16" fill="currentColor"><path d="M8.186 1.113a.5.5 0 0 0-.372 0L1.846 3.5 8 5.961 14.154 3.5 8.186 1.113zM15 4.239l-6.5 2.6v7.922l6.5-2.6V4.24zM7.5 14.762V6.838L1 4.239v7.923l6.5 2.6zM7.443.184a1.5 1.5 0 0 1 1.114 0l7.129 2.852A.5.5 0 0 1 16 3.5v8.662a1 1 0 0 1-.629.928l-7.185 2.874a.5.5 0 0 1-.372 0L.63 13.09a1 1 0 0 1-.63-.928V3.5a.5.5 0 0 1 .314-.464L7.443.184z"/></svg>
+      <span class="nav-item-text">Contig Assembly Graph</span>
+    </a>
+    <a class="nav-item active" href="/export">
+      <svg width="15" height="15" viewBox="0 0 16 16" fill="currentColor"><path d="M.5 9.9a.5.5 0 0 1 .5.5v2.5a1 1 0 0 0 1 1h12a1 1 0 0 0 1-1v-2.5a.5.5 0 0 1 1 0v2.5a2 2 0 0 1-2 2H2a2 2 0 0 1-2-2v-2.5a.5.5 0 0 1 .5-.5z"/><path d="M7.646 11.854a.5.5 0 0 0 .708 0l3-3a.5.5 0 0 0-.708-.708L8.5 10.293V1.5a.5.5 0 0 0-1 0v8.793L5.354 8.146a.5.5 0 1 0-.708.708l3 3z"/></svg>
+      <span class="nav-item-text">Export Results</span>
+    </a>
+    <div class="sidebar-nav-divider"></div>
+    <a class="nav-item" href="/docs">
+      <svg width="15" height="15" viewBox="0 0 16 16" fill="currentColor"><path d="M1 2.828c.885-.37 2.154-.769 3.388-.893 1.33-.134 2.458.063 3.112.752v9.746c-.935-.53-2.12-.603-3.213-.493-1.18.12-2.37.461-3.287.811V2.828zm7.5-.141c.654-.689 1.782-.886 3.112-.752 1.234.124 2.503.523 3.388.893v9.923c-.918-.35-2.107-.692-3.287-.81-1.094-.111-2.278-.039-3.213.492V2.687zM8 1.783C7.015.936 5.587.81 4.287.94c-1.514.153-3.042.672-3.994 1.105A.5.5 0 0 0 0 2.5v11a.5.5 0 0 0 .707.455c.882-.4 2.303-.881 3.68-1.02 1.409-.142 2.59.087 3.223.877a.5.5 0 0 0 .78 0c.633-.79 1.814-1.019 3.222-.877 1.378.139 2.8.62 3.681 1.02A.5.5 0 0 0 16 13.5v-11a.5.5 0 0 0-.293-.455c-.952-.433-2.48-.952-3.994-1.105C10.413.809 8.985.936 8 1.783z"/></svg>
+      <span class="nav-item-text">Documentation</span>
+    </a>
+    <a class="nav-item" href="/guide">
+      <svg width="15" height="15" viewBox="0 0 16 16" fill="currentColor"><path d="M8 15A7 7 0 1 1 8 1a7 7 0 0 1 0 14zm0 1A8 8 0 1 0 8 0a8 8 0 0 0 0 16z"/><path d="M5.255 5.786a.237.237 0 0 0 .241.247h.825c.138 0 .248-.113.266-.25.09-.656.54-1.134 1.342-1.134.686 0 1.314.343 1.314 1.168 0 .635-.374.927-.965 1.371-.673.489-1.206 1.06-1.168 1.987l.003.217a.25.25 0 0 0 .25.246h.811a.25.25 0 0 0 .25-.25v-.105c0-.718.273-.927 1.01-1.486.609-.463 1.244-.977 1.244-2.056 0-1.511-1.276-2.241-2.673-2.241-1.267 0-2.655.59-2.75 2.286zm1.557 5.763c0 .533.425.927 1.01.927.609 0 1.028-.394 1.028-.927 0-.552-.42-.94-1.029-.94-.584 0-1.009.388-1.009.94z"/></svg>
+      <span class="nav-item-text">User Guide</span>
+    </a>
+    <div class="sidebar-footer">Aviary Web Interface</div>
+  </nav>
+
+  <!-- Main split -->
+  <div class="main-split">
+
+    <!-- Config panel -->
+    <div class="config-panel scroll-y">
+
+      <!-- Export level -->
+      <div class="config-section">
+        <div class="section-label">Export Level</div>
+        <div class="toggle-group">
+          <button class="toggle-btn active" id="toggle-summary" onclick="setExportLevel('summary')">Sample Summary</button>
+          <button class="toggle-btn" id="toggle-bin" onclick="setExportLevel('bin')">Bin Detail</button>
+        </div>
+        <div style="font-size:11px;color:var(--muted);margin-top:8px" id="level-desc">
+          One row per sample &amp; assembler with aggregate MAG counts and assembly statistics.
+        </div>
+      </div>
+
+      <!-- Samples -->
+      <div class="config-section">
+        <div class="section-label">Samples</div>
+        <div class="sel-actions">
+          <button class="sel-action-btn" onclick="selectAll()">Select all</button>
+          <span style="color:var(--border)">·</span>
+          <button class="sel-action-btn" onclick="selectNone()">None</button>
+          <span class="sel-count" id="sel-count">0 selected</span>
+        </div>
+        <div class="sample-list" id="sample-list">
+          <div style="color:var(--muted);font-size:12px">Loading samples…</div>
+        </div>
+      </div>
+
+      <!-- Columns -->
+      <div class="config-section" id="col-section">
+        <div class="section-label">Columns</div>
+        <div id="col-groups"></div>
+      </div>
+
+      <!-- Filters (bin mode only) -->
+      <div class="config-section" id="filter-section" style="display:none">
+        <div class="section-label">Filters</div>
+        <div class="filter-row">
+          <span class="filter-label">Min completeness (%)</span>
+          <input type="number" class="filter-input" id="flt-min-comp" min="0" max="100" value="0" oninput="renderPreview()">
+        </div>
+        <div class="filter-row">
+          <span class="filter-label">Max contamination (%)</span>
+          <input type="number" class="filter-input" id="flt-max-cont" min="0" max="100" value="100" oninput="renderPreview()">
+        </div>
+        <div class="filter-row" style="align-items:flex-start;margin-top:4px">
+          <span class="filter-label" style="padding-top:2px">Quality preset</span>
+          <div class="preset-btns" id="preset-btns">
+            <button class="preset-btn active-all" id="preset-all" onclick="applyPreset('all')">All</button>
+            <button class="preset-btn" id="preset-mq" onclick="applyPreset('mq')">MQ+</button>
+            <button class="preset-btn" id="preset-hq" onclick="applyPreset('hq')">HQ only</button>
+          </div>
+        </div>
+      </div>
+
+      <!-- Format -->
+      <div class="config-section">
+        <div class="section-label">Format</div>
+        <div class="fmt-group">
+          <button class="fmt-btn active" id="fmt-tsv" onclick="setFormat('tsv')">TSV</button>
+          <button class="fmt-btn" id="fmt-csv" onclick="setFormat('csv')">CSV</button>
+        </div>
+      </div>
+
+    </div><!-- /config-panel -->
+
+    <!-- Preview panel -->
+    <div class="preview-panel">
+      <div class="preview-header">
+        <div class="preview-title">Preview</div>
+        <div class="row-badge" id="row-badge">0 rows</div>
+        <div class="preview-subtitle" id="preview-subtitle">Select samples to see a preview</div>
+      </div>
+      <div class="preview-table-wrap">
+        <table class="preview-table" id="preview-table">
+          <thead id="preview-thead"></thead>
+          <tbody id="preview-tbody"></tbody>
+        </table>
+        <div class="preview-empty" id="preview-empty">
+          <svg width="40" height="40" viewBox="0 0 16 16" fill="var(--muted)">
+            <path d="M9.5 0H4a2 2 0 0 0-2 2v12a2 2 0 0 0 2 2h8a2 2 0 0 0 2-2V4.5L9.5 0zm0 1v2a1 1 0 0 0 1 1h2L9.5 1zM4 1h5v2a2 2 0 0 1-2-2H4v12h8V5h-2a2 2 0 0 1-2-2V1H4z"/>
+          </svg>
+          <p>No data to preview</p>
+          <p style="font-size:11px">Select at least one sample to continue</p>
+        </div>
+      </div>
+      <div class="download-bar">
+        <div class="download-info" id="download-info">Select samples and configure options above.</div>
+        <button class="btn-download" id="download-btn" onclick="triggerDownload()" disabled>
+          <svg width="14" height="14" viewBox="0 0 16 16" fill="currentColor">
+            <path d="M.5 9.9a.5.5 0 0 1 .5.5v2.5a1 1 0 0 0 1 1h12a1 1 0 0 0 1-1v-2.5a.5.5 0 0 1 1 0v2.5a2 2 0 0 1-2 2H2a2 2 0 0 1-2-2v-2.5a.5.5 0 0 1 .5-.5z"/>
+            <path d="M7.646 11.854a.5.5 0 0 0 .708 0l3-3a.5.5 0 0 0-.708-.708L8.5 10.293V1.5a.5.5 0 0 0-1 0v8.793L5.354 8.146a.5.5 0 1 0-.708.708l3 3z"/>
+          </svg>
+          Download
+        </button>
+      </div>
+    </div><!-- /preview-panel -->
+
+  </div><!-- /main-split -->
+</div><!-- /layout -->
+
+<script>
+// ---------------------------------------------------------------------------
+// State
+// ---------------------------------------------------------------------------
+let _summaryData = null;         // full /api/summary response
+let _exportLevel = 'summary';    // 'summary' | 'bin'
+let _format      = 'tsv';        // 'tsv' | 'csv'
+let _selected    = new Set();    // "date||sample||assembler" keys
+
+// Column definitions
+const SUMMARY_COLS = [
+  { id: 'date',        label: 'Date',          group: 'Identifiers', defaultOn: true,  desc: '' },
+  { id: 'sample',      label: 'Sample',        group: 'Identifiers', defaultOn: true,  desc: '' },
+  { id: 'assembler',   label: 'Assembler',     group: 'Identifiers', defaultOn: true,  desc: '' },
+  { id: 'mag_count',   label: 'Total MAGs',    group: 'MAG Counts',  defaultOn: true,  desc: '' },
+  { id: 'hq',          label: 'HQ MAGs',       group: 'MAG Counts',  defaultOn: true,  desc: '≥90% comp, ≤5% cont' },
+  { id: 'mq',          label: 'MQ MAGs',       group: 'MAG Counts',  defaultOn: true,  desc: '≥50% comp, ≤10% cont' },
+  { id: 'lq',          label: 'LQ MAGs',       group: 'MAG Counts',  defaultOn: true,  desc: 'Below MQ thresholds' },
+  { id: 'asm_mb',      label: 'Assembly (Mb)', group: 'Assembly',    defaultOn: true,  desc: '' },
+  { id: 'n50',         label: 'N50',           group: 'Assembly',    defaultOn: true,  desc: '' },
+  { id: 'contigs',     label: 'Total Contigs', group: 'Assembly',    defaultOn: true,  desc: '' },
+  { id: 'gc',          label: 'GC%',           group: 'Assembly',    defaultOn: false, desc: '' },
+  { id: 'l50',         label: 'L50',           group: 'Assembly',    defaultOn: false, desc: '' },
+  { id: 'max_contig',  label: 'Max Contig',    group: 'Assembly',    defaultOn: false, desc: '' },
+  { id: 'scaffolds50', label: 'Scaffolds >50 kb', group: 'Assembly', defaultOn: false, desc: '' },
+];
+
+const BIN_COLS = [
+  { id: 'date',       label: 'Date',          group: 'Identifiers', defaultOn: true,  desc: '' },
+  { id: 'sample',     label: 'Sample',        group: 'Identifiers', defaultOn: true,  desc: '' },
+  { id: 'assembler',  label: 'Assembler',     group: 'Identifiers', defaultOn: true,  desc: '' },
+  { id: 'bin',        label: 'Bin Name',      group: 'Identifiers', defaultOn: true,  desc: '' },
+  { id: 'comp',       label: 'Completeness%', group: 'Quality',     defaultOn: true,  desc: '' },
+  { id: 'cont',       label: 'Contamination%', group: 'Quality',    defaultOn: true,  desc: '' },
+  { id: 'tier',       label: 'Tier',          group: 'Quality',     defaultOn: true,  desc: 'HQ / MQ / LQ' },
+  { id: 'size',       label: 'Genome Size',   group: 'Assembly',    defaultOn: true,  desc: 'bp' },
+  { id: 'gc',         label: 'GC%',           group: 'Assembly',    defaultOn: false, desc: '' },
+  { id: 'n_contigs',  label: 'Contigs',       group: 'Assembly',    defaultOn: false, desc: '' },
+  { id: 'n50',        label: 'N50',           group: 'Assembly',    defaultOn: false, desc: '' },
+  { id: 'circular',   label: 'Circular Ctgs', group: 'Assembly',    defaultOn: false, desc: '' },
+  { id: 'domain',     label: 'Domain',        group: 'Taxonomy',    defaultOn: false, desc: '' },
+  { id: 'phylum',     label: 'Phylum',        group: 'Taxonomy',    defaultOn: false, desc: '' },
+  { id: 'class',      label: 'Class',         group: 'Taxonomy',    defaultOn: false, desc: '' },
+  { id: 'order',      label: 'Order',         group: 'Taxonomy',    defaultOn: false, desc: '' },
+  { id: 'family',     label: 'Family',        group: 'Taxonomy',    defaultOn: false, desc: '' },
+  { id: 'genus',      label: 'Genus',         group: 'Taxonomy',    defaultOn: false, desc: '' },
+  { id: 'species',    label: 'Species',       group: 'Taxonomy',    defaultOn: false, desc: '' },
+];
+
+// Track which columns are enabled
+let _colEnabled = {};
+
+function initColEnabled() {
+  const cols = _exportLevel === 'summary' ? SUMMARY_COLS : BIN_COLS;
+  _colEnabled = {};
+  cols.forEach(c => { _colEnabled[c.id] = c.defaultOn; });
+}
+
+// ---------------------------------------------------------------------------
+// Boot
+// ---------------------------------------------------------------------------
+document.addEventListener('DOMContentLoaded', () => {
+  document.getElementById('fn-date').textContent = new Date().toISOString().slice(0, 10);
+  initColEnabled();
+  renderColGroups();
+  loadSummary();
+});
+
+async function loadSummary() {
+  // Get root from URL param, falling back to localStorage
+  const qs = new URLSearchParams(window.location.search);
+  const od = qs.get('output_dir') || qs.get('root') || localStorage.getItem('aviary-active-root') || '';
+  const url = '/api/summary' + (od ? `?root=${encodeURIComponent(od)}` : '');
+  try {
+    const r = await fetch(url);
+    if (!r.ok) throw new Error(await r.text());
+    _summaryData = await r.json();
+    renderSampleList();
+    // Select all by default
+    selectAll();
+  } catch (e) {
+    document.getElementById('sample-list').innerHTML =
+      `<div style="color:var(--red);font-size:12px">Failed to load samples: ${e.message}</div>`;
+  }
+}
+
+// ---------------------------------------------------------------------------
+// Export level & format
+// ---------------------------------------------------------------------------
+function setExportLevel(level) {
+  _exportLevel = level;
+  document.getElementById('toggle-summary').classList.toggle('active', level === 'summary');
+  document.getElementById('toggle-bin').classList.toggle('active', level === 'bin');
+  document.getElementById('filter-section').style.display = level === 'bin' ? '' : 'none';
+  document.getElementById('level-desc').textContent = level === 'summary'
+    ? 'One row per sample & assembler with aggregate MAG counts and assembly statistics.'
+    : 'One row per MAG/bin with completeness, contamination, taxonomy and assembly metrics.';
+  initColEnabled();
+  renderColGroups();
+  updateFilename();
+  renderPreview();
+}
+
+function setFormat(fmt) {
+  _format = fmt;
+  document.getElementById('fmt-tsv').classList.toggle('active', fmt === 'tsv');
+  document.getElementById('fmt-csv').classList.toggle('active', fmt === 'csv');
+  updateFilename();
+  renderPreview();
+}
+
+function updateFilename() {
+  const date = new Date().toISOString().slice(0, 10);
+  const name = `aviary_${_exportLevel}_${date}.${_format}`;
+  document.getElementById('filename-preview').innerHTML = `<b>${name}</b>`;
+}
+
+// ---------------------------------------------------------------------------
+// Sample list
+// ---------------------------------------------------------------------------
+function sampleKey(date, sample, assembler) {
+  return `${date}||${sample}||${assembler}`;
+}
+
+function renderSampleList() {
+  if (!_summaryData) return;
+  const listEl = document.getElementById('sample-list');
+  const batches = _summaryData.batches || {};
+  if (!Object.keys(batches).length) {
+    listEl.innerHTML = '<div style="color:var(--muted);font-size:12px">No samples found.</div>';
+    return;
+  }
+  let html = '';
+  const dates = Object.keys(batches);
+  dates.forEach((date, di) => {
+    const entries = batches[date].filter(e => e.sample !== 'MOCK_ERR999999');
+    if (!entries.length) return;
+    const open = di === 0;
+    html += `<button class="batch-header ${open ? 'open' : ''}" onclick="toggleBatch(this)">
+      <span class="chevron">▶</span>
+      <span>${date}</span>
+      <span style="color:var(--muted);font-size:10px;margin-left:auto">${entries.length}</span>
+    </button>
+    <div class="batch-body ${open ? '' : 'closed'}" data-date="${escAttr(date)}">`;
+    entries.forEach(e => {
+      const key = sampleKey(date, e.sample, e.assembler);
+      html += `<label class="sample-row">
+        <input type="checkbox" data-key="${escAttr(key)}" onchange="onSampleCheck(this)">
+        <span class="sample-name" title="${escAttr(e.sample)}">${escHtml(e.sample)}</span>
+        <span class="asm-badge">${escHtml(e.assembler)}</span>
+      </label>`;
+    });
+    html += `</div>`;
+  });
+  listEl.innerHTML = html;
+}
+
+function toggleBatch(btn) {
+  btn.classList.toggle('open');
+  const body = btn.nextElementSibling;
+  body.classList.toggle('closed');
+}
+
+function onSampleCheck(cb) {
+  if (cb.checked) _selected.add(cb.dataset.key);
+  else _selected.delete(cb.dataset.key);
+  updateSelCount();
+  renderPreview();
+}
+
+function selectAll() {
+  if (!_summaryData) return;
+  _selected.clear();
+  const batches = _summaryData.batches || {};
+  Object.entries(batches).forEach(([date, entries]) => {
+    entries.filter(e => e.sample !== 'MOCK_ERR999999')
+      .forEach(e => _selected.add(sampleKey(date, e.sample, e.assembler)));
+  });
+  document.querySelectorAll('#sample-list input[type=checkbox]').forEach(cb => cb.checked = true);
+  updateSelCount();
+  renderPreview();
+}
+
+function selectNone() {
+  _selected.clear();
+  document.querySelectorAll('#sample-list input[type=checkbox]').forEach(cb => cb.checked = false);
+  updateSelCount();
+  renderPreview();
+}
+
+function updateSelCount() {
+  document.getElementById('sel-count').textContent = `${_selected.size} selected`;
+}
+
+// ---------------------------------------------------------------------------
+// Column groups
+// ---------------------------------------------------------------------------
+function renderColGroups() {
+  const cols = _exportLevel === 'summary' ? SUMMARY_COLS : BIN_COLS;
+  const groups = {};
+  cols.forEach(c => { (groups[c.group] = groups[c.group] || []).push(c); });
+  let html = '';
+  Object.entries(groups).forEach(([grp, gcols]) => {
+    html += `<div class="col-group"><div class="col-group-label">${grp}</div><div class="col-checks">`;
+    gcols.forEach(c => {
+      html += `<label class="col-check-row">
+        <input type="checkbox" data-col="${c.id}" ${_colEnabled[c.id] ? 'checked' : ''} onchange="onColCheck(this)">
+        <span>${c.label}</span>
+        ${c.desc ? `<span class="col-desc">${c.desc}</span>` : ''}
+      </label>`;
+    });
+    html += `</div></div>`;
+  });
+  document.getElementById('col-groups').innerHTML = html;
+}
+
+function onColCheck(cb) {
+  _colEnabled[cb.dataset.col] = cb.checked;
+  renderPreview();
+}
+
+// ---------------------------------------------------------------------------
+// Filters (bin mode)
+// ---------------------------------------------------------------------------
+let _activePreset = 'all';
+function applyPreset(p) {
+  _activePreset = p;
+  if (p === 'all')  { document.getElementById('flt-min-comp').value = 0;  document.getElementById('flt-max-cont').value = 100; }
+  if (p === 'mq')   { document.getElementById('flt-min-comp').value = 50; document.getElementById('flt-max-cont').value = 10;  }
+  if (p === 'hq')   { document.getElementById('flt-min-comp').value = 90; document.getElementById('flt-max-cont').value = 5;   }
+  document.getElementById('preset-all').className = `preset-btn ${p === 'all' ? 'active-all' : ''}`;
+  document.getElementById('preset-mq').className  = `preset-btn ${p === 'mq'  ? 'active-mq'  : ''}`;
+  document.getElementById('preset-hq').className  = `preset-btn ${p === 'hq'  ? 'active-hq'  : ''}`;
+  renderPreview();
+}
+
+function qualityTier(comp, cont) {
+  const c = parseFloat(comp), k = parseFloat(cont);
+  if (isNaN(c) || isNaN(k)) return 'LQ';
+  if (c >= 90 && k <= 5)  return 'HQ';
+  if (c >= 50 && k <= 10) return 'MQ';
+  return 'LQ';
+}
+
+// ---------------------------------------------------------------------------
+// Build rows from _summaryData + state
+// ---------------------------------------------------------------------------
+function buildRows() {
+  if (!_summaryData || !_selected.size) return [];
+  const batches = _summaryData.batches || {};
+  const rows = [];
+
+  if (_exportLevel === 'summary') {
+    Object.entries(batches).forEach(([date, entries]) => {
+      entries.filter(e => e.sample !== 'MOCK_ERR999999').forEach(e => {
+        if (!_selected.has(sampleKey(date, e.sample, e.assembler))) return;
+        const asm = e.assembly || {};
+        rows.push({
+          date, sample: e.sample, assembler: e.assembler,
+          mag_count: e.mag_count ?? '',
+          hq: e.hq ?? '', mq: e.mq ?? '', lq: e.lq ?? '',
+          asm_mb:      asm.total_length_mb ?? '',
+          n50:         asm.n50 ?? '',
+          contigs:     asm.contig_count ?? '',
+          gc:          asm.gc_percent ?? '',
+          l50:         asm.l50 ?? '',
+          max_contig:  asm.max_contig ?? '',
+          scaffolds50: asm.scaffolds_gt50kb ?? '',
+        });
+      });
+    });
+  } else {
+    const minComp = parseFloat(document.getElementById('flt-min-comp')?.value ?? 0);
+    const maxCont = parseFloat(document.getElementById('flt-max-cont')?.value ?? 100);
+    Object.entries(batches).forEach(([date, entries]) => {
+      entries.filter(e => e.sample !== 'MOCK_ERR999999').forEach(e => {
+        if (!_selected.has(sampleKey(date, e.sample, e.assembler))) return;
+        const bins = e.bins || [];
+        bins.forEach(b => {
+          const comp = parseFloat(b.Completeness ?? b.completeness);
+          const cont = parseFloat(b.Contamination ?? b.contamination);
+          if (!isNaN(comp) && comp < minComp) return;
+          if (!isNaN(cont) && cont > maxCont) return;
+          const tier = qualityTier(comp, cont);
+          const tax = parseTaxonomy(b.classification || b.Classification || '');
+          rows.push({
+            date, sample: e.sample, assembler: e.assembler,
+            bin:      b.Name || b.name || '',
+            comp:     isNaN(comp) ? '' : comp.toFixed(2),
+            cont:     isNaN(cont) ? '' : cont.toFixed(2),
+            tier,
+            size:     b['Genome size'] ?? b.genome_size ?? '',
+            gc:       b['GC Content'] ?? b.gc ?? '',
+            n_contigs: b['# contigs'] ?? b.n_contigs ?? '',
+            n50:      b.N50 ?? b.n50 ?? '',
+            circular: b['Circular contigs'] ?? b.circular ?? '',
+            ...tax,
+          });
+        });
+      });
+    });
+  }
+  return rows;
+}
+
+function parseTaxonomy(classStr) {
+  // e.g. "d__Bacteria;p__Proteobacteria;c__..."
+  const out = { domain: '', phylum: '', class: '', order: '', family: '', genus: '', species: '' };
+  if (!classStr) return out;
+  const map = { d: 'domain', p: 'phylum', c: 'class', o: 'order', f: 'family', g: 'genus', s: 'species' };
+  classStr.split(';').forEach(part => {
+    const m = part.match(/^([dpcofgs])__(.+)$/);
+    if (m && map[m[1]]) out[map[m[1]]] = m[2];
+  });
+  return out;
+}
+
+// ---------------------------------------------------------------------------
+// Preview
+// ---------------------------------------------------------------------------
+const PREVIEW_LIMIT = 50;
+
+function renderPreview() {
+  updateFilename();
+  const rows = buildRows();
+  const cols = (_exportLevel === 'summary' ? SUMMARY_COLS : BIN_COLS).filter(c => _colEnabled[c.id]);
+  const total = rows.length;
+  const preview = rows.slice(0, PREVIEW_LIMIT);
+
+  const badge = document.getElementById('row-badge');
+  const sub   = document.getElementById('preview-subtitle');
+  const empty = document.getElementById('preview-empty');
+  const tbl   = document.getElementById('preview-table');
+  const thead = document.getElementById('preview-thead');
+  const tbody = document.getElementById('preview-tbody');
+  const info  = document.getElementById('download-info');
+  const dlBtn = document.getElementById('download-btn');
+  const topDl = document.getElementById('topbar-download-btn');
+
+  badge.textContent = `${total} row${total !== 1 ? 's' : ''}`;
+  sub.textContent = total > PREVIEW_LIMIT ? `Showing first ${PREVIEW_LIMIT} of ${total} rows` : `Showing all ${total} rows`;
+
+  if (!total || !cols.length) {
+    empty.style.display = 'flex'; tbl.style.display = 'none';
+    info.innerHTML = total === 0 ? 'Select at least one sample to export.' : 'Enable at least one column.';
+    dlBtn.disabled = topDl.disabled = true;
+    return;
+  }
+  empty.style.display = 'none'; tbl.style.display = '';
+
+  // Header
+  thead.innerHTML = '<tr>' + cols.map(c => `<th>${escHtml(c.label)}</th>`).join('') + '</tr>';
+
+  // Body
+  let tbHtml = '';
+  preview.forEach(row => {
+    tbHtml += '<tr>';
+    cols.forEach(c => {
+      const v = row[c.id] ?? '';
+      if (c.id === 'tier') {
+        const cls = v === 'HQ' ? 'tier-hq' : v === 'MQ' ? 'tier-mq' : 'tier-lq';
+        tbHtml += `<td><span class="${cls}">${escHtml(String(v))}</span></td>`;
+      } else {
+        const numeric = ['mag_count','hq','mq','lq','comp','cont','size','n50','l50','max_contig','scaffolds50','n_contigs','circular','contigs'].includes(c.id);
+        tbHtml += `<td class="${numeric ? 'td-num' : ''}">${escHtml(String(v))}</td>`;
+      }
+    });
+    tbHtml += '</tr>';
+  });
+  if (!preview.length) {
+    tbHtml = `<tr class="no-data-row"><td colspan="${cols.length}">No rows match the current filters</td></tr>`;
+  }
+  tbody.innerHTML = tbHtml;
+
+  const lvl = _exportLevel === 'summary' ? 'summary' : 'bin detail';
+  info.innerHTML = `<b>${total}</b> ${lvl} row${total !== 1 ? 's' : ''} · <b>${cols.length}</b> columns · ${_format.toUpperCase()}`;
+  dlBtn.disabled = topDl.disabled = total === 0;
+}
+
+// ---------------------------------------------------------------------------
+// Download
+// ---------------------------------------------------------------------------
+function triggerDownload() {
+  const rows = buildRows();
+  const cols = (_exportLevel === 'summary' ? SUMMARY_COLS : BIN_COLS).filter(c => _colEnabled[c.id]);
+  if (!rows.length || !cols.length) return;
+
+  const sep = _format === 'csv' ? ',' : '\t';
+  const esc = _format === 'csv' ? csvEsc : v => String(v).replace(/\t/g, ' ');
+
+  const header = cols.map(c => esc(c.label)).join(sep);
+  const body = rows.map(row => cols.map(c => esc(row[c.id] ?? '')).join(sep)).join('\n');
+  const content = header + '\n' + body;
+
+  const mime = _format === 'csv' ? 'text/csv' : 'text/tab-separated-values';
+  const blob = new Blob([content], { type: mime });
+  const a = document.createElement('a');
+  a.href = URL.createObjectURL(blob);
+  a.download = `aviary_${_exportLevel}_${new Date().toISOString().slice(0,10)}.${_format}`;
+  a.click();
+  setTimeout(() => URL.revokeObjectURL(a.href), 5000);
+}
+
+function csvEsc(v) {
+  const s = String(v);
+  if (s.includes(',') || s.includes('"') || s.includes('\n')) return '"' + s.replace(/"/g, '""') + '"';
+  return s;
+}
+
+// ---------------------------------------------------------------------------
+// Utilities
+// ---------------------------------------------------------------------------
+function escHtml(s) {
+  return String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
+}
+function escAttr(s) {
+  return String(s).replace(/"/g, '&quot;');
+}
+</script>
+</body>
+</html>
