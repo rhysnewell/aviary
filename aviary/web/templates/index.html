@@ -1302,7 +1302,7 @@
     </svg>
     <span class="nav-item-text">Bin Quality Report</span>
   </div>
-  <a class="nav-item" id="nav-phylo" href="/phylo" onclick="openPhylo(event)">
+  <a class="nav-item" id="nav-phylo" href="/view" onclick="openPhylo(event)">
     <svg width="15" height="15" viewBox="0 0 16 16" fill="currentColor">
       <path d="M4.5 1a.5.5 0 0 1 .5.5V4h3V1.5a.5.5 0 0 1 1 0V4h1a.5.5 0 0 1 0 1H9v1.293l2.354 2.353a.5.5 0 0 1-.708.708L9 7.707V9h1a.5.5 0 0 1 0 1H9v1.293l2.354 2.353a.5.5 0 0 1-.708.708L9 12.707V14.5a.5.5 0 0 1-1 0V10H5v4.5a.5.5 0 0 1-1 0V12.707l-1.646 1.647a.5.5 0 0 1-.708-.708L3.293 12H2a.5.5 0 0 1 0-1h1.293L2.146 9.854a.5.5 0 1 1 .708-.708L4 10.293V9H3a.5.5 0 0 1 0-1h1V6.707L2.854 5.561a.5.5 0 1 1 .708-.708L5 6.293V5H4a.5.5 0 0 1 0-1h1V1.5a.5.5 0 0 1 .5-.5zM5 5v2h3V5H5zm0 3v2h3V8H5z"/>
     </svg>
@@ -1627,9 +1627,9 @@ function openPhylo(e) {
   // Pass the current root so phylo page loads the same data
   if (currentRoot) {
     e.preventDefault();
-    window.location.href = '/phylo?root=' + encodeURIComponent(currentRoot);
+    window.location.href = '/view?root=' + encodeURIComponent(currentRoot);
   }
-  // else let the default href=/phylo navigate without a root param
+  // else let the default href=/view navigate without a root param
 }
 
 async function fetchSummary() {
@@ -3147,7 +3147,7 @@ function clearError() {
   }
   document.querySelectorAll('a[href^="/"]').forEach(function(a) {
     // Skip switchView links (they have onclick but no real navigation)
-    if (!a.href || a.getAttribute('onclick') && !a.href.includes('/phylo') && !a.href.includes('/graph') && !a.href.includes('/assembly') && !a.href.includes('/export') && !a.href.includes('/docs') && !a.href.includes('/guide')) return;
+    if (!a.href || a.getAttribute('onclick') && !a.href.includes('/view') && !a.href.includes('/graph') && !a.href.includes('/assembly') && !a.href.includes('/export') && !a.href.includes('/docs') && !a.href.includes('/guide')) return;
     a.addEventListener('click', showSplash);
   });
   // Hide splash if back-navigation lands here

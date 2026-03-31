@@ -641,7 +641,7 @@
     <svg width="15" height="15" viewBox="0 0 16 16" fill="currentColor"><path d="M4 11H2v3h2v-3zm5-4H7v7h2V7zm5-5v12h-2V2h2zm-2-1a1 1 0 0 0-1 1v12a1 1 0 0 0 1 1h2a1 1 0 0 0 1-1V2a1 1 0 0 0-1-1h-2zM6 7a1 1 0 0 1 1-1h2a1 1 0 0 1 1 1v7a1 1 0 0 1-1 1H7a1 1 0 0 1-1-1V7zm-5 4a1 1 0 0 1 1-1h2a1 1 0 0 1 1 1v3a1 1 0 0 1-1 1H2a1 1 0 0 1-1-1v-3z"/></svg>
     <span class="nav-item-text">Bin Quality Report</span>
   </a>
-  <a class="nav-item" href="/phylo">
+  <a class="nav-item" href="/view">
     <svg width="15" height="15" viewBox="0 0 16 16" fill="currentColor"><path d="M4.5 1a.5.5 0 0 1 .5.5V4h3V1.5a.5.5 0 0 1 1 0V4h1a.5.5 0 0 1 0 1H9v1.293l2.354 2.353a.5.5 0 0 1-.708.708L9 7.707V9h1a.5.5 0 0 1 0 1H9v1.293l2.354 2.353a.5.5 0 0 1-.708.708L9 12.707V14.5a.5.5 0 0 1-1 0V10H5v4.5a.5.5 0 0 1-1 0V12.707l-1.646 1.647a.5.5 0 0 1-.708-.708L3.293 12H2a.5.5 0 0 1 0-1h1.293L2.146 9.854a.5.5 0 1 1 .708-.708L4 10.293V9H3a.5.5 0 0 1 0-1h1V6.707L2.854 5.561a.5.5 0 1 1 .708-.708L5 6.293V5H4a.5.5 0 0 1 0-1h1V1.5a.5.5 0 0 1 .5-.5zM5 5v2h3V5H5zm0 3v2h3V8H5z"/></svg>
     <span class="nav-item-text">View</span>
   </a>
@@ -689,8 +689,8 @@
     <a class="toc-link"        href="#summary"     data-section="s3">3. Bin Quality Report</a>
     <a class="toc-link"        href="#graph"       data-section="s4">4. Results Visualisation</a>
     <a class="toc-link sub"    href="#graph-customise" data-section="s4a">→ Customise Panel</a>
-    <a class="toc-link"        href="#phylo"       data-section="s5">5. Phylogenetic Identification</a>
-    <a class="toc-link sub"    href="#phylo-controls" data-section="s5a">→ Controls</a>
+    <a class="toc-link"        href="#tree-view"   data-section="s5">5. Tree View</a>
+    <a class="toc-link sub"    href="#tree-controls" data-section="s5a">→ Controls</a>
     <a class="toc-link"        href="#assembly"    data-section="s6">6. Contig Assembly Graph</a>
     <a class="toc-link"        href="#export"      data-section="s7">7. Export Results</a>
     <a class="toc-link"        href="#hpc"         data-section="s8">8. HPC / SSH Tunnel</a>
@@ -744,10 +744,10 @@
           <div class="page-card-name">Results Visualisation</div>
           <div class="page-card-desc">Six interactive chart types with palette, font, and axis label customisation</div>
         </a>
-        <a class="page-card" href="/phylo">
-          <div class="page-card-url">/phylo</div>
-          <div class="page-card-name">Phylogenetic Identification</div>
-          <div class="page-card-desc">Interactive GTDB-Tk phylogenetic tree — radial or horizontal, configurable depth and labels</div>
+        <a class="page-card" href="/view">
+          <div class="page-card-url">/view</div>
+          <div class="page-card-name">Tree View</div>
+          <div class="page-card-desc">Interactive GTDB-Tk taxonomy tree — sunburst, radial, or horizontal layouts, configurable depth, zoom, and labels</div>
         </a>
         <a class="page-card" href="/assembly">
           <div class="page-card-url">/assembly</div>
@@ -1036,33 +1036,35 @@
     </section>
 
     <!-- ================================================================ -->
-    <!-- 5. Phylogenetic Identification                                                      -->
+    <!-- 5. Tree View                                                      -->
     <!-- ================================================================ -->
-    <section class="doc-section" id="phylo" data-section="s5">
-      <h2><span class="section-num">05</span>Phylogenetic Identification <code style="font-size:0.72em">/phylo</code></h2>
+    <section class="doc-section" id="tree-view" data-section="s5">
+      <h2><span class="section-num">05</span>Tree View <code style="font-size:0.72em">/view</code></h2>
 
       <p>
-        An interactive phylogenetic tree built from GTDB-Tk classifications across all bins.
+        An interactive taxonomy tree built from GTDB-Tk classifications across all bins.
         The tree is constructed client-side from the taxonomy strings in your bin results — no pre-computed tree file required.
+        Three layout modes are available depending on what you want to explore.
       </p>
 
       <div class="table-wrap">
         <table>
           <thead><tr><th>Layout</th><th>Description</th></tr></thead>
           <tbody>
-            <tr><td><strong>Radial (Circular)</strong></td><td>Classic circular cladogram. Phylum-level clade arcs with colour bands. Best for a full overview of diversity.</td></tr>
-            <tr><td><strong>Horizontal Cladogram</strong></td><td>Left-to-right dendrogram. Better for reading taxonomy labels on deep trees.</td></tr>
+            <tr><td><strong>Sunburst</strong></td><td>Default view. Concentric ring chart showing taxonomy from domain outward. Click any segment to zoom into that clade — click the centre circle to go back. Scroll or use the Zoom In / Zoom Out buttons to scale. Best for getting a quick overview of community composition.</td></tr>
+            <tr><td><strong>Radial (Circular)</strong></td><td>Classic circular cladogram with phylum-level colour bands. Click nodes to expand or collapse. Best for exploring tree structure at a glance.</td></tr>
+            <tr><td><strong>Horizontal Cladogram</strong></td><td>Left-to-right dendrogram. Better for reading full taxonomy labels on deep or species-level trees.</td></tr>
           </tbody>
         </table>
       </div>
 
-      <h3 id="phylo-controls">Controls</h3>
+      <h3 id="tree-controls">Controls</h3>
 
       <div class="feature-grid">
         <div class="feature-card">
           <div class="feature-card-icon">🌲</div>
           <div class="feature-card-title">Initial View Depth</div>
-          <div class="feature-card-desc">Choose how deep the tree expands on load: Phylum, Class (default), Order, Family, Genus, or fully expanded. Changing this resets the view.</div>
+          <div class="feature-card-desc">Choose how deep the tree expands on load: Phylum, Class (default), Order, Family, Genus, or fully expanded. Applies to radial and horizontal layouts. Changing this resets the view.</div>
         </div>
         <div class="feature-card">
           <div class="feature-card-icon">🏷️</div>
@@ -1093,9 +1095,12 @@
 
       <h3>Interaction</h3>
       <ul style="font-size:0.85rem;line-height:1.8;color:var(--text-dim);padding-left:1.2em">
-        <li><strong style="color:var(--text)">Click</strong> any node to expand or collapse that branch individually.</li>
-        <li><strong style="color:var(--text)">Expand All / Collapse</strong> buttons in the topbar reset the entire tree.</li>
-        <li><strong style="color:var(--text)">Drag and scroll</strong> to pan and zoom freely.</li>
+        <li><strong style="color:var(--text)">Sunburst — click a segment</strong> to zoom into that clade. Click the teal centre circle to go back to the full view.</li>
+        <li><strong style="color:var(--text)">Radial / Horizontal — click</strong> any node to expand or collapse that branch individually.</li>
+        <li><strong style="color:var(--text)">Zoom In / Zoom Out</strong> buttons in the topbar scale the view in all layouts. Mouse scroll also works.</li>
+        <li><strong style="color:var(--text)">Reset View</strong> returns to the default zoom and position.</li>
+        <li><strong style="color:var(--text)">Expand All / Collapse</strong> buttons reset the entire tree structure (radial and horizontal only).</li>
+        <li><strong style="color:var(--text)">Drag</strong> to pan freely in all layouts.</li>
         <li><strong style="color:var(--text)">Hover</strong> any node for a tooltip showing rank, MAG count, and HQ/MQ/LQ breakdown.</li>
       </ul>
 
@@ -1198,7 +1203,7 @@ cd /path/to/aviary/aviary/web
             <tr>
               <td><code>GET /api/summary</code></td>
               <td><code>?root=</code></td>
-              <td>Bins, assembly stats, and SingleM data for all runs</td>
+              <td>Bins and assembly stats for all runs</td>
             </tr>
             <tr>
               <td><code>GET /api/logs</code></td>
@@ -1219,6 +1224,31 @@ cd /path/to/aviary/aviary/web
               <td><code>GET /api/output_dirs</code></td>
               <td><code>?root=</code></td>
               <td>All discovered output directories under the root</td>
+            </tr>
+            <tr>
+              <td><code>GET /api/gfa_stats</code></td>
+              <td><code>?output_dir=</code></td>
+              <td>Parsed GFA assembly graph statistics for a single output directory. Results are cached by file mtime.</td>
+            </tr>
+            <tr>
+              <td><code>GET /api/gfa_available</code></td>
+              <td><code>?root=</code></td>
+              <td>Map of all discovered output directories to a boolean indicating whether <code>assembly/assembly_graph.gfa</code> exists</td>
+            </tr>
+            <tr>
+              <td><code>GET /api/taxonomy_tree</code></td>
+              <td><code>?root=</code></td>
+              <td>Taxonomy breakdown tree — prefers SingleM condensed profile data when available, falls back to GTDB-Tk classification strings</td>
+            </tr>
+            <tr>
+              <td><code>GET /api/singlem_status</code></td>
+              <td><code>?root=</code></td>
+              <td>Count of output directories that have a SingleM condensed profile (<code>total</code> and <code>done</code> keys)</td>
+            </tr>
+            <tr>
+              <td><code>GET /api/phylo_newick</code></td>
+              <td><code>?output_dir=</code>, <code>?root=</code></td>
+              <td>GTDB-Tk Newick tree with MAG annotations for the tree view (<code>output_dir</code> or auto-detected from <code>root</code>)</td>
             </tr>
           </tbody>
         </table>
