@@ -13,7 +13,8 @@ Forked from [wwood/aviary](https://github.com/wwood/aviary) at v0.12.0 (`myloasm
 A full browser-based monitor and results explorer served via Flask with a self-contained pixi environment. Start with:
 
 ```bash
-pixi run -e web serve --output-dir /path/to/aviary_output
+ssh -L 8090:localhost:8090 username@address.com
+pixi run -e web server --output-dir /path/to/aviary_output
 ```
 
 Then open `http://localhost:8090` in your browser.
@@ -61,7 +62,7 @@ All endpoints accept an optional `?root=` parameter to override the default outp
 #### Environment
 
 - **Web environment in main `pixi.toml`** — flask added as `[feature.web]` so a single `pixi install` covers both the pipeline and the web interface
-- **`serve` task** — `pixi run -e web serve` starts the web interface directly
+- **`server` task** — `pixi run -e web server` starts the web interface directly
 
 ---
 
