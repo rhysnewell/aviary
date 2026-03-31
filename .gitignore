@@ -23,3 +23,6 @@ logs
 db
 mqsub.out
 test/qsub-test-log.txt
+aviary_tests_samples/*
+
+
