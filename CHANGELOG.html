@@ -1,0 +1,271 @@
+<!doctype html>
+
+<html lang="en">
+
+<head>
+    <meta charset="utf-8">
+
+    <title>CHANGELOG</title>
+    <meta name="description" content="Documentation for Aviary">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+
+    <link
+        href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700&family=Source+Sans+Pro:ital,wght@0,400;0,600;0,700;1,400;1,600;1,700&display=swap"
+        rel="stylesheet">
+
+    <link rel="stylesheet" type="text/css" href="/aviary/assets/normalize.css?v=1775000077"
+        media="screen" />
+    <link rel="stylesheet" type="text/css" href="/aviary/assets/doctave-style.css?v=1775000077"
+        media="screen" />
+    <link rel="stylesheet" type="text/css" href="/aviary/assets/katex.css?v=1775000077" media="screen" />
+    <link rel="stylesheet" type="text/css" href="/aviary/assets/prism-ghcolors.css?v=1775000077"
+        media="screen" />
+
+    <script>
+        var DOCTAVE_TIMESTAMP = "1775000077";
+        var BASE_PATH = "/aviary/";
+        var color = localStorage.getItem('doctave-color')
+
+        if (color === 'dark') {
+            document.getElementsByTagName('html')[0].classList.remove('light');
+            document.getElementsByTagName('html')[0].classList.add('dark');
+        } else {
+            document.getElementsByTagName('html')[0].classList.remove('dark');
+            document.getElementsByTagName('html')[0].classList.add('light');
+        }
+    </script>
+
+    
+</head>
+
+<body>
+    <label for='menu-toggle-switch' class='menu-toggle-button'>
+        ☰
+    </label>
+    <input type="checkbox" id="menu-toggle-switch" value='0' />
+    <div class='page'>
+        <div class='header'>
+            <div class='logo'>
+                
+                <a href="/aviary/">
+                    <img src="/aviary/images/mini_logo.png" alt='Aviary logo'></img>
+                </a>
+                
+                <h2 class='project-name'>
+                    <a href="/aviary/">
+                        Aviary
+                    </a>
+                </h2>
+            </div>
+            <div class='search'>
+                <form id='search-form'>
+    <input type='text' id='search-box' autocomplete="off" placeholder="Search..."></input>
+    <span class='search-icon'>S</span>
+    <ul id='search-results'></ul>
+</form>
+
+            </div>
+            <div class='header-dummy-right'>
+            </div>
+        </div>
+        <div class='container'>
+            <div class='sidebar-left'>
+                <nav class='site-nav'>
+    <ul>
+        
+            <li><a href="/aviary/installation">Installation</a></li>
+            
+        
+            <li><a href="/aviary/examples">Examples</a></li>
+            
+        
+            <li><a href="/aviary/faqs">FAQs &amp; Troubleshooting</a></li>
+            
+        
+            <li><a href="/aviary/concepts">Concepts</a></li>
+            
+        
+            <li><a href="/aviary/citations">Citations</a></li>
+            
+        
+            <li><a href="/aviary/development">Development</a></li>
+            
+        
+    </ul>
+    <span id='light-dark-mode-switch'>
+        <svg xmlns="http://www.w3.org/2000/svg" id="dark-mode-icon" viewBox="0 0 20 20" fill="currentColor">
+            <path d="M17.293 13.293A8 8 0 016.707 2.707a8.001 8.001 0 1010.586 10.586z" />
+        </svg>
+
+        <svg xmlns="http://www.w3.org/2000/svg" id="light-mode-icon" viewBox="0 0 20 20" fill="currentColor">
+            <path fill-rule="evenodd" d="M10 2a1 1 0 011 1v1a1 1 0 11-2 0V3a1 1 0 011-1zm4 8a4 4 0 11-8 0 4 4 0 018 0zm-.464 4.95l.707.707a1 1 0 001.414-1.414l-.707-.707a1 1 0 00-1.414 1.414zm2.12-10.607a1 1 0 010 1.414l-.706.707a1 1 0 11-1.414-1.414l.707-.707a1 1 0 011.414 0zM17 11a1 1 0 100-2h-1a1 1 0 100 2h1zm-7 4a1 1 0 011 1v1a1 1 0 11-2 0v-1a1 1 0 011-1zM5.05 6.464A1 1 0 106.465 5.05l-.708-.707a1 1 0 00-1.414 1.414l.707.707zm1.414 8.486l-.707.707a1 1 0 01-1.414-1.414l.707-.707a1 1 0 011.414 1.414zM4 11a1 1 0 100-2H3a1 1 0 000 2h1z" clip-rule="evenodd" />
+        </svg>
+    </span>
+</nav>
+
+            </div>
+            <div class='doctave-content'>
+                <h1 id="changelog">Changelog</h1>
+<h2 id="v0.13.0---2026-03-31">v0.13.0 - 2026-03-31</h2>
+<p>Forked from <a href="https://github.com/wwood/aviary">wwood/aviary</a> at v0.12.0 (<code>myloasm</code> branch). All changes below are relative to that base.</p>
+<hr>
+<h3 id="added">Added</h3>
+<h4 id="web-interface-(-aviary/web/-)">Web Interface (<code>aviary/web/</code>)</h4>
+<p>A full browser-based monitor and results explorer served via Flask with a self-contained pixi environment. Start with:</p>
+<pre><code class="language-bash">ssh -L 8090:localhost:8090 username@address.com
+pixi run -e web server --output-dir /path/to/aviary_output
+</code></pre>
+<p>Then open <code>http://localhost:8090</code> in your browser.</p>
+<ul>
+<li><strong>Landing page</strong> (<code>/</code>) — animated splash screen with navigation nodes linking to all pages</li>
+<li><strong>Pipeline Monitor</strong> (<code>/dashboard</code>) — live Snakemake job tree grouped by sample and run date; log viewer with error highlighting, attempt selector, and search; auto-refresh every 60 seconds; output directory switcher; dismiss failed run banners</li>
+<li><strong>Bin Quality Report</strong> (<code>/dashboard</code> → tab) — per-bin completeness, contamination, strain heterogeneity, N50, size, GC, and GTDB taxonomy; assembly stats per sample/assembler; bins sorted HQ → MQ → LQ then by completeness</li>
+<li><strong>Results Visualisation</strong> (<code>/graph</code>) — six interactive chart types (bar, scatter, histogram, phylum stacked bar, heatmap, donut); 11 colour palette options; font and axis label customisation; SVG and PNG export</li>
+<li><strong>Tree View</strong> (<code>/view</code>) — interactive taxonomy tree from GTDB-Tk bin classifications with three layout modes:
+<ul>
+<li><strong>Sunburst</strong> (default) — concentric ring chart; click any segment to zoom into that clade; click the centre to go back; scroll or use topbar buttons to zoom in/out</li>
+<li><strong>Radial (Circular)</strong> — circular cladogram with phylum-level colour bands</li>
+<li><strong>Horizontal Cladogram</strong> — left-to-right dendrogram for reading deep taxonomy labels</li>
+<li>Quality and sample filters; taxonomy search; label size and font controls; SVG and PNG export</li>
+</ul>
+</li>
+<li><strong>Contig Assembly Graph</strong> (<code>/assembly</code>) — per-sample GFA assembly graph viewer for megahit and metaSPAdes outputs</li>
+<li><strong>Export Results</strong> (<code>/export</code>) — filtered bin table download as CSV or TSV; column selection grouped by category; quality filters; live preview of first 50 rows</li>
+<li><strong>Documentation</strong> (<code>/docs</code>) — inline Aviary pipeline documentation, citations, and external resource links</li>
+<li><strong>User Guide</strong> (<code>/guide</code>) — full in-browser guide covering all pages, controls, HPC/SSH tunnel setup, and API reference</li>
+</ul>
+<h4 id="web-api">Web API</h4>
+<p>All endpoints accept an optional <code>?root=</code> parameter to override the default output directory:</p>
+<table><thead><tr><th>Endpoint</th><th>Description</th></tr></thead><tbody>
+<tr><td><code>GET /api/structure</code></td><td>Sample/assembler job tree grouped by run date</td></tr>
+<tr><td><code>GET /api/status</code></td><td>Detailed status for a single output directory</td></tr>
+<tr><td><code>GET /api/summary</code></td><td>Bins and assembly stats for all runs</td></tr>
+<tr><td><code>GET /api/logs</code></td><td>Available Snakemake log files for a directory</td></tr>
+<tr><td><code>GET /api/job_log</code></td><td>Log file content and available retry attempts</td></tr>
+<tr><td><code>GET /api/benchmark</code></td><td>Benchmark timing data for a job</td></tr>
+<tr><td><code>GET /api/output_dirs</code></td><td>All discovered output directories under the root</td></tr>
+<tr><td><code>GET /api/gfa_stats</code></td><td>Parsed GFA assembly graph statistics for an output directory</td></tr>
+<tr><td><code>GET /api/gfa_available</code></td><td>Map of output directories to GFA file availability</td></tr>
+<tr><td><code>GET /api/taxonomy_tree</code></td><td>Taxonomy tree — SingleM condensed profile when available, falls back to GTDB-Tk</td></tr>
+<tr><td><code>GET /api/singlem_status</code></td><td>Count of output directories with a SingleM condensed profile</td></tr>
+<tr><td><code>GET /api/phylo_newick</code></td><td>GTDB-Tk Newick tree with MAG annotations for the tree view</td></tr>
+</tbody></table>
+<h4 id="pipeline">Pipeline</h4>
+<ul>
+<li><strong>myloasm assembler support</strong> — myloasm added as an alternative long-read assembler alongside Flye (<code>--long-read-assembler myloasm</code>)</li>
+<li><strong>GFA graph generation for short and long read assembly</strong> — assembly graphs produced and retained for use in the assembly graph viewer</li>
+<li><strong><code>skip_reads_check</code> parameter</strong> — added to <code>template_config.yaml</code> and config handling to support running subcommands without providing reads</li>
+<li><strong>SingleM metapackage support in integration tests</strong></li>
+</ul>
+<h4 id="environment">Environment</h4>
+<ul>
+<li><strong>Web environment in main <code>pixi.toml</code></strong> — flask added as <code>[feature.web]</code> so a single <code>pixi install</code> covers both the pipeline and the web interface</li>
+<li><strong><code>server</code> task</strong> — <code>pixi run -e web server</code> starts the web interface directly</li>
+</ul>
+<hr>
+<h3 id="fixed">Fixed</h3>
+<ul>
+<li>Updated symlinks to be working correctly</li>
+<li>Added diamond dependency to das-tool environment</li>
+<li>Added gzip dependencies so packages can read compressed files</li>
+<li>Updated <code>pbsim.fq.gz</code> binary file</li>
+<li>Fixed quickbin rule to use relative path for <code>quickbin.sh</code> after BBTool update</li>
+<li>Added conditional check for <code>skip_reads_check</code> to prevent errors when no reads are provided</li>
+<li>Normalised qnames in PAF output to match original fastq read names</li>
+<li>Handle unexpected long read types by raising a clear exception</li>
+<li>Ensured <code>bam_cache</code> directory is created in <code>get_coverage</code> before use</li>
+<li>Added memory allocation parameter to quickbin rule to prevent crashes</li>
+<li>Added <code>--only-id</code> flag to seqkit command in <code>filter_contigs_by_size</code> rule</li>
+<li>Refactored log permission handling in <code>onsuccess</code>/<code>onerror</code> to check file existence first</li>
+<li>Added temporary directory creation for GFA conversion in <code>assemble_short_reads</code></li>
+<li>Unset CUDA environment variables in taxvamb, semibin, and comebin rules for improved compatibility</li>
+<li>Added file locking to NanoPlot command for improved concurrency handling</li>
+<li>Fixed <code>OUTPUT_DIR</code> path to use <code>PIXI_PROJECT_ROOT</code> environment variable</li>
+<li>Added pandas import to <code>prepare_binning_files_gather</code> rule</li>
+<li>Updated blas and blas-devel package versions in <code>pixi.lock</code> for compatibility</li>
+<li>Refactored unrefined binners list formatting</li>
+<li>Removed unnecessary <code>--no-assign-taxonomy</code> flag from SingleM commands</li>
+<li>Handle <code>"none"</code> input for read lists in <code>ReadContainer</code> initialisation</li>
+<li>Added scratch directory to gtdbtk rule for better temporary file and memory handling</li>
+<li>Added sleep delays between GPU test submissions to prevent resource contention</li>
+<li>Increased memory allocation for GPU and expensive tests in mqsub commands</li>
+</ul>
+<hr>
+<h3 id="changed-(pipeline-only)">Changed (pipeline only)</h3>
+<ul>
+<li>Assembly rules now retain GFA graph files for downstream use</li>
+<li>Test output directory naming split for CPU and GPU tests to prevent log/data overwrites</li>
+<li>Log completion message added after refinery process finishes</li>
+</ul>
+
+            </div>
+            <div class='sidebar-right'>
+                <div class='page-nav' id='page-nav'>
+                    <p class='page-nav-header'>On this page</p>
+                    <ul>
+                        
+                        <li class='page-nav-level-1'>
+                            <a href='#changelog'>Changelog</a>
+                        </li>
+                        
+                        <li class='page-nav-level-2'>
+                            <a href='#v0.13.0---2026-03-31'>v0.13.0 - 2026-03-31</a>
+                        </li>
+                        
+                        <li class='page-nav-level-3'>
+                            <a href='#added'>Added</a>
+                        </li>
+                        
+                        <li class='page-nav-level-4'>
+                            <a href='#web-interface-(-aviary/web/-)'>Web Interface (aviary/web/)</a>
+                        </li>
+                        
+                        <li class='page-nav-level-4'>
+                            <a href='#web-api'>Web API</a>
+                        </li>
+                        
+                        <li class='page-nav-level-4'>
+                            <a href='#pipeline'>Pipeline</a>
+                        </li>
+                        
+                        <li class='page-nav-level-4'>
+                            <a href='#environment'>Environment</a>
+                        </li>
+                        
+                        <li class='page-nav-level-3'>
+                            <a href='#fixed'>Fixed</a>
+                        </li>
+                        
+                        <li class='page-nav-level-3'>
+                            <a href='#changed-(pipeline-only)'>Changed (pipeline only)</a>
+                        </li>
+                        
+                    </ul>
+                </div>
+            </div>
+            <div class='wave-container'>
+                <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1440 320">
+                    <path fill-opacity="0.35"
+                        d="M0,192L60,213.3C120,235,240,277,360,277.3C480,277,600,235,720,192C840,149,960,107,1080,122.7C1200,139,1320,213,1380,250.7L1440,288L1440,320L1380,320C1320,320,1200,320,1080,320C960,320,840,320,720,320C600,320,480,320,360,320C240,320,120,320,60,320L0,320Z">
+                    </path>
+                    <path fill-opacity="0.5"
+                        d="M0,160L60,181.3C120,203,240,245,360,229.3C480,213,600,139,720,138.7C840,139,960,213,1080,229.3C1200,245,1320,203,1380,181.3L1440,160L1440,320L1380,320C1320,320,1200,320,1080,320C960,320,840,320,720,320C600,320,480,320,360,320C240,320,120,320,60,320L0,320Z">
+                    </path>
+                    <path fill-opacity="0.2"
+                        d="M0,224L60,197.3C120,171,240,117,360,117.3C480,117,600,171,720,186.7C840,203,960,181,1080,186.7C1200,192,1320,224,1380,240L1440,256L1440,320L1380,320C1320,320,1200,320,1080,320C960,320,840,320,720,320C600,320,480,320,360,320C240,320,120,320,60,320L0,320Z">
+                    </path>
+                </svg>
+                <p>Powered by <a href='https://cli.doctave.com' target='_blank'>Doctave</a></p>
+            </div>
+        </div>
+    </div>
+    <script type="text/javascript" src="/aviary/assets/katex.js?v=1775000077"></script>
+    <script type="text/javascript" src="/aviary/assets/mermaid.js?v=1775000077"></script>
+    <script type="text/javascript" src="/aviary/assets/elasticlunr.js?v=1775000077"></script>
+    <script type="text/javascript" src="/aviary/assets/prism.js?v=1775000077"></script>
+    <script type="text/javascript" src="/aviary/assets/doctave-app.js?v=1775000077"></script>
+
+    
+</body>
+
+</html>
