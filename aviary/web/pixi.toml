@@ -11,4 +11,4 @@ flask = ">=2.3"
 env = { PYTHONNOUSERSITE = "1" }
 
 [tasks]
-serve = { cmd = "python server.py", description = "Start with defaults (port 8090, cwd as root)" }
+server = { cmd = "python server.py", description = "Start with defaults (port 8090, cwd as root)" }
