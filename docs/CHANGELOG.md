@@ -55,7 +55,7 @@ All endpoints accept an optional `?root=` parameter to override the default outp
 #### Pipeline
 
 - **myloasm assembler support** — myloasm added as an alternative long-read assembler alongside Flye (`--long-read-assembler myloasm`)
-- **GFA graph generation for short read assembly** — assembly graphs produced and retained for use in the assembly graph viewer
+- **GFA graph generation for short and long read assembly** — assembly graphs produced and retained for use in the assembly graph viewer
 - **`skip_reads_check` parameter** — added to `template_config.yaml` and config handling to support running subcommands without providing reads
 - **SingleM metapackage support in integration tests**
 
