@@ -18,9 +18,12 @@ import socket
 import random as _random
 import threading
 import argparse
+import logging
 from pathlib import Path
 from datetime import datetime
 from flask import Flask, request, Response, jsonify
+
+logger = logging.getLogger(__name__)
 
 # singlem_scanner.py writes this file after running singlem condense.
 # This is the correct input for the phylo tree — NOT the raw OTU table.
