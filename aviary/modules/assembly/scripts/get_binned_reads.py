@@ -1,3 +1,19 @@
+#!/usr/bin/env python3
+
+# Example shell directive for Snakemake:
+#
+# shell:
+#     """
+#     python3 aviary/modules/assembly/scripts/get_binned_reads.py \
+#         --long-reads {long_reads} \
+#         --short-reads-1 {short_reads_1} \
+#         --short-reads-2 {short_reads_2} \
+#         --threads {threads} \
+#         --output {output} \
+#         --log {log}
+#     """
+
+import argparse
 from subprocess import Popen, PIPE
 import os
 import multiprocessing as mp
@@ -179,16 +195,25 @@ def get_binned_reads(
 
     Path(output_file).touch()
 
-
 if __name__ == '__main__':
-    log = snakemake.log[0]
-    with open(log, "w") as logf: pass
+    parser = argparse.ArgumentParser(description="Extract binned reads for each bin.")
+    parser.add_argument('--long-reads', nargs='*', default='none', help='Long reads file(s)')
+    parser.add_argument('--short-reads-1', nargs='*', default='none', help='Short reads 1 file(s)')
+    parser.add_argument('--short-reads-2', nargs='*', default='none', help='Short reads 2 file(s)')
+    parser.add_argument('--threads', type=int, default=1, help='Number of threads')
+    parser.add_argument('--output', required=True, help='Output file')
+    parser.add_argument('--log', required=True, help='Log file')
+    args = parser.parse_args()
+
+    log = args.log
+    with open(log, "w") as logf:
+        pass
 
     get_binned_reads(
-        snakemake.config['long_reads'],
-        snakemake.config['short_reads_1'],
-        snakemake.config['short_reads_2'],
-        snakemake.threads,
-        snakemake.output,
+        args.long_reads,
+        args.short_reads_1,
+        args.short_reads_2,
+        args.threads,
+        args.output,
         log=log
     )

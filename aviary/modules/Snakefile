@@ -2,11 +2,21 @@
 # ruleorder: filtlong_no_reference > link_reads
 
 onsuccess:
-    shell("chmod g+w {log}")
+    import os
+    log_list = log if isinstance(log, list) else [log]
+    flat_logs = [item for sublist in log_list for item in (sublist if isinstance(sublist, list) else [sublist])]
+    for l in flat_logs:
+        if isinstance(l, str) and os.path.exists(l):
+            shell("chmod g+w " + l)
     print("Aviary finished, no error")
 
 onerror:
-    shell("chmod g+w {log}")
+    import os
+    log_list = log if isinstance(log, list) else [log]
+    flat_logs = [item for sublist in log_list for item in (sublist if isinstance(sublist, list) else [sublist])]
+    for l in flat_logs:
+        if isinstance(l, str) and os.path.exists(l):
+            shell("chmod g+w " + l)
     print("An error occurred")
 
 onstart:
@@ -29,7 +39,7 @@ onstart:
     ## pplacer deadlocks on too many threads
     pplacer_threads = min(48, int(config["pplacer_threads"]))
 
-    if long_reads == "none" and short_reads_1 == "none":
+    if long_reads == "none" and short_reads_1 == "none" and not config.get("skip_reads_check", False):
         sys.exit("Need at least one of long_reads or short_reads_1")
     if long_reads != "none" and not os.path.exists(long_reads[0]):
         sys.exit("long_reads does not point to a file")
@@ -72,18 +82,6 @@ module annotation:
     snakefile: "annotation/annotation.smk"
     config: config
 
-module strain_analysis:
-    snakefile: "strain_analysis/strain_analysis.smk"
-    config: config
-
-module viral_analysis:
-    snakefile: "viral_analysis/viral_analysis.smk"
-    config: config
-
-module benchmarking:
-    snakefile: "benchmarking/benchmarking.smk"
-    config: config
-
 use rule * from qc as *
 
 use rule * from cluster as *
@@ -96,39 +94,5 @@ use rule * from binning as *
 
 use rule * from annotation as *
 
-use rule * from strain_analysis as *
-
-use rule * from viral_analysis as *
-
-use rule * from benchmarking as *
-
 if config["fasta"] == "none":
     config["fasta"] = "assembly/final_contigs.fasta"
-
-
-# Create summary webpage
-rule create_webpage:
-    input:
-        checkm_file = "bins/checkm_minimal.tsv",
-        final_bins = "bins/bin_info.tsv",
-        # busco_done = "annotation/busco/done",
-        # enrichm_done = "annotation/enrichm/done",
-        fasta = config['fasta'],
-        long_reads_qc_html = "www/nanoplot/longReadsNanoPlot-report.html",
-        short_reads_fastqc_html = "www/fastqc/done",
-        long_reads_fastqc_html = "www/fastqc_long/done",
-        annotation_done = 'annotation/done',
-        singlem_done = "diversity/singlem_out/singlem_appraisal.tsv",
-        # strain_profile = "data/instrain/output/instrain_scaffold_info.tsv"
-    output:
-        "www/index.html"
-    threads:
-        config["max_threads"]
-    conda:
-        "../envs/webpage.yaml"
-    script:
-        "scripts/create_aviary_webpage.py"
-
-
-
-

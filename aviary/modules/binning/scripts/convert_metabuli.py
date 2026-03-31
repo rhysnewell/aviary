@@ -43,7 +43,10 @@ if __name__ == '__main__':
     filt_cov = snakemake.input.filt_cov
     output_file = snakemake.output[0]
     threads = snakemake.threads
-    log = snakemake.log[0]
+    # Prefer resources.log_path (new pattern); fallback to log[0] if present
+    log = getattr(getattr(snakemake, 'resources', object()), 'log_path', None)
+    if not log:
+        log = snakemake.log[0]
 
     with open(log, "w") as logf:
         logf.write("Starting conversion of metabuli predictions\n")

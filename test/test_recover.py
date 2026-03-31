@@ -4,16 +4,85 @@ import unittest
 import os
 import tempfile
 import extern
-from snakemake import load_configfile
+from snakemake.common.configfile import load_configfile
 
 path_to_data = os.path.join(os.path.dirname(os.path.realpath(__file__)),'data')
-path_to_conda = os.path.join(path_to_data,'.conda')
 
 FORWARD_READS = os.path.join(path_to_data, "wgsim.1.fq.gz")
 REVERSE_READS = os.path.join(path_to_data, "wgsim.2.fq.gz")
 ASSEMBLY = os.path.join(path_to_data, "assembly.fasta")
 
 class Tests(unittest.TestCase):
+    def test_read_permissions(self):
+        """Test with a non-readable fastq input fastq file."""
+        with tempfile.TemporaryDirectory() as tmpdir:
+            # Create a file with no read permissions
+            no_read_permissions = os.path.join(tmpdir, "no_read_permissions.fq.gz")
+            with open(no_read_permissions, 'w') as f:
+                f.write(">abc\nACGT\n")
+            os.chmod(no_read_permissions, 0o200)
+
+            cmd = (
+                f"GTDBTK_DATA_PATH=. "
+                f"CHECKM2DB=. "
+                f"EGGNOG_DATA_DIR=. "
+                f"METABULI_DB_PATH=. "
+                f"SINGLEM_METAPACKAGE_PATH=. "
+                f"aviary recover "
+                f"--assembly {ASSEMBLY} "
+                f"-1 {no_read_permissions} "
+                f"-2 {REVERSE_READS} "
+                f"--output {tmpdir}/test "
+            )
+            try:
+                output = extern.run(cmd)
+                # If the command succeeds, it should not
+                # raise an exception, so we fail the test.
+                raise AssertionError("Command should have failed due to read permissions error.")
+            except extern.ExternCalledProcessError as e:
+                output = str(e)
+                self.assertTrue(" Please check permissions." in output)
+
+            cmd = (
+                f"GTDBTK_DATA_PATH=. "
+                f"CHECKM2DB=. "
+                f"EGGNOG_DATA_DIR=. "
+                f"METABULI_DB_PATH=. "
+                f"SINGLEM_METAPACKAGE_PATH=. "
+                f"aviary recover "
+                f"--assembly {ASSEMBLY} "
+                f"-1 {FORWARD_READS} "
+                f"-2 {no_read_permissions} "
+                f"--output {tmpdir}/test "
+            )
+            try:
+                output = extern.run(cmd)
+                # If the command succeeds, it should not
+                # raise an exception, so we fail the test.
+                raise AssertionError("Command should have failed due to read permissions error.")
+            except extern.ExternCalledProcessError as e:
+                output = str(e)
+                self.assertTrue(" Please check permissions." in output)
+
+            cmd = (
+                f"GTDBTK_DATA_PATH=. "
+                f"CHECKM2DB=. "
+                f"EGGNOG_DATA_DIR=. "
+                f"METABULI_DB_PATH=. "
+                f"SINGLEM_METAPACKAGE_PATH=. "
+                f"aviary assemble "
+                f"--interleaved {no_read_permissions} "
+                f"--output {tmpdir}/test "
+            )
+            try:
+                output = extern.run(cmd)
+                # If the command succeeds, it should not
+                # raise an exception, so we fail the test.
+                raise AssertionError("Command should have failed due to read permissions error.")
+            except extern.ExternCalledProcessError as e:
+                output = str(e)
+                self.assertTrue(" Please check permissions." in output)
+
     def test_recover_simple_inputs(self):
         with tempfile.TemporaryDirectory() as tmpdir:
             cmd = (
@@ -27,9 +96,8 @@ class Tests(unittest.TestCase):
                 f"-1 {FORWARD_READS} "
                 f"-2 {REVERSE_READS} "
                 f"--output {tmpdir}/test "
-                f"--conda-prefix {path_to_conda} "
                 f"--dryrun --tmpdir {tmpdir} "
-                f"--snakemake-cmds \" --quiet\" "
+                #f"--snakemake-cmds \" --quiet\" "
             )
             output = extern.run(cmd)
 
@@ -59,11 +127,10 @@ class Tests(unittest.TestCase):
             self.assertTrue("refine_dastool" in output)
 
             # Extras
-            self.assertTrue("checkm2" in output)
             self.assertTrue("gtdbtk" in output)
             self.assertTrue("get_abundances" in output)
-            self.assertTrue("singlem_pipe_reads" in output)
-            self.assertTrue("singlem_appraise" in output)
+            self.assertFalse("singlem_pipe_reads" in output)
+            self.assertFalse("singlem_appraise" in output)
             self.assertTrue("finalise_stats" in output)
             self.assertTrue("recover_mags" in output)
 
@@ -83,10 +150,9 @@ class Tests(unittest.TestCase):
                 f"-1 {FORWARD_READS} "
                 f"-2 {REVERSE_READS} "
                 f"--output {tmpdir}/test "
-                f"--conda-prefix {path_to_conda} "
                 f"--skip-binners metabat "
                 f"--dryrun --tmpdir {tmpdir} "
-                f"--snakemake-cmds \" --quiet\" "
+                #f"--snakemake-cmds \" --quiet\" "
             )
             output = extern.run(cmd)
 
@@ -116,16 +182,36 @@ class Tests(unittest.TestCase):
             self.assertTrue("refine_dastool" in output)
 
             # Extras
-            self.assertTrue("checkm2" in output)
             self.assertTrue("gtdbtk" in output)
             self.assertTrue("get_abundances" in output)
-            self.assertTrue("singlem_pipe_reads" in output)
-            self.assertTrue("singlem_appraise" in output)
+            self.assertFalse("singlem_pipe_reads" in output)
+            self.assertFalse("singlem_appraise" in output)
             self.assertTrue("finalise_stats" in output)
             self.assertTrue("recover_mags" in output)
 
             # Unnecessary
             self.assertTrue("complete_assembly_with_qc" not in output)
+
+    def test_recover_quickbin(self):
+        with tempfile.TemporaryDirectory() as tmpdir:
+            cmd = (
+                f"GTDBTK_DATA_PATH=. "
+                f"CHECKM2DB=. "
+                f"EGGNOG_DATA_DIR=. "
+                f"METABULI_DB_PATH=. "
+                f"SINGLEM_METAPACKAGE_PATH=. "
+                f"aviary recover "
+                f"--assembly {ASSEMBLY} "
+                f"-1 {FORWARD_READS} "
+                f"-2 {REVERSE_READS} "
+                f"--extra-binners quickbin "
+                f"--output {tmpdir}/test "
+                f"--dryrun --tmpdir {tmpdir} "
+                # f"--snakemake-cmds \" --quiet\" "
+            )
+            output = extern.run(cmd)
+
+            self.assertTrue("quickbin" in output)
 
     def test_recover_no_singlem(self):
         with tempfile.TemporaryDirectory() as tmpdir:
@@ -141,9 +227,8 @@ class Tests(unittest.TestCase):
                 f"-1 {FORWARD_READS} "
                 f"-2 {REVERSE_READS} "
                 f"--output {tmpdir}/test "
-                f"--conda-prefix {path_to_conda} "
                 f"--dryrun --tmpdir {tmpdir} "
-                f"--snakemake-cmds \" --quiet\" "
+                #f"--snakemake-cmds \" --quiet\" "
             )
             output = extern.run(cmd)
 
@@ -173,11 +258,10 @@ class Tests(unittest.TestCase):
             self.assertTrue("refine_dastool" in output)
 
             # Extras
-            self.assertTrue("checkm2" in output)
             self.assertTrue("gtdbtk" in output)
             self.assertTrue("get_abundances" in output)
-            self.assertTrue("singlem_pipe_reads" not in output)
-            self.assertTrue("singlem_appraise" not in output)
+            self.assertFalse("singlem_pipe_reads" in output)
+            self.assertFalse("singlem_appraise" in output)
             self.assertTrue("finalise_stats" in output)
             self.assertTrue("recover_mags" in output)
 
@@ -198,9 +282,8 @@ class Tests(unittest.TestCase):
                 f"-1 {FORWARD_READS} "
                 f"-2 {REVERSE_READS} "
                 f"--output {tmpdir}/test "
-                f"--conda-prefix {path_to_conda} "
                 f"--dryrun --tmpdir {tmpdir} "
-                f"--snakemake-cmds \" --quiet\" "
+                #f"--snakemake-cmds \" --quiet\" "
             )
             output = extern.run(cmd)
 
@@ -230,11 +313,10 @@ class Tests(unittest.TestCase):
             self.assertTrue("refine_dastool" in output)
 
             # Extras
-            self.assertTrue("checkm2" in output)
             self.assertTrue("gtdbtk" in output)
             self.assertTrue("get_abundances" not in output)
-            self.assertTrue("singlem_pipe_reads" in output)
-            self.assertTrue("singlem_appraise" in output)
+            self.assertFalse("singlem_pipe_reads" in output)
+            self.assertFalse("singlem_appraise" in output)
             self.assertTrue("finalise_stats" in output)
             self.assertTrue("recover_mags" in output)
 
@@ -255,9 +337,8 @@ class Tests(unittest.TestCase):
                 f"-1 {FORWARD_READS} "
                 f"-2 {REVERSE_READS} "
                 f"--output {tmpdir}/test "
-                f"--conda-prefix {path_to_conda} "
                 f"--dryrun --tmpdir {tmpdir} "
-                f"--snakemake-cmds \" --quiet\" "
+                #f"--snakemake-cmds \" --quiet\" "
             )
             output = extern.run(cmd)
 
@@ -287,11 +368,10 @@ class Tests(unittest.TestCase):
             self.assertTrue("refine_dastool" in output)
 
             # Extras
-            self.assertTrue("checkm2" in output)
             self.assertTrue("gtdbtk" not in output)
             self.assertTrue("get_abundances" in output)
-            self.assertTrue("singlem_pipe_reads" in output)
-            self.assertTrue("singlem_appraise" in output)
+            self.assertFalse("singlem_pipe_reads" in output)
+            self.assertFalse("singlem_appraise" in output)
             self.assertTrue("finalise_stats" in output)
             self.assertTrue("recover_mags" in output)
 
@@ -312,11 +392,11 @@ class Tests(unittest.TestCase):
                 f"-1 {FORWARD_READS} "
                 f"-2 {REVERSE_READS} "
                 f"--output {tmpdir}/test "
-                f"--conda-prefix {path_to_conda} "
                 f"--dryrun --tmpdir {tmpdir} "
-                f"--snakemake-cmds \" --quiet\" "
+                #f"--snakemake-cmds \" --quiet\" "
             )
             output = extern.run(cmd)
+            print(output)
 
             # Binners
             self.assertTrue("prepare_binning_files" in output)
@@ -344,11 +424,10 @@ class Tests(unittest.TestCase):
             self.assertTrue("refine_dastool" in output)
 
             # Extras
-            self.assertTrue("checkm2" in output)
             self.assertTrue("gtdbtk" not in output)
             self.assertTrue("get_abundances" not in output)
-            self.assertTrue("singlem_pipe_reads" not in output)
-            self.assertTrue("singlem_appraise" not in output)
+            self.assertFalse("singlem_pipe_reads" in output)
+            self.assertFalse("singlem_appraise" in output)
             self.assertTrue("finalise_stats" in output)
             self.assertTrue("recover_mags" in output)
 
@@ -365,14 +444,15 @@ class Tests(unittest.TestCase):
                 f"SINGLEM_METAPACKAGE_PATH=. "
                 f"aviary recover "
                 f"--refinery-max-iterations 3 "
+                f"--min-completeness 62 "
+                f"--max-contamination 3 "
                 f"--max-threads 8 "
                 f"--assembly {ASSEMBLY} "
                 f"-1 {FORWARD_READS} "
                 f"-2 {REVERSE_READS} "
                 f"--output {tmpdir}/test --tmpdir {tmpdir} "
-                f"--conda-prefix {path_to_conda} "
                 f"--dryrun "
-                f"--snakemake-cmds \" --quiet\" "
+                #f"--snakemake-cmds \" --quiet\" "
             )
             extern.run(cmd)
 
@@ -382,6 +462,8 @@ class Tests(unittest.TestCase):
 
             self.assertEqual(config["refinery_max_iterations"], 3)
             self.assertEqual(config["pplacer_threads"], 8)
+            self.assertEqual(config["filter_bins_min_completeness"], 62.0)
+            self.assertEqual(config["filter_bins_max_contamination"], 3.0)
 
     def test_recover_config_many_threads(self):
         with tempfile.TemporaryDirectory() as tmpdir:
@@ -397,9 +479,8 @@ class Tests(unittest.TestCase):
                 f"-1 {FORWARD_READS} "
                 f"-2 {REVERSE_READS} "
                 f"--output {tmpdir}/test --tmpdir {tmpdir} "
-                f"--conda-prefix {path_to_conda} "
                 f"--dryrun "
-                f"--snakemake-cmds \" --quiet\" "
+                #f"--snakemake-cmds \" --quiet\" "
             )
             extern.run(cmd)
 
@@ -409,6 +490,8 @@ class Tests(unittest.TestCase):
 
             self.assertEqual(config["refinery_max_iterations"], 5)
             self.assertEqual(config["pplacer_threads"], 8)
+            self.assertEqual(config["filter_bins_min_completeness"], 50.0)
+            self.assertEqual(config["filter_bins_max_contamination"], 5.0)
 
     def test_recover_config_many_pplacer_threads(self):
         with tempfile.TemporaryDirectory() as tmpdir:
@@ -425,9 +508,8 @@ class Tests(unittest.TestCase):
                 f"-1 {FORWARD_READS} "
                 f"-2 {REVERSE_READS} "
                 f"--output {tmpdir}/test --tmpdir {tmpdir} "
-                f"--conda-prefix {path_to_conda} "
                 f"--dryrun "
-                f"--snakemake-cmds \" --quiet\" "
+                #f"--snakemake-cmds \" --quiet\" "
             )
             extern.run(cmd)
 
@@ -437,6 +519,8 @@ class Tests(unittest.TestCase):
 
             self.assertEqual(config["refinery_max_iterations"], 5)
             self.assertEqual(config["pplacer_threads"], 32)
+            self.assertEqual(config["filter_bins_min_completeness"], 50.0)
+            self.assertEqual(config["filter_bins_max_contamination"], 5.0)
 
 if __name__ == '__main__':
     unittest.main()

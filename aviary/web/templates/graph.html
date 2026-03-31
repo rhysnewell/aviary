@@ -1,0 +1,1707 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Aviary — Results Visualisation</title>
+<link rel="icon" href="/logo" type="image/png">
+<style>
+*, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+:root {
+  --bg:       #0d1117; --surface:  #161b22; --surface2: #1c2333;
+  --border:   #30363d; --text:     #c9d1d9; --muted:    #8b949e;
+  --teal:     #1abc9c; --teal-dim: rgba(26,188,156,.15);
+  --yellow:   #e3b341; --red:      #f85149; --green:    #3fb950;
+  --blue:     #58a6ff; --purple:   #bc8cff;
+  --radius:   6px; --sidebar-w: 220px; --topbar-h: 56px;
+}
+html, body { height: 100%; overflow: hidden; }
+body { display: flex; flex-direction: column; background: var(--bg); color: var(--text);
+       font: 13px/1.5 -apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif; }
+
+/* Topbar */
+.topbar {
+  height: var(--topbar-h); min-height: var(--topbar-h);
+  background: var(--surface); border-bottom: 1px solid var(--border);
+  display: flex; align-items: center; gap: 12px; padding: 0 20px;
+  flex-shrink: 0; z-index: 50;
+}
+.topbar-title { font-size: 15px; font-weight: 600; flex: 1; }
+.topbar-title span { color: var(--muted); font-weight: 400; font-size: 12px; margin-left: 8px; }
+.btn-dl {
+  display: inline-flex; align-items: center; gap: 5px;
+  padding: 6px 14px; border-radius: var(--radius); font-size: 12px;
+  font-weight: 600; cursor: pointer; border: 1px solid var(--border);
+  background: var(--surface2); color: var(--text); transition: all .15s;
+}
+.btn-dl:hover { border-color: var(--teal); color: var(--teal); }
+.btn-dl:disabled { opacity: .35; cursor: not-allowed; }
+.btn-dl.primary { background: var(--teal); color: #0d1117; border-color: var(--teal); }
+.btn-dl.primary:hover:not(:disabled) { opacity: .85; }
+
+/* Layout */
+.layout { display: flex; flex: 1; overflow: hidden; }
+
+/* Sidebar */
+.sidebar {
+  width: var(--sidebar-w); min-width: var(--sidebar-w);
+  background: var(--surface); border-right: 1px solid var(--border);
+  display: flex; flex-direction: column; overflow-y: auto; flex-shrink: 0;
+}
+.sidebar-logo {
+  height: var(--topbar-h); padding: 0 16px;
+  border-bottom: 1px solid var(--border);
+  display: flex; align-items: center; gap: 10px; flex-shrink: 0;
+}
+.sidebar-logo img { width: 32px; height: 32px; object-fit: contain; border-radius: 6px; }
+.sidebar-logo-text .title { font-size: 1.15rem; font-weight: 700; color: var(--text); letter-spacing: 0.02em; }
+.sidebar-logo-text .subtitle { font-size: 0.68rem; color: var(--teal); letter-spacing: 0.08em; text-transform: uppercase; margin-top: 1px; }
+.nav-section-header { padding: 12px 16px 4px; font-size: 0.62rem; font-weight: 700; letter-spacing: 0.1em; text-transform: uppercase; color: var(--muted); flex-shrink: 0; }
+.nav-item {
+  display: flex; align-items: center; gap: 10px;
+  padding: 8px 16px; font-size: 0.82rem; font-weight: 500; color: var(--muted);
+  text-decoration: none; transition: background .12s, color .12s, border-color .12s;
+  border-left: 2px solid transparent; flex-shrink: 0; user-select: none;
+}
+.nav-item:hover { color: var(--text); background: rgba(255,255,255,.04); }
+.nav-item.active { color: var(--teal); background: var(--teal-dim); border-left-color: var(--teal); }
+.nav-item svg { flex-shrink: 0; }
+.sidebar-nav-divider { height: 1px; background: var(--border); margin: 6px 0; flex-shrink: 0; }
+.sidebar-footer { padding: 12px 16px; border-top: 1px solid var(--border);
+                  font-size: 11px; color: var(--muted); margin-top: auto; flex-shrink: 0; }
+
+/* Main split */
+.main-split { flex: 1; display: flex; overflow: hidden; }
+
+/* Config panel */
+.config-panel {
+  width: 300px; min-width: 300px; background: var(--surface);
+  border-right: 1px solid var(--border); overflow-y: auto;
+  display: flex; flex-direction: column;
+}
+.config-section { padding: 14px 16px; border-bottom: 1px solid var(--border); }
+.section-label {
+  font-size: 10px; font-weight: 700; letter-spacing: .8px;
+  text-transform: uppercase; color: var(--muted); margin-bottom: 10px;
+}
+
+/* Graph type grid */
+.graph-type-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 6px; }
+.graph-type-card {
+  display: flex; flex-direction: column; align-items: center; gap: 5px;
+  padding: 10px 6px; border-radius: var(--radius);
+  border: 1px solid var(--border); background: var(--bg);
+  cursor: pointer; transition: all .15s; text-align: center;
+}
+.graph-type-card:hover { border-color: var(--muted); }
+.graph-type-card.active { border-color: var(--teal); background: var(--teal-dim); color: var(--teal); }
+.graph-type-card svg { opacity: .6; }
+.graph-type-card.active svg { opacity: 1; }
+.graph-type-card .card-label { font-size: 11px; font-weight: 500; }
+
+/* Form controls */
+.form-row { margin-bottom: 10px; }
+.form-label { font-size: 11px; color: var(--muted); margin-bottom: 4px; display: block; }
+.form-select, .form-input {
+  width: 100%; padding: 5px 9px; background: var(--bg);
+  border: 1px solid var(--border); border-radius: var(--radius);
+  color: var(--text); font-size: 12px; outline: none;
+}
+.form-select:focus, .form-input:focus { border-color: var(--teal); }
+
+/* Sample list */
+.sample-batch-header {
+  display: flex; align-items: center; gap: 6px; cursor: pointer;
+  background: none; border: none; width: 100%; text-align: left;
+  padding: 4px 0; font-size: 11px; font-weight: 600; color: var(--muted);
+}
+.sample-batch-header:hover { color: var(--text); }
+.sample-batch-header .chev { transition: transform .2s; font-size: 10px; }
+.sample-batch-header.open .chev { transform: rotate(90deg); }
+.batch-items { padding-left: 4px; }
+.batch-items.closed { display: none; }
+.sample-check-row {
+  display: flex; align-items: center; gap: 7px; padding: 4px 6px;
+  border-radius: 4px; cursor: pointer; font-size: 11px;
+}
+.sample-check-row:hover { background: rgba(255,255,255,.04); }
+.sample-check-row input { accent-color: var(--teal); cursor: pointer; }
+.asm-pill {
+  font-size: 10px; padding: 1px 5px; border-radius: 8px;
+  background: rgba(88,166,255,.15); color: var(--blue); border: 1px solid rgba(88,166,255,.2);
+}
+.sel-actions { display: flex; gap: 8px; margin-bottom: 8px; }
+.sel-link { font-size: 11px; color: var(--teal); background: none; border: none; cursor: pointer; padding: 0; }
+.sel-link:hover { text-decoration: underline; }
+
+/* Toggle row */
+.toggle-row { display: flex; border: 1px solid var(--border); border-radius: var(--radius); overflow: hidden; }
+.toggle-opt {
+  flex: 1; padding: 5px; font-size: 11px; font-weight: 500;
+  background: none; border: none; color: var(--muted); cursor: pointer;
+  transition: background .15s, color .15s;
+}
+.toggle-opt:not(:last-child) { border-right: 1px solid var(--border); }
+.toggle-opt.active { background: var(--teal); color: #0d1117; }
+
+/* Graph panel */
+.graph-panel { flex: 1; display: flex; flex-direction: column; overflow: hidden; background: var(--bg); }
+.graph-header {
+  display: flex; align-items: center; gap: 10px;
+  padding: 10px 18px; border-bottom: 1px solid var(--border);
+  background: var(--surface); flex-shrink: 0;
+}
+.graph-title { font-size: 13px; font-weight: 600; flex: 1; }
+.point-badge {
+  font-size: 11px; padding: 2px 8px; border-radius: 10px;
+  background: var(--teal-dim); color: var(--teal); border: 1px solid rgba(26,188,156,.2);
+}
+.graph-body { flex: 1; overflow: auto; display: flex; align-items: center; justify-content: center; padding: 20px; }
+.graph-svg-wrap { width: 100%; max-width: 820px; }
+.graph-empty {
+  display: flex; flex-direction: column; align-items: center;
+  gap: 10px; color: var(--muted); text-align: center;
+}
+.graph-empty svg { opacity: .25; }
+.graph-legend {
+  display: flex; flex-wrap: wrap; gap: 10px;
+  padding: 10px 18px; border-top: 1px solid var(--border);
+  background: var(--surface); flex-shrink: 0;
+}
+.legend-item { display: flex; align-items: center; gap: 5px; font-size: 11px; color: var(--muted); }
+.legend-swatch { width: 10px; height: 10px; border-radius: 2px; flex-shrink: 0; }
+
+/* Tooltip */
+#g-tooltip {
+  position: fixed; background: var(--surface2); border: 1px solid var(--border);
+  border-radius: 6px; padding: 8px 11px; font-size: 12px; color: var(--text);
+  pointer-events: none; z-index: 999; display: none; max-width: 230px; line-height: 1.6;
+  box-shadow: 0 4px 16px rgba(0,0,0,.4);
+}
+
+/* Palette swatches */
+.palette-grid { display: flex; flex-wrap: wrap; gap: 5px; margin-top: 4px; }
+.palette-swatch {
+  width: 36px; height: 22px; border-radius: 4px; cursor: pointer;
+  border: 2px solid transparent; transition: border-color .15s; overflow: hidden;
+}
+.palette-swatch.active { border-color: var(--teal); }
+.palette-swatch-inner { display: flex; height: 100%; }
+.palette-swatch-inner span { flex: 1; }
+/* Style toggle buttons */
+.style-toggles { display: flex; gap: 5px; }
+.style-toggle {
+  flex: 1; padding: 5px 0; font-size: 12px; font-weight: 600;
+  background: var(--bg); border: 1px solid var(--border);
+  border-radius: var(--radius); color: var(--muted); cursor: pointer;
+  transition: all .15s; text-align: center;
+}
+.style-toggle.active { background: var(--teal); color: #0d1117; border-color: var(--teal); }
+#page-loading { display:none; position:fixed; inset:0; z-index:9999; background:var(--bg); align-items:center; justify-content:center; }
+#page-loading.visible { display:flex; }
+#page-loading img { width:min(340px,55vw); opacity:0; animation:splash-fade .3s ease forwards; }
+@keyframes splash-fade { from{opacity:0;transform:scale(.96)} to{opacity:1;transform:scale(1)} }
+</style>
+</head>
+<body>
+<div id="page-loading"><img src="/logo" alt="Aviary"></div>
+
+<div id="g-tooltip"></div>
+
+<!-- Topbar -->
+<div class="topbar">
+  <div class="topbar-title">Results Visualisation <span>Interactive pipeline result visualisation</span></div>
+  <button class="btn-dl" id="btn-svg" onclick="downloadSVG()" disabled>
+    <svg width="13" height="13" viewBox="0 0 16 16" fill="currentColor"><path d="M14 4.5V14a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2V2a2 2 0 0 1 2-2h5.5L14 4.5zm-3 0A1.5 1.5 0 0 1 9.5 3V1H4a1 1 0 0 0-1 1v12a1 1 0 0 0 1 1h8a1 1 0 0 0 1-1V4.5h-2z"/></svg>
+    SVG
+  </button>
+  <button class="btn-dl primary" id="btn-png" onclick="downloadPNG()" disabled>
+    <svg width="13" height="13" viewBox="0 0 16 16" fill="currentColor"><path d="M.5 9.9a.5.5 0 0 1 .5.5v2.5a1 1 0 0 0 1 1h12a1 1 0 0 0 1-1v-2.5a.5.5 0 0 1 1 0v2.5a2 2 0 0 1-2 2H2a2 2 0 0 1-2-2v-2.5a.5.5 0 0 1 .5-.5z"/><path d="M7.646 11.854a.5.5 0 0 0 .708 0l3-3a.5.5 0 0 0-.708-.708L8.5 10.293V1.5a.5.5 0 0 0-1 0v8.793L5.354 8.146a.5.5 0 1 0-.708.708l3 3z"/></svg>
+    PNG
+  </button>
+</div>
+
+<div class="layout">
+  <!-- Sidebar -->
+  <nav class="sidebar">
+    <div class="sidebar-logo">
+      <a href="/" style="text-decoration:none;display:flex;align-items:center;gap:10px;"><img src="/logo" alt="Aviary" onerror="this.style.display='none'">
+      <div class="sidebar-logo-text"><div class="title">Aviary</div><div class="subtitle">Metagenomics</div></div></a>
+    </div>
+    <a class="nav-item" href="/dashboard">
+      <svg width="15" height="15" viewBox="0 0 16 16" fill="currentColor"><path d="M0 2a2 2 0 0 1 2-2h12a2 2 0 0 1 2 2v1a2 2 0 0 1-2 2H2a2 2 0 0 1-2-2V2zm15 2a1 1 0 0 0 1-1V2a1 1 0 0 0-1-1H1a1 1 0 0 0-1 1v1a1 1 0 0 0 1 1h14zM0 8a2 2 0 0 1 2-2h12a2 2 0 0 1 2 2v1a2 2 0 0 1-2 2H2a2 2 0 0 1-2-2V8zm15 2a1 1 0 0 0 1-1V8a1 1 0 0 0-1-1H1a1 1 0 0 0-1 1v1a1 1 0 0 0 1 1h14zm-13-1a1 1 0 1 0 0-2 1 1 0 0 0 0 2zm2 0a1 1 0 1 0 0-2 1 1 0 0 0 0 2zm2 0a1 1 0 1 0 0-2 1 1 0 0 0 0 2z"/></svg>
+      <span class="nav-item-text">Pipeline Monitor</span>
+    </a>
+    <a class="nav-item" href="/dashboard?view=summary">
+      <svg width="15" height="15" viewBox="0 0 16 16" fill="currentColor"><path d="M4 11H2v3h2v-3zm5-4H7v7h2V7zm5-5v12h-2V2h2zm-2-1a1 1 0 0 0-1 1v12a1 1 0 0 0 1 1h2a1 1 0 0 0 1-1V2a1 1 0 0 0-1-1h-2zM6 7a1 1 0 0 1 1-1h2a1 1 0 0 1 1 1v7a1 1 0 0 1-1 1H7a1 1 0 0 1-1-1V7zm-5 4a1 1 0 0 1 1-1h2a1 1 0 0 1 1 1v3a1 1 0 0 1-1 1H2a1 1 0 0 1-1-1v-3z"/></svg>
+      <span class="nav-item-text">Bin Quality Report</span>
+    </a>
+    <a class="nav-item" href="/view">
+      <svg width="15" height="15" viewBox="0 0 16 16" fill="currentColor"><path d="M4.5 1a.5.5 0 0 1 .5.5V4h3V1.5a.5.5 0 0 1 1 0V4h1a.5.5 0 0 1 0 1H9v1.293l2.354 2.353a.5.5 0 0 1-.708.708L9 7.707V9h1a.5.5 0 0 1 0 1H9v1.293l2.354 2.353a.5.5 0 0 1-.708.708L9 12.707V14.5a.5.5 0 0 1-1 0V10H5v4.5a.5.5 0 0 1-1 0V12.707l-1.646 1.647a.5.5 0 0 1-.708-.708L3.293 12H2a.5.5 0 0 1 0-1h1.293L2.146 9.854a.5.5 0 1 1 .708-.708L4 10.293V9H3a.5.5 0 0 1 0-1h1V6.707L2.854 5.561a.5.5 0 1 1 .708-.708L5 6.293V5H4a.5.5 0 0 1 0-1h1V1.5a.5.5 0 0 1 .5-.5zM5 5v2h3V5H5zm0 3v2h3V8H5z"/></svg>
+      <span class="nav-item-text">View</span>
+    </a>
+    <div class="sidebar-nav-divider"></div>
+    <a class="nav-item active" href="/graph">
+      <svg width="15" height="15" viewBox="0 0 16 16" fill="currentColor"><path d="M0 0h1v16H0zm15 0h1v16h-1zM5 11.5a.5.5 0 0 1 .5-.5h5a.5.5 0 0 1 0 1h-5a.5.5 0 0 1-.5-.5zm-3-4a.5.5 0 0 1 .5-.5h11a.5.5 0 0 1 0 1h-11a.5.5 0 0 1-.5-.5zm6-4a.5.5 0 0 1 .5-.5h5a.5.5 0 0 1 0 1h-5a.5.5 0 0 1-.5-.5z"/></svg>
+      <span class="nav-item-text">Results Visualisation</span>
+    </a>
+    <a class="nav-item" href="/assembly">
+      <svg width="15" height="15" viewBox="0 0 16 16" fill="currentColor"><path d="M8.186 1.113a.5.5 0 0 0-.372 0L1.846 3.5 8 5.961 14.154 3.5 8.186 1.113zM15 4.239l-6.5 2.6v7.922l6.5-2.6V4.24zM7.5 14.762V6.838L1 4.239v7.923l6.5 2.6zM7.443.184a1.5 1.5 0 0 1 1.114 0l7.129 2.852A.5.5 0 0 1 16 3.5v8.662a1 1 0 0 1-.629.928l-7.185 2.874a.5.5 0 0 1-.372 0L.63 13.09a1 1 0 0 1-.63-.928V3.5a.5.5 0 0 1 .314-.464L7.443.184z"/></svg>
+      <span class="nav-item-text">Contig Assembly Graph</span>
+    </a>
+    <a class="nav-item" href="/export">
+      <svg width="15" height="15" viewBox="0 0 16 16" fill="currentColor"><path d="M.5 9.9a.5.5 0 0 1 .5.5v2.5a1 1 0 0 0 1 1h12a1 1 0 0 0 1-1v-2.5a.5.5 0 0 1 1 0v2.5a2 2 0 0 1-2 2H2a2 2 0 0 1-2-2v-2.5a.5.5 0 0 1 .5-.5z"/><path d="M7.646 11.854a.5.5 0 0 0 .708 0l3-3a.5.5 0 0 0-.708-.708L8.5 10.293V1.5a.5.5 0 0 0-1 0v8.793L5.354 8.146a.5.5 0 1 0-.708.708l3 3z"/></svg>
+      <span class="nav-item-text">Export Results</span>
+    </a>
+    <div class="sidebar-nav-divider"></div>
+    <a class="nav-item" href="/docs">
+      <svg width="15" height="15" viewBox="0 0 16 16" fill="currentColor"><path d="M1 2.828c.885-.37 2.154-.769 3.388-.893 1.33-.134 2.458.063 3.112.752v9.746c-.935-.53-2.12-.603-3.213-.493-1.18.12-2.37.461-3.287.811V2.828zm7.5-.141c.654-.689 1.782-.886 3.112-.752 1.234.124 2.503.523 3.388.893v9.923c-.918-.35-2.107-.692-3.287-.81-1.094-.111-2.278-.039-3.213.492V2.687zM8 1.783C7.015.936 5.587.81 4.287.94c-1.514.153-3.042.672-3.994 1.105A.5.5 0 0 0 0 2.5v11a.5.5 0 0 0 .707.455c.882-.4 2.303-.881 3.68-1.02 1.409-.142 2.59.087 3.223.877a.5.5 0 0 0 .78 0c.633-.79 1.814-1.019 3.222-.877 1.378.139 2.8.62 3.681 1.02A.5.5 0 0 0 16 13.5v-11a.5.5 0 0 0-.293-.455c-.952-.433-2.48-.952-3.994-1.105C10.413.809 8.985.936 8 1.783z"/></svg>
+      <span class="nav-item-text">Documentation</span>
+    </a>
+    <a class="nav-item" href="/guide">
+      <svg width="15" height="15" viewBox="0 0 16 16" fill="currentColor"><path d="M8 15A7 7 0 1 1 8 1a7 7 0 0 1 0 14zm0 1A8 8 0 1 0 8 0a8 8 0 0 0 0 16z"/><path d="M5.255 5.786a.237.237 0 0 0 .241.247h.825c.138 0 .248-.113.266-.25.09-.656.54-1.134 1.342-1.134.686 0 1.314.343 1.314 1.168 0 .635-.374.927-.965 1.371-.673.489-1.206 1.06-1.168 1.987l.003.217a.25.25 0 0 0 .25.246h.811a.25.25 0 0 0 .25-.25v-.105c0-.718.273-.927 1.01-1.486.609-.463 1.244-.977 1.244-2.056 0-1.511-1.276-2.241-2.673-2.241-1.267 0-2.655.59-2.75 2.286zm1.557 5.763c0 .533.425.927 1.01.927.609 0 1.028-.394 1.028-.927 0-.552-.42-.94-1.029-.94-.584 0-1.009.388-1.009.94z"/></svg>
+      <span class="nav-item-text">User Guide</span>
+    </a>
+    <div class="sidebar-footer">Aviary Web Interface</div>
+  </nav>
+
+  <div class="main-split">
+    <!-- Config panel -->
+    <div class="config-panel">
+
+      <!-- Graph type -->
+      <div class="config-section">
+        <div class="section-label">Graph Type</div>
+        <div class="graph-type-grid" id="type-grid"></div>
+      </div>
+
+      <!-- Samples -->
+      <div class="config-section">
+        <div class="section-label">Samples</div>
+        <div class="sel-actions">
+          <button class="sel-link" onclick="selAll()">All</button>
+          <span style="color:var(--border)">·</span>
+          <button class="sel-link" onclick="selNone()">None</button>
+          <span id="sel-count" style="margin-left:auto;font-size:11px;color:var(--muted)">0</span>
+        </div>
+        <div id="sample-list"><div style="color:var(--muted);font-size:12px">Loading…</div></div>
+      </div>
+
+      <!-- Options (dynamic) -->
+      <div class="config-section" id="options-section">
+        <div class="section-label">Options</div>
+        <div id="options-body"><div style="color:var(--muted);font-size:12px">Select a graph type above.</div></div>
+      </div>
+
+      <!-- Customise -->
+      <div class="config-section">
+        <div class="section-label">Customise</div>
+        <div class="form-row">
+          <label class="form-label">Title</label>
+          <input class="form-input" type="text" id="style-title" placeholder="Chart title…"
+                 oninput="setStyle('title',this.value)">
+        </div>
+        <div class="form-row">
+          <label class="form-label">Subtitle</label>
+          <input class="form-input" type="text" id="style-subtitle" placeholder="Subtitle…"
+                 oninput="setStyle('subtitle',this.value)">
+        </div>
+        <div class="form-row">
+          <label class="form-label">X axis label override</label>
+          <input class="form-input" type="text" id="style-xlabel" placeholder="Custom x label…"
+                 oninput="setStyle('xLabel',this.value)">
+        </div>
+        <div class="form-row">
+          <label class="form-label">Y axis label override</label>
+          <input class="form-input" type="text" id="style-ylabel" placeholder="Custom y label…"
+                 oninput="setStyle('yLabel',this.value)">
+        </div>
+        <div class="form-row">
+          <label class="form-label">Font size</label>
+          <select class="form-select" id="style-fontsize" onchange="setStyle('fontSize',this.value)">
+            <option value="">Auto</option>
+            <option value="9">9</option>
+            <option value="10">10</option>
+            <option value="11">11</option>
+            <option value="12">12</option>
+            <option value="13">13 (default)</option>
+            <option value="14">14</option>
+            <option value="16">16</option>
+            <option value="18">18</option>
+          </select>
+        </div>
+        <div class="form-row">
+          <label class="form-label">Font</label>
+          <select class="form-select" id="style-fontfamily" onchange="setStyle('fontFamily',this.value)">
+            <option value="">System default</option>
+            <option value="monospace">Monospace</option>
+            <option value="serif">Serif</option>
+            <option value="'Arial',sans-serif">Arial</option>
+            <option value="'Georgia',serif">Georgia</option>
+            <option value="'Courier New',monospace">Courier New</option>
+          </select>
+        </div>
+        <div class="form-row">
+          <label class="form-label">Text style</label>
+          <div class="style-toggles">
+            <button class="style-toggle" id="toggle-bold" onclick="toggleStyle('bold')"><b>B</b></button>
+            <button class="style-toggle" id="toggle-italic" onclick="toggleStyle('italic')"><i>I</i></button>
+          </div>
+        </div>
+        <div class="form-row">
+          <label class="form-label">Colour palette</label>
+          <div class="palette-grid" id="palette-grid"></div>
+        </div>
+      </div>
+
+    </div><!-- /config-panel -->
+
+    <!-- Graph panel -->
+    <div class="graph-panel">
+      <div class="graph-header">
+        <div class="graph-title" id="graph-title">No graph selected</div>
+        <div class="point-badge" id="point-badge" style="display:none"></div>
+      </div>
+      <div class="graph-body" id="graph-body">
+        <div class="graph-empty">
+          <svg width="48" height="48" viewBox="0 0 16 16" fill="var(--muted)"><path d="M0 0h1v16H0zm15 0h1v16h-1zM5 11.5a.5.5 0 0 1 .5-.5h5a.5.5 0 0 1 0 1h-5a.5.5 0 0 1-.5-.5zm-3-4a.5.5 0 0 1 .5-.5h11a.5.5 0 0 1 0 1h-11a.5.5 0 0 1-.5-.5zm6-4a.5.5 0 0 1 .5-.5h5a.5.5 0 0 1 0 1h-5a.5.5 0 0 1-.5-.5z"/></svg>
+          <p>Configure a graph and select samples to get started.</p>
+        </div>
+      </div>
+      <div class="graph-legend" id="graph-legend" style="display:none"></div>
+    </div>
+  </div>
+</div>
+
+<script>
+// ---------------------------------------------------------------------------
+// Constants & palette
+// ---------------------------------------------------------------------------
+const C = {
+  bg:'#0d1117', surface:'#161b22', border:'#30363d',
+  text:'#c9d1d9', muted:'#8b949e',
+  teal:'#1abc9c', green:'#3fb950', yellow:'#e3b341', red:'#f85149',
+  blue:'#58a6ff', purple:'#bc8cff',
+};
+const TIER_LABEL = { high: 'HQ', medium: 'MQ', low: 'LQ' };
+function getTierCol() {
+  const p = getAsmPalette();
+  return { high: p[0], medium: p[1], low: p[2] };
+}
+const ASM_COL    = {};  // filled dynamically
+
+// ---------------------------------------------------------------------------
+// Style / customisation state
+// ---------------------------------------------------------------------------
+const PALETTES = {
+  // ── First 3 slots = HQ / MQ / LQ colours ──────────────────────────────────
+  classic:    { label:'Classic',    colors:['#3fb950','#f97316','#f85149','#58a6ff','#bc8cff','#1abc9c'] },
+  aviary:     { label:'Aviary',     colors:['#58a6ff','#bc8cff','#1abc9c','#e3b341','#f78166','#ff9500'] },
+  bold:       { label:'Bold',       colors:['#e11d48','#2563eb','#16a34a','#f59e0b','#7c3aed','#0891b2'] },
+  vivid:      { label:'Vivid',      colors:['#06d6a0','#ef476f','#ffd166','#118ab2','#9b5de5','#f15bb5'] },
+  ocean:      { label:'Ocean',      colors:['#0ea5e9','#059669','#7c3aed','#06b6d4','#38bdf8','#0284c7'] },
+  sunset:     { label:'Sunset',     colors:['#f97316','#ef4444','#9333ea','#eab308','#ec4899','#fb923c'] },
+  tropical:   { label:'Tropical',   colors:['#14b8a6','#f43f5e','#facc15','#8b5cf6','#22d3ee','#fb7185'] },
+  accessible: { label:'Accessible', colors:['#0077bb','#ee7733','#009988','#cc3311','#33bbee','#ee3377'] },
+  forest:     { label:'Forest',     colors:['#22c55e','#16a34a','#84cc16','#65a30d','#4ade80','#86efac'] },
+  mono:       { label:'Mono',       colors:['#e2e8f0','#94a3b8','#64748b','#475569','#334155','#cbd5e1'] },
+  amethyst:   { label:'Amethyst',   colors:['#a78bfa','#8b5cf6','#c4b5fd','#7c3aed','#ddd6fe','#6d28d9'] },
+};
+
+let _style = { title:'', subtitle:'', xLabel:'', yLabel:'', fontSize:'', bold:false, italic:false, palette:'classic', fontFamily:'' };
+
+function getAsmPalette() { return (PALETTES[_style.palette] || PALETTES.classic).colors; }
+const PHYLUM_PAL = ['#58a6ff','#3fb950','#e3b341','#bc8cff','#1abc9c','#f78166',
+                    '#ff9500','#30d158','#ff2d55','#af52de','#34aadc','#5ac8fa',
+                    '#ffcc00','#ff3b30','#4cd964'];
+
+const GRAPH_TYPES = [
+  { id:'bar',      label:'Bar Chart',   desc:'MAG counts per sample',
+    icon:'<rect x="2" y="10" width="3" height="4" rx=".5"/><rect x="6.5" y="6" width="3" height="8" rx=".5"/><rect x="11" y="2" width="3" height="12" rx=".5"/>' },
+  { id:'scatter',  label:'Scatter',     desc:'Completeness vs contamination',
+    icon:'<circle cx="4" cy="12" r="1.5"/><circle cx="8" cy="6" r="1.5"/><circle cx="12" cy="9" r="1.5"/><circle cx="6" cy="3" r="1.5"/><circle cx="13" cy="4" r="1.5"/>' },
+  { id:'histogram',label:'Histogram',   desc:'Bin quality distributions',
+    icon:'<rect x="1" y="8" width="2.5" height="6" rx=".3"/><rect x="4.5" y="4" width="2.5" height="10" rx=".3"/><rect x="8" y="6" width="2.5" height="8" rx=".3"/><rect x="11.5" y="10" width="2.5" height="4" rx=".3"/>' },
+  { id:'phylum',   label:'Phylum Bar',  desc:'Taxonomy breakdown',
+    icon:'<rect x="1" y="2" width="14" height="3" rx=".5"/><rect x="1" y="6.5" width="14" height="3" rx=".5"/><rect x="1" y="11" width="14" height="3" rx=".5"/>' },
+  { id:'heatmap',  label:'Heatmap',     desc:'Rule duration per sample',
+    icon:'<rect x="1" y="1" width="6" height="6" rx=".5" opacity=".3"/><rect x="9" y="1" width="6" height="6" rx=".5" opacity=".8"/><rect x="1" y="9" width="6" height="6" rx=".5" opacity=".6"/><rect x="9" y="9" width="6" height="6" rx=".5" opacity="1"/>' },
+  { id:'donut',    label:'Donut',       desc:'Tier or domain proportions',
+    icon:'<path d="M8 2a6 6 0 1 0 0 12A6 6 0 0 0 8 2zm0 2a4 4 0 1 1 0 8A4 4 0 0 1 8 4zm0 1.5a2.5 2.5 0 1 0 0 5A2.5 2.5 0 0 0 8 5.5z"/>' },
+  { id:'phylumcomp', label:'Phylum Quality', desc:'Mean completeness by phylum',
+    icon:'<rect x="2" y="2" width="11" height="2.5" rx=".5"/><rect x="2" y="6.5" width="8" height="2.5" rx=".5"/><rect x="2" y="11" width="9" height="2.5" rx=".5"/>' },
+];
+
+const SVG_W = 760, SVG_H = 440;
+const PAD = { top: 40, right: 30, bottom: 80, left: 72 };
+const iW  = SVG_W - PAD.left - PAD.right;
+const iH  = SVG_H - PAD.top  - PAD.bottom;
+
+// ---------------------------------------------------------------------------
+// State
+// ---------------------------------------------------------------------------
+let _summaryData  = null;
+let _structData   = null;
+let _graphType    = null;
+let _selected     = new Set();   // "date||sample||asm" keys
+let _opts         = {};          // current options per graph type
+let _legendItems  = [];
+
+// ---------------------------------------------------------------------------
+// Boot
+// ---------------------------------------------------------------------------
+document.addEventListener('DOMContentLoaded', () => {
+  renderTypeGrid();
+  renderPaletteGrid();
+  loadData();
+});
+
+// ---------------------------------------------------------------------------
+// Style functions
+// ---------------------------------------------------------------------------
+function setStyle(key, val) {
+  _style[key] = val;
+  redraw();
+}
+
+function toggleStyle(key) {
+  _style[key] = !_style[key];
+  document.getElementById(`toggle-${key}`).classList.toggle('active', _style[key]);
+  redraw();
+}
+
+function setPalette(name) {
+  _style.palette = name;
+  const pal = getAsmPalette();
+  // Reassign assembler colors in sorted order from new palette
+  Object.keys(ASM_COL).sort().forEach((a, i) => { ASM_COL[a] = pal[i % pal.length]; });
+  document.querySelectorAll('.palette-swatch').forEach(s =>
+    s.classList.toggle('active', s.dataset.palette === name)
+  );
+  redraw();
+}
+
+function renderPaletteGrid() {
+  document.getElementById('palette-grid').innerHTML = Object.entries(PALETTES).map(([name, p]) => {
+    const strips = p.colors.slice(0, 5).map(c => `<span style="background:${c}"></span>`).join('');
+    return `<div class="palette-swatch${name === _style.palette ? ' active' : ''}"
+                 data-palette="${name}" onclick="setPalette('${name}')" title="${p.label}">
+              <div class="palette-swatch-inner">${strips}</div>
+            </div>`;
+  }).join('');
+}
+
+function applyStyleToSVG() {
+  const svgEl = document.getElementById('graph-svg');
+  if (!svgEl) return;
+
+  const vb = svgEl.viewBox.baseVal;
+  const origW = vb.width, origH = vb.height;
+  const NS = 'http://www.w3.org/2000/svg';
+
+  // Title + subtitle: expand viewBox upward and inject text
+  const titleLines = [_style.title, _style.subtitle].filter(Boolean);
+  if (titleLines.length) {
+    const titleH = titleLines.length === 2 ? 46 : 28;
+    svgEl.setAttribute('viewBox', `0 ${-titleH} ${origW} ${origH + titleH}`);
+    svgEl.setAttribute('height', origH + titleH);
+
+    const bg = document.createElementNS(NS, 'rect');
+    bg.setAttribute('x', '0'); bg.setAttribute('y', String(-titleH));
+    bg.setAttribute('width', String(origW)); bg.setAttribute('height', String(titleH));
+    bg.setAttribute('fill', C.bg); bg.setAttribute('data-style-el', '1');
+    svgEl.insertBefore(bg, svgEl.firstChild);
+
+    if (_style.title) {
+      const t = document.createElementNS(NS, 'text');
+      t.setAttribute('x', String(origW / 2));
+      t.setAttribute('y', String(-titleH + 19));
+      t.setAttribute('text-anchor', 'middle');
+      t.setAttribute('font-size', _style.fontSize || '15');
+      t.setAttribute('font-weight', '700');
+      if (_style.italic) t.setAttribute('font-style', 'italic');
+      t.setAttribute('fill', C.text); t.setAttribute('data-style-el', '1');
+      t.textContent = _style.title;
+      svgEl.insertBefore(t, bg.nextSibling);
+    }
+    if (_style.subtitle) {
+      const y = _style.title ? -titleH + 38 : -titleH + 19;
+      const t = document.createElementNS(NS, 'text');
+      t.setAttribute('x', String(origW / 2)); t.setAttribute('y', String(y));
+      t.setAttribute('text-anchor', 'middle');
+      t.setAttribute('font-size', _style.fontSize || '11');
+      if (_style.bold) t.setAttribute('font-weight', 'bold');
+      if (_style.italic) t.setAttribute('font-style', 'italic');
+      t.setAttribute('fill', C.muted); t.setAttribute('data-style-el', '1');
+      t.textContent = _style.subtitle;
+      // Insert after bg (and title if present)
+      const insertAfter = svgEl.querySelector('[data-style-el]:last-of-type') || bg;
+      insertAfter.insertAdjacentElement('afterend', t);
+    }
+  }
+
+  // Custom Y axis label — override existing rotate(-90) label, or inject one if absent
+  if (_style.yLabel) {
+    let yLabelEl = null;
+    svgEl.querySelectorAll('text').forEach(t => {
+      if (t.hasAttribute('data-style-el')) return;
+      if ((t.getAttribute('transform') || '').includes('rotate(-90)')) yLabelEl = t;
+    });
+    if (yLabelEl) {
+      yLabelEl.textContent = _style.yLabel;
+    } else if (_graphType !== 'donut') {
+      const t = document.createElementNS(NS, 'text');
+      t.setAttribute('x', String(-(origH / 2)));
+      t.setAttribute('y', '14');
+      t.setAttribute('text-anchor', 'middle');
+      t.setAttribute('font-size', '11');
+      t.setAttribute('fill', C.muted);
+      t.setAttribute('transform', 'rotate(-90)');
+      t.textContent = _style.yLabel;
+      svgEl.appendChild(t);
+    }
+  }
+
+  // Custom X axis label — only match text in the bottom 20px of the SVG (true axis labels),
+  // so donut centre text / tick marks are never mistaken for the axis title.
+  // If no such element exists, inject one.
+  if (_style.xLabel) {
+    let xLabelEl = null;
+    svgEl.querySelectorAll('text[text-anchor="middle"]').forEach(t => {
+      if (t.hasAttribute('data-style-el')) return;
+      if ((t.getAttribute('transform') || '').includes('rotate')) return;
+      const y = parseFloat(t.getAttribute('y') || '0');
+      if (y >= origH - 20) xLabelEl = t;
+    });
+    if (xLabelEl) {
+      xLabelEl.textContent = _style.xLabel;
+    } else if (_graphType !== 'donut') {
+      const t = document.createElementNS(NS, 'text');
+      t.setAttribute('x', String(origW / 2));
+      t.setAttribute('y', String(origH - 8));
+      t.setAttribute('text-anchor', 'middle');
+      t.setAttribute('font-size', '11');
+      t.setAttribute('fill', C.muted);
+      t.textContent = _style.xLabel;
+      svgEl.appendChild(t);
+    }
+  }
+
+  // Font family (set on SVG root so it cascades)
+  if (_style.fontFamily) svgEl.setAttribute('font-family', _style.fontFamily);
+  else svgEl.removeAttribute('font-family');
+
+  // Font size / bold / italic (applied to chart text, not injected title elements)
+  if (_style.fontSize || _style.bold || _style.italic) {
+    svgEl.querySelectorAll('text:not([data-style-el])').forEach(t => {
+      if (_style.fontSize) t.setAttribute('font-size', _style.fontSize);
+      if (_style.bold) t.setAttribute('font-weight', 'bold');
+      if (_style.italic) t.setAttribute('font-style', 'italic');
+    });
+  }
+}
+
+async function loadData() {
+  try {
+    const _root = localStorage.getItem('aviary-active-root');
+    const _qs   = _root ? `?root=${encodeURIComponent(_root)}` : '';
+    const [sr, st] = await Promise.all([
+      fetch('/api/summary'   + _qs).then(r => r.json()),
+      fetch('/api/structure' + _qs).then(r => r.json()),
+    ]);
+    _summaryData = sr;
+    _structData  = st;
+    renderSampleList();
+    selAll();
+  } catch(e) {
+    document.getElementById('sample-list').innerHTML =
+      `<div style="color:var(--red);font-size:12px">Failed to load: ${e.message}</div>`;
+  }
+}
+
+// ---------------------------------------------------------------------------
+// Graph type grid
+// ---------------------------------------------------------------------------
+function renderTypeGrid() {
+  document.getElementById('type-grid').innerHTML = GRAPH_TYPES.map(t =>
+    `<div class="graph-type-card" id="type-${t.id}" onclick="selectType('${t.id}')" title="${t.desc}">
+       <svg width="24" height="24" viewBox="0 0 16 16" fill="currentColor">${t.icon}</svg>
+       <span class="card-label">${t.label}</span>
+     </div>`
+  ).join('');
+}
+
+function selectType(id) {
+  _graphType = id;
+  document.querySelectorAll('.graph-type-card').forEach(c =>
+    c.classList.toggle('active', c.id === `type-${id}`)
+  );
+  renderOptions();
+  redraw();
+}
+
+// ---------------------------------------------------------------------------
+// Sample list
+// ---------------------------------------------------------------------------
+function sampleKey(date, sample, asm) { return `${date}||${sample}||${asm}`; }
+
+function renderSampleList() {
+  if (!_summaryData) return;
+  const batches = _summaryData.batches || {};
+  let html = '';
+  let asmIdx = 0;
+  Object.entries(batches).forEach(([date, entries], bi) => {
+    const valid = entries.filter(e => e.sample !== 'MOCK_ERR999999');
+    if (!valid.length) return;
+    html += `<button class="sample-batch-header ${bi===0?'open':''}" onclick="toggleBatch(this)">
+               <span class="chev">▶</span><span>${date}</span>
+               <span style="margin-left:auto;font-size:10px">${valid.length}</span>
+             </button>
+             <div class="batch-items ${bi===0?'':'closed'}">`;
+    valid.forEach(e => {
+      const key = sampleKey(date, e.sample, e.assembler);
+      if (!ASM_COL[e.assembler]) { const pal = getAsmPalette(); ASM_COL[e.assembler] = pal[asmIdx++ % pal.length]; }
+      html += `<label class="sample-check-row">
+                 <input type="checkbox" data-key="${escA(key)}" onchange="onCheck(this)">
+                 <span style="flex:1;overflow:hidden;text-overflow:ellipsis;white-space:nowrap" title="${escH(e.sample)}">${escH(e.sample)}</span>
+                 <span class="asm-pill">${escH(e.assembler)}</span>
+               </label>`;
+    });
+    html += `</div>`;
+  });
+  document.getElementById('sample-list').innerHTML = html || '<div style="color:var(--muted);font-size:12px">No samples found.</div>';
+}
+
+function toggleBatch(btn) {
+  btn.classList.toggle('open');
+  btn.nextElementSibling.classList.toggle('closed');
+}
+
+function onCheck(cb) {
+  if (cb.checked) _selected.add(cb.dataset.key);
+  else _selected.delete(cb.dataset.key);
+  updateSelCount();
+  redraw();
+}
+
+function selAll() {
+  if (!_summaryData) return;
+  _selected.clear();
+  Object.entries(_summaryData.batches || {}).forEach(([date, entries]) =>
+    entries.filter(e => e.sample !== 'MOCK_ERR999999')
+           .forEach(e => _selected.add(sampleKey(date, e.sample, e.assembler)))
+  );
+  document.querySelectorAll('#sample-list input[type=checkbox]').forEach(cb => cb.checked = true);
+  updateSelCount(); redraw();
+}
+
+function selNone() {
+  _selected.clear();
+  document.querySelectorAll('#sample-list input[type=checkbox]').forEach(cb => cb.checked = false);
+  updateSelCount(); redraw();
+}
+
+function updateSelCount() {
+  document.getElementById('sel-count').textContent = `${_selected.size} selected`;
+}
+
+// ---------------------------------------------------------------------------
+// Options panel (dynamic per graph type)
+// ---------------------------------------------------------------------------
+const OPT_DEFAULTS = {
+  bar:       { metric: 'hq_mq_lq', style: 'grouped', assemblers: 'all' },
+  scatter:   { x: 'Completeness', y: 'Contamination', colorBy: 'tier', sizeBy: 'none' },
+  histogram: { field: 'Completeness', bins: '20', tierLines: 'yes' },
+  phylum:    { topN: '8', level: 'phylum', groupBy: 'sample' },
+  heatmap:   { metric: 'duration' },
+  donut:     { field: 'tier', scope: 'aggregate' },
+  phylumcomp: { topN: '10', minBins: '1' },
+};
+
+function opt(key) {
+  if (!_graphType) return '';
+  _opts[_graphType] = _opts[_graphType] || { ...(OPT_DEFAULTS[_graphType] || {}) };
+  return _opts[_graphType][key] ?? (OPT_DEFAULTS[_graphType]?.[key] ?? '');
+}
+
+function setOpt(key, val) {
+  if (!_graphType) return;
+  _opts[_graphType] = _opts[_graphType] || {};
+  _opts[_graphType][key] = val;
+  redraw();
+}
+
+function sel(id) { return `<select class="form-select" id="opt-${id}" onchange="setOpt('${id}',this.value)">`; }
+function opt_end() { return `</select>`; }
+function optv(val, label, cur) { return `<option value="${val}"${cur===val?' selected':''}>${label}</option>`; }
+
+function renderOptions() {
+  const ob = document.getElementById('options-body');
+  if (!_graphType) { ob.innerHTML = '<div style="color:var(--muted);font-size:12px">Select a graph type above.</div>'; return; }
+  const o = (k) => opt(k);
+  let h = '';
+
+  if (_graphType === 'bar') {
+    h = `
+      <div class="form-row"><label class="form-label">Metric</label>
+        ${sel('metric')}
+          ${optv('hq_mq_lq','HQ / MQ / LQ counts',o('metric'))}
+          ${optv('mag_count','Total MAGs',o('metric'))}
+          ${optv('n50','Assembly N50',o('metric'))}
+          ${optv('assembly_mb','Assembly size (Mb)',o('metric'))}
+          ${optv('unbinned','Binned vs Unbinned (Mb)',o('metric'))}
+        ${opt_end()}</div>
+      <div class="form-row"><label class="form-label">Style</label>
+        <div class="toggle-row">
+          <button class="toggle-opt${o('style')==='grouped'?' active':''}" onclick="setOpt('style','grouped')">Grouped</button>
+          <button class="toggle-opt${o('style')==='stacked'?' active':''}" onclick="setOpt('style','stacked')">Stacked</button>
+        </div></div>`;
+  } else if (_graphType === 'scatter') {
+    const fields = ['Completeness','Contamination','Genome_Size','GC_Content','Contig_N50','Total_Contigs'];
+    const fOpts = (cur) => fields.map(f => optv(f, f.replace(/_/g,' '), cur)).join('');
+    h = `
+      <div class="form-row"><label class="form-label">X axis</label>
+        ${sel('x')}${fOpts(o('x'))}${opt_end()}</div>
+      <div class="form-row"><label class="form-label">Y axis</label>
+        ${sel('y')}${fOpts(o('y'))}${opt_end()}</div>
+      <div class="form-row"><label class="form-label">Colour by</label>
+        ${sel('colorBy')}
+          ${optv('tier','Quality tier',o('colorBy'))}
+          ${optv('assembler','Assembler',o('colorBy'))}
+          ${optv('sample','Sample',o('colorBy'))}
+          ${optv('domain','Domain (GTDB)',o('colorBy'))}
+        ${opt_end()}</div>
+      <div class="form-row"><label class="form-label">Size by</label>
+        ${sel('sizeBy')}
+          ${optv('none','Uniform',o('sizeBy'))}
+          ${optv('Genome_Size','Genome size',o('sizeBy'))}
+          ${optv('Total_Contigs','Contig count',o('sizeBy'))}
+        ${opt_end()}</div>`;
+  } else if (_graphType === 'histogram') {
+    h = `
+      <div class="form-row"><label class="form-label">Field</label>
+        ${sel('field')}
+          ${optv('Completeness','Completeness (%)',o('field'))}
+          ${optv('Contamination','Contamination (%)',o('field'))}
+          ${optv('Genome_Size','Genome size (bp)',o('field'))}
+          ${optv('GC_Content','GC content',o('field'))}
+          ${optv('Contig_N50','Contig N50',o('field'))}
+        ${opt_end()}</div>
+      <div class="form-row"><label class="form-label">Bin count</label>
+        <input class="form-input" type="number" min="5" max="60" value="${o('bins')}"
+               oninput="setOpt('bins',this.value)"></div>
+      <div class="form-row"><label class="form-label">Threshold lines</label>
+        <div class="toggle-row">
+          <button class="toggle-opt${o('tierLines')==='yes'?' active':''}" onclick="setOpt('tierLines','yes')">Show</button>
+          <button class="toggle-opt${o('tierLines')==='no'?' active':''}" onclick="setOpt('tierLines','no')">Hide</button>
+        </div></div>`;
+  } else if (_graphType === 'phylum') {
+    h = `
+      <div class="form-row"><label class="form-label">Taxonomy level</label>
+        ${sel('level')}
+          ${optv('phylum','Phylum',o('level'))}
+          ${optv('class','Class',o('level'))}
+          ${optv('domain','Domain',o('level'))}
+        ${opt_end()}</div>
+      <div class="form-row"><label class="form-label">Top N taxa shown</label>
+        <input class="form-input" type="number" min="3" max="15" value="${o('topN')}"
+               oninput="setOpt('topN',this.value)"></div>
+      <div class="form-row"><label class="form-label">Group bars by</label>
+        <div class="toggle-row">
+          <button class="toggle-opt${o('groupBy')==='sample'?' active':''}" onclick="setOpt('groupBy','sample')">Sample</button>
+          <button class="toggle-opt${o('groupBy')==='assembler'?' active':''}" onclick="setOpt('groupBy','assembler')">Assembler</button>
+        </div></div>`;
+  } else if (_graphType === 'heatmap') {
+    h = `
+      <div class="form-row"><label class="form-label">Metric</label>
+        ${sel('metric')}
+          ${optv('duration','Wall time (min)',o('metric'))}
+          ${optv('hq','HQ MAGs per sample',o('metric'))}
+          ${optv('completeness','Mean completeness',o('metric'))}
+        ${opt_end()}</div>`;
+  } else if (_graphType === 'donut') {
+    h = `
+      <div class="form-row"><label class="form-label">Field</label>
+        ${sel('field')}
+          ${optv('tier','Quality tier (HQ/MQ/LQ)',o('field'))}
+          ${optv('domain','GTDB domain',o('field'))}
+          ${optv('assembler','Assembler',o('field'))}
+        ${opt_end()}</div>
+      <div class="form-row"><label class="form-label">Scope</label>
+        <div class="toggle-row">
+          <button class="toggle-opt${o('scope')==='aggregate'?' active':''}" onclick="setOpt('scope','aggregate')">Aggregate</button>
+          <button class="toggle-opt${o('scope')==='per_sample'?' active':''}" onclick="setOpt('scope','per_sample')">Per sample</button>
+        </div></div>`;
+  } else if (_graphType === 'phylumcomp') {
+    h = `
+      <div class="form-row"><label class="form-label">Top N phyla shown</label>
+        <input class="form-input" type="number" min="3" max="20" value="${o('topN')}"
+               oninput="setOpt('topN',this.value)"></div>
+      <div class="form-row"><label class="form-label">Min bins per phylum</label>
+        <input class="form-input" type="number" min="1" max="10" value="${o('minBins')}"
+               oninput="setOpt('minBins',this.value)"></div>`;
+  }
+  ob.innerHTML = h;
+}
+
+// ---------------------------------------------------------------------------
+// Collect selected entries
+// ---------------------------------------------------------------------------
+function getEntries() {
+  if (!_summaryData) return [];
+  const out = [];
+  Object.entries(_summaryData.batches || {}).forEach(([date, entries]) => {
+    entries.filter(e => e.sample !== 'MOCK_ERR999999').forEach(e => {
+      if (_selected.has(sampleKey(date, e.sample, e.assembler))) out.push({ ...e, date });
+    });
+  });
+  return out;
+}
+
+function getAllBins() {
+  return getEntries().flatMap(e => (e.bins || []).map(b => ({ ...b, _sample: e.sample, _asm: e.assembler, _date: e.date })));
+}
+
+// ---------------------------------------------------------------------------
+// Redraw dispatcher
+// ---------------------------------------------------------------------------
+function redraw() {
+  if (!_graphType || !_selected.size) { showEmpty(); return; }
+  const entries = getEntries();
+  if (!entries.length) { showEmpty('No entries match your selection.'); return; }
+
+  let svg = '', title = '', badge = '', legend = [];
+  try {
+    switch (_graphType) {
+      case 'bar':       ({ svg, title, badge, legend } = drawBar(entries));      break;
+      case 'scatter':   ({ svg, title, badge, legend } = drawScatter(entries));  break;
+      case 'histogram': ({ svg, title, badge, legend } = drawHistogram());       break;
+      case 'phylum':    ({ svg, title, badge, legend } = drawPhylum(entries));   break;
+      case 'heatmap':   ({ svg, title, badge, legend } = drawHeatmap(entries));  break;
+      case 'donut':      ({ svg, title, badge, legend } = drawDonut());              break;
+      case 'phylumcomp': ({ svg, title, badge, legend } = drawPhylumCompleteness()); break;
+    }
+  } catch(e) {
+    svg = `<svg width="${SVG_W}" height="80" viewBox="0 0 ${SVG_W} 80">
+             <text x="${SVG_W/2}" y="40" fill="${C.red}" text-anchor="middle" font-size="13">Error: ${escH(e.message)}</text></svg>`;
+  }
+
+  const body = document.getElementById('graph-body');
+  body.innerHTML = `<div class="graph-svg-wrap">${svg}</div>`;
+  applyStyleToSVG();
+  document.getElementById('graph-title').textContent = title;
+
+  const pb = document.getElementById('point-badge');
+  if (badge) { pb.textContent = badge; pb.style.display = ''; } else pb.style.display = 'none';
+
+  const legEl = document.getElementById('graph-legend');
+  _legendItems = legend;
+  if (legend.length) {
+    legEl.style.display = '';
+    legEl.innerHTML = legend.map(l =>
+      `<div class="legend-item"><div class="legend-swatch" style="background:${l.color}"></div>${escH(l.label)}</div>`
+    ).join('');
+  } else legEl.style.display = 'none';
+
+  document.getElementById('btn-svg').disabled = false;
+  document.getElementById('btn-png').disabled = false;
+}
+
+function showEmpty(msg = 'Configure a graph and select samples to get started.') {
+  document.getElementById('graph-body').innerHTML =
+    `<div class="graph-empty">
+       <svg width="48" height="48" viewBox="0 0 16 16" fill="${C.muted}"><path d="M0 0h1v16H0zm15 0h1v16h-1zM5 11.5a.5.5 0 0 1 .5-.5h5a.5.5 0 0 1 0 1h-5a.5.5 0 0 1-.5-.5zm-3-4a.5.5 0 0 1 .5-.5h11a.5.5 0 0 1 0 1h-11a.5.5 0 0 1-.5-.5zm6-4a.5.5 0 0 1 .5-.5h5a.5.5 0 0 1 0 1h-5a.5.5 0 0 1-.5-.5z"/></svg>
+       <p>${msg}</p></div>`;
+  document.getElementById('graph-title').textContent = 'No graph selected';
+  document.getElementById('point-badge').style.display = 'none';
+  document.getElementById('graph-legend').style.display = 'none';
+  document.getElementById('btn-svg').disabled = true;
+  document.getElementById('btn-png').disabled = true;
+}
+
+// ===========================================================================
+// BAR CHART
+// ===========================================================================
+function drawBar(entries) {
+  const metric = opt('metric');
+  const style  = opt('style');
+
+  // Determine labels and bar groups
+  const asmSet = [...new Set(entries.map(e => e.assembler))].sort();
+  const labels = [...new Set(entries.map(e => e.sample))].sort();
+
+  // Build data: label -> asm -> values
+  const data = {};
+  labels.forEach(s => { data[s] = {}; });
+  entries.forEach(e => {
+    if (!data[e.sample]) data[e.sample] = {};
+    if (metric === 'hq_mq_lq') {
+      data[e.sample][e.assembler] = [e.hq||0, e.mq||0, e.lq||0];
+    } else if (metric === 'mag_count') {
+      data[e.sample][e.assembler] = [e.mag_count||0];
+    } else if (metric === 'n50') {
+      data[e.sample][e.assembler] = [e.assembly?.n50||0];
+    } else if (metric === 'assembly_mb') {
+      data[e.sample][e.assembler] = [+(e.assembly?.total_length_mb||0)];
+    } else if (metric === 'unbinned') {
+      const totalBp  = e.assembly?.Genome_Size || 0;
+      const binnedBp = (e.bins||[]).reduce((s,b) => s+(parseFloat(b.Genome_Size)||0), 0);
+      data[e.sample][e.assembler] = [binnedBp/1e6, Math.max(0, (totalBp-binnedBp)/1e6)];
+    }
+  });
+
+  const isMulti   = metric === 'hq_mq_lq' || metric === 'unbinned';
+  const subLabels = metric === 'unbinned' ? ['Binned','Unbinned'] : ['HQ','MQ','LQ'];
+  const _tc = getTierCol();
+  const subColors = metric === 'hq_mq_lq' ? [_tc.high, _tc.medium, _tc.low]
+                  : metric === 'unbinned'  ? [getAsmPalette()[0], C.muted]
+                  : asmSet.map(a => ASM_COL[a]||C.teal);
+
+  let maxVal = 0;
+  labels.forEach(s => asmSet.forEach(a => {
+    const vals = data[s]?.[a] || [0];
+    const sum  = style === 'stacked' ? vals.reduce((a,b)=>a+b,0) : Math.max(...vals);
+    maxVal = Math.max(maxVal, sum);
+  }));
+  maxVal = niceMax(maxVal);
+
+  const W = SVG_W, H = SVG_H;
+  const p = PAD;
+  const iw = W - p.left - p.right;
+  const ih = H - p.top  - p.bottom;
+
+  const groupW  = iw / labels.length;
+  const barCols = isMulti && style === 'grouped' ? (asmSet.length * 3) : asmSet.length;
+  const barW    = Math.min(30, (groupW * 0.8) / Math.max(barCols,1));
+  const groupPad = (groupW - barW * barCols) / 2;
+
+  const sy = v => p.top + ih - (v / maxVal) * ih;
+
+  // Grid & axes
+  let rects = '', texts = '', lines = '';
+  const ticks = niceTicksMax(maxVal, 5);
+  ticks.forEach(t => {
+    const y = sy(t);
+    lines += `<line x1="${p.left}" y1="${y}" x2="${p.left+iw}" y2="${y}" stroke="${C.border}" stroke-width="1"/>`;
+    texts += `<text x="${p.left-6}" y="${y+4}" text-anchor="end" font-size="10" fill="${C.muted}">${fmtNum(t)}</text>`;
+  });
+
+  // Bars
+  let tooltipRects = '';
+  labels.forEach((s, si) => {
+    const gx = p.left + si * groupW + groupPad;
+    asmSet.forEach((a, ai) => {
+      const vals = data[s]?.[a] || (metric === 'hq_mq_lq' ? [0,0,0] : isMulti ? [0,0] : [0]);
+      if (style === 'stacked' && isMulti) {
+        let yBase = p.top + ih;
+        vals.forEach((v, vi) => {
+          if (!v) return;
+          const bh = (v / maxVal) * ih;
+          const x  = gx + ai * barW;
+          const y  = yBase - bh;
+          rects += `<rect x="${x}" y="${y}" width="${barW-1}" height="${bh}" fill="${subColors[vi]}" opacity=".85" rx="1"/>`;
+          tooltipRects += `<rect x="${x}" y="${p.top}" width="${barW-1}" height="${ih}" fill="transparent"
+            onmouseenter="showTip(event,'${escA(s)} (${escA(a)})<br/>${subLabels[vi]}: ${v}')"
+            onmouseleave="hideTip()"/>`;
+          yBase -= bh;
+        });
+      } else {
+        const viOffset = isMulti ? subColors.length * ai : 0;
+        vals.forEach((v, vi) => {
+          if (!v && !isMulti) return;
+          const col = isMulti ? subColors[vi] : (ASM_COL[a]||C.teal);
+          const bIdx = isMulti ? ai * 3 + vi : ai;
+          const x   = gx + bIdx * barW;
+          const bh  = (v / maxVal) * ih;
+          const y   = sy(v);
+          rects += `<rect x="${x}" y="${y}" width="${barW-1}" height="${bh}" fill="${col}" opacity=".85" rx="1"/>`;
+          tooltipRects += `<rect x="${x}" y="${p.top}" width="${barW-1}" height="${ih}" fill="transparent"
+            onmouseenter="showTip(event,'${escA(s)} (${escA(a)})<br/>${isMulti?subLabels[vi]:a}: ${fmtNum(v)}')"
+            onmouseleave="hideTip()"/>`;
+        });
+      }
+    });
+    // X label
+    const lx = p.left + si * groupW + groupW / 2;
+    texts += `<text x="${lx}" y="${p.top+ih+18}" text-anchor="end" font-size="10" fill="${C.muted}"
+                transform="rotate(-40,${lx},${p.top+ih+18})">${escH(s)}</text>`;
+  });
+
+  // Axis lines
+  lines += `<line x1="${p.left}" y1="${p.top}" x2="${p.left}" y2="${p.top+ih}" stroke="${C.border}" stroke-width="1.5"/>`;
+  lines += `<line x1="${p.left}" y1="${p.top+ih}" x2="${p.left+iw}" y2="${p.top+ih}" stroke="${C.border}" stroke-width="1.5"/>`;
+
+  // Y label
+  const yAxisLabel = metric === 'hq_mq_lq' ? 'MAG count' : metric === 'n50' ? 'N50 (bp)' : metric === 'assembly_mb' ? 'Assembly (Mb)' : metric === 'unbinned' ? 'Bases (Mb)' : 'Count';
+  texts += `<text x="${-(p.top+ih/2)}" y="14" text-anchor="middle" font-size="11" fill="${C.muted}"
+              transform="rotate(-90)">${yAxisLabel}</text>`;
+
+  const svg = `<svg id="graph-svg" width="${W}" height="${H}" viewBox="0 0 ${W} ${H}"
+                    style="background:${C.bg};border-radius:8px;width:100%;height:auto"
+                    xmlns="http://www.w3.org/2000/svg">
+    ${lines}${rects}${tooltipRects}${texts}
+  </svg>`;
+
+  const legend = isMulti
+    ? subLabels.map((l,i) => ({ label: l, color: subColors[i] }))
+    : asmSet.map(a => ({ label: a, color: ASM_COL[a]||C.teal }));
+
+  const total = entries.reduce((s, e) => s + (e.mag_count||0), 0);
+  const metricName = { hq_mq_lq:'HQ/MQ/LQ counts', mag_count:'Total MAGs', n50:'N50', assembly_mb:'Assembly size', unbinned:'Binned vs Unbinned' }[metric];
+  return { svg, title: `Bar Chart — ${metricName}`, badge: `${labels.length} samples`, legend };
+}
+
+// ===========================================================================
+// SCATTER PLOT
+// ===========================================================================
+function drawScatter(entries) {
+  const xf      = opt('x');
+  const yf      = opt('y');
+  const colorBy = opt('colorBy');
+  const sizeBy  = opt('sizeBy');
+  const bins    = getAllBins();
+  if (!bins.length) return emptyResult('No bin data available.');
+
+  const xs = bins.map(b => parseFloat(b[xf]) || 0);
+  const ys = bins.map(b => parseFloat(b[yf]) || 0);
+  const xMin = 0, xMax = niceMax(Math.max(...xs));
+  const yMin = 0, yMax = niceMax(Math.max(...ys));
+
+  const W = SVG_W, H = SVG_H;
+  const p = PAD;
+  const iw = W - p.left - p.right;
+  const ih = H - p.top  - p.bottom;
+
+  const sx = v => p.left + (v / xMax) * iw;
+  const sy = v => p.top  + ih - (v / yMax) * ih;
+
+  // Quality zone rectangles (if x=Completeness, y=Contamination)
+  let zones = '';
+  if (xf === 'Completeness' && yf === 'Contamination') {
+    const bottom = p.top + ih;
+    const _ztc = getTierCol();
+    zones += `<rect x="${p.left}" y="${p.top}" width="${iw}" height="${ih}" fill="${_ztc.low}" opacity=".06"/>`;
+    zones += `<rect x="${sx(50)}" y="${sy(10)}" width="${p.left+iw-sx(50)}" height="${bottom-sy(10)}" fill="${_ztc.medium}" opacity=".08"/>`;
+    zones += `<rect x="${sx(90)}" y="${sy(5)}"  width="${p.left+iw-sx(90)}" height="${bottom-sy(5)}"  fill="${_ztc.high}" opacity=".11"/>`;
+  }
+
+  // Grid
+  let grid = '', axText = '';
+  niceTicksMax(xMax, 5).forEach(t => {
+    grid += `<line x1="${sx(t)}" y1="${p.top}" x2="${sx(t)}" y2="${p.top+ih}" stroke="${C.border}" stroke-width="1"/>`;
+    axText += `<text x="${sx(t)}" y="${p.top+ih+16}" text-anchor="middle" font-size="10" fill="${C.muted}">${fmtNum(t)}</text>`;
+  });
+  niceTicksMax(yMax, 5).forEach(t => {
+    grid += `<line x1="${p.left}" y1="${sy(t)}" x2="${p.left+iw}" y2="${sy(t)}" stroke="${C.border}" stroke-width="1"/>`;
+    axText += `<text x="${p.left-6}" y="${sy(t)+4}" text-anchor="end" font-size="10" fill="${C.muted}">${fmtNum(t)}</text>`;
+  });
+
+  // Axis lines
+  grid += `<line x1="${p.left}" y1="${p.top}" x2="${p.left}" y2="${p.top+ih}" stroke="${C.border}" stroke-width="1.5"/>`;
+  grid += `<line x1="${p.left}" y1="${p.top+ih}" x2="${p.left+iw}" y2="${p.top+ih}" stroke="${C.border}" stroke-width="1.5"/>`;
+  axText += `<text x="${p.left+iw/2}" y="${H-8}" text-anchor="middle" font-size="11" fill="${C.muted}">${xf.replace(/_/g,' ')}</text>`;
+  axText += `<text x="${-(p.top+ih/2)}" y="14" text-anchor="middle" font-size="11" fill="${C.muted}" transform="rotate(-90)">${yf.replace(/_/g,' ')}</text>`;
+
+  // Compute colour/size per bin
+  const sampleColors = {};
+  let sIdx = 0;
+  const domainColors = { Bacteria: C.teal, Archaea: C.purple, Unclassified: C.muted };
+  const maxSize = sizeBy !== 'none' ? Math.max(1, ...bins.map(b => parseFloat(b[sizeBy])||0)) : 1;
+
+  let legendMap = {};
+  const dots = bins.map(b => {
+    const x = parseFloat(b[xf]) || 0;
+    const y = parseFloat(b[yf]) || 0;
+    let col = C.teal;
+    let legKey = '';
+    if (colorBy === 'tier')      { const t = qualTier(b.Completeness, b.Contamination); col = getTierCol()[t]; legKey = TIER_LABEL[t]; }
+    else if (colorBy === 'assembler') { col = ASM_COL[b._asm]||C.teal; legKey = b._asm; }
+    else if (colorBy === 'sample')    {
+      if (!sampleColors[b._sample]) { const pal = getAsmPalette(); sampleColors[b._sample] = pal[sIdx++ % pal.length]; }
+      col = sampleColors[b._sample]; legKey = b._sample;
+    } else if (colorBy === 'domain') {
+      const dom = parseTax(b.classification||'').domain || 'Unclassified';
+      col = domainColors[dom] || C.muted; legKey = dom;
+    }
+    if (legKey) legendMap[legKey] = col;
+    const r = sizeBy !== 'none' ? Math.max(3, Math.min(12, ((parseFloat(b[sizeBy])||0)/maxSize)*10+3)) : 5;
+    const name = b.Name||b.name||'bin';
+    const tip = `${escA(name)}<br/>${escA(xf.replace(/_/g,' '))}: ${fmtNum(x)}<br/>${escA(yf.replace(/_/g,' '))}: ${fmtNum(y)}`;
+    return `<circle cx="${sx(x).toFixed(1)}" cy="${sy(y).toFixed(1)}" r="${r}"
+              fill="${col}" opacity=".75" stroke="${C.bg}" stroke-width=".5"
+              onmouseenter="showTip(event,'${tip}')" onmouseleave="hideTip()"/>`;
+  }).join('');
+
+  const svg = `<svg id="graph-svg" width="${W}" height="${H}" viewBox="0 0 ${W} ${H}"
+                    style="background:${C.bg};border-radius:8px;width:100%;height:auto" xmlns="http://www.w3.org/2000/svg">
+    ${zones}${grid}${axText}${dots}
+  </svg>`;
+
+  const legend = Object.entries(legendMap).map(([l,c]) => ({ label: l, color: c }));
+  return { svg, title: `Scatter — ${xf.replace(/_/g,' ')} vs ${yf.replace(/_/g,' ')}`, badge: `${bins.length} bins`, legend };
+}
+
+// ===========================================================================
+// HISTOGRAM
+// ===========================================================================
+function drawHistogram() {
+  const field      = opt('field');
+  const nBins      = Math.max(5, Math.min(60, parseInt(opt('bins'))||20));
+  const tierLines  = opt('tierLines') === 'yes';
+  const bins       = getAllBins();
+  if (!bins.length) return emptyResult('No bin data available.');
+
+  const vals = bins.map(b => {
+    const v = parseFloat(b[field]);
+    if (field === 'GC_Content' && v > 0 && v <= 1) return v * 100;
+    return isNaN(v) ? null : v;
+  }).filter(v => v !== null);
+
+  const vMin = Math.min(...vals), vMax = Math.max(...vals);
+  const step = (vMax - vMin) / nBins;
+  const buckets = Array.from({length: nBins}, (_, i) => ({
+    lo: vMin + i*step, hi: vMin + (i+1)*step, count: 0
+  }));
+  vals.forEach(v => {
+    let bi = Math.floor((v - vMin) / step);
+    if (bi >= nBins) bi = nBins - 1;
+    buckets[bi].count++;
+  });
+
+  const maxCount = niceMax(Math.max(...buckets.map(b => b.count)));
+  const W = SVG_W, H = SVG_H;
+  const p = PAD;
+  const iw = W - p.left - p.right;
+  const ih = H - p.top  - p.bottom;
+  const bw = iw / nBins;
+  const sx = v => p.left + ((v - vMin) / (vMax - vMin)) * iw;
+  const sy = v => p.top + ih - (v / maxCount) * ih;
+
+  let bars = '', grid = '', axText = '';
+  // Y grid
+  niceTicksMax(maxCount, 5).forEach(t => {
+    grid += `<line x1="${p.left}" y1="${sy(t)}" x2="${p.left+iw}" y2="${sy(t)}" stroke="${C.border}" stroke-width="1"/>`;
+    axText += `<text x="${p.left-6}" y="${sy(t)+4}" text-anchor="end" font-size="10" fill="${C.muted}">${t}</text>`;
+  });
+  // Bars
+  buckets.forEach((b, i) => {
+    if (!b.count) return;
+    const x  = p.left + i * bw;
+    const bh = (b.count / maxCount) * ih;
+    const y  = p.top + ih - bh;
+    // Colour by tier position for tier-related fields, otherwise use palette
+    const _htc = getTierCol();
+    let col = getAsmPalette()[0];
+    if (field === 'Completeness') {
+      col = b.lo >= 90 ? _htc.high : b.lo >= 50 ? _htc.medium : _htc.low;
+    } else if (field === 'Contamination') {
+      col = b.hi <= 5 ? _htc.high : b.hi <= 10 ? _htc.medium : _htc.low;
+    }
+    bars += `<rect x="${x+1}" y="${y}" width="${bw-2}" height="${bh}" fill="${col}" opacity=".8" rx="1"
+               onmouseenter="showTip(event,'${fmtNum(b.lo)}–${fmtNum(b.hi)}<br/>Count: ${b.count}')"
+               onmouseleave="hideTip()"/>`;
+    // X tick every ~5 buckets
+    if (i % Math.ceil(nBins/10) === 0) {
+      axText += `<text x="${x + bw/2}" y="${p.top+ih+16}" text-anchor="middle" font-size="10" fill="${C.muted}">${fmtNum(b.lo)}</text>`;
+    }
+  });
+
+  // Tier threshold lines
+  if (tierLines && (field === 'Completeness' || field === 'Contamination')) {
+    const thresholds = field === 'Completeness'
+      ? [{ v: 50, label: 'MQ', col: getTierCol().medium }, { v: 90, label: 'HQ', col: getTierCol().high }]
+      : [{ v: 5,  label: 'HQ', col: getTierCol().high  }, { v: 10, label: 'MQ', col: getTierCol().medium }];
+    thresholds.forEach(t => {
+      const tx = sx(t.v);
+      grid += `<line x1="${tx}" y1="${p.top}" x2="${tx}" y2="${p.top+ih}" stroke="${t.col}" stroke-width="1.5" stroke-dasharray="4,3" opacity=".7"/>`;
+      axText += `<text x="${tx+4}" y="${p.top+12}" font-size="10" fill="${t.col}">${t.label} ≥${t.v}%</text>`;
+    });
+  }
+
+  grid += `<line x1="${p.left}" y1="${p.top}" x2="${p.left}" y2="${p.top+ih}" stroke="${C.border}" stroke-width="1.5"/>`;
+  grid += `<line x1="${p.left}" y1="${p.top+ih}" x2="${p.left+iw}" y2="${p.top+ih}" stroke="${C.border}" stroke-width="1.5"/>`;
+  axText += `<text x="${p.left+iw/2}" y="${H-8}" text-anchor="middle" font-size="11" fill="${C.muted}">${field.replace(/_/g,' ')}</text>`;
+  axText += `<text x="${-(p.top+ih/2)}" y="14" text-anchor="middle" font-size="11" fill="${C.muted}" transform="rotate(-90)">Count</text>`;
+
+  const svg = `<svg id="graph-svg" width="${W}" height="${H}" viewBox="0 0 ${W} ${H}"
+                    style="background:${C.bg};border-radius:8px;width:100%;height:auto" xmlns="http://www.w3.org/2000/svg">
+    ${grid}${bars}${axText}
+  </svg>`;
+  return { svg, title: `Histogram — ${field.replace(/_/g,' ')} (${vals.length} bins)`, badge: `${vals.length} data points`, legend: [] };
+}
+
+// ===========================================================================
+// PHYLUM STACKED BAR
+// ===========================================================================
+function drawPhylum(entries) {
+  const level   = opt('level');
+  const topN    = Math.max(3, parseInt(opt('topN'))||8);
+  const groupBy = opt('groupBy');
+  const bins    = getAllBins();
+  if (!bins.length) return emptyResult('No taxonomy data available.');
+
+  // Count taxa per group
+  const groups = {};
+  const taxaCount = {};
+  bins.forEach(b => {
+    const tax  = parseTax(b.classification || '');
+    const taxa = tax[level] || 'Unclassified';
+    const grp  = groupBy === 'sample' ? b._sample : b._asm;
+    if (!groups[grp]) groups[grp] = {};
+    groups[grp][taxa] = (groups[grp][taxa] || 0) + 1;
+    taxaCount[taxa]   = (taxaCount[taxa]   || 0) + 1;
+  });
+
+  // Top N taxa globally
+  const allTaxa    = Object.entries(taxaCount).sort((a,b)=>b[1]-a[1]);
+  const topTaxa    = allTaxa.slice(0, topN).map(t=>t[0]);
+  const taxaColors = {};
+  const _phylumPal = [...getAsmPalette(), ...PHYLUM_PAL];
+  topTaxa.forEach((t, i) => taxaColors[t] = _phylumPal[i % _phylumPal.length]);
+  taxaColors['Other'] = C.muted;
+
+  const labels = Object.keys(groups).sort();
+  const maxVal = niceMax(Math.max(...labels.map(g => Object.values(groups[g]).reduce((a,b)=>a+b,0))));
+
+  const W = SVG_W, H = SVG_H;
+  const p = PAD;
+  const iw = W - p.left - p.right;
+  const ih = H - p.top  - p.bottom;
+  const bw = Math.min(60, (iw / labels.length) * 0.7);
+  const gap = iw / labels.length;
+  const sy  = v => p.top + ih - (v / maxVal) * ih;
+
+  let bars = '', grid = '', axText = '';
+  niceTicksMax(maxVal, 5).forEach(t => {
+    grid += `<line x1="${p.left}" y1="${sy(t)}" x2="${p.left+iw}" y2="${sy(t)}" stroke="${C.border}" stroke-width="1"/>`;
+    axText += `<text x="${p.left-6}" y="${sy(t)+4}" text-anchor="end" font-size="10" fill="${C.muted}">${t}</text>`;
+  });
+
+  labels.forEach((g, gi) => {
+    const cx  = p.left + gi * gap + gap / 2;
+    const x   = cx - bw / 2;
+    let yBase = p.top + ih;
+    const tCounts = { ...groups[g] };
+
+    // Aggregate non-top into Other
+    let other = 0;
+    Object.keys(tCounts).forEach(t => { if (!topTaxa.includes(t)) { other += tCounts[t]; delete tCounts[t]; } });
+    if (other) tCounts['Other'] = other;
+
+    [...topTaxa, 'Other'].forEach(t => {
+      const v = tCounts[t] || 0;
+      if (!v) return;
+      const bh = (v / maxVal) * ih;
+      const y  = yBase - bh;
+      bars += `<rect x="${x}" y="${y}" width="${bw}" height="${bh}" fill="${taxaColors[t]||C.muted}" opacity=".85" rx="1"
+                 onmouseenter="showTip(event,'${escA(g)}<br/>${escA(t)}: ${v}')" onmouseleave="hideTip()"/>`;
+      yBase -= bh;
+    });
+    axText += `<text x="${cx}" y="${p.top+ih+18}" text-anchor="end" font-size="10" fill="${C.muted}"
+                 transform="rotate(-40,${cx},${p.top+ih+18})">${escH(g)}</text>`;
+  });
+
+  grid += `<line x1="${p.left}" y1="${p.top}" x2="${p.left}" y2="${p.top+ih}" stroke="${C.border}" stroke-width="1.5"/>`;
+  grid += `<line x1="${p.left}" y1="${p.top+ih}" x2="${p.left+iw}" y2="${p.top+ih}" stroke="${C.border}" stroke-width="1.5"/>`;
+  axText += `<text x="${-(p.top+ih/2)}" y="14" text-anchor="middle" font-size="11" fill="${C.muted}" transform="rotate(-90)">Bin count</text>`;
+
+  const svg = `<svg id="graph-svg" width="${W}" height="${H}" viewBox="0 0 ${W} ${H}"
+                    style="background:${C.bg};border-radius:8px;width:100%;height:auto" xmlns="http://www.w3.org/2000/svg">
+    ${grid}${bars}${axText}
+  </svg>`;
+
+  const legend = [...topTaxa, 'Other'].filter(t => Object.values(groups).some(g => g[t])).map(t => ({ label: t, color: taxaColors[t]||C.muted }));
+  return { svg, title: `Phylum Bar — ${level} breakdown by ${groupBy}`, badge: `${bins.length} bins`, legend };
+}
+
+// ===========================================================================
+// HEATMAP
+// ===========================================================================
+function drawHeatmap(entries) {
+  const metric = opt('metric');
+
+  // Build row × col matrix
+  const rowLabels = [...new Set(entries.map(e => e.sample))].sort();
+  const colLabels = [...new Set(entries.map(e => e.assembler))].sort();
+
+  const matrix = {};
+  rowLabels.forEach(s => { matrix[s] = {}; colLabels.forEach(a => { matrix[s][a] = null; }); });
+  entries.forEach(e => {
+    let val = null;
+    if (metric === 'hq')           val = e.hq || 0;
+    else if (metric === 'completeness') {
+      const bs = e.bins || [];
+      val = bs.length ? bs.reduce((s,b)=>s+(parseFloat(b.Completeness)||0),0)/bs.length : null;
+    } else if (metric === 'duration') {
+      // Try to get job durations from _structData
+      const sData = _structData?.samples;
+      if (sData) {
+        const aData = sData[e.sample]?.[e.assembler];
+        if (aData) {
+          const totalMin = (aData.jobs_list||[]).reduce((s,j) => {
+            const m = parseFloat(j.duration) || parseDurationMin(j.duration||'');
+            return s + m;
+          }, 0);
+          val = totalMin || null;
+        }
+      }
+    }
+    matrix[e.sample][e.assembler] = val;
+  });
+
+  const allVals = rowLabels.flatMap(s => colLabels.map(a => matrix[s][a])).filter(v=>v!==null);
+  if (!allVals.length) return emptyResult('No data available for this metric.');
+  const maxVal = Math.max(...allVals);
+
+  // Heatmap needs a wider left margin to fit sample names without overlapping the y-axis label
+  const hmPL = 150;
+  const cellW = Math.min(120, Math.max(40, (SVG_W - hmPL - PAD.right - 40) / colLabels.length));
+  const cellH = Math.min(50,  Math.max(24, (SVG_H - PAD.top  - PAD.bottom)    / rowLabels.length));
+  const W = hmPL + colLabels.length * cellW + PAD.right + 40;
+  const H = PAD.top  + rowLabels.length * cellH + PAD.bottom;
+
+  let cells = '', axText = '';
+
+  // Col headers
+  colLabels.forEach((a, ci) => {
+    const x = hmPL + ci * cellW + cellW / 2;
+    axText += `<text x="${x}" y="${PAD.top - 6}" text-anchor="middle" font-size="11" fill="${C.text}">${escH(a)}</text>`;
+  });
+
+  // Rows
+  rowLabels.forEach((s, ri) => {
+    const y = PAD.top + ri * cellH;
+    axText += `<text x="${hmPL - 8}" y="${y + cellH/2 + 4}" text-anchor="end" font-size="10" fill="${C.muted}">${escH(s)}</text>`;
+    colLabels.forEach((a, ci) => {
+      const x   = hmPL + ci * cellW;
+      const val = matrix[s][a];
+      const t   = val === null ? 0 : val / maxVal;
+      const col = interpolateColor(C.surface, getAsmPalette()[0], t);
+      const label = val === null ? '—' : metric === 'completeness' ? val.toFixed(1)+'%' : metric === 'duration' ? val.toFixed(0)+'m' : val;
+      cells += `<rect x="${x}" y="${y}" width="${cellW-1}" height="${cellH-1}" fill="${col}" rx="2"
+                  onmouseenter="showTip(event,'${escA(s)} / ${escA(a)}<br/>${escA(metricLabel(metric))}: ${label}')"
+                  onmouseleave="hideTip()"/>`;
+      cells += `<text x="${x+cellW/2}" y="${y+cellH/2+4}" text-anchor="middle" font-size="10"
+                  fill="${t > 0.5 ? C.bg : C.text}">${label}</text>`;
+    });
+  });
+
+  // Y-axis label (rotated, so y-label override can find it)
+  axText += `<text x="${-(PAD.top + rowLabels.length * cellH / 2)}" y="14" text-anchor="middle" font-size="11" fill="${C.muted}" transform="rotate(-90)">Sample</text>`;
+  // X-axis label
+  axText += `<text x="${hmPL + colLabels.length * cellW / 2}" y="${H - 4}" text-anchor="middle" font-size="11" fill="${C.muted}">Assembler</text>`;
+
+  const svg = `<svg id="graph-svg" width="${W}" height="${H}" viewBox="0 0 ${W} ${H}"
+                    style="background:${C.bg};border-radius:8px;width:100%;height:auto" xmlns="http://www.w3.org/2000/svg">
+    ${cells}${axText}
+  </svg>`;
+  return { svg, title: `Heatmap — ${metricLabel(metric)}`, badge: `${rowLabels.length}×${colLabels.length}`, legend: [] };
+}
+
+function metricLabel(m) {
+  return { hq:'HQ MAGs', completeness:'Mean completeness', duration:'Total wall time (min)' }[m] || m;
+}
+
+// ===========================================================================
+// DONUT CHART
+// ===========================================================================
+function drawDonut() {
+  const field = opt('field');
+  const scope = opt('scope');
+  const bins  = getAllBins();
+  const entries = getEntries();
+
+  // Build segments
+  const counts = {};
+  const colors = {};
+
+  if (scope === 'aggregate' || field !== 'tier') {
+    const src = field === 'assembler' ? entries : bins;
+    src.forEach(item => {
+      let key = '';
+      if (field === 'tier')      { const t = qualTier(item.Completeness, item.Contamination); key = TIER_LABEL[t]; colors[key] = getTierCol()[t]; }
+      else if (field === 'assembler') { key = item.assembler||item._asm||'?'; colors[key] = ASM_COL[key] || C.teal; }
+      else if (field === 'domain') {
+        const d = parseTax(item.classification||'').domain || 'Unclassified';
+        key = d;
+        colors[key] = { Bacteria: C.teal, Archaea: C.purple, Unclassified: C.muted }[d] || C.blue;
+      }
+      if (key) counts[key] = (counts[key]||0) + 1;
+    });
+  }
+
+  const total   = Object.values(counts).reduce((a,b)=>a+b,0);
+  if (!total) return emptyResult('No data available for this field.');
+  const segs    = Object.entries(counts).sort((a,b)=>b[1]-a[1]);
+  const CX = SVG_W/2, CY = SVG_H/2 - 10;
+  const R = 130, rInner = 72;
+
+  let slices = '', labels = '';
+  let angle = -Math.PI / 2;
+  segs.forEach(([key, val]) => {
+    const sweep = (val / total) * 2 * Math.PI;
+    const mid   = angle + sweep / 2;
+    const x1 = CX + R * Math.cos(angle), y1 = CY + R * Math.sin(angle);
+    const x2 = CX + R * Math.cos(angle+sweep), y2 = CY + R * Math.sin(angle+sweep);
+    const xi1 = CX + rInner * Math.cos(angle), yi1 = CY + rInner * Math.sin(angle);
+    const xi2 = CX + rInner * Math.cos(angle+sweep), yi2 = CY + rInner * Math.sin(angle+sweep);
+    const lg = sweep > Math.PI ? 1 : 0;
+    const col = colors[key] || PHYLUM_PAL[segs.indexOf([key,val]) % PHYLUM_PAL.length];
+    const pct = ((val/total)*100).toFixed(1);
+
+    const d = `M${xi1.toFixed(2)},${yi1.toFixed(2)} L${x1.toFixed(2)},${y1.toFixed(2)} A${R},${R} 0 ${lg},1 ${x2.toFixed(2)},${y2.toFixed(2)} L${xi2.toFixed(2)},${yi2.toFixed(2)} A${rInner},${rInner} 0 ${lg},0 ${xi1.toFixed(2)},${yi1.toFixed(2)} Z`;
+    slices += `<path d="${d}" fill="${col}" opacity=".85" stroke="${C.bg}" stroke-width="1.5"
+                 onmouseenter="showTip(event,'${escA(key)}: ${val} (${pct}%)')" onmouseleave="hideTip()"/>`;
+
+    if (sweep > 0.25) {
+      const lx = CX + (R+20) * Math.cos(mid), ly = CY + (R+20) * Math.sin(mid);
+      const anchor = Math.cos(mid) > 0 ? 'start' : 'end';
+      labels += `<text x="${lx.toFixed(1)}" y="${ly.toFixed(1)}" text-anchor="${anchor}" font-size="11" fill="${C.text}">${pct}%</text>`;
+    }
+    angle += sweep;
+  });
+
+  // Centre text
+  slices += `<text x="${CX}" y="${CY-4}" text-anchor="middle" font-size="22" font-weight="700" fill="${C.text}">${total}</text>`;
+  slices += `<text x="${CX}" y="${CY+14}" text-anchor="middle" font-size="11" fill="${C.muted}">total</text>`;
+
+  const svg = `<svg id="graph-svg" width="${SVG_W}" height="${SVG_H}" viewBox="0 0 ${SVG_W} ${SVG_H}"
+                    style="background:${C.bg};border-radius:8px;width:100%;height:auto" xmlns="http://www.w3.org/2000/svg">
+    ${slices}${labels}
+  </svg>`;
+
+  const legend = segs.map(([key]) => ({ label: `${key} (${counts[key]})`, color: colors[key]||C.teal }));
+  return { svg, title: `Donut — ${field} distribution`, badge: `${total} items`, legend };
+}
+
+// ===========================================================================
+// PHYLUM COMPLETENESS HORIZONTAL BAR
+// ===========================================================================
+function drawPhylumCompleteness() {
+  const topN    = Math.max(3, parseInt(opt('topN'))||10);
+  const minBins = Math.max(1, parseInt(opt('minBins'))||1);
+  const bins    = getAllBins();
+  if (!bins.length) return emptyResult('No taxonomy data available.');
+
+  // Aggregate completeness + contamination per phylum
+  const phylumData = {};
+  bins.forEach(b => {
+    const phylum = parseTax(b.classification||'').phylum || 'Unclassified';
+    if (!phylumData[phylum]) phylumData[phylum] = { compSum:0, contSum:0, hq:0, mq:0, count:0 };
+    const comp = parseFloat(b.Completeness), cont = parseFloat(b.Contamination);
+    if (!isNaN(comp)) {
+      phylumData[phylum].compSum += comp;
+      phylumData[phylum].count++;
+      const t = qualTier(comp, cont);
+      if (t === 'high')   phylumData[phylum].hq++;
+      else if (t === 'medium') phylumData[phylum].mq++;
+    }
+    if (!isNaN(cont)) phylumData[phylum].contSum += cont;
+  });
+
+  // Filter, compute means, sort by mean completeness desc, take topN
+  const rows = Object.entries(phylumData)
+    .filter(([, d]) => d.count >= minBins)
+    .map(([phylum, d]) => ({
+      phylum,
+      meanComp: d.compSum / d.count,
+      meanCont: d.contSum / d.count,
+      hq: d.hq, mq: d.mq, count: d.count
+    }))
+    .sort((a, b) => b.meanComp - a.meanComp)
+    .slice(0, topN);
+
+  if (!rows.length) return emptyResult('No phyla pass the minimum bin filter.');
+
+  const pL = 190, pR = 160, pT = PAD.top, pB = PAD.bottom + 10;
+  const rowH = 40;
+  const barH = 22;
+  const H = pT + rows.length * rowH + pB;
+  const W = SVG_W;
+  const iw = W - pL - pR;
+  const maxVal = 100; // completeness %
+
+  const _phylumPal2 = [...getAsmPalette(), ...PHYLUM_PAL];
+  let bars = '', axText = '', grid = '';
+
+  // X grid + tick labels
+  [0, 25, 50, 75, 100].forEach(v => {
+    const x = pL + (v / maxVal) * iw;
+    grid += `<line x1="${x}" y1="${pT-4}" x2="${x}" y2="${H-pB}" stroke="${C.border}" stroke-width="${v===0?1.5:.5}" opacity="${v===0?1:.5}"/>`;
+    axText += `<text x="${x}" y="${H-pB+14}" text-anchor="middle" font-size="10" fill="${C.muted}">${v}%</text>`;
+  });
+  // HQ threshold dashed line
+  const hqX = pL + 0.9 * iw;
+  const _htc2 = getTierCol();
+  grid += `<line x1="${hqX}" y1="${pT-4}" x2="${hqX}" y2="${H-pB}" stroke="${_htc2.high}" stroke-width="1.5" stroke-dasharray="4,3" opacity=".6"/>`;
+  axText += `<text x="${hqX+3}" y="${pT+8}" font-size="9" fill="${_htc2.high}">HQ ≥90%</text>`;
+
+  rows.forEach((row, i) => {
+    const cy  = pT + i * rowH + rowH / 2;
+    const bw  = (row.meanComp / maxVal) * iw;
+    const col = _phylumPal2[i % _phylumPal2.length];
+    const tip = `${escA(row.phylum)}<br/>Mean completeness: ${row.meanComp.toFixed(1)}%<br/>Mean contamination: ${row.meanCont.toFixed(1)}%<br/>Bins: ${row.count} (HQ: ${row.hq}, MQ: ${row.mq})`;
+
+    bars += `<rect x="${pL}" y="${cy-barH/2}" width="${bw}" height="${barH}"
+               fill="${col}" opacity=".82" rx="2"
+               onmouseenter="showTip(event,'${tip}')" onmouseleave="hideTip()"/>`;
+    // Phylum name (left)
+    axText += `<text x="${pL-8}" y="${cy+4}" text-anchor="end" font-size="10" fill="${C.text}">${escH(row.phylum)}</text>`;
+    // Stats label (right of bar)
+    const stats = `${row.meanComp.toFixed(1)}%  n=${row.count}  HQ:${row.hq}`;
+    axText += `<text x="${pL+bw+7}" y="${cy+4}" font-size="10" fill="${C.muted}">${escH(stats)}</text>`;
+  });
+
+  // Axis border
+  grid += `<line x1="${pL}" y1="${pT-4}" x2="${pL}" y2="${H-pB}" stroke="${C.border}" stroke-width="1.5"/>`;
+  grid += `<line x1="${pL}" y1="${H-pB}" x2="${pL+iw}" y2="${H-pB}" stroke="${C.border}" stroke-width="1.5"/>`;
+  axText += `<text x="${pL+iw/2}" y="${H-pB+28}" text-anchor="middle" font-size="11" fill="${C.muted}">Mean Completeness (%)</text>`;
+
+  const svg = `<svg id="graph-svg" width="${W}" height="${H}" viewBox="0 0 ${W} ${H}"
+                    style="background:${C.bg};border-radius:8px;width:100%;height:auto" xmlns="http://www.w3.org/2000/svg">
+    ${grid}${bars}${axText}
+  </svg>`;
+
+  const legend = rows.slice(0, 6).map((row, i) => ({ label: row.phylum, color: _phylumPal2[i % _phylumPal2.length] }));
+  return { svg, title: `Phylum Quality — Mean completeness by phylum`, badge: `${rows.length} phyla · ${bins.length} bins`, legend };
+}
+
+// ===========================================================================
+// Download
+// ===========================================================================
+function downloadSVG() {
+  const el = document.getElementById('graph-svg');
+  if (!el) return;
+  const blob = new Blob([el.outerHTML], { type: 'image/svg+xml' });
+  const a = document.createElement('a');
+  a.href = URL.createObjectURL(blob); a.download = `aviary_${_graphType||'graph'}.svg`; a.click();
+  setTimeout(() => URL.revokeObjectURL(a.href), 5000);
+}
+
+function downloadPNG() {
+  const el = document.getElementById('graph-svg');
+  if (!el) return;
+  const scale = 2;
+  const vb    = el.viewBox.baseVal;
+  const W = (vb.width  || SVG_W) * scale;
+  const H = (vb.height || SVG_H) * scale;
+
+  // Serialize with XMLSerializer so namespace declarations are correct
+  let svgStr = new XMLSerializer().serializeToString(el);
+  if (!svgStr.includes('xmlns='))
+    svgStr = svgStr.replace('<svg', '<svg xmlns="http://www.w3.org/2000/svg"');
+
+  const canvas = document.createElement('canvas');
+  canvas.width = W; canvas.height = H;
+  const ctx = canvas.getContext('2d');
+
+  const img = new Image();
+  img.onload = () => {
+    ctx.fillStyle = C.bg;
+    ctx.fillRect(0, 0, W, H);
+    ctx.drawImage(img, 0, 0, W, H);
+    const a = document.createElement('a');
+    a.href = canvas.toDataURL('image/png');
+    a.download = `aviary_${_graphType || 'graph'}.png`;
+    a.click();
+  };
+  img.onerror = () => {
+    alert('PNG export failed — try downloading as SVG instead.');
+  };
+  // data: URI is more reliable than blob URL for SVG→canvas cross-browser
+  img.src = 'data:image/svg+xml;charset=utf-8,' + encodeURIComponent(svgStr);
+}
+
+// ===========================================================================
+// Tooltip
+// ===========================================================================
+function showTip(e, html) {
+  const t = document.getElementById('g-tooltip');
+  t.innerHTML = html.replace(/<br\/>/g,'<br>');
+  t.style.display = '';
+  t.style.left = `${e.clientX + 14}px`;
+  t.style.top  = `${e.clientY - 10}px`;
+}
+function hideTip() { document.getElementById('g-tooltip').style.display = 'none'; }
+
+// ===========================================================================
+// Utilities
+// ===========================================================================
+function qualTier(comp, cont) {
+  const c = parseFloat(comp), k = parseFloat(cont);
+  if (isNaN(c)||isNaN(k)) return 'low';
+  if (c >= 90 && k <= 5)  return 'high';
+  if (c >= 50 && k <= 10) return 'medium';
+  return 'low';
+}
+
+function parseTax(s) {
+  const out = { domain:'', phylum:'', class:'', order:'', family:'', genus:'', species:'' };
+  const map = { d:'domain', p:'phylum', c:'class', o:'order', f:'family', g:'genus', s:'species' };
+  (s||'').split(';').forEach(p => {
+    const m = p.match(/^([dpcofgs])__(.+)$/);
+    if (m && map[m[1]]) out[map[m[1]]] = m[2];
+  });
+  return out;
+}
+
+function parseDurationMin(s) {
+  if (!s) return 0;
+  let m = 0;
+  const h = s.match(/(\d+)h/); const mi = s.match(/(\d+)m/); const sec = s.match(/(\d+)s/);
+  if (h) m += parseInt(h[1])*60;
+  if (mi) m += parseInt(mi[1]);
+  if (sec) m += parseInt(sec[1])/60;
+  return m;
+}
+
+function interpolateColor(hex1, hex2, t) {
+  const c1 = hexRGB(hex1), c2 = hexRGB(hex2);
+  const r = Math.round(c1[0] + (c2[0]-c1[0])*t);
+  const g = Math.round(c1[1] + (c2[1]-c1[1])*t);
+  const b = Math.round(c1[2] + (c2[2]-c1[2])*t);
+  return `rgb(${r},${g},${b})`;
+}
+
+function hexRGB(hex) {
+  const h = hex.replace('#','');
+  return [parseInt(h.slice(0,2),16), parseInt(h.slice(2,4),16), parseInt(h.slice(4,6),16)];
+}
+
+function niceMax(v) {
+  if (!v || v <= 0) return 10;
+  const mag = Math.pow(10, Math.floor(Math.log10(v)));
+  const norm = v / mag;
+  const nice = norm <= 1 ? 1 : norm <= 2 ? 2 : norm <= 5 ? 5 : 10;
+  return nice * mag;
+}
+
+function niceTicksMax(max, n) {
+  const step = niceMax(max / n);
+  const ticks = [];
+  for (let v = 0; v <= max; v += step) ticks.push(v);
+  return ticks;
+}
+
+function fmtNum(v) {
+  if (typeof v !== 'number') v = parseFloat(v);
+  if (isNaN(v)) return '—';
+  if (v >= 1e6) return (v/1e6).toFixed(1)+'M';
+  if (v >= 1e3) return (v/1e3).toFixed(0)+'k';
+  return v % 1 === 0 ? String(v) : v.toFixed(1);
+}
+
+function emptyResult(msg) {
+  return { svg: `<svg id="graph-svg" width="${SVG_W}" height="100" viewBox="0 0 ${SVG_W} 100"
+                      style="background:${C.bg};border-radius:8px" xmlns="http://www.w3.org/2000/svg">
+    <text x="${SVG_W/2}" y="54" fill="${C.muted}" text-anchor="middle" font-size="13">${escH(msg)}</text></svg>`,
+           title: 'No data', badge: '', legend: [] };
+}
+
+function escH(s) { return String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;'); }
+function escA(s) { return String(s).replace(/\\/g,'\\\\').replace(/'/g,"\\'").replace(/"/g,'&quot;'); }
+
+(function(){var s=document.getElementById('page-loading');document.querySelectorAll('a[href^="/"]').forEach(function(a){if(a.target!=='_blank')a.addEventListener('click',function(){s.classList.add('visible');});});window.addEventListener('pageshow',function(){s.classList.remove('visible');});})();
+</script>
+</body>
+</html>

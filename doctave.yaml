@@ -10,3 +10,4 @@ navigation:
   - path: docs/faqs.md
   - path: docs/concepts.md
   - path: docs/citations.md
+  - path: docs/development.md

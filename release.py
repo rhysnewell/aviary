@@ -17,6 +17,9 @@ if __name__ == "__main__":
     version = get_version('aviary/__init__.py')
     print("version is {}".format(version))
 
+    print("Updating dependencies ..")
+    extern.run('pixi run --manifest-path aviary/pixi.toml update_deps')
+
     print("Checking if repo is clean ..")
     extern.run('if [[ $(git diff --shortstat 2> /dev/null | tail -n1) != "" ]]; then exit 1; fi')
 

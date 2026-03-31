@@ -1,3 +1,6 @@
+#!/usr/bin/env python
+
+import argparse
 from subprocess import run, STDOUT
 import os
 
@@ -10,10 +13,11 @@ def run_coverm(
     strain_analysis: bool,
     output_dir: str,
     log: str,
+    bins_dir: str,
 ):
     strain_analysis_flag = f"--bam-file-cache-directory {output_dir} --discard-unmapped" if strain_analysis else ""
 
-    coverm_cmd = f"coverm genome -t {threads} {strain_analysis_flag} -d bins/final_bins/ -m relative_abundance covered_fraction {read_type} {reads} -p {minimap2_type} --output-file {output_file} --min-covered-fraction 0.0 -x fna".split()
+    coverm_cmd = f"coverm genome -t {threads} {strain_analysis_flag} -d {bins_dir} -m relative_abundance covered_fraction {read_type} {reads} -p {minimap2_type} --output-file {output_file} --min-covered-fraction 0.0 -x fna".split()
 
     with open(log, "a") as logf:
         run(coverm_cmd, stdout=logf, stderr=STDOUT)
@@ -26,6 +30,7 @@ def get_abundances(
     threads: int,
     strain_analysis: bool,
     log: str,
+    bins_dir: str,
 ):
     if long_reads != "none":
         if long_read_type in ["ont", "ont_hq"]:
@@ -38,6 +43,7 @@ def get_abundances(
                 strain_analysis=strain_analysis,
                 output_dir="data/reads_mapped_to_mags/long/",
                 log=log,
+                bins_dir=bins_dir,
             )
 
         elif long_read_type in ["rs", "sq", "ccs", "hifi"]:
@@ -50,19 +56,11 @@ def get_abundances(
                 strain_analysis=strain_analysis,
                 output_dir="data/reads_mapped_to_mags/long/",
                 log=log,
+                bins_dir=bins_dir,
             )
 
         else:
-            run_coverm(
-                reads=" ".join(long_reads),
-                minimap2_type="minimap2-ont",
-                output_file="data/long_abundances.tsv",
-                read_type="--single",
-                threads=threads,
-                strain_analysis=strain_analysis,
-                output_dir="data/reads_mapped_to_mags/long/",
-                log=log,
-            )
+            raise Exception("Unexpected long_read_type: {}".format(long_read_type))
 
     if short_reads_2 != 'none':
         reads_str = []
@@ -79,6 +77,7 @@ def get_abundances(
             strain_analysis=strain_analysis,
             output_dir="data/reads_mapped_to_mags/short/",
             log=log,
+            bins_dir=bins_dir,
         )
 
     elif short_reads_1 != 'none':
@@ -91,6 +90,7 @@ def get_abundances(
             strain_analysis=strain_analysis,
             output_dir="data/reads_mapped_to_mags/short/",
             log=log,
+            bins_dir=bins_dir,
         )
 
     # Concatenate the two coverage files if both long and short exist
@@ -103,21 +103,33 @@ def get_abundances(
                         print(line1.strip(), "\t", long_cov_line, file=file3)
     elif long_reads != "none":  # rename long reads cov if only it exists
         os.rename("data/long_abundances.tsv", "data/coverm_abundances.tsv")
-    elif short_reads_1 != "none":  # rename shrot reads cov if only they exist
+    elif short_reads_1 != "none":  # rename short reads cov if only they exist
         os.rename("data/short_abundances.tsv", "data/coverm_abundances.tsv")
 
 
 if __name__ == '__main__':
-    log = snakemake.log[0]
+    parser = argparse.ArgumentParser(description="Get abundances using CoverM.")
+    parser.add_argument("--long-reads", nargs="+", default="none", help="Paths to long reads files.")
+    parser.add_argument("--short-reads-1", nargs="+", default="none", help="Paths to first set of short reads files.")
+    parser.add_argument("--short-reads-2", nargs="+", default="none", help="Paths to second set of short reads files.")
+    parser.add_argument("--long-read-type", type=str, required=True, help="Type of long reads (e.g., ont, rs, etc.).")
+    parser.add_argument("--threads", type=int, required=True, help="Number of threads to use.")
+    parser.add_argument("--strain-analysis", type=lambda x: x.lower() == 'true', nargs='?', const=True, default=False, help="Enable strain analysis (True/False).")
+    parser.add_argument("--log", type=str, required=True, help="Path to log file.")
+    parser.add_argument("--bins-dir", type=str, required=True, help="Directory containing bins to quantify.")
 
-    with open(log, "w") as logf: pass
+    args = parser.parse_args()
+
+    with open(args.log, "w") as logf:
+        pass
 
     get_abundances(
-        snakemake.config["long_reads"],
-        snakemake.config["short_reads_1"],
-        snakemake.config["short_reads_2"],
-        snakemake.config["long_read_type"][0],
-        snakemake.threads,
-        snakemake.config["strain_analysis"],
-        log,
+        long_reads="none" if args.long_reads == ["none"] or args.long_reads == [] else args.long_reads,
+        short_reads_1="none" if args.short_reads_1 == ["none"] or args.short_reads_1 == [] else args.short_reads_1,
+        short_reads_2="none" if args.short_reads_2 == ["none"] or args.short_reads_2 == [] else args.short_reads_2,
+        long_read_type=args.long_read_type,
+        threads=args.threads,
+        strain_analysis=args.strain_analysis,
+        log=args.log,
+        bins_dir=args.bins_dir,
     )

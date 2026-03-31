@@ -1,0 +1,3160 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Aviary — Pipeline Monitor</title>
+  <link rel="icon" href="/logo" type="image/png">
+  <style>
+    /* ------------------------------------------------------------------ */
+    /* Reset & base                                                         */
+    /* ------------------------------------------------------------------ */
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+    :root {
+      --bg:          #0d1117;
+      --surface:     #161b22;
+      --surface2:    #1c2333;
+      --border:      #30363d;
+      --text:        #c9d1d9;
+      --muted:       #8b949e;
+      --text-dim:    #8b949e;
+      --text-bright: #f0f6fc;
+      --teal:        #1abc9c;
+      --teal-dim:    rgba(26,188,156,.15);
+      --teal-glow:   rgba(26,188,156,.15);
+      --blue:        #58a6ff;
+      --yellow:      #e3b341;
+      --red:         #f85149;
+      --green:       #3fb950;
+      --purple:      #bc8cff;
+      --sidebar-w:   220px;
+      --topbar-h:    56px;
+      --header-h:    56px;
+      --panel-w:     480px;
+    }
+
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", sans-serif;
+      background: var(--bg);
+      color: var(--text);
+      display: flex;
+      height: 100vh;
+      overflow: hidden;
+    }
+
+    /* ------------------------------------------------------------------ */
+    /* Sidebar                                                              */
+    /* ------------------------------------------------------------------ */
+    .sidebar {
+      width: var(--sidebar-w);
+      background: var(--surface);
+      border-right: 1px solid var(--border);
+      display: flex;
+      flex-direction: column;
+      flex-shrink: 0;
+      overflow: hidden;
+    }
+
+    .sidebar-logo {
+      height: var(--header-h);
+      padding: 0 16px;
+      border-bottom: 1px solid var(--border);
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      flex-shrink: 0;
+    }
+
+    .sidebar-logo img {
+      width: 32px; height: 32px;
+      object-fit: contain;
+      border-radius: 6px;
+    }
+
+    .sidebar-logo-text .title {
+      font-size: 1.15rem;
+      font-weight: 700;
+      color: var(--text-bright);
+      letter-spacing: 0.02em;
+    }
+
+    .sidebar-logo-text .subtitle {
+      font-size: 0.68rem;
+      color: var(--teal);
+      letter-spacing: 0.08em;
+      text-transform: uppercase;
+      margin-top: 1px;
+    }
+
+    .sidebar-section {
+      padding: 12px 16px 4px;
+      font-size: 0.67rem;
+      font-weight: 600;
+      letter-spacing: 0.1em;
+      text-transform: uppercase;
+      color: var(--text-dim);
+    }
+
+    .sidebar-info { padding: 4px 16px 8px; }
+
+    .sidebar-info-row {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      padding: 5px 0;
+      font-size: 0.8rem;
+      border-bottom: 1px solid var(--border);
+    }
+
+    .sidebar-info-row:last-child { border-bottom: none; }
+    .sidebar-info-row .label { color: var(--text-dim); }
+    .sidebar-info-row .value {
+      color: var(--text-bright);
+      font-weight: 500;
+      font-size: 0.78rem;
+    }
+
+    .sidebar-footer {
+      margin-top: auto;
+      padding: 0 16px;
+      height: 45px;
+      display: flex;
+      align-items: center;
+      border-top: 1px solid var(--border);
+      font-size: 0.72rem;
+      color: var(--text-dim);
+      flex-shrink: 0;
+    }
+
+    .docs-link {
+      display: flex;
+      align-items: center;
+      gap: 7px;
+      margin-bottom: 10px;
+      padding: 7px 10px;
+      border-radius: 6px;
+      color: var(--teal);
+      text-decoration: none;
+      font-size: 0.78rem;
+      font-weight: 500;
+      transition: background 0.15s;
+    }
+    .docs-link:hover {
+      background: rgba(26,188,156,0.1);
+    }
+
+    .page-footer {
+      border-top: 1px solid var(--border);
+      padding: 0 24px;
+      height: 45px;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      flex-wrap: nowrap;
+      gap: 8px;
+      font-size: 0.7rem;
+      color: var(--text-dim);
+      background: var(--surface);
+      flex-shrink: 0;
+    }
+    .page-footer a {
+      color: var(--teal);
+      text-decoration: none;
+    }
+    .page-footer a:hover { text-decoration: underline; }
+    .page-footer .footer-sep {
+      color: var(--border);
+      margin: 0 6px;
+    }
+
+    .refresh-status { display: flex; align-items: center; gap: 6px; }
+
+    .pulse-dot {
+      width: 7px; height: 7px;
+      border-radius: 50%;
+      background: var(--teal);
+      animation: pulse 2s ease-in-out infinite;
+    }
+
+    .pulse-dot.error { background: var(--red); animation: none; }
+    .pulse-dot.idle  { background: var(--text-dim); animation: none; }
+
+    @keyframes pulse {
+      0%, 100% { opacity: 1; transform: scale(1); }
+      50%       { opacity: .5; transform: scale(.8); }
+    }
+
+    /* ------------------------------------------------------------------ */
+    /* Main layout                                                          */
+    /* ------------------------------------------------------------------ */
+    .main {
+      flex: 1;
+      display: flex;
+      flex-direction: column;
+      overflow: hidden;
+    }
+
+    .topbar {
+      height: var(--header-h);
+      border-bottom: 1px solid var(--border);
+      display: flex;
+      align-items: center;
+      padding: 0 20px;
+      gap: 12px;
+      background: var(--surface);
+      flex-shrink: 0;
+    }
+
+    .topbar-title {
+      font-size: 0.95rem;
+      font-weight: 600;
+      color: var(--text-bright);
+      flex: 1;
+    }
+
+    .btn {
+      display: inline-flex;
+      align-items: center;
+      gap: 5px;
+      padding: 5px 12px;
+      border-radius: 6px;
+      font-size: 0.78rem;
+      font-weight: 500;
+      border: 1px solid var(--border);
+      background: var(--surface2);
+      color: var(--text);
+      cursor: pointer;
+      transition: background .15s;
+    }
+
+    .btn:hover { background: var(--border); }
+
+    .content {
+      flex: 1;
+      display: flex;
+      overflow: hidden;
+    }
+
+    /* ------------------------------------------------------------------ */
+    /* Samples area                                                         */
+    /* ------------------------------------------------------------------ */
+    .samples-area {
+      flex: 1;
+      overflow-y: auto;
+      padding: 16px 20px;
+    }
+
+    /* Empty state */
+    .empty-state {
+      text-align: center;
+      padding: 60px 20px;
+      color: var(--text-dim);
+    }
+
+    .empty-state .icon { font-size: 3rem; margin-bottom: 12px; }
+    .empty-state h3 { font-size: 1rem; color: var(--text); margin-bottom: 6px; }
+    .empty-state p  { font-size: 0.82rem; }
+
+    /* Sample cards */
+    .sample-card {
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: 10px;
+      margin-bottom: 12px;
+      overflow: hidden;
+    }
+
+    .sample-header {
+      display: flex;
+      align-items: stretch;
+      padding: 0;
+    }
+
+    .sample-left {
+      flex: 1;
+      padding: 14px 16px;
+      display: flex;
+      flex-direction: column;
+      gap: 10px;
+      min-width: 0;
+    }
+
+    .sample-name {
+      font-size: 1rem;
+      font-weight: 700;
+      color: var(--text-bright);
+      font-family: "SF Mono", "Fira Code", monospace;
+    }
+
+    .asm-pills-stack {
+      display: flex;
+      flex-direction: column;
+      gap: 7px;
+    }
+
+    /* Assembler pills — stacked, full-width rows */
+    .asm-pill {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      padding: 9px 14px;
+      border-radius: 10px;
+      cursor: pointer;
+      border: 1px solid var(--border);
+      background: var(--surface2);
+      font-size: 0.88rem;
+      color: var(--text);
+      transition: all .15s;
+      user-select: none;
+    }
+
+    .asm-pill:hover { background: var(--border); }
+
+    .asm-pill.open {
+      background: var(--teal-glow);
+      border-color: var(--teal);
+      color: var(--teal);
+    }
+
+    .asm-pill.open .asm-pill-name { color: var(--teal); }
+
+    .asm-pill-name {
+      font-weight: 700;
+      font-size: 0.9rem;
+      min-width: 90px;
+    }
+
+    /* Pill progress bar — stretches to fill remaining space */
+    .asm-pill-bar-wrap {
+      flex: 1;
+      height: 7px;
+      background: var(--border);
+      border-radius: 99px;
+      overflow: hidden;
+      min-width: 48px;
+      position: relative;
+    }
+    .asm-pill-bar {
+      height: 100%;
+      border-radius: 99px;
+      transition: width 0.4s;
+    }
+    .asm-pill-bar-ghost {
+      position: absolute;
+      top: 0;
+      height: 100%;
+      border-radius: 99px;
+      animation: ghost-flash 6s ease-out forwards;
+      pointer-events: none;
+    }
+    @keyframes ghost-flash {
+      0%   { opacity: 0.75; }
+      20%  { opacity: 0.95; }
+      40%  { opacity: 0.6;  }
+      60%  { opacity: 0.8;  }
+      80%  { opacity: 0.35; }
+      100% { opacity: 0;    }
+    }
+    .asm-pill-pct {
+      font-size: 0.75rem;
+      color: var(--text-dim);
+      font-family: "SF Mono","Fira Code",monospace;
+      min-width: 40px;
+      text-align: right;
+    }
+    .asm-pill.open .asm-pill-pct { color: var(--teal-dim); }
+
+    /* Per-sample stats panel (right side of sample-header) */
+    .sample-stats {
+      min-width: 190px;
+      max-width: 220px;
+      border-left: 1px solid var(--border);
+      padding: 14px 18px;
+      display: flex;
+      flex-direction: column;
+      justify-content: center;
+      gap: 7px;
+    }
+    .sample-stats-steps {
+      font-size: 0.82rem;
+      color: var(--text);
+      font-family: "SF Mono","Fira Code",monospace;
+      font-weight: 600;
+    }
+    .sample-agg-bar-wrap {
+      height: 8px;
+      background: var(--border);
+      border-radius: 99px;
+      overflow: hidden;
+    }
+    .sample-agg-bar {
+      height: 100%;
+      border-radius: 99px;
+      transition: width 0.4s;
+    }
+    .sample-stats-elapsed {
+      font-size: 0.75rem;
+      color: var(--text-dim);
+    }
+
+    /* Batch sections on samples page */
+    .batch-group { margin-bottom: 14px; }
+
+    .batch-group-header {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      cursor: pointer;
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: 10px;
+      padding: 11px 16px;
+      margin-bottom: 0;
+      user-select: none;
+      transition: background 0.15s;
+    }
+    .batch-group-header:hover { background: var(--surface2); }
+    .batch-group-header.open { border-radius: 10px 10px 0 0; border-bottom-color: transparent; }
+
+    .batch-group-arrow {
+      font-size: 0.65rem;
+      color: var(--text-dim);
+      transition: transform 0.2s;
+      flex-shrink: 0;
+    }
+    .batch-group-header.open .batch-group-arrow { transform: rotate(90deg); }
+
+    .batch-group-date {
+      font-weight: 700;
+      font-size: 0.88rem;
+      color: var(--text-bright);
+      font-family: "SF Mono","Fira Code",monospace;
+    }
+
+    .batch-group-meta {
+      font-size: 0.75rem;
+      color: var(--text-dim);
+    }
+
+    .batch-group-progress {
+      margin-left: auto;
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+
+    .batch-prog-wrap {
+      width: 120px;
+      height: 7px;
+      background: var(--border);
+      border-radius: 99px;
+      overflow: hidden;
+    }
+
+    .batch-prog-bar {
+      height: 100%;
+      border-radius: 99px;
+      transition: width 0.4s;
+    }
+
+    .batch-prog-label {
+      font-size: 0.72rem;
+      color: var(--text-dim);
+      font-family: "SF Mono","Fira Code",monospace;
+      min-width: 36px;
+      text-align: right;
+    }
+
+    .batch-group-body {
+      display: none;
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-top: none;
+      border-radius: 0 0 10px 10px;
+      padding: 12px 12px 4px;
+    }
+    .batch-group-body.open { display: block; }
+
+    /* Assembler expand section */
+    .asm-expand {
+      border-top: 1px solid var(--border);
+      background: var(--bg);
+    }
+
+    .asm-expand-header {
+      display: flex;
+      align-items: center;
+      padding: 7px 16px;
+      gap: 10px;
+      background: var(--surface2);
+      border-bottom: 1px solid var(--border);
+      font-size: 0.72rem;
+      color: var(--text-dim);
+      font-weight: 600;
+      letter-spacing: .06em;
+      text-transform: uppercase;
+    }
+
+    .batch-select {
+      margin-left: auto;
+      background: var(--surface);
+      border: 1px solid var(--border);
+      color: var(--text);
+      font-size: 0.68rem;
+      padding: 2px 6px;
+      border-radius: 4px;
+      cursor: pointer;
+      text-transform: none;
+      letter-spacing: normal;
+      font-weight: normal;
+    }
+
+    .batch-select:focus { outline: none; border-color: var(--teal); }
+
+    /* Compact job rows */
+    .job-row {
+      display: flex;
+      align-items: center;
+      padding: 7px 16px 7px 20px;
+      gap: 10px;
+      border-bottom: 1px solid rgba(48,54,61,.4);
+      cursor: pointer;
+      transition: background .1s;
+    }
+
+    .job-row:hover { background: var(--surface2); }
+    .job-row.selected { background: var(--teal-glow) !important; }
+    .job-row:last-child { border-bottom: none; }
+
+    .job-row-rule {
+      font-family: "SF Mono", "Fira Code", monospace;
+      font-size: 0.78rem;
+      font-weight: 500;
+      color: var(--text-bright);
+      flex: 1;
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+    }
+
+    .job-row-dur {
+      font-size: 0.72rem;
+      color: var(--text-dim);
+      min-width: 55px;
+      text-align: right;
+      font-family: "SF Mono", "Fira Code", monospace;
+    }
+
+    .view-log-btn {
+      font-size: 0.68rem;
+      color: var(--teal);
+      padding: 2px 7px;
+      border-radius: 4px;
+      border: 1px solid rgba(26,188,156,.3);
+      background: rgba(26,188,156,.08);
+      flex-shrink: 0;
+    }
+
+    .view-log-btn:hover { background: rgba(26,188,156,.2); }
+
+    .local-tag {
+      display: inline-block;
+      font-size: 0.6rem;
+      padding: 1px 4px;
+      border-radius: 3px;
+      background: rgba(188,140,255,.15);
+      color: var(--purple);
+      border: 1px solid rgba(188,140,255,.3);
+      margin-left: 5px;
+      vertical-align: middle;
+    }
+
+    /* Status dots */
+    .status-dot {
+      width: 8px; height: 8px;
+      border-radius: 50%;
+      flex-shrink: 0;
+    }
+
+    .dot-running   { background: var(--blue);  animation: pulse 1.8s ease-in-out infinite; }
+    .dot-completed { background: var(--green); }
+    .dot-failed    { background: var(--red);   }
+    .dot-waiting   { background: #A020F0;      animation: pulse 2.5s ease-in-out infinite; }
+    .dot-pending   { background: var(--text-dim); }
+
+    /* Error banner */
+    .error-banner {
+      margin: 12px 20px 0;
+      padding: 10px 14px;
+      background: rgba(248,81,73,.1);
+      border: 1px solid rgba(248,81,73,.3);
+      border-radius: 8px;
+      color: var(--red);
+      font-size: 0.82rem;
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+
+    /* ------------------------------------------------------------------ */
+    /* Log panel (right side)                                               */
+    /* ------------------------------------------------------------------ */
+    .log-panel {
+      width: var(--panel-w);
+      background: var(--surface);
+      border-left: 1px solid var(--border);
+      display: flex;
+      flex-direction: column;
+      flex-shrink: 0;
+      transition: width .25s ease;
+      overflow: hidden;
+    }
+
+    .log-panel.closed { width: 0; }
+
+    .log-panel-header {
+      padding: 12px 16px;
+      border-bottom: 1px solid var(--border);
+      display: flex;
+      align-items: flex-start;
+      gap: 8px;
+      flex-shrink: 0;
+    }
+
+    .log-panel-header h3 {
+      flex: 1;
+      font-size: 0.85rem;
+      font-weight: 600;
+      color: var(--text-bright);
+      word-break: break-all;
+    }
+
+    .close-btn {
+      background: none;
+      border: none;
+      cursor: pointer;
+      color: var(--text-dim);
+      padding: 2px;
+      border-radius: 4px;
+      flex-shrink: 0;
+    }
+
+    .close-btn:hover { background: var(--border); color: var(--text); }
+
+    .log-panel-meta {
+      padding: 8px 16px;
+      border-bottom: 1px solid var(--border);
+      display: flex;
+      flex-wrap: wrap;
+      gap: 8px 16px;
+      flex-shrink: 0;
+    }
+
+    .meta-chip { font-size: 0.72rem; color: var(--text-dim); }
+    .meta-chip span { color: var(--text); font-weight: 500; }
+
+    .log-panel-tabs {
+      display: flex;
+      border-bottom: 1px solid var(--border);
+      padding: 0 16px;
+      flex-shrink: 0;
+    }
+
+    .tab-btn {
+      background: none;
+      border: none;
+      border-bottom: 2px solid transparent;
+      cursor: pointer;
+      color: var(--text-dim);
+      font-size: 0.8rem;
+      padding: 8px 12px;
+      margin-bottom: -1px;
+      transition: color .15s;
+    }
+
+    .tab-btn:hover { color: var(--text); }
+    .tab-btn.active { color: var(--teal); border-bottom-color: var(--teal); }
+
+    .log-panel-content {
+      flex: 1;
+      overflow-y: auto;
+      font-family: "SF Mono", "Fira Code", "Cascadia Code", Consolas, monospace;
+      font-size: 0.72rem;
+      line-height: 1.65;
+      white-space: pre-wrap;
+      word-break: break-word;
+      padding: 12px 16px;
+      color: var(--text);
+    }
+
+    .log-loading {
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      height: 100%;
+      color: var(--text-dim);
+      font-size: 0.82rem;
+      gap: 8px;
+    }
+
+    /* Benchmark / details panel */
+    .bench-section { padding: 12px 16px; }
+    .bench-section h4 {
+      font-size: 0.78rem;
+      color: var(--text-dim);
+      margin-bottom: 8px;
+      text-transform: uppercase;
+      letter-spacing: .06em;
+    }
+
+    .bench-stat {
+      display: flex;
+      justify-content: space-between;
+      padding: 5px 0;
+      border-bottom: 1px solid rgba(48,54,61,.5);
+      font-size: 0.8rem;
+    }
+
+    .bench-stat .k { color: var(--text-dim); }
+    .bench-stat .v { color: var(--text-bright); font-weight: 500; font-family: "SF Mono", monospace; }
+
+    /* Spinner */
+    .spinner {
+      width: 16px; height: 16px;
+      border: 2px solid var(--border);
+      border-top-color: var(--teal);
+      border-radius: 50%;
+      animation: spin .7s linear infinite;
+    }
+
+    @keyframes spin { to { transform: rotate(360deg); } }
+
+    /* Summary dashboard — dark theme */
+    .sum-batch { margin-bottom: 14px; }
+    .sum-batch-header { display: flex; align-items: center; gap: 12px; cursor: pointer;
+      background: var(--surface); border-radius: 10px; padding: 13px 18px;
+      border: 1px solid var(--border); user-select: none; transition: background 0.15s; }
+    .sum-batch-header:hover { background: var(--surface2); }
+    .sum-batch-arrow { font-size: 0.65rem; color: var(--text-dim); transition: transform 0.2s; flex-shrink:0; }
+    .sum-batch-header.open .sum-batch-arrow { transform: rotate(90deg); }
+    .sum-batch-date { font-weight: 700; font-size: 0.95rem; color: var(--text-bright); }
+    .sum-batch-pills { display: flex; gap: 6px; margin-left: auto; flex-wrap: wrap; }
+    .sum-mini-pill { padding: 2px 10px; border-radius: 20px; font-size: 0.7rem; font-weight: 600; }
+    .sum-mini-pill.purple { background: rgba(139,92,246,0.2); color: #a78bfa; }
+    .sum-mini-pill.green  { background: rgba(63,185,80,0.15); color: var(--green); }
+    .sum-mini-pill.amber  { background: rgba(227,179,65,0.15); color: var(--yellow); }
+    .sum-batch-body { display: none; padding-top: 12px; }
+    .sum-batch-body.open { display: block; }
+
+    .sum-sample { background: var(--surface); border-radius: 10px;
+      border: 1px solid var(--border); margin-bottom: 12px; overflow: hidden; }
+    .sum-sample-header { padding: 12px 18px; background: var(--surface2);
+      border-bottom: 1px solid var(--border); display: flex; align-items: center;
+      gap: 10px; cursor: pointer; user-select: none; transition: background 0.15s; }
+    .sum-sample-header:hover { background: var(--surface); }
+    .sum-sample-arrow { font-size: 0.65rem; color: var(--text-dim); transition: transform 0.2s; flex-shrink:0; }
+    .sum-sample-header.open .sum-sample-arrow { transform: rotate(90deg); }
+    .sum-sample-name { font-weight: 700; font-size: 0.9rem; color: var(--text-bright); }
+    .sum-sample-asm  { font-size: 0.72rem; color: var(--teal); background: var(--teal-glow);
+      padding: 2px 8px; border-radius: 20px; font-weight: 600; }
+    .sum-sample-pills { display: flex; gap: 6px; margin-left: auto; }
+    .sum-sample-body { padding: 16px 18px; display: none; }
+    .sum-sample-body.open { display: block; }
+
+    .sum-metric-cards { display: grid; grid-template-columns: repeat(4,1fr); gap: 10px; margin-bottom: 14px; }
+    .sum-metric-card  { background: var(--surface2); border-radius: 8px; padding: 14px 16px;
+      border: 1px solid var(--border); }
+    .sum-card-val   { font-size: 1.6rem; font-weight: 700; line-height: 1.1; }
+    .sum-card-label { font-size: 0.7rem; font-weight: 600; color: var(--text-dim);
+      text-transform: uppercase; letter-spacing: 0.06em; margin-top: 3px; }
+    .sum-card-sub   { font-size: 0.65rem; color: var(--text-dim); opacity: 0.7; margin-top: 1px; }
+
+    .sum-two-col { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; margin-bottom: 14px; }
+    .sum-box { background: var(--surface2); border-radius: 8px; padding: 14px 16px; border: 1px solid var(--border); }
+    .sum-box-title { font-size: 0.72rem; font-weight: 700; text-transform: uppercase;
+      letter-spacing: 0.07em; color: var(--text-dim); margin-bottom: 10px;
+      padding-bottom: 8px; border-bottom: 1px solid var(--border); }
+    .sum-stat-table { width: 100%; border-collapse: collapse; }
+    .sum-stat-table tr { border-bottom: 1px solid var(--border); }
+    .sum-stat-table tr:last-child { border-bottom: none; }
+    .sum-stat-key { color: var(--text-dim); font-size: 0.78rem; padding: 5px 0; width: 55%; }
+    .sum-stat-val { font-weight: 600; font-size: 0.78rem; text-align: right; color: var(--text-bright); }
+    .sum-no-data  { color: var(--text-dim); font-size: 0.8rem; font-style: italic; padding: 8px 0; }
+
+    .sum-qs-row   { display: flex; align-items: center; gap: 8px; margin-bottom: 6px; }
+    .sum-qs-label { width: 110px; font-size: 0.72rem; color: var(--text-dim); flex-shrink: 0; }
+    .sum-qs-wrap  { flex: 1; height: 8px; background: var(--border); border-radius: 99px; overflow: hidden; }
+    .sum-qs-bar   { height: 100%; border-radius: 99px; }
+    .sum-qs-count { width: 24px; text-align: right; font-weight: 700; font-size: 0.75rem; color: var(--text); }
+
+    .sum-bins-wrap  { overflow-x: auto; margin-bottom: 2px; }
+    .sum-bins-table { width: 100%; border-collapse: collapse; font-size: 0.75rem; }
+    .sum-bins-table th { padding: 7px 9px; background: var(--bg); color: var(--text-dim);
+      font-size: 0.65rem; font-weight: 700; letter-spacing: 0.07em; text-transform: uppercase;
+      border-bottom: 2px solid var(--border); white-space: nowrap; text-align: left; }
+    .sum-bins-table td { padding: 6px 9px; border-bottom: 1px solid var(--border); vertical-align: middle; color: var(--text); }
+    .sum-bins-table tbody tr:hover td { background: var(--surface2); }
+    .sum-bins-table tbody tr:last-child td { border-bottom: none; }
+    .sum-bin-name { font-family: "SF Mono",Consolas,monospace; font-size: 0.68rem;
+      max-width: 110px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+    tr.stier-high   td { background: rgba(63,185,80,0.07); }
+    tr.stier-medium td { background: rgba(227,179,65,0.07); }
+    tr.stier-low    td { background: rgba(248,81,73,0.07); }
+    tr.stier-high:hover td, tr.stier-medium:hover td, tr.stier-low:hover td { background: var(--surface2) !important; }
+
+    .sum-prog-wrap  { position:relative; height:16px; background:var(--border);
+      border-radius:99px; overflow:hidden; min-width:70px; }
+    .sum-prog-bar   { height:100%; border-radius:99px; }
+    .sum-prog-label { position:absolute; inset:0; display:flex; align-items:center;
+      justify-content:center; font-size:0.62rem; font-weight:700; color:var(--text-bright); pointer-events:none; }
+
+    .sum-badge { display:inline-block; padding:2px 8px; border-radius:20px;
+      font-size:0.62rem; font-weight:700; letter-spacing:0.03em; white-space:nowrap; }
+    .sum-badge-high   { background: rgba(63,185,80,0.18);  color: var(--green); }
+    .sum-badge-medium { background: rgba(227,179,65,0.18); color: var(--yellow); }
+    .sum-badge-low    { background: rgba(248,81,73,0.18);  color: var(--red); }
+
+    .sum-tax-tag { display:inline-block; padding:1px 7px; border-radius:20px;
+      font-size:0.62rem; font-weight:600; margin-right:2px; white-space:nowrap; }
+
+    .sum-empty { text-align:center; padding:40px 20px; color:var(--text-dim); font-size:0.85rem; }
+
+    /* View toggle */
+    .view-toggle {
+      display: flex;
+      gap: 4px;
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: 6px;
+      padding: 3px;
+    }
+
+    .view-toggle-btn {
+      background: none;
+      border: none;
+      color: var(--text-dim);
+      font-size: 0.75rem;
+      padding: 4px 12px;
+      border-radius: 4px;
+      cursor: pointer;
+      font-weight: 500;
+    }
+
+    .view-toggle-btn.active {
+      background: var(--surface2);
+      color: var(--text-bright);
+    }
+
+    /* Sample search bar */
+    .sample-search-wrap {
+      position: relative;
+      display: flex;
+      align-items: center;
+      margin-left: 8px;
+    }
+
+    .sample-search-icon {
+      position: absolute;
+      left: 9px;
+      color: var(--text-dim);
+      pointer-events: none;
+    }
+
+    .sample-search-input {
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: 6px;
+      color: var(--text);
+      font-size: 0.78rem;
+      padding: 5px 28px 5px 28px;
+      width: 180px;
+      outline: none;
+      transition: border-color 0.15s, width 0.2s;
+    }
+
+    .sample-search-input:focus {
+      border-color: var(--teal);
+      width: 220px;
+    }
+
+    .sample-search-input::placeholder { color: var(--text-dim); }
+
+    .sample-search-clear {
+      position: absolute;
+      right: 6px;
+      background: none;
+      border: none;
+      color: var(--text-dim);
+      cursor: pointer;
+      font-size: 0.7rem;
+      padding: 0 2px;
+      line-height: 1;
+    }
+
+    .sample-search-clear:hover { color: var(--text); }
+
+    /* Summary view */
+    .summary-area {
+      flex: 1;
+      overflow-y: auto;
+      padding: 16px 20px;
+      display: none;
+      flex-direction: column;
+      background: var(--bg);
+    }
+
+    .summary-meta {
+      font-size: 0.75rem;
+      color: var(--text-dim);
+      margin-bottom: 16px;
+    }
+
+    .summary-meta span { color: var(--teal); }
+
+    .summary-table {
+      width: 100%;
+      border-collapse: collapse;
+      font-size: 0.8rem;
+    }
+
+    .summary-table th {
+      text-align: left;
+      padding: 8px 12px;
+      background: var(--surface2);
+      color: var(--text-dim);
+      font-size: 0.68rem;
+      font-weight: 600;
+      letter-spacing: .07em;
+      text-transform: uppercase;
+      border-bottom: 1px solid var(--border);
+      position: sticky;
+      top: 0;
+    }
+
+    .summary-table td {
+      padding: 7px 12px;
+      border-bottom: 1px solid var(--border);
+      color: var(--text);
+    }
+
+    .summary-table tr:last-child td { border-bottom: none; }
+
+    .summary-table tbody tr:hover td { background: var(--surface2); }
+
+    .summary-group-row td {
+      background: var(--surface);
+      color: var(--teal);
+      font-size: 0.68rem;
+      font-weight: 700;
+      letter-spacing: .08em;
+      text-transform: uppercase;
+      padding: 5px 12px;
+    }
+
+    /* Scrollbars */
+    ::-webkit-scrollbar { width: 6px; height: 6px; }
+    ::-webkit-scrollbar-track { background: transparent; }
+    ::-webkit-scrollbar-thumb { background: var(--border); border-radius: 3px; }
+    ::-webkit-scrollbar-thumb:hover { background: #484f58; }
+
+    /* ------------------------------------------------------------------ */
+    /* Status filter pills                                                  */
+    /* ------------------------------------------------------------------ */
+    .status-filter { display: flex; gap: 3px; }
+    .sf-btn {
+      padding: 4px 10px; border-radius: 20px; font-size: 0.72rem; font-weight: 600;
+      border: 1px solid var(--border); background: none; color: var(--text-dim);
+      cursor: pointer; transition: all .15s; white-space: nowrap;
+    }
+    .sf-btn:hover { background: var(--surface2); color: var(--text); }
+    .sf-btn.active { color: var(--text-bright); background: var(--surface2); border-color: var(--text-dim); }
+    .sf-btn.active[data-f="running"] { color: var(--blue);  background: rgba(88,166,255,.1);  border-color: var(--blue); }
+    .sf-btn.active[data-f="failed"]  { color: var(--red);   background: rgba(248,81,73,.1);   border-color: var(--red); }
+    .sf-btn.active[data-f="done"]    { color: var(--green); background: rgba(63,185,80,.1);   border-color: var(--green); }
+
+    /* ------------------------------------------------------------------ */
+    /* Failed job banner on sample card                                     */
+    /* ------------------------------------------------------------------ */
+    .sample-fail-banner {
+      padding: 5px 16px; background: rgba(248,81,73,.07);
+      border-top: 1px solid rgba(248,81,73,.25);
+      font-size: 0.74rem; color: var(--red);
+      display: flex; align-items: center; gap: 6px; flex-wrap: wrap;
+    }
+    .fail-rule-tag {
+      font-family: "SF Mono","Fira Code",monospace; font-size: 0.7rem;
+      background: rgba(248,81,73,.15); border: 1px solid rgba(248,81,73,.3);
+      border-radius: 4px; padding: 1px 6px;
+    }
+    .fail-dismiss-btn {
+      margin-left: auto; flex-shrink: 0;
+      background: none; border: 1px solid rgba(248,81,73,.35);
+      color: var(--red); border-radius: 4px; font-size: 0.68rem;
+      padding: 2px 8px; cursor: pointer; opacity: .7;
+    }
+    .fail-dismiss-btn:hover { opacity: 1; background: rgba(248,81,73,.1); }
+
+    /* ETA */
+    .sample-eta { font-size: 0.7rem; color: var(--yellow); font-style: italic; }
+
+    /* ------------------------------------------------------------------ */
+    /* ------------------------------------------------------------------ */
+    /* Collapsible sidebar                                                  */
+    /* ------------------------------------------------------------------ */
+    .sidebar { transition: width .2s ease; }
+    .sidebar.collapsed { width: 48px; }
+    .sidebar.collapsed .sidebar-logo-text,
+    .sidebar.collapsed .sidebar-section,
+    .sidebar.collapsed .sidebar-info,
+    .sidebar.collapsed .docs-link-text,
+    .sidebar.collapsed #refresh-label { display: none; }
+    .sidebar.collapsed .sidebar-logo { justify-content: center; padding: 14px 0; }
+    .sidebar.collapsed .sidebar-logo img { display: none; }
+    .sidebar.collapsed .docs-link    { justify-content: center; padding: 7px 0; }
+    .sidebar.collapsed .refresh-status { justify-content: center; }
+    .sidebar-collapse-btn {
+      background: none; border: none; color: var(--text-dim); cursor: pointer;
+      padding: 3px; border-radius: 4px; display: inline-flex; margin-left: auto; flex-shrink: 0;
+      transition: color .15s, transform .2s;
+    }
+    .sidebar.collapsed .sidebar-collapse-btn { margin-left: 0; transform: rotate(180deg); }
+    .sidebar-collapse-btn:hover { color: var(--text); }
+
+    /* ------------------------------------------------------------------ */
+    /* Log panel search                                                     */
+    /* ------------------------------------------------------------------ */
+    .log-search-bar {
+      padding: 6px 12px; border-bottom: 1px solid var(--border);
+      display: flex; align-items: center; gap: 6px; flex-shrink: 0;
+    }
+    .log-search-input {
+      flex: 1; background: var(--surface2); border: 1px solid var(--border);
+      border-radius: 5px; color: var(--text); font-size: 0.75rem; padding: 4px 8px;
+      outline: none; font-family: "SF Mono","Fira Code",monospace;
+    }
+    .log-search-input:focus { border-color: var(--teal); }
+    .log-search-input::placeholder { color: var(--text-dim); }
+    .log-search-info { font-size: 0.68rem; color: var(--text-dim); white-space: nowrap; min-width: 48px; text-align: right; }
+    .log-search-nav { display: flex; gap: 2px; }
+    .log-search-nav button { background: none; border: 1px solid var(--border); border-radius: 4px; color: var(--text-dim); cursor: pointer; font-size: 0.65rem; padding: 2px 5px; line-height: 1; transition: color .15s, border-color .15s; }
+    .log-search-nav button:hover { color: var(--text); border-color: var(--text-dim); }
+    .log-search-nav button:disabled { opacity: 0.3; cursor: default; }
+    mark.log-hl { background: rgba(227,179,65,.35); color: var(--text-bright); border-radius: 2px; }
+    mark.log-hl.log-hl-current { background: rgba(227,179,65,.75); color: #000; }
+    .log-err-line { background: rgba(248,81,73,.12); color: #ff7b72; border-radius: 2px; font-weight: 500; }
+
+    /* Page-transition loading splash */
+    #page-loading {
+      display: none;
+      position: fixed;
+      inset: 0;
+      z-index: 9999;
+      background: var(--bg);
+      align-items: center;
+      justify-content: center;
+    }
+    #page-loading.visible { display: flex; }
+    #page-loading img {
+      width: min(340px, 55vw);
+      opacity: 0;
+      animation: splash-fade 0.3s ease forwards;
+    }
+    @keyframes splash-fade {
+      from { opacity: 0; transform: scale(0.96); }
+      to   { opacity: 1; transform: scale(1); }
+    }
+
+    /* ------------------------------------------------------------------ */
+    /* Attempt selector bar                                                 */
+    /* ------------------------------------------------------------------ */
+    .attempt-bar {
+      display: flex; align-items: center; gap: 6px; flex-shrink: 0;
+      padding: 5px 12px; background: var(--surface2); border-bottom: 1px solid var(--border);
+      font-size: 0.7rem;
+    }
+    .attempt-bar-label { color: var(--text-dim); }
+    .attempt-pill {
+      padding: 2px 9px; border-radius: 10px; font-size: 0.7rem;
+      border: 1px solid var(--border); background: none; color: var(--text-dim);
+      cursor: pointer; transition: all .12s;
+    }
+    .attempt-pill:hover { border-color: var(--text); color: var(--text); }
+    .attempt-pill.active { border-color: var(--teal); color: var(--teal); background: var(--teal-glow); }
+
+    /* ------------------------------------------------------------------ */
+    /* Root switcher                                                        */
+    /* ------------------------------------------------------------------ */
+    .root-switcher {
+      position: relative; display: flex; align-items: center; gap: 6px;
+      background: var(--surface2); border: 1px solid var(--border);
+      border-radius: 6px; padding: 4px 9px; font-size: 0.72rem; cursor: pointer;
+      transition: border-color .15s; flex-shrink: 0; max-width: 230px;
+    }
+    .root-switcher:hover { border-color: var(--text-dim); }
+    .root-switcher.open  { border-color: var(--teal); }
+    .root-switcher-icon  { color: var(--text-dim); flex-shrink: 0; }
+    .root-display {
+      color: var(--text-dim); overflow: hidden; text-overflow: ellipsis;
+      white-space: nowrap; flex: 1; max-width: 155px;
+    }
+    .root-caret { color: var(--text-dim); font-size: 0.6rem; flex-shrink: 0; }
+    .root-dropdown {
+      position: absolute; top: calc(100% + 4px); left: 0;
+      background: var(--surface); border: 1px solid var(--border);
+      border-radius: 6px; z-index: 200; min-width: 280px;
+      box-shadow: 0 6px 20px rgba(0,0,0,.4); overflow: hidden;
+    }
+    .root-dropdown-section {
+      padding: 5px 10px 3px; font-size: 0.65rem; font-weight: 700;
+      letter-spacing: .7px; text-transform: uppercase; color: var(--text-dim);
+      border-bottom: 1px solid var(--border);
+    }
+    .root-dropdown-item {
+      padding: 7px 12px; font-size: 0.72rem; cursor: pointer;
+      color: var(--text-dim); font-family: "SF Mono","Fira Code",monospace;
+      border-bottom: 1px solid rgba(48,54,61,.5);
+      transition: background .1s, color .1s;
+      white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
+    }
+    .root-dropdown-item:last-child { border-bottom: none; }
+    .root-dropdown-item:hover { background: var(--surface2); color: var(--text); }
+    .root-dropdown-item.active { color: var(--teal); }
+    .root-input-row {
+      display: flex; align-items: center; gap: 6px;
+      padding: 7px 12px; border-top: 1px solid var(--border); background: var(--surface2);
+    }
+    .root-path-input {
+      flex: 1; background: var(--bg); border: 1px solid var(--border);
+      border-radius: 4px; color: var(--text); font-size: 0.72rem;
+      font-family: "SF Mono","Fira Code",monospace; padding: 4px 7px; outline: none;
+    }
+    .root-path-input:focus { border-color: var(--teal); }
+    .root-apply-btn {
+      padding: 3px 10px; background: var(--teal); color: #0d1117;
+      border: none; border-radius: 4px; font-size: 0.7rem; font-weight: 700;
+      cursor: pointer;
+    }
+    .root-apply-btn:hover { opacity: .85; }
+
+    /* ------------------------------------------------------------------ */
+    /* Refresh countdown                                                    */
+    /* ------------------------------------------------------------------ */
+    .refresh-text { display: flex; flex-direction: column; line-height: 1.35; }
+    #refresh-countdown { font-size: 0.6rem; color: var(--text-dim); }
+
+    /* ------------------------------------------------------------------ */
+    /* MAG scatter plot                                                     */
+    /* ------------------------------------------------------------------ */
+    .mag-scatter-wrap {
+      background: var(--surface); border: 1px solid var(--border);
+      border-radius: 8px; padding: 16px 18px; margin-bottom: 14px;
+    }
+    .mag-scatter-title {
+      font-size: 0.72rem; font-weight: 700; text-transform: uppercase;
+      letter-spacing: 0.07em; color: var(--text-dim); margin-bottom: 10px;
+    }
+    .mag-scatter-svg { display: block; width: 100%; }
+    .scatter-tooltip {
+      position: fixed; background: var(--surface2); border: 1px solid var(--border);
+      border-radius: 6px; padding: 7px 10px; font-size: 0.73rem; color: var(--text);
+      pointer-events: none; z-index: 100; display: none; max-width: 220px; line-height: 1.5;
+    }
+
+    /* ------------------------------------------------------------------ */
+    /* Benchmark bar chart                                                  */
+    /* ------------------------------------------------------------------ */
+    .bench-bar-row { margin-bottom: 10px; }
+    .bench-bar-label {
+      font-size: 0.72rem; color: var(--text-dim); margin-bottom: 3px;
+      display: flex; justify-content: space-between;
+    }
+    .bench-bar-label span { color: var(--text-bright); font-weight: 600; }
+    .bench-bar-track {
+      height: 10px; background: var(--bg); border-radius: 99px;
+      overflow: hidden; border: 1px solid var(--border);
+    }
+    .bench-bar-fill { height: 100%; border-radius: 99px; transition: width .4s; }
+
+    /* ------------------------------------------------------------------ */
+    /* Toast                                                               */
+    /* ------------------------------------------------------------------ */
+    .toast {
+      position: fixed; bottom: 24px; right: 24px; background: var(--surface2);
+      border: 1px solid var(--border); border-radius: 8px; padding: 10px 16px;
+      font-size: 0.8rem; color: var(--text); z-index: 300; opacity: 0;
+      transform: translateY(8px); transition: opacity .2s, transform .2s; pointer-events: none;
+    }
+    .toast.show { opacity: 1; transform: translateY(0); }
+
+    /* Keyboard-focused sample card */
+    .sample-card.kb-focus { outline: 2px solid var(--teal); outline-offset: 1px; }
+
+    /* ------------------------------------------------------------------ */
+    /* Sidebar navigation items                                             */
+    /* ------------------------------------------------------------------ */
+    .nav-section-header {
+      padding: 12px 16px 4px;
+      font-size: 0.62rem;
+      font-weight: 700;
+      letter-spacing: 0.1em;
+      text-transform: uppercase;
+      color: var(--text-dim);
+      flex-shrink: 0;
+    }
+
+    .nav-item {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      padding: 8px 16px;
+      font-size: 0.82rem;
+      font-weight: 500;
+      color: var(--text-dim);
+      cursor: pointer;
+      border-left: 2px solid transparent;
+      transition: background .12s, color .12s, border-color .12s;
+      text-decoration: none;
+      user-select: none;
+      flex-shrink: 0;
+    }
+
+    .nav-item:hover {
+      background: rgba(255,255,255,.04);
+      color: var(--text);
+    }
+
+    .nav-item.active {
+      color: var(--teal);
+      background: var(--teal-glow);
+      border-left-color: var(--teal);
+    }
+
+    .nav-item svg { flex-shrink: 0; }
+    .nav-item-text { white-space: nowrap; overflow: hidden; }
+
+    /* Hide text/labels when sidebar is collapsed */
+    .sidebar.collapsed .nav-section-header,
+    .sidebar.collapsed .nav-item-text { display: none; }
+    .sidebar.collapsed .nav-item {
+      justify-content: center;
+      padding: 10px 0;
+      border-left: none;
+    }
+    .sidebar.collapsed .nav-item.active {
+      background: var(--teal-glow);
+    }
+    .sidebar.collapsed .sidebar-nav-divider { margin: 4px 8px; }
+
+    .sidebar-nav-divider {
+      height: 1px;
+      background: var(--border);
+      margin: 6px 0;
+      flex-shrink: 0;
+    }
+
+  </style>
+</head>
+<body>
+<div class="toast" id="toast"></div>
+<div class="scatter-tooltip" id="scatter-tooltip"></div>
+
+<!-- ====================================================================== -->
+<!-- Sidebar                                                                  -->
+<!-- ====================================================================== -->
+<aside class="sidebar">
+  <div class="sidebar-logo">
+    <a href="/" style="text-decoration:none;display:flex;align-items:center;gap:10px;flex:1;min-width:0;">
+    <img src="/logo" alt="Aviary logo" onerror="this.style.display='none'">
+    <div class="sidebar-logo-text">
+      <div class="title">Aviary</div>
+      <div class="subtitle">Metagenomics</div>
+    </div>
+    </a>
+    <button class="sidebar-collapse-btn" id="sidebar-collapse-btn" onclick="toggleSidebar()" title="Collapse sidebar">
+      <svg width="14" height="14" viewBox="0 0 16 16" fill="currentColor">
+        <path d="M15 8a.5.5 0 0 0-.5-.5H2.707l3.147-3.146a.5.5 0 1 0-.708-.708l-4 4a.5.5 0 0 0 0 .708l4 4a.5.5 0 0 0 .708-.708L2.707 8.5H14.5A.5.5 0 0 0 15 8z"/>
+      </svg>
+    </button>
+  </div>
+
+  <div class="sidebar-section">Overview</div>
+  <div class="sidebar-info">
+    <div class="sidebar-info-row"><span class="label">Samples</span><span class="value" id="si-samples">—</span></div>
+    <div class="sidebar-info-row"><span class="label">Running</span><span class="value" id="si-running">—</span></div>
+    <div class="sidebar-info-row"><span class="label">Waiting</span><span class="value" id="si-waiting">—</span></div>
+    <div class="sidebar-info-row"><span class="label">Completed</span><span class="value" id="si-done">—</span></div>
+    <div class="sidebar-info-row"><span class="label">Failed</span><span class="value" id="si-failed">—</span></div>
+  </div>
+
+  <div class="sidebar-nav-divider"></div>
+
+  <!-- Views nav -->
+  <div class="nav-item active" id="nav-samples" onclick="switchView('samples')">
+    <svg width="15" height="15" viewBox="0 0 16 16" fill="currentColor">
+      <path d="M0 2a2 2 0 0 1 2-2h12a2 2 0 0 1 2 2v1a2 2 0 0 1-2 2H2a2 2 0 0 1-2-2V2zm15 2a1 1 0 0 0 1-1V2a1 1 0 0 0-1-1H1a1 1 0 0 0-1 1v1a1 1 0 0 0 1 1h14zM0 8a2 2 0 0 1 2-2h12a2 2 0 0 1 2 2v1a2 2 0 0 1-2 2H2a2 2 0 0 1-2-2V8zm15 2a1 1 0 0 0 1-1V8a1 1 0 0 0-1-1H1a1 1 0 0 0-1 1v1a1 1 0 0 0 1 1h14zm-13-1a1 1 0 1 0 0-2 1 1 0 0 0 0 2zm2 0a1 1 0 1 0 0-2 1 1 0 0 0 0 2zm2 0a1 1 0 1 0 0-2 1 1 0 0 0 0 2z"/>
+    </svg>
+    <span class="nav-item-text">Pipeline Monitor</span>
+  </div>
+  <div class="nav-item" id="nav-summary" onclick="switchView('summary')">
+    <svg width="15" height="15" viewBox="0 0 16 16" fill="currentColor">
+      <path d="M4 11H2v3h2v-3zm5-4H7v7h2V7zm5-5v12h-2V2h2zm-2-1a1 1 0 0 0-1 1v12a1 1 0 0 0 1 1h2a1 1 0 0 0 1-1V2a1 1 0 0 0-1-1h-2zM6 7a1 1 0 0 1 1-1h2a1 1 0 0 1 1 1v7a1 1 0 0 1-1 1H7a1 1 0 0 1-1-1V7zm-5 4a1 1 0 0 1 1-1h2a1 1 0 0 1 1 1v3a1 1 0 0 1-1 1H2a1 1 0 0 1-1-1v-3z"/>
+    </svg>
+    <span class="nav-item-text">Bin Quality Report</span>
+  </div>
+  <a class="nav-item" id="nav-phylo" href="/view" onclick="openPhylo(event)">
+    <svg width="15" height="15" viewBox="0 0 16 16" fill="currentColor">
+      <path d="M4.5 1a.5.5 0 0 1 .5.5V4h3V1.5a.5.5 0 0 1 1 0V4h1a.5.5 0 0 1 0 1H9v1.293l2.354 2.353a.5.5 0 0 1-.708.708L9 7.707V9h1a.5.5 0 0 1 0 1H9v1.293l2.354 2.353a.5.5 0 0 1-.708.708L9 12.707V14.5a.5.5 0 0 1-1 0V10H5v4.5a.5.5 0 0 1-1 0V12.707l-1.646 1.647a.5.5 0 0 1-.708-.708L3.293 12H2a.5.5 0 0 1 0-1h1.293L2.146 9.854a.5.5 0 1 1 .708-.708L4 10.293V9H3a.5.5 0 0 1 0-1h1V6.707L2.854 5.561a.5.5 0 1 1 .708-.708L5 6.293V5H4a.5.5 0 0 1 0-1h1V1.5a.5.5 0 0 1 .5-.5zM5 5v2h3V5H5zm0 3v2h3V8H5z"/>
+    </svg>
+    <span class="nav-item-text">View</span>
+  </a>
+
+  <div class="sidebar-nav-divider"></div>
+
+  <!-- Tools nav -->
+  <a href="/graph" class="nav-item">
+    <svg width="15" height="15" viewBox="0 0 16 16" fill="currentColor">
+      <path d="M0 0h1v16H0zm15 0h1v16h-1zM5 11.5a.5.5 0 0 1 .5-.5h5a.5.5 0 0 1 0 1h-5a.5.5 0 0 1-.5-.5zm-3-4a.5.5 0 0 1 .5-.5h11a.5.5 0 0 1 0 1h-11a.5.5 0 0 1-.5-.5zm6-4a.5.5 0 0 1 .5-.5h5a.5.5 0 0 1 0 1h-5a.5.5 0 0 1-.5-.5z"/>
+    </svg>
+    <span class="nav-item-text">Results Visualisation</span>
+  </a>
+  <a href="/assembly" class="nav-item">
+    <svg width="15" height="15" viewBox="0 0 16 16" fill="currentColor">
+      <path d="M8.186 1.113a.5.5 0 0 0-.372 0L1.846 3.5 8 5.961 14.154 3.5 8.186 1.113zM15 4.239l-6.5 2.6v7.922l6.5-2.6V4.24zM7.5 14.762V6.838L1 4.239v7.923l6.5 2.6zM7.443.184a1.5 1.5 0 0 1 1.114 0l7.129 2.852A.5.5 0 0 1 16 3.5v8.662a1 1 0 0 1-.629.928l-7.185 2.874a.5.5 0 0 1-.372 0L.63 13.09a1 1 0 0 1-.63-.928V3.5a.5.5 0 0 1 .314-.464L7.443.184z"/>
+    </svg>
+    <span class="nav-item-text">Contig Assembly Graph</span>
+  </a>
+  <a href="/export" class="nav-item">
+    <svg width="15" height="15" viewBox="0 0 16 16" fill="currentColor">
+      <path d="M.5 9.9a.5.5 0 0 1 .5.5v2.5a1 1 0 0 0 1 1h12a1 1 0 0 0 1-1v-2.5a.5.5 0 0 1 1 0v2.5a2 2 0 0 1-2 2H2a2 2 0 0 1-2-2v-2.5a.5.5 0 0 1 .5-.5z"/>
+      <path d="M7.646 11.854a.5.5 0 0 0 .708 0l3-3a.5.5 0 0 0-.708-.708L8.5 10.293V1.5a.5.5 0 0 0-1 0v8.793L5.354 8.146a.5.5 0 1 0-.708.708l3 3z"/>
+    </svg>
+    <span class="nav-item-text">Export Results</span>
+  </a>
+
+  <div class="sidebar-nav-divider"></div>
+
+  <!-- Help nav -->
+  <a href="/docs" class="nav-item">
+    <svg width="15" height="15" viewBox="0 0 16 16" fill="currentColor">
+      <path d="M1 2.828c.885-.37 2.154-.769 3.388-.893 1.33-.134 2.458.063 3.112.752v9.746c-.935-.53-2.12-.603-3.213-.493-1.18.12-2.37.461-3.287.811V2.828zm7.5-.141c.654-.689 1.782-.886 3.112-.752 1.234.124 2.503.523 3.388.893v9.923c-.918-.35-2.107-.692-3.287-.81-1.094-.111-2.278-.039-3.213.492V2.687zM8 1.783C7.015.936 5.587.81 4.287.94c-1.514.153-3.042.672-3.994 1.105A.5.5 0 0 0 0 2.5v11a.5.5 0 0 0 .707.455c.882-.4 2.303-.881 3.68-1.02 1.409-.142 2.59.087 3.223.877a.5.5 0 0 0 .78 0c.633-.79 1.814-1.019 3.222-.877 1.378.139 2.8.62 3.681 1.02A.5.5 0 0 0 16 13.5v-11a.5.5 0 0 0-.293-.455c-.952-.433-2.48-.952-3.994-1.105C10.413.809 8.985.936 8 1.783z"/>
+    </svg>
+    <span class="nav-item-text">Documentation</span>
+  </a>
+  <a href="/guide" class="nav-item">
+    <svg width="15" height="15" viewBox="0 0 16 16" fill="currentColor">
+      <path d="M8 15A7 7 0 1 1 8 1a7 7 0 0 1 0 14zm0 1A8 8 0 1 0 8 0a8 8 0 0 0 0 16z"/>
+      <path d="M5.255 5.786a.237.237 0 0 0 .241.247h.825c.138 0 .248-.113.266-.25.09-.656.54-1.134 1.342-1.134.686 0 1.314.343 1.314 1.168 0 .635-.374.927-.965 1.371-.673.489-1.206 1.06-1.168 1.987l.003.217a.25.25 0 0 0 .25.246h.811a.25.25 0 0 0 .25-.25v-.105c0-.718.273-.927 1.01-1.486.609-.463 1.244-.977 1.244-2.056 0-1.511-1.276-2.241-2.673-2.241-1.267 0-2.655.59-2.75 2.286zm1.557 5.763c0 .533.425.927 1.01.927.609 0 1.028-.394 1.028-.927 0-.552-.42-.94-1.029-.94-.584 0-1.009.388-1.009.94z"/>
+    </svg>
+    <span class="nav-item-text">User Guide</span>
+  </a>
+
+  <div class="sidebar-footer">
+    <div class="refresh-status">
+      <div class="pulse-dot" id="pulse-dot"></div>
+      <div class="refresh-text">
+        <span id="refresh-label">Connecting…</span>
+        <span id="refresh-countdown"></span>
+      </div>
+    </div>
+  </div>
+</aside>
+
+<!-- ====================================================================== -->
+<!-- Main                                                                     -->
+<!-- ====================================================================== -->
+<!-- Page-transition loading splash -->
+<div id="page-loading">
+  <img src="/logo" alt="Aviary">
+</div>
+
+<div class="main">
+
+  <div class="topbar">
+    <div class="root-switcher" id="root-switcher" onclick="toggleRootDropdown(event)">
+      <svg class="root-switcher-icon" width="13" height="13" viewBox="0 0 16 16" fill="currentColor">
+        <path d="M1 3.5A1.5 1.5 0 0 1 2.5 2h2.764c.958 0 1.76.56 2.311 1.184C7.985 3.648 8.48 4 9 4h4.5A1.5 1.5 0 0 1 15 5.5v7a1.5 1.5 0 0 1-1.5 1.5h-11A1.5 1.5 0 0 1 1 12.5v-9z"/>
+      </svg>
+      <span class="root-display" id="root-display">Default</span>
+      <span class="root-caret">▾</span>
+      <div class="root-dropdown" id="root-dropdown" style="display:none" onclick="event.stopPropagation()">
+        <div class="root-dropdown-section">Recent roots</div>
+        <div id="root-recent-items"></div>
+        <div class="root-input-row">
+          <input type="text" class="root-path-input" id="root-path-input"
+                 placeholder="/path/to/project…"
+                 onkeydown="if(event.key==='Enter') applyRootInput()">
+          <button class="root-apply-btn" onclick="applyRootInput()">Go</button>
+        </div>
+      </div>
+    </div>
+    <div class="topbar-title" id="topbar-title">Samples</div>
+    <div class="sample-search-wrap">
+      <svg width="13" height="13" viewBox="0 0 16 16" fill="currentColor" class="sample-search-icon">
+        <path d="M11.742 10.344a6.5 6.5 0 1 0-1.397 1.398h-.001c.03.04.062.078.098.115l3.85 3.85a1 1 0 0 0 1.415-1.414l-3.85-3.85a1.007 1.007 0 0 0-.115-.099zm-5.242 1.656a5.5 5.5 0 1 1 0-11 5.5 5.5 0 0 1 0 11z"/>
+      </svg>
+      <input type="text" id="sample-search" class="sample-search-input" placeholder="Find sample…" oninput="filterSamples(this.value)" autocomplete="off" spellcheck="false">
+      <button class="sample-search-clear" id="sample-search-clear" onclick="clearSampleSearch()" title="Clear search" style="display:none">✕</button>
+    </div>
+    <div class="status-filter">
+      <button class="sf-btn active" data-f="all"     onclick="setStatusFilter('all')">All</button>
+      <button class="sf-btn"        data-f="running" onclick="setStatusFilter('running')">Running</button>
+      <button class="sf-btn"        data-f="failed"  onclick="setStatusFilter('failed')">Failed</button>
+      <button class="sf-btn"        data-f="done"    onclick="setStatusFilter('done')">Done</button>
+    </div>
+    <button class="btn" id="export-btn" onclick="window.location.href='/export'" title="Export data" style="display:none">
+      <svg width="13" height="13" viewBox="0 0 16 16" fill="currentColor">
+        <path d="M.5 9.9a.5.5 0 0 1 .5.5v2.5a1 1 0 0 0 1 1h12a1 1 0 0 0 1-1v-2.5a.5.5 0 0 1 1 0v2.5a2 2 0 0 1-2 2H2a2 2 0 0 1-2-2v-2.5a.5.5 0 0 1 .5-.5z"/>
+        <path d="M7.646 11.854a.5.5 0 0 0 .708 0l3-3a.5.5 0 0 0-.708-.708L8.5 10.293V1.5a.5.5 0 0 0-1 0v8.793L5.354 8.146a.5.5 0 1 0-.708.708l3 3z"/>
+      </svg>
+      Export
+    </button>
+    <button class="btn" onclick="refreshNow()">
+      <svg width="13" height="13" viewBox="0 0 16 16" fill="currentColor">
+        <path d="M8 3a5 5 0 1 0 4.546 2.914.5.5 0 0 1 .908-.417A6 6 0 1 1 8 2v1z"/>
+        <path d="M8 4.466V.534a.25.25 0 0 1 .41-.192l2.36 1.966c.12.1.12.284 0 .384L8.41 4.658A.25.25 0 0 1 8 4.466z"/>
+      </svg>
+      Refresh
+    </button>
+  </div>
+
+  <div class="content">
+
+    <!-- Samples list -->
+    <div class="samples-area" id="samples-area">
+      <div class="error-banner" id="error-banner" style="display:none">
+        <svg width="15" height="15" viewBox="0 0 16 16" fill="currentColor">
+          <path d="M8 15A7 7 0 1 1 8 1a7 7 0 0 1 0 14zm0 1A8 8 0 1 0 8 0a8 8 0 0 0 0 16z"/>
+          <path d="M7.002 11a1 1 0 1 1 2 0 1 1 0 0 1-2 0zM7.1 4.995a.905.905 0 1 1 1.8 0l-.35 3.507a.552.552 0 0 1-1.1 0L7.1 4.995z"/>
+        </svg>
+        <span id="error-text"></span>
+      </div>
+      <div class="empty-state" id="empty-state">
+        <div class="icon">🐦</div>
+        <h3>Scanning for samples…</h3>
+        <p>Looking for <code>.snakemake/log/</code> directories.</p>
+      </div>
+      <div id="samples-list"></div>
+    </div>
+
+    <!-- Summary view -->
+    <div class="summary-area" id="summary-area"></div>
+
+    <!-- Log panel -->
+    <div class="log-panel closed" id="log-panel">
+      <div class="log-panel-header">
+        <h3 id="panel-title">Job Log</h3>
+        <button class="close-btn" onclick="closePanel()" title="Close">
+          <svg width="14" height="14" viewBox="0 0 16 16" fill="currentColor">
+            <path d="M4.646 4.646a.5.5 0 0 1 .708 0L8 7.293l2.646-2.647a.5.5 0 0 1 .708.708L8.707 8l2.647 2.646a.5.5 0 0 1-.708.708L8 8.707l-2.646 2.647a.5.5 0 0 1-.708-.708L7.293 8 4.646 5.354a.5.5 0 0 1 0-.708z"/>
+          </svg>
+        </button>
+      </div>
+      <div class="log-panel-meta" id="panel-meta"></div>
+      <div class="log-panel-tabs" id="panel-tabs">
+        <button class="tab-btn active" data-tab="log"       onclick="switchTab('log')">Log Output</button>
+        <button class="tab-btn"        data-tab="details"   onclick="switchTab('details')">Details</button>
+        <button class="tab-btn"        data-tab="benchmark" onclick="switchTab('benchmark')">Benchmark</button>
+      </div>
+      <div class="attempt-bar" id="attempt-bar" style="display:none">
+        <span class="attempt-bar-label">Attempt:</span>
+        <div id="attempt-pills"></div>
+      </div>
+      <div class="log-search-bar" id="log-search-bar" style="display:none">
+        <svg width="12" height="12" viewBox="0 0 16 16" fill="currentColor" style="color:var(--text-dim);flex-shrink:0">
+          <path d="M11.742 10.344a6.5 6.5 0 1 0-1.397 1.398h-.001c.03.04.062.078.098.115l3.85 3.85a1 1 0 0 0 1.415-1.414l-3.85-3.85a1.007 1.007 0 0 0-.115-.099zm-5.242 1.656a5.5 5.5 0 1 1 0-11 5.5 5.5 0 0 1 0 11z"/>
+        </svg>
+        <input type="text" id="log-search-input" class="log-search-input" placeholder="Search log… (Ctrl+F)" oninput="searchLog(this.value)" onkeydown="handleLogSearchKey(event)" autocomplete="off" spellcheck="false">
+        <span class="log-search-info" id="log-search-info"></span>
+        <div class="log-search-nav">
+          <button id="log-search-prev" onclick="stepLogSearch(-1)" title="Previous match (Shift+Enter)" disabled>▲</button>
+          <button id="log-search-next" onclick="stepLogSearch(1)" title="Next match (Enter)" disabled>▼</button>
+        </div>
+        <button style="background:none;border:none;color:var(--text-dim);cursor:pointer;font-size:.7rem;padding:0 2px" onclick="clearLogSearch()" title="Clear">✕</button>
+      </div>
+      <div class="log-panel-content" id="panel-content">
+        <div class="log-loading"><div class="spinner"></div> Loading…</div>
+      </div>
+    </div>
+
+  </div><!-- /.content -->
+
+  <footer class="page-footer">
+    <div>
+      Web interface by <strong style="color:var(--text)">Stefan Herholdt</strong>
+      <span class="footer-sep">|</span>
+      <span style="color:var(--text-dim)">SNH-star</span>
+      <span class="footer-sep">·</span>
+      <a href="/guide">User Guide</a>
+    </div>
+    <div>
+      Powered by <a href="https://github.com/rhysnewell/aviary" target="_blank" rel="noopener">Aviary</a>
+      <span class="footer-sep">·</span>
+      Newell, Aroney, Zaugg, Sternes, Tyson &amp; Woodcroft
+      <span class="footer-sep">·</span>
+      <a href="https://doi.org/10.5281/zenodo.10158086" target="_blank" rel="noopener">doi:10.5281/zenodo.10158086</a>
+    </div>
+  </footer>
+
+</div><!-- /.main -->
+
+<!-- ====================================================================== -->
+<!-- JavaScript                                                               -->
+<!-- ====================================================================== -->
+<script>
+// ---------------------------------------------------------------------------
+// State
+// ---------------------------------------------------------------------------
+let structureData       = {};     // { sample: { assembler: { ...status, jobs_list, output_dir } } }
+let openAssemblers      = {};     // "sample::assembler" -> bool
+let openBatches         = {};     // "YYYY-MM-DD" -> bool
+let sampleFilter        = '';     // current sample ID search query
+let statusFilter        = 'all';  // all | running | failed | done
+let selectedBatch       = {};     // "sample::assembler" -> log filename
+let selectedKey         = null;   // "sample::assembler::jobid"
+let selectedJob         = null;
+let selectedOutDir      = null;
+let currentTab          = 'log';
+let currentView         = 'samples';
+let refreshTimer        = null;
+let _countdownInterval  = null;
+let _refreshCountdown   = 60;
+const notificationsEnabled = false; // feature removed
+let prevStatusSnapshot  = {};     // sample::asm -> status string (for notification diffing)
+let prevProgressSnapshot = {};    // sample::asm -> progress_pct before last refresh
+let silencedRuns        = new Set(JSON.parse(localStorage.getItem('aviary_silenced') || '[]'));
+let _summaryData        = null;   // cached summary API response
+let focusedSampleIdx    = -1;     // keyboard nav
+let _firstLoad          = true;   // for auto-scroll once
+let currentRoot         = null;   // null = use server default
+let _logAttempts        = [];     // available attempt log paths for open panel
+let _activeLogPath      = null;   // currently displayed log path
+
+// ---------------------------------------------------------------------------
+// Boot
+// ---------------------------------------------------------------------------
+window.addEventListener('DOMContentLoaded', () => {
+  // Restore sidebar collapse state
+  if (localStorage.getItem('sidebar-collapsed') === 'true') {
+    document.querySelector('.sidebar')?.classList.add('collapsed');
+  }
+  // Restore active root from localStorage
+  const savedRoot = localStorage.getItem('aviary-active-root');
+  if (savedRoot) {
+    currentRoot = savedRoot;
+    updateRootDisplay(currentRoot);
+  }
+  if (new URLSearchParams(location.search).get('view') === 'summary') switchView('summary');
+  fetchStructure();
+  scheduleRefresh();
+  loadRecentRoots();
+  // Close root dropdown when clicking outside
+  document.addEventListener('click', e => {
+    if (!document.getElementById('root-switcher')?.contains(e.target)) {
+      closeRootDropdown();
+    }
+  });
+  // Keyboard navigation
+  document.addEventListener('keydown', handleKeyNav);
+  // Ctrl+F inside log panel
+  document.addEventListener('keydown', e => {
+    if ((e.ctrlKey || e.metaKey) && e.key === 'f') {
+      const bar = document.getElementById('log-search-bar');
+      if (bar && bar.style.display !== 'none') {
+        e.preventDefault();
+        document.getElementById('log-search-input')?.focus();
+      }
+    }
+  });
+});
+
+const REFRESH_INTERVAL = 60; // seconds
+
+function scheduleRefresh() {
+  clearTimeout(refreshTimer);
+  clearInterval(_countdownInterval);
+  _refreshCountdown = REFRESH_INTERVAL;
+  updateCountdownLabel();
+  _countdownInterval = setInterval(() => {
+    _refreshCountdown--;
+    updateCountdownLabel();
+    if (_refreshCountdown <= 0) {
+      clearInterval(_countdownInterval);
+      fetchStructure();
+      scheduleRefresh();
+    }
+  }, 1000);
+}
+
+function updateCountdownLabel() {
+  const el = document.getElementById('refresh-countdown');
+  if (el) el.textContent = _refreshCountdown > 0 ? `in ${_refreshCountdown}s` : '';
+}
+
+function refreshNow() {
+  clearTimeout(refreshTimer);
+  clearInterval(_countdownInterval);
+  fetchStructure();
+  scheduleRefresh();
+}
+
+// ---------------------------------------------------------------------------
+// View switching (Samples / Summary)
+// ---------------------------------------------------------------------------
+function switchView(view) {
+  currentView = view;
+  // Update sidebar nav active state
+  document.getElementById('nav-samples').classList.toggle('active', view === 'samples');
+  document.getElementById('nav-summary').classList.toggle('active', view === 'summary');
+  // Update topbar title
+  const titles = { samples: 'Pipeline Monitor', summary: 'Bin Quality Report' };
+  const titleEl = document.getElementById('topbar-title');
+  if (titleEl) titleEl.textContent = titles[view] || 'Overview';
+  document.getElementById('samples-area').style.display  = view === 'samples' ? '' : 'none';
+  document.getElementById('summary-area').style.display  = view === 'summary'  ? 'flex' : 'none';
+  document.getElementById('log-panel').style.display     = view === 'samples' ? '' : 'none';
+  const exportBtn = document.getElementById('export-btn');
+  if (exportBtn) exportBtn.style.display = view === 'summary' ? '' : 'none';
+  if (view === 'summary') {
+    fetchSummary();
+    if (sampleFilter.trim()) setTimeout(() => filterSummaryView(sampleFilter), 100);
+  } else {
+    renderStructure();
+  }
+}
+
+function openPhylo(e) {
+  // Pass the current root so phylo page loads the same data
+  if (currentRoot) {
+    e.preventDefault();
+    window.location.href = '/view?root=' + encodeURIComponent(currentRoot);
+  }
+  // else let the default href=/view navigate without a root param
+}
+
+async function fetchSummary() {
+  const url = '/api/summary' + (currentRoot ? `?root=${encodeURIComponent(currentRoot)}` : '');
+  try {
+    const r = await fetch(url);
+    if (!r.ok) {
+      const d = await r.json();
+      document.getElementById('summary-meta').textContent = d.error || 'Summary not available.';
+      document.getElementById('summary-thead').innerHTML = '';
+      document.getElementById('summary-tbody').innerHTML = '';
+      return;
+    }
+    renderSummary(await r.json());
+  } catch(e) {
+    document.getElementById('summary-area').innerHTML =
+      `<div class="sum-empty">Failed to load summary: ${e.message}</div>`;
+  }
+}
+
+// ---------------------------------------------------------------------------
+// Summary rendering helpers
+// ---------------------------------------------------------------------------
+const TAX_COLORS = {
+  Phylum:  ['#dcfce7','#15803d'],
+  Class:   ['#fef9c3','#854d0e'],
+  Order:   ['#fce7f3','#9d174d'],
+  Family:  ['#ede9fe','#5b21b6'],
+  Genus:   ['#ffedd5','#c2410c'],
+  Species: ['#f1f5f9','#475569'],
+};
+
+function parseTaxonomy(s) {
+  if (!s) return {};
+  const ranks = {};
+  const map = {d:'Domain',p:'Phylum',c:'Class',o:'Order',f:'Family',g:'Genus',s:'Species'};
+  for (const part of s.split(';')) {
+    const [pre, name] = part.split('__');
+    if (pre && name && name.trim()) ranks[map[pre.trim()]] = name.trim();
+  }
+  return ranks;
+}
+
+function renderTaxTags(cls) {
+  const taxa = parseTaxonomy(cls);
+  const show = ['Phylum','Class','Order'];
+  const tags = show.filter(r => taxa[r]).map(r => {
+    const [bg, fg] = TAX_COLORS[r] || ['#f1f5f9','#475569'];
+    return `<span class="sum-tax-tag" style="background:${bg};color:${fg}">${r[0]}: ${taxa[r]}</span>`;
+  });
+  return tags.length ? tags.join('') : '<span style="color:#cbd5e1;font-size:.7rem">—</span>';
+}
+
+function renderSumProgressBar(val, maxVal, color) {
+  const pct = Math.min(100, Math.max(0, (parseFloat(val) || 0) / maxVal * 100));
+  const label = val != null ? `${parseFloat(val).toFixed(1)}%` : 'N/A';
+  return `<div class="sum-prog-wrap">
+    <div class="sum-prog-bar" style="width:${pct.toFixed(1)}%;background:${color}"></div>
+    <span class="sum-prog-label">${label}</span>
+  </div>`;
+}
+
+function renderQualityBadge(tier) {
+  const map = {high:['sum-badge-high','High Quality'], medium:['sum-badge-medium','Medium Quality'], low:['sum-badge-low','Low Quality']};
+  const [cls, lbl] = map[tier] || map.low;
+  return `<span class="sum-badge ${cls}">${lbl}</span>`;
+}
+
+function qualityTier(comp, cont) {
+  const c = parseFloat(comp), x = parseFloat(cont);
+  if (c >= 90 && x <= 5)  return 'high';
+  if (c >= 50 && x <= 10) return 'medium';
+  return 'low';
+}
+
+function renderSumMetricCard(val, label, sub, color) {
+  return `<div class="sum-metric-card">
+    <div class="sum-card-val" style="color:${color}">${val}</div>
+    <div class="sum-card-label">${label}</div>
+    ${sub ? `<div class="sum-card-sub">${sub}</div>` : ''}
+  </div>`;
+}
+
+function renderAssemblyBox(asm) {
+  if (!asm) return `<div class="sum-box"><div class="sum-box-title">Assembly</div><div class="sum-no-data">No assembly stats available</div></div>`;
+  const rows = [
+    ['Total Length', `${asm.total_length_mb ?? '—'} Mb`],
+    ['Contigs',      (asm.contig_count ?? '—').toLocaleString?.() ?? asm.contig_count],
+    ['N50',          asm.n50 ? `${asm.n50.toLocaleString()} bp` : '—'],
+    ['L50',          asm.l50 ?? '—'],
+    ['Max Contig',   asm.max_length ?? '—'],
+    ['GC Content',   asm.gc_content != null ? `${asm.gc_content}%` : '—'],
+    ['Scaffolds >50kb', asm.scaffolds_50kb ?? '—'],
+  ];
+  return `<div class="sum-box"><div class="sum-box-title">Assembly Statistics</div>
+    <table class="sum-stat-table">${rows.map(([k,v]) =>
+      `<tr><td class="sum-stat-key">${k}</td><td class="sum-stat-val">${v}</td></tr>`
+    ).join('')}</table></div>`;
+}
+
+function renderQualitySummaryBox(hq, mq, lq) {
+  const total = hq + mq + lq;
+  function bar(count, color, label) {
+    const pct = total ? count / total * 100 : 0;
+    return `<div class="sum-qs-row">
+      <span class="sum-qs-label">${label}</span>
+      <div class="sum-qs-wrap"><div class="sum-qs-bar" style="width:${pct.toFixed(1)}%;background:${color}"></div></div>
+      <span class="sum-qs-count">${count}</span>
+    </div>`;
+  }
+  return `<div class="sum-box"><div class="sum-box-title">Quality Summary</div>
+    <div style="font-size:.8rem;color:#64748b;margin-bottom:10px">Total: <strong>${total}</strong> bins</div>
+    ${bar(hq,'#16a34a','High Quality')}
+    ${bar(mq,'#d97706','Medium Quality')}
+    ${bar(lq,'#dc2626','Low Quality')}
+  </div>`;
+}
+
+function renderBinsTable(bins, hasCircular, hasTaxonomy) {
+  if (!bins || !bins.length) return `<div class="sum-box" style="margin-top:12px"><div class="sum-box-title">Bins</div><div class="sum-no-data">No bin data available</div></div>`;
+  const tierOrder = { high: 0, medium: 1, low: 2 };
+  const sorted = [...bins].sort((a, b) => {
+    const ta = tierOrder[qualityTier(a.Completeness, a.Contamination)] ?? 2;
+    const tb = tierOrder[qualityTier(b.Completeness, b.Contamination)] ?? 2;
+    if (ta !== tb) return ta - tb;
+    return (parseFloat(b.Completeness) || 0) - (parseFloat(a.Completeness) || 0);
+  });
+  const cols = ['Bin','Completeness','Contamination','Genome Size','GC%','Contigs','N50'];
+  if (hasCircular) cols.push('Circular');
+  if (hasTaxonomy) cols.push('Taxonomy');
+  cols.push('Quality');
+  const rows = sorted.map(b => {
+    const name  = b.Name || '';
+    const short = name.replace(/.*[._](\d+)$/, 'bin.$1') || name;
+    const tier  = qualityTier(b.Completeness, b.Contamination);
+    const sizeMb = b.Genome_Size ? `${(b.Genome_Size/1e6).toFixed(2)} Mb` : '—';
+    const gc = b.GC_Content != null ? `${(b.GC_Content <= 1 ? b.GC_Content*100 : b.GC_Content).toFixed(1)}%` : '—';
+    const n50 = b.Contig_N50 ? b.Contig_N50.toLocaleString() : '—';
+    let cells = `
+      <td class="sum-bin-name" title="${name}">${short}</td>
+      <td>${renderSumProgressBar(b.Completeness, 100, '#16a34a')}</td>
+      <td>${renderSumProgressBar(b.Contamination, 20, '#dc2626')}</td>
+      <td>${sizeMb}</td><td>${gc}</td>
+      <td>${b.Total_Contigs ?? '—'}</td><td>${n50}</td>`;
+    if (hasCircular) cells += `<td>${b['Circular contigs'] ?? '—'}</td>`;
+    if (hasTaxonomy) cells += `<td>${renderTaxTags(b.classification)}</td>`;
+    cells += `<td>${renderQualityBadge(tier)}</td>`;
+    return `<tr class="stier-${tier}">${cells}</tr>`;
+  }).join('');
+  return `<div style="margin-top:12px">
+    <div class="sum-box-title" style="margin-bottom:8px">Bins</div>
+    <div class="sum-bins-wrap"><table class="sum-bins-table">
+      <thead><tr>${cols.map(h=>`<th>${h}</th>`).join('')}</tr></thead>
+      <tbody>${rows}</tbody>
+    </table></div></div>`;
+}
+
+let sumSampleCounter = 0;
+
+function renderSampleCard(entry) {
+  const id = sumSampleCounter++;
+  const cards = [
+    renderSumMetricCard(entry.mag_count ?? '—', 'MAGs Recovered', 'final bins', '#a78bfa'),
+    renderSumMetricCard(entry.hq, 'High Quality', '≥90% · ≤5% cont.', 'var(--green)'),
+    renderSumMetricCard(entry.mq, 'Medium Quality', '≥50% · ≤10% cont.', 'var(--yellow)'),
+    renderSumMetricCard(
+      entry.assembly?.total_length_mb ? `${entry.assembly.total_length_mb} Mb` : '—',
+      'Assembly Size', 'total scaffold length', 'var(--blue)'),
+  ].join('');
+  return `<div class="sum-sample">
+    <div class="sum-sample-header" id="ssh-${id}" onclick="toggleSumSample(${id})">
+      <span class="sum-sample-arrow">▶</span>
+      <span class="sum-sample-name">${entry.sample}</span>
+      <span class="sum-sample-asm">${entry.assembler}</span>
+      <div class="sum-sample-pills">
+        <span class="sum-mini-pill purple">${entry.mag_count ?? '?'} MAGs</span>
+        <span class="sum-mini-pill green">${entry.hq} High Quality</span>
+        <span class="sum-mini-pill amber">${entry.mq} Medium Quality</span>
+      </div>
+    </div>
+    <div class="sum-sample-body" id="ssb-${id}">
+      <div class="sum-metric-cards">${cards}</div>
+      <div class="sum-two-col">
+        ${renderAssemblyBox(entry.assembly)}
+        ${renderQualitySummaryBox(entry.hq, entry.mq, entry.lq)}
+      </div>
+      ${entry.bins && entry.bins.length >= 2 ? renderScatterPlot(entry.bins, entry.sample, entry.assembler) : ''}
+      ${renderBinsTable(entry.bins, entry.has_circular, entry.has_taxonomy)}
+    </div>
+  </div>`;
+}
+
+const MOCK_ENTRY = {
+  sample: 'MOCK_ERR999999', assembler: 'myloasm',
+  mag_count: 6, hq: 3, mq: 2, lq: 1,
+  has_circular: true, has_taxonomy: true,
+  assembly: { total_length_mb: 412.5, contig_count: 18420, n50: 12480, l50: 88,
+              max_length: '312.1 Kbp', gc_content: 41.2, scaffolds_50kb: 143 },
+  bins: [
+    { Name: 'myloasm_bin.1', Completeness: 97.4, Contamination: 1.2, Genome_Size: 3200000,
+      GC_Content: 0.42, Total_Contigs: 8, Contig_N50: 48200, 'Circular contigs': 2,
+      classification: 'd__Bacteria;p__Proteobacteria;c__Gammaproteobacteria;o__Pseudomonadales;f__Pseudomonadaceae;g__Pseudomonas;s__Pseudomonas_aeruginosa' },
+    { Name: 'myloasm_bin.2', Completeness: 93.1, Contamination: 3.5, Genome_Size: 2800000,
+      GC_Content: 0.38, Total_Contigs: 12, Contig_N50: 31000, 'Circular contigs': 1,
+      classification: 'd__Bacteria;p__Firmicutes;c__Bacilli;o__Lactobacillales;f__Lactobacillaceae;g__Lactobacillus;s__Lactobacillus_acidophilus' },
+    { Name: 'myloasm_bin.3', Completeness: 91.8, Contamination: 0.8, Genome_Size: 4100000,
+      GC_Content: 0.51, Total_Contigs: 6, Contig_N50: 72000, 'Circular contigs': 3,
+      classification: 'd__Bacteria;p__Bacteroidota;c__Bacteroidia;o__Bacteroidales;f__Bacteroidaceae;g__Bacteroides;s__Bacteroides_fragilis' },
+    { Name: 'myloasm_bin.4', Completeness: 74.2, Contamination: 6.1, Genome_Size: 1900000,
+      GC_Content: 0.35, Total_Contigs: 31, Contig_N50: 8400, 'Circular contigs': 0,
+      classification: 'd__Bacteria;p__Actinobacteriota;c__Actinomycetia;o__Actinomycetales;f__Actinomycetaceae;g__Actinomyces;s__' },
+    { Name: 'myloasm_bin.5', Completeness: 58.3, Contamination: 4.2, Genome_Size: 2200000,
+      GC_Content: 0.44, Total_Contigs: 54, Contig_N50: 5100, 'Circular contigs': 0,
+      classification: 'd__Bacteria;p__Proteobacteria;c__Alphaproteobacteria;o__Rhizobiales;f__Rhizobiaceae;g__Rhizobium;s__' },
+    { Name: 'myloasm_bin.6', Completeness: 21.4, Contamination: 12.3, Genome_Size: 800000,
+      GC_Content: 0.29, Total_Contigs: 112, Contig_N50: 1200, 'Circular contigs': 0,
+      classification: '' },
+  ]
+};
+
+function renderSummary(data) {
+  _summaryData = data;
+  sumSampleCounter = 0;
+  const area = document.getElementById('summary-area');
+  const batches = data.batches || {};
+
+  // Prepend mock entry to first date for preview
+  const dates = Object.keys(batches);
+  if (dates.length) batches[dates[0]] = [MOCK_ENTRY, ...batches[dates[0]]];
+  if (!dates.length) {
+    area.innerHTML = '<div class="sum-empty">No completed run output found.</div>';
+    return;
+  }
+
+  area.innerHTML = dates.map((date, i) => {
+    const entries = batches[date];
+    const totalMags = entries.reduce((s,e) => s + (e.mag_count||0), 0);
+    const totalHQ   = entries.reduce((s,e) => s + (e.hq||0), 0);
+    const totalMQ   = entries.reduce((s,e) => s + (e.mq||0), 0);
+    const bodyId = `sum-body-${i}`;
+    const headId = `sum-head-${i}`;
+    const isOpen = i === 0;
+    return `<div class="sum-batch">
+      <div class="sum-batch-header${isOpen?' open':''}" id="${headId}" onclick="toggleSumBatch(${i})">
+        <span class="sum-batch-arrow">▶</span>
+        <span class="sum-batch-date">${date}</span>
+        <span style="font-size:.8rem;color:#94a3b8;margin-left:4px">(${entries.length} sample${entries.length!==1?'s':''})</span>
+        <div class="sum-batch-pills">
+          <span class="sum-mini-pill purple">${totalMags} MAGs</span>
+          <span class="sum-mini-pill green">${totalHQ} HQ</span>
+          <span class="sum-mini-pill amber">${totalMQ} MQ</span>
+        </div>
+      </div>
+      <div class="sum-batch-body${isOpen?' open':''}" id="${bodyId}">
+        ${entries.map(renderSampleCard).join('')}
+      </div>
+    </div>`;
+  }).join('');
+
+  // Re-apply active filter if any
+  if (sampleFilter.trim()) filterSummaryView(sampleFilter);
+}
+
+function toggleSumBatch(i) {
+  const head = document.getElementById(`sum-head-${i}`);
+  const body = document.getElementById(`sum-body-${i}`);
+  const open = body.classList.toggle('open');
+  head.classList.toggle('open', open);
+}
+
+function toggleSumSample(id) {
+  const head = document.getElementById(`ssh-${id}`);
+  const body = document.getElementById(`ssb-${id}`);
+  const open = body.classList.toggle('open');
+  head.classList.toggle('open', open);
+}
+
+// ---------------------------------------------------------------------------
+// Fetch /api/structure
+// ---------------------------------------------------------------------------
+async function fetchStructure() {
+  try {
+    const url = '/api/structure' + (currentRoot ? `?root=${encodeURIComponent(currentRoot)}` : '');
+    const r = await fetch(url);
+    if (!r.ok) { setError(`HTTP ${r.status}`); return; }
+    clearError();
+    const data = await r.json();
+    if (data.root) updateRootDisplay(data.root);
+    checkNotifications();
+    // Snapshot current progress before overwriting so ghost bars can show gains
+    const _snap = {};
+    for (const [s, asms] of Object.entries(structureData)) {
+      for (const [a, d] of Object.entries(asms)) {
+        _snap[`${s}::${a}`] = d.progress_pct || 0;
+      }
+    }
+    prevProgressSnapshot = _snap;
+    structureData = data.samples || {};
+    renderStructure();
+    updateSidebar();
+    refreshOpenPanel();
+    if (_firstLoad) { _firstLoad = false; restoreFromURL(); autoScrollToActive(); }
+  } catch(e) {
+    setError(`Failed to fetch: ${e.message}`);
+  }
+}
+
+// ---------------------------------------------------------------------------
+// Sidebar counts
+// ---------------------------------------------------------------------------
+function updateSidebar() {
+  // Only count entries from the latest run to avoid inflating counts with historical runs
+  let running = 0, waiting = 0, done = 0, failed = 0, latestSamples = new Set();
+
+  for (const s of Object.keys(structureData)) {
+    for (const d of Object.values(structureData[s])) {
+      if (!d.is_latest_run) continue;
+      latestSamples.add(s);
+      const st = asmStatus(d);
+      if (st === 'failed')         failed++;
+      else if (st === 'completed') done++;
+      else if (st === 'waiting')   waiting++;
+      else if (st === 'running')   running++;
+    }
+  }
+
+  document.getElementById('si-samples').textContent = latestSamples.size;
+  document.getElementById('si-running').textContent  = running;
+  document.getElementById('si-waiting').textContent  = waiting;
+  document.getElementById('si-done').textContent     = done;
+  document.getElementById('si-failed').textContent   = failed;
+
+  const dot = document.getElementById('pulse-dot');
+  dot.className = 'pulse-dot' + (failed > 0 ? ' error' : '');
+  document.getElementById('refresh-label').textContent =
+    `Updated ${new Date().toLocaleTimeString()}`;
+}
+
+// ---------------------------------------------------------------------------
+// Render sample cards
+// ---------------------------------------------------------------------------
+function renderStructure() {
+  const list  = document.getElementById('samples-list');
+  const empty = document.getElementById('empty-state');
+  const samples = Object.keys(structureData).sort();
+
+  if (!samples.length) {
+    list.innerHTML = '';
+    empty.style.display = '';
+    return;
+  }
+
+  empty.style.display = 'none';
+
+  // ---- apply sample ID filter ----
+  const q = sampleFilter.trim().toLowerCase();
+  let visibleSamples = q ? samples.filter(s => s.toLowerCase().includes(q)) : samples;
+
+  // ---- apply status filter ----
+  if (statusFilter !== 'all') {
+    visibleSamples = visibleSamples.filter(sample =>
+      Object.values(structureData[sample]).some(d => {
+        const st = asmStatus(d);
+        if (statusFilter === 'running') return st === 'running';
+        if (statusFilter === 'failed')  return st === 'failed';
+        if (statusFilter === 'done')    return st === 'completed';
+        return true;
+      })
+    );
+  }
+
+  if (!visibleSamples.length && (q || statusFilter !== 'all')) {
+    const msg = q ? `No samples match "${esc(q)}"` : `No ${statusFilter} samples`;
+    list.innerHTML = `<div class="empty-state"><div class="icon">🔍</div><h3>${msg}</h3><p>Try a different filter.</p></div>`;
+    return;
+  }
+
+  // ---- group samples by date (from started_at of any assembler) ----
+  const batches = {};   // dateKey -> { label, samples: [] }
+  visibleSamples.forEach(sample => {
+    const assemblers = Object.keys(structureData[sample]);
+    let dateKey = 'Unknown date';
+    let dateLabel = 'Unknown date';
+    for (const asm of assemblers) {
+      const sa = structureData[sample][asm].started_at;
+      if (sa) {
+        // "Tue Mar 18 16:06:59 2026" -> sort key "2026-03-18", label "Tue 18 Mar 2026"
+        const d = new Date(sa);
+        if (!isNaN(d)) {
+          const y = d.getFullYear();
+          const m = String(d.getMonth()+1).padStart(2,'0');
+          const day = String(d.getDate()).padStart(2,'0');
+          dateKey = `${y}-${m}-${day}`;
+          dateLabel = d.toLocaleDateString('en-GB', { weekday:'short', day:'numeric', month:'long', year:'numeric' });
+          break;
+        }
+      }
+    }
+    if (!batches[dateKey]) batches[dateKey] = { label: dateLabel, samples: [] };
+    batches[dateKey].samples.push(sample);
+  });
+
+  const sortedDates = Object.keys(batches).sort();
+  const mostRecent  = sortedDates[sortedDates.length - 1];
+
+  // Initialise openBatches: most recent open by default; force open all when filtering
+  sortedDates.forEach(dk => {
+    if (q) {
+      openBatches[dk] = true;
+    } else if (!(dk in openBatches)) {
+      openBatches[dk] = (dk === mostRecent);
+    }
+  });
+
+  list.innerHTML = sortedDates.map(dateKey => {
+    const batch   = batches[dateKey];
+    const isOpen  = !!openBatches[dateKey];
+
+    // Aggregate progress across all samples/assemblers in this batch
+    let totalSteps = 0, completedSteps = 0, hasError = false;
+    batch.samples.forEach(sample => {
+      Object.values(structureData[sample]).forEach(d => {
+        totalSteps     += d.total_steps     || 0;
+        completedSteps += d.completed_steps || 0;
+        if (asmStatus(d) === 'failed') hasError = true;
+      });
+    });
+    const batchPct   = totalSteps > 0 ? Math.round(completedSteps / totalSteps * 100) : 0;
+    const batchComplete = totalSteps > 0 && completedSteps >= totalSteps;
+    const batchAllWaiting = !hasError && !batchComplete && batch.samples.every(s => Object.values(structureData[s]).every(d => asmStatus(d) === 'waiting'));
+    const barColour  = hasError ? 'var(--red)' : batchComplete ? 'var(--green)' : batchAllWaiting ? '#A020F0' : 'var(--teal)';
+    const metaText   = totalSteps > 0
+      ? `${batch.samples.length} sample${batch.samples.length>1?'s':''} · ${completedSteps}/${totalSteps} steps · ${batchPct}%`
+      : `${batch.samples.length} sample${batch.samples.length>1?'s':''}`;
+
+    // ---- render each sample card inside this batch ----
+    const cards = batch.samples.map(sample => {
+      const assemblers = Object.keys(structureData[sample]).sort();
+
+      // Aggregate stats for this sample (across all assemblers)
+      let sampleTotal = 0, sampleDone = 0, sampleError = false, earliestStart = null;
+      assemblers.forEach(asm => {
+        const d = structureData[sample][asm];
+        sampleTotal += d.total_steps     || 0;
+        sampleDone  += d.completed_steps || 0;
+        if (asmStatus(d) === 'failed') {
+          const logs = d.available_logs || [];
+          if (!silencedRuns.has(`${sample}::${asm}::${logs[0] || ''}`)) sampleError = true;
+        }
+        if (d.started_at) {
+          const t = new Date(d.started_at);
+          if (!isNaN(t) && (!earliestStart || t < earliestStart)) earliestStart = t;
+        }
+      });
+      const samplePct    = sampleTotal > 0 ? Math.round(sampleDone / sampleTotal * 100) : 0;
+      const aggBarColour = sampleError ? 'var(--red)' : samplePct === 100 ? 'var(--green)' : 'var(--teal)';
+      const elapsedStr   = earliestStart ? elapsed(earliestStart.toISOString()) : null;
+
+      const pills = assemblers.map(asm => {
+        const d      = structureData[sample][asm];
+        const key    = `${sample}::${asm}`;
+        const st     = asmStatus(d);
+        const logs   = d.available_logs || [];
+        const isSilenced = st === 'failed' && silencedRuns.has(`${sample}::${asm}::${logs[0] || ''}`);
+        const dotCls = isSilenced ? 'dot-pending' : dotClass(st);
+        const isOpenPill = !!openAssemblers[key];
+        const pct    = d.progress_pct || 0;
+        const barCol = (st === 'failed' && !isSilenced) ? 'var(--red)' : st === 'completed' ? 'var(--green)' : st === 'waiting' ? '#A020F0' : 'var(--teal)';
+        const prevPct = prevProgressSnapshot[key] ?? null;
+        const gainPct = (prevPct !== null && pct > prevPct && d.total_steps > 0) ? (pct - prevPct) : 0;
+        const ghostBar = gainPct > 0
+          ? `<div class="asm-pill-bar-ghost" style="left:${prevPct}%;width:${gainPct}%;background:${barCol}"></div>`
+          : '';
+        const pillBar = d.total_steps > 0
+          ? `<div class="asm-pill-bar-wrap"><div class="asm-pill-bar" style="width:${pct}%;background:${barCol}"></div>${ghostBar}</div>
+             <span class="asm-pill-pct">${pct}%</span>`
+          : '';
+        return `<div class="asm-pill${isOpenPill ? ' open' : ''}"
+                     onclick="toggleAssembler('${esc(sample)}','${esc(asm)}')"
+                     title="${asm}: ${st}${d.total_steps > 0 ? ` — ${d.completed_steps}/${d.total_steps} steps` : ''}">
+          <span class="status-dot ${dotCls}"></span>
+          <span class="asm-pill-name">${asm}</span>
+          ${pillBar}
+        </div>`;
+      }).join('');
+
+      // Failed assembler banners (skip silenced)
+      const failedInfo = [];
+      assemblers.forEach(asm => {
+        const d = structureData[sample][asm];
+        if (asmStatus(d) !== 'failed') return;
+        const logs = d.available_logs || [];
+        if (silencedRuns.has(`${sample}::${asm}::${logs[0] || ''}`)) return;
+        const fj = (d.jobs_list || []).filter(j => j.status === 'failed');
+        fj.length
+          ? fj.forEach(j => failedInfo.push(`${asm}: ${j.rule}`))
+          : failedInfo.push(`${asm}: workflow error`);
+      });
+      const failBanner = failedInfo.length
+        ? `<div class="sample-fail-banner">
+            <svg width="12" height="12" viewBox="0 0 16 16" fill="currentColor"><path d="M8 15A7 7 0 1 1 8 1a7 7 0 0 1 0 14zm0 1A8 8 0 1 0 8 0a8 8 0 0 0 0 16z"/><path d="M7.002 11a1 1 0 1 1 2 0 1 1 0 0 1-2 0zM7.1 4.995a.905.905 0 1 1 1.8 0l-.35 3.507a.552.552 0 0 1-1.1 0L7.1 4.995z"/></svg>
+            <strong>Failed:</strong>
+            ${failedInfo.map(r => `<span class="fail-rule-tag">${esc(r)}</span>`).join('')}
+            <button class="fail-dismiss-btn" onclick="event.stopPropagation();silenceFailure('${esc(sample)}')">Dismiss</button>
+          </div>`
+        : '';
+
+      const statsPanel = `<div class="sample-stats">
+        ${sampleTotal > 0 ? `
+          <div class="sample-stats-steps">${sampleDone} / ${sampleTotal} steps</div>
+          <div class="sample-agg-bar-wrap">
+            <div class="sample-agg-bar" style="width:${samplePct}%;background:${aggBarColour}"></div>
+          </div>
+          <div class="sample-stats-elapsed">${samplePct}%${elapsedStr ? ` · started ${elapsedStr} ago` : ''}</div>
+        ` : `<div class="sample-stats-elapsed" style="color:var(--text-dim)">No data yet</div>`}
+      </div>`;
+
+      const expandSections = assemblers.map(asm => {
+        const key    = `${sample}::${asm}`;
+        const isOpenPill = !!openAssemblers[key];
+        if (!isOpenPill) return `<div id="expand-${esc(sample)}-${esc(asm)}" style="display:none"></div>`;
+
+        const d    = structureData[sample][asm];
+        const jobs = d.jobs_list || [];
+
+        const jobRows = jobs.length === 0
+          ? `<div style="padding:10px 20px;font-size:.8rem;color:var(--text-dim)">No jobs in log yet.</div>`
+          : jobs.map(j => {
+              const jkey   = `${sample}::${asm}::${j.jobid}`;
+              const isSel  = jkey === selectedKey;
+              const dc     = dotClass(j.status);
+              const dur    = j.duration || (j.status === 'running' ? elapsed(j.start_time) : '—');
+              const ltag   = j.is_local ? '<span class="local-tag">local</span>' : '';
+              const logBtn = j.log_path
+                ? `<span class="view-log-btn"
+                         onclick="event.stopPropagation();openJobPanel('${esc(sample)}','${esc(asm)}',${j.jobid})">
+                     View log
+                   </span>`
+                : '';
+              return `<div class="job-row${isSel ? ' selected' : ''}"
+                          data-key="${jkey}"
+                          onclick="openJobPanel('${esc(sample)}','${esc(asm)}',${j.jobid})">
+                <span class="status-dot ${dc}"></span>
+                <span class="job-row-rule">${j.rule}${ltag}</span>
+                <span class="job-row-dur">${dur}</span>
+                ${logBtn}
+              </div>`;
+            }).join('');
+
+        const st   = asmStatus(d);
+        const pct  = d.progress_pct || 0;
+        const hdr  = `${asm} — ${st}${d.total_steps > 0 ? ` &nbsp;·&nbsp; ${d.completed_steps}/${d.total_steps} steps &nbsp;·&nbsp; ${pct}%` : ''}`;
+
+        const logs = d.available_logs || [];
+        const currentLog = selectedBatch[key] || (logs[0] || '');
+        const batchSelect = logs.length > 1
+          ? `<select class="batch-select" onchange="selectBatch('${esc(sample)}','${esc(asm)}',this.value)">
+              ${logs.map(l => {
+                const label = l.replace('.snakemake.log','').replace('T',' ');
+                return `<option value="${l}"${l === currentLog ? ' selected' : ''}>${label}</option>`;
+              }).join('')}
+             </select>`
+          : (logs.length === 1 ? `<span style="margin-left:auto;font-size:.65rem;font-weight:normal;text-transform:none;letter-spacing:normal;color:var(--text-dim)">${logs[0].replace('.snakemake.log','').replace('T',' ')}</span>` : '');
+
+        return `<div id="expand-${esc(sample)}-${esc(asm)}" class="asm-expand">
+          <div class="asm-expand-header">${hdr}${batchSelect}</div>
+          ${jobRows}
+        </div>`;
+      }).join('');
+
+      return `<div class="sample-card" data-sample="${esc(sample)}">
+        <div class="sample-header">
+          <div class="sample-left">
+            <span class="sample-name">${sample}</span>
+            <div class="asm-pills-stack">${pills}</div>
+          </div>
+          ${statsPanel}
+        </div>
+        ${failBanner}
+        ${expandSections}
+      </div>`;
+    }).join('');
+
+    return `<div class="batch-group">
+      <div class="batch-group-header${isOpen ? ' open' : ''}" onclick="toggleBatchGroup('${esc(dateKey)}')">
+        <span class="batch-group-arrow">▶</span>
+        <span class="batch-group-date">${batch.label}</span>
+        <span class="batch-group-meta">${metaText}</span>
+        ${totalSteps > 0 ? `<div class="batch-group-progress">
+          <div class="batch-prog-wrap">
+            <div class="batch-prog-bar" style="width:${batchPct}%;background:${barColour}"></div>
+          </div>
+          <span class="batch-prog-label">${batchPct}%</span>
+        </div>` : ''}
+      </div>
+      <div class="batch-group-body${isOpen ? ' open' : ''}">${cards}</div>
+    </div>`;
+  }).join('');
+}
+
+function toggleBatchGroup(dateKey) {
+  openBatches[dateKey] = !openBatches[dateKey];
+  renderStructure();
+}
+
+// ---------------------------------------------------------------------------
+// Sample search / filter
+// ---------------------------------------------------------------------------
+function filterSamples(value) {
+  sampleFilter = value;
+  const clearBtn = document.getElementById('sample-search-clear');
+  if (clearBtn) clearBtn.style.display = value ? '' : 'none';
+
+  if (currentView === 'samples') {
+    renderStructure();
+    // Scroll to first matching card after render
+    if (value.trim()) {
+      const q = value.trim().toLowerCase();
+      const cards = document.querySelectorAll('.sample-name');
+      for (const el of cards) {
+        if (el.textContent.toLowerCase().includes(q)) {
+          el.closest('.sample-card')?.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+          break;
+        }
+      }
+    }
+  } else {
+    // Summary view: show/hide sum-sample entries
+    filterSummaryView(value);
+  }
+}
+
+function filterSummaryView(value) {
+  const q = value.trim().toLowerCase();
+  let anyVisible = false;
+  document.querySelectorAll('.sum-sample').forEach(el => {
+    const name = el.querySelector('.sum-sample-name')?.textContent || '';
+    const match = !q || name.toLowerCase().includes(q);
+    el.style.display = match ? '' : 'none';
+    if (match) anyVisible = true;
+  });
+  // Open batch groups that have visible entries
+  if (q) {
+    document.querySelectorAll('.sum-batch-body').forEach(body => {
+      const hasVisible = body.querySelector('.sum-sample:not([style*="display: none"])');
+      const head = body.previousElementSibling;
+      if (hasVisible) {
+        body.classList.add('open');
+        head?.classList.add('open');
+      }
+    });
+    // Scroll to first match
+    const first = document.querySelector('.sum-sample:not([style*="display: none"])');
+    if (first) first.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+  }
+}
+
+function clearSampleSearch() {
+  const input = document.getElementById('sample-search');
+  if (input) { input.value = ''; filterSamples(''); input.focus(); }
+}
+
+// ---------------------------------------------------------------------------
+// Toggle assembler expand
+// ---------------------------------------------------------------------------
+function toggleAssembler(sample, asm) {
+  const key = `${sample}::${asm}`;
+  openAssemblers[key] = !openAssemblers[key];
+  renderStructure();
+}
+
+async function selectBatch(sample, asm, logName) {
+  const key = `${sample}::${asm}`;
+  selectedBatch[key] = logName;
+  const outDir = structureData[sample]?.[asm]?.output_dir;
+  if (!outDir) return;
+  try {
+    const r = await fetch(`/api/status?output_dir=${encodeURIComponent(outDir)}&log=${encodeURIComponent(logName)}`);
+    if (!r.ok) return;
+    const data = await r.json();
+    data.output_dir = outDir;
+    data.available_logs = structureData[sample][asm].available_logs;
+    structureData[sample][asm] = data;
+    renderStructure();
+    updateSidebar();
+  } catch(e) { /* ignore */ }
+}
+
+// ---------------------------------------------------------------------------
+// Open log panel for a job
+// ---------------------------------------------------------------------------
+function openJobPanel(sample, asm, jobid) {
+  const d = structureData[sample]?.[asm];
+  if (!d) return;
+  const job = (d.jobs_list || []).find(j => j.jobid === jobid);
+  if (!job) return;
+
+  selectedKey    = `${sample}::${asm}::${jobid}`;
+  selectedJob    = job;
+  selectedOutDir = d.output_dir;
+  updateURL(sample, asm);
+
+  // Highlight row (re-render keeps the selected class via renderStructure)
+  renderStructure();
+
+  document.getElementById('log-panel').classList.remove('closed');
+  document.getElementById('panel-title').textContent = job.rule;
+  updatePanelMeta(job);
+  switchTab(currentTab || 'log');
+}
+
+function closePanel() {
+  document.getElementById('log-panel').classList.add('closed');
+  selectedKey    = null;
+  selectedJob    = null;
+  selectedOutDir = null;
+  _logAttempts   = [];
+  _activeLogPath = null;
+  const bar = document.getElementById('attempt-bar');
+  if (bar) bar.style.display = 'none';
+  // Remove selected highlight
+  document.querySelectorAll('.job-row.selected').forEach(r => r.classList.remove('selected'));
+}
+
+// ---------------------------------------------------------------------------
+// Refresh open panel on data update
+// ---------------------------------------------------------------------------
+function refreshOpenPanel() {
+  if (!selectedKey || !selectedJob) return;
+  const [sample, asm] = selectedKey.split('::');
+  const d = structureData[sample]?.[asm];
+  if (!d) return;
+  const updated = (d.jobs_list || []).find(j => j.jobid === selectedJob.jobid);
+  if (!updated) return;
+  selectedJob    = updated;
+  selectedOutDir = d.output_dir;
+  updatePanelMeta(updated);
+  if (currentTab === 'log' && updated.log_path) {
+    fetchJobLog(updated.log_path, selectedOutDir, true);
+  }
+}
+
+// ---------------------------------------------------------------------------
+// Panel tabs
+// ---------------------------------------------------------------------------
+function switchTab(tab) {
+  currentTab = tab;
+  document.querySelectorAll('.tab-btn').forEach(b =>
+    b.classList.toggle('active', b.dataset.tab === tab)
+  );
+  const searchBar = document.getElementById('log-search-bar');
+  if (searchBar) searchBar.style.display = tab === 'log' ? '' : 'none';
+  // Clear log search state when switching tabs
+  if (tab !== 'log') { logSearchQuery = ''; }
+
+  if (!selectedJob) return;
+  const job = selectedJob;
+  const content = document.getElementById('panel-content');
+
+  if (tab === 'log') {
+    if (job.log_path) {
+      fetchJobLog(job.log_path, selectedOutDir);
+    } else {
+      content.textContent = 'No log path available for this job.';
+    }
+  } else if (tab === 'details') {
+    renderDetails(job);
+  } else if (tab === 'benchmark') {
+    if (job.benchmark) {
+      fetchBenchmark(job.benchmark, selectedOutDir);
+    } else {
+      content.innerHTML = '<div style="padding:16px;color:var(--text-dim)">No benchmark configured for this rule.</div>';
+    }
+  }
+}
+
+function updatePanelMeta(job) {
+  const chips = [
+    ['Status',        job.status],
+    ['Started',       job.start_time ? fmtTs(job.start_time) : '—'],
+    ['Duration',      job.duration || (job.status === 'running' ? elapsed(job.start_time) : '—')],
+    ['Threads',       job.threads || '—'],
+    ['Memory',        job.mem_mb ? `${(job.mem_mb/1024).toFixed(0)} GB` : '—'],
+    ['Runtime limit', job.runtime_limit ? fmtMinutes(job.runtime_limit) : '—'],
+    ['External ID',   job.external_jobid || '—'],
+  ].map(([k, v]) => `<div class="meta-chip">${k}: <span>${v}</span></div>`).join('');
+  document.getElementById('panel-meta').innerHTML = chips;
+}
+
+// ---------------------------------------------------------------------------
+// Fetch job log
+// ---------------------------------------------------------------------------
+async function fetchJobLog(logPath, outDir, silent=false) {
+  const content = document.getElementById('panel-content');
+  if (!silent) content.innerHTML = '<div class="log-loading"><div class="spinner"></div> Loading log…</div>';
+  if (!outDir) { content.textContent = 'No output directory.'; return; }
+  try {
+    const r = await fetch(
+      `/api/job_log?output_dir=${encodeURIComponent(outDir)}&log_path=${encodeURIComponent(logPath)}`
+    );
+    if (!r.ok) {
+      const d = await r.json();
+      content.textContent = `Error: ${d.error}`;
+      return;
+    }
+    const d = await r.json();
+    content.style.whiteSpace = 'pre-wrap';
+    content.style.fontFamily = '';
+    content.style.fontSize   = '';
+    const text = d.content || '(empty log)';
+    content._plainText = text;
+    _activeLogPath = logPath;
+
+    // Attempt selector
+    _logAttempts = d.available_attempts || [];
+    renderAttemptBar(_logAttempts, logPath);
+
+    // Render content with error highlights or active search
+    if (logSearchQuery) {
+      searchLog(logSearchQuery);
+    } else {
+      const errIdxs = applyErrorHighlights(text);
+      if (errIdxs.length) {
+        content.querySelector('.log-err-line')?.scrollIntoView({ block: 'center' });
+      } else {
+        content.scrollTop = content.scrollHeight;
+      }
+    }
+  } catch(e) {
+    content.textContent = `Failed: ${e.message}`;
+  }
+}
+
+// ---------------------------------------------------------------------------
+// Fetch benchmark
+// ---------------------------------------------------------------------------
+async function fetchBenchmark(benchPath, outDir) {
+  const content = document.getElementById('panel-content');
+  content.innerHTML = '<div class="log-loading"><div class="spinner"></div> Loading benchmark…</div>';
+  if (!outDir) return;
+  try {
+    const r = await fetch(
+      `/api/benchmark?output_dir=${encodeURIComponent(outDir)}&path=${encodeURIComponent(benchPath)}`
+    );
+    if (!r.ok) {
+      const d = await r.json();
+      content.innerHTML = `<div style="padding:16px;color:var(--text-dim)">${d.error || 'Benchmark not yet written.'}</div>`;
+      return;
+    }
+    const d = await r.json();
+    renderBenchmarkPanel(d, benchPath);
+  } catch(e) {
+    content.innerHTML = `<div style="padding:16px;color:var(--red)">Failed: ${e.message}</div>`;
+  }
+}
+
+function renderBenchmarkPanel(d, benchPath) {
+  const content = document.getElementById('panel-content');
+  content.style.fontFamily = 'inherit';
+  content.style.fontSize   = 'inherit';
+  content.style.whiteSpace = 'normal';
+  const fmtNum = v => isNaN(v) ? v : parseFloat(v).toFixed(2);
+  const rows = [
+    ['Wall time',       d['h:m:s']],
+    ['Seconds',         d['s']         ? fmtNum(d['s'])         + 's'  : null],
+    ['CPU time',        d['cpu_time']  ? fmtNum(d['cpu_time'])  + 's'  : null],
+    ['Mean CPU load',   d['mean_load'] ? fmtNum(d['mean_load']) + '%'  : null],
+    ['Max RSS (MB)',    d['max_rss']   ? fmtNum(d['max_rss'])          : null],
+    ['Max VMS (MB)',    d['max_vms']   ? fmtNum(d['max_vms'])          : null],
+    ['I/O read (MB)',   d['io_in']     ? fmtNum(d['io_in'])            : null],
+    ['I/O write (MB)',  d['io_out']    ? fmtNum(d['io_out'])           : null],
+  ].filter(([, v]) => v).map(([k, v]) =>
+    `<div class="bench-stat"><span class="k">${k}</span><span class="v">${v}</span></div>`
+  ).join('');
+  // Build bar charts for key metrics
+  const barMaxes = { cpu: 86400, rss: 512000 }; // 24h in s, 500GB in MB
+  const wallSecs = parseFloat(d['s']) || 0;
+  const cpuSecs  = parseFloat(d['cpu_time']) || 0;
+  const maxRss   = parseFloat(d['max_rss']) || 0;
+  function benchBar(label, val, max, color, unit) {
+    if (!val) return '';
+    const pct = Math.min(100, val / max * 100);
+    return `<div class="bench-bar-row">
+      <div class="bench-bar-label">${label} <span>${fmtNum(val)} ${unit}</span></div>
+      <div class="bench-bar-track"><div class="bench-bar-fill" style="width:${pct.toFixed(1)}%;background:${color}"></div></div>
+    </div>`;
+  }
+  const bars = [
+    benchBar('Wall time',    wallSecs, 86400,  'var(--teal)',  's'),
+    benchBar('CPU time',     cpuSecs,  86400,  'var(--blue)',  's'),
+    benchBar('Max RSS (MB)', maxRss,   65536,  'var(--purple)','MB'),
+  ].join('');
+
+  content.innerHTML = `<div class="bench-section">
+    <h4>Performance Metrics</h4>${bars}${rows}
+    <div style="margin-top:12px;font-size:.7rem;color:var(--text-dim)">File: ${benchPath}</div>
+  </div>`;
+}
+
+function renderDetails(job) {
+  const content = document.getElementById('panel-content');
+  content.style.whiteSpace = 'normal';
+  content.style.fontFamily = 'inherit';
+  content.style.fontSize   = 'inherit';
+  const field = (label, value, mono) => value
+    ? `<div class="bench-stat">
+        <span class="k">${label}</span>
+        <span class="v" style="${mono ? 'font-size:.72rem;word-break:break-all' : ''}">${value}</span>
+       </div>`
+    : '';
+  const inputHtml = job.input
+    ? `<div class="bench-section"><h4>Input files</h4>
+        <div style="font-size:.72rem;font-family:monospace;word-break:break-all;color:var(--text);line-height:1.7">
+          ${job.input.split(', ').map(f => `<div>${f}</div>`).join('')}
+        </div></div>`
+    : '';
+  const outputHtml = job.output
+    ? `<div class="bench-section"><h4>Output files</h4>
+        <div style="font-size:.72rem;font-family:monospace;word-break:break-all;color:var(--text);line-height:1.7">
+          ${job.output.split(', ').map(f => `<div>${f}</div>`).join('')}
+        </div></div>`
+    : '';
+  content.innerHTML = `<div class="bench-section">
+    <h4>Job Details</h4>
+    ${field('Rule',          job.rule)}
+    ${field('Type',          job.is_local ? 'Local (head node)' : 'Cluster job')}
+    ${field('Job ID',        job.jobid >= 0 ? job.jobid : '—')}
+    ${field('External ID',   job.external_jobid)}
+    ${field('Status',        job.status)}
+    ${field('Started',       job.start_time ? fmtTs(job.start_time) : '—')}
+    ${field('Finished',      job.end_time ? fmtTs(job.end_time) : '—')}
+    ${field('Duration',      job.duration || (job.status === 'running' ? elapsed(job.start_time) : '—'))}
+    ${field('Threads',       job.threads)}
+    ${field('Memory (MB)',   job.mem_mb)}
+    ${field('Runtime limit', job.runtime_limit ? fmtMinutes(job.runtime_limit) : null)}
+    ${field('Log path',      job.log_path,  true)}
+    ${field('Benchmark',     job.benchmark, true)}
+  </div>
+  ${inputHtml}${outputHtml}`;
+}
+
+// ---------------------------------------------------------------------------
+// Helpers
+// ---------------------------------------------------------------------------
+function silenceFailure(sample) {
+  const data = structureData[sample];
+  if (!data) return;
+  Object.entries(data).forEach(([asm, d]) => {
+    if (asmStatus(d) === 'failed') {
+      const logs = d.available_logs || [];
+      silencedRuns.add(`${sample}::${asm}::${logs[0] || ''}`);
+    }
+  });
+  localStorage.setItem('aviary_silenced', JSON.stringify([...silencedRuns]));
+  renderStructure();
+}
+
+function asmStatus(d) {
+  if (d.workflow_failed) return 'failed';
+  if (d.is_complete)     return 'completed';
+  if (d.total_steps > 0) {
+    // If every currently-running job has been submitted to the cluster queue
+    // (external_jobid set) then the pipeline is waiting for the scheduler
+    const jobs = d.jobs_list || [];
+    const running = jobs.filter(j => j.status === 'running');
+    if (running.length > 0 && running.every(j => j.external_jobid))
+      return 'waiting';
+    return 'running';
+  }
+  return 'unknown';
+}
+
+function dotClass(status) {
+  return { running: 'dot-running', completed: 'dot-completed', failed: 'dot-failed', waiting: 'dot-waiting' }[status]
+    || 'dot-pending';
+}
+
+function fmtTs(ts) {
+  if (!ts) return '—';
+  try {
+    const d = new Date(ts);
+    if (!isNaN(d))
+      return d.toLocaleString(undefined, { month:'short', day:'numeric', hour:'2-digit', minute:'2-digit' });
+  } catch(e) {}
+  return ts.replace(/^\w+ /, '');
+}
+
+function elapsed(startStr) {
+  if (!startStr) return '—';
+  try {
+    const start = new Date(startStr);
+    if (isNaN(start)) return '—';
+    const secs = Math.floor((Date.now() - start) / 1000);
+    if (secs < 0)    return '—';
+    if (secs < 60)   return `${secs}s`;
+    if (secs < 3600) return `${Math.floor(secs/60)}m ${secs%60}s`;
+    return `${Math.floor(secs/3600)}h ${Math.floor((secs%3600)/60)}m`;
+  } catch(e) { return '—'; }
+}
+
+function fmtMinutes(mins) {
+  if (!mins) return '—';
+  if (mins < 60) return `${mins}m`;
+  return `${Math.floor(mins/60)}h ${mins%60}m`;
+}
+
+// Escape single quotes for inline onclick attributes
+function esc(s) { return String(s).replace(/'/g, "\\'"); }
+
+// ---------------------------------------------------------------------------
+// Status filter
+// ---------------------------------------------------------------------------
+function setStatusFilter(f) {
+  statusFilter = f;
+  document.querySelectorAll('.sf-btn').forEach(b =>
+    b.classList.toggle('active', b.dataset.f === f)
+  );
+  renderStructure();
+}
+
+// ---------------------------------------------------------------------------
+// ETA estimation
+// ---------------------------------------------------------------------------
+function calcEta(d) {
+  if (!d.started_at || !d.total_steps || !d.completed_steps) return null;
+  const elapsed_ms = Date.now() - new Date(d.started_at).getTime();
+  if (elapsed_ms <= 0 || d.completed_steps <= 0) return null;
+  const msPerStep  = elapsed_ms / d.completed_steps;
+  const remaining  = (d.total_steps - d.completed_steps) * msPerStep;
+  if (remaining <= 0) return null;
+  const secs = Math.floor(remaining / 1000);
+  if (secs < 60)   return `~${secs}s left`;
+  if (secs < 3600) return `~${Math.floor(secs/60)}m left`;
+  return `~${Math.floor(secs/3600)}h ${Math.floor((secs%3600)/60)}m left`;
+}
+
+// ---------------------------------------------------------------------------
+// Auto-scroll to first active sample on initial load
+// ---------------------------------------------------------------------------
+function autoScrollToActive() {
+  setTimeout(() => {
+    const list = document.getElementById('samples-list');
+    if (!list) return;
+    for (const sample of Object.keys(structureData).sort()) {
+      for (const d of Object.values(structureData[sample])) {
+        const st = asmStatus(d);
+        if (st === 'failed' || st === 'running') {
+          const el = list.querySelector(`[data-sample="${CSS.escape(sample)}"]`);
+          if (el) el.scrollIntoView({ behavior: 'smooth', block: 'center' });
+          return;
+        }
+      }
+    }
+  }, 80);
+}
+
+// ---------------------------------------------------------------------------
+// Browser notifications
+// ---------------------------------------------------------------------------
+function checkNotifications() {
+  if (!notificationsEnabled || !Object.keys(structureData).length) return;
+  for (const [sample, asms] of Object.entries(structureData)) {
+    for (const [asm, d] of Object.entries(asms)) {
+      if (!d.is_latest_run) continue;
+      const key = `${sample}::${asm}`;
+      const st  = asmStatus(d);
+      const prev = prevStatusSnapshot[key];
+      if (prev && prev !== st) {
+        if (st === 'completed') new Notification('Aviary — Run Complete', { body: `${sample} (${asm}) finished`, icon: '/logo' });
+        if (st === 'failed')   new Notification('Aviary — Run Failed',   { body: `${sample} (${asm}) failed`,   icon: '/logo' });
+      }
+      prevStatusSnapshot[key] = st;
+    }
+  }
+}
+
+// ---------------------------------------------------------------------------
+// Toast
+// ---------------------------------------------------------------------------
+function showToast(msg, duration=2800) {
+  const t = document.getElementById('toast');
+  if (!t) return;
+  t.textContent = msg;
+  t.classList.add('show');
+  setTimeout(() => t.classList.remove('show'), duration);
+}
+
+// ---------------------------------------------------------------------------
+// Shareable URLs
+// ---------------------------------------------------------------------------
+function updateURL(sample, asm) {
+  const params = new URLSearchParams(window.location.search);
+  if (sample) { params.set('sample', sample); if (asm) params.set('assembler', asm); }
+  else { params.delete('sample'); params.delete('assembler'); }
+  const q = params.toString();
+  history.replaceState({}, '', window.location.pathname + (q ? '?' + q : ''));
+}
+
+function restoreFromURL() {
+  const params   = new URLSearchParams(window.location.search);
+  const sample   = params.get('sample');
+  const asm      = params.get('assembler');
+  if (!sample || !structureData[sample]) return;
+  if (asm && structureData[sample]?.[asm]) openAssemblers[`${sample}::${asm}`] = true;
+  renderStructure();
+  setTimeout(() => {
+    const el = document.querySelector(`[data-sample="${CSS.escape(sample)}"]`);
+    if (el) el.scrollIntoView({ behavior: 'smooth', block: 'center' });
+  }, 80);
+}
+
+// ---------------------------------------------------------------------------
+// Keyboard navigation
+// ---------------------------------------------------------------------------
+function handleKeyNav(e) {
+  if (e.target.tagName === 'INPUT' || e.target.tagName === 'SELECT' || e.target.tagName === 'TEXTAREA') return;
+  const cards = Array.from(document.querySelectorAll('.sample-card'));
+  if (!cards.length) return;
+
+  if (e.key === 'j' || e.key === 'ArrowDown') {
+    e.preventDefault();
+    focusedSampleIdx = Math.min(focusedSampleIdx + 1, cards.length - 1);
+  } else if (e.key === 'k' || e.key === 'ArrowUp') {
+    e.preventDefault();
+    focusedSampleIdx = Math.max(focusedSampleIdx - 1, 0);
+  } else if (e.key === 'Escape') {
+    closePanel();
+    cards.forEach(c => c.classList.remove('kb-focus'));
+    focusedSampleIdx = -1;
+    return;
+  } else if (e.key === '/') {
+    e.preventDefault();
+    document.getElementById('sample-search')?.focus();
+    return;
+  } else { return; }
+
+  cards.forEach((c, i) => c.classList.toggle('kb-focus', i === focusedSampleIdx));
+  cards[focusedSampleIdx]?.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+}
+
+// ---------------------------------------------------------------------------
+// Collapsible sidebar
+// ---------------------------------------------------------------------------
+function toggleSidebar() {
+  const sidebar = document.querySelector('.sidebar');
+  if (!sidebar) return;
+  const collapsed = sidebar.classList.toggle('collapsed');
+  localStorage.setItem('sidebar-collapsed', collapsed);
+}
+
+// ---------------------------------------------------------------------------
+// Log line search
+// ---------------------------------------------------------------------------
+let logSearchQuery   = '';
+let logSearchMatches = [];
+let logSearchCurrent = 0;
+
+function searchLog(q) {
+  logSearchQuery = q;
+  const content = document.getElementById('panel-content');
+  const info    = document.getElementById('log-search-info');
+  if (!content) return;
+
+  if (!q.trim()) {
+    if (content._plainText !== undefined) {
+      applyErrorHighlights(content._plainText);
+    }
+    if (info) info.textContent = '';
+    _setLogNavButtons(false);
+    return;
+  }
+
+  if (!content._plainText) content._plainText = content.textContent;
+  const text  = content._plainText;
+  const regex = new RegExp(q.replace(/[.*+?^${}()|[\]\\]/g, '\\$&'), 'gi');
+  const matches = [...text.matchAll(regex)];
+
+  if (!matches.length) { if (info) info.textContent = 'No matches'; _setLogNavButtons(false); return; }
+
+  logSearchMatches = matches;
+  logSearchCurrent = 0;
+
+  let html = '', last = 0;
+  matches.forEach((m, i) => {
+    html += escHtml(text.slice(last, m.index));
+    html += `<mark class="log-hl${i === 0 ? ' log-hl-current' : ''}">${escHtml(m[0])}</mark>`;
+    last = m.index + m[0].length;
+  });
+  html += escHtml(text.slice(last));
+
+  content.style.whiteSpace = 'pre-wrap';
+  content.innerHTML = html;
+  if (info) info.textContent = `1/${matches.length}`;
+  _setLogNavButtons(matches.length > 1);
+  content.querySelector('.log-hl-current')?.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+}
+
+function stepLogSearch(dir) {
+  const marks = document.querySelectorAll('#panel-content .log-hl');
+  if (!marks.length) return;
+  marks[logSearchCurrent].classList.remove('log-hl-current');
+  logSearchCurrent = (logSearchCurrent + dir + marks.length) % marks.length;
+  marks[logSearchCurrent].classList.add('log-hl-current');
+  marks[logSearchCurrent].scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+  const info = document.getElementById('log-search-info');
+  if (info) info.textContent = `${logSearchCurrent + 1}/${marks.length}`;
+}
+
+function handleLogSearchKey(e) {
+  if (e.key === 'Enter') {
+    e.preventDefault();
+    stepLogSearch(e.shiftKey ? -1 : 1);
+  }
+}
+
+function _setLogNavButtons(enabled) {
+  const prev = document.getElementById('log-search-prev');
+  const next = document.getElementById('log-search-next');
+  if (prev) prev.disabled = !enabled;
+  if (next) next.disabled = !enabled;
+}
+
+function clearLogSearch() {
+  logSearchQuery = '';
+  logSearchMatches = [];
+  logSearchCurrent = 0;
+  const inp = document.getElementById('log-search-input');
+  if (inp) inp.value = '';
+  const content = document.getElementById('panel-content');
+  if (content?._plainText) applyErrorHighlights(content._plainText);
+  const info = document.getElementById('log-search-info');
+  if (info) info.textContent = '';
+  _setLogNavButtons(false);
+  if (inp) inp.focus();
+}
+
+function escHtml(s) {
+  return s.replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');
+}
+
+// ---------------------------------------------------------------------------
+// Error line highlighting
+// ---------------------------------------------------------------------------
+const ERR_LINE_RE = /\b(Error|error|Failed|failed|Exception|Traceback|CalledProcessError|MissingOutputException|WorkflowError)\b/;
+
+function applyErrorHighlights(text) {
+  const content = document.getElementById('panel-content');
+  if (!content) return [];
+  const lines = text.split('\n');
+  const errIdxs = [];
+  let html = '';
+  lines.forEach((line, i) => {
+    if (ERR_LINE_RE.test(line)) {
+      errIdxs.push(i);
+      html += `<span class="log-err-line">${escHtml(line)}</span>\n`;
+    } else {
+      html += escHtml(line) + '\n';
+    }
+  });
+  content.style.whiteSpace = 'pre-wrap';
+  content.innerHTML = html;
+  return errIdxs;
+}
+
+// ---------------------------------------------------------------------------
+// Attempt selector bar
+// ---------------------------------------------------------------------------
+function renderAttemptBar(attempts, currentPath) {
+  const bar   = document.getElementById('attempt-bar');
+  const pills = document.getElementById('attempt-pills');
+  if (!bar || !pills) return;
+  if (!attempts || attempts.length <= 1) { bar.style.display = 'none'; return; }
+  bar.style.display = '';
+  pills.innerHTML = attempts.map((p, i) => {
+    const label    = `Attempt ${i + 1}`;
+    const isActive = p === currentPath || p.replace(/\\/g, '/') === currentPath?.replace(/\\/g, '/');
+    return `<button class="attempt-pill${isActive ? ' active' : ''}"
+                    onclick="switchAttempt('${escAttrJs(p)}')">${label}</button>`;
+  }).join('');
+}
+
+function switchAttempt(logPath) {
+  if (!selectedOutDir) return;
+  _activeLogPath = logPath;
+  renderAttemptBar(_logAttempts, logPath);
+  fetchJobLog(logPath, selectedOutDir);
+}
+
+function escAttrJs(s) {
+  return s.replace(/\\/g, '\\\\').replace(/'/g, "\\'");
+}
+
+// ---------------------------------------------------------------------------
+// Root switcher
+// ---------------------------------------------------------------------------
+const ROOT_LS_KEY = 'aviary-recent-roots';
+const ROOT_MAX    = 5;
+
+function loadRecentRoots() {
+  try {
+    const saved = JSON.parse(localStorage.getItem(ROOT_LS_KEY) || '[]');
+    renderRecentItems(saved);
+  } catch(e) {}
+}
+
+function saveRecentRoot(root) {
+  try {
+    let list = JSON.parse(localStorage.getItem(ROOT_LS_KEY) || '[]');
+    list = [root, ...list.filter(r => r !== root)].slice(0, ROOT_MAX);
+    localStorage.setItem(ROOT_LS_KEY, JSON.stringify(list));
+    renderRecentItems(list);
+  } catch(e) {}
+}
+
+function renderRecentItems(list) {
+  const container = document.getElementById('root-recent-items');
+  if (!container) return;
+  if (!list.length) {
+    container.innerHTML = '<div class="root-dropdown-item" style="color:var(--text-dim);font-style:italic;font-family:inherit">No recent roots</div>';
+    return;
+  }
+  container.innerHTML = list.map(r => {
+    const isActive = r === currentRoot;
+    return `<div class="root-dropdown-item${isActive ? ' active' : ''}" onclick="applyRoot('${escAttrJs(r)}')" title="${escHtml(r)}">${escHtml(r)}</div>`;
+  }).join('');
+}
+
+function updateRootDisplay(root) {
+  const el = document.getElementById('root-display');
+  if (!el) return;
+  if (!root) { el.textContent = 'Default'; return; }
+  // Show just the last 2 path segments for brevity
+  const parts = root.replace(/\\/g, '/').split('/').filter(Boolean);
+  el.textContent = parts.length > 2 ? '…/' + parts.slice(-2).join('/') : root;
+  el.title = root;
+}
+
+function toggleRootDropdown(e) {
+  e.stopPropagation();
+  const dd = document.getElementById('root-dropdown');
+  const sw = document.getElementById('root-switcher');
+  if (!dd) return;
+  const isOpen = dd.style.display !== 'none';
+  if (isOpen) { closeRootDropdown(); return; }
+  dd.style.display = '';
+  sw.classList.add('open');
+  const inp = document.getElementById('root-path-input');
+  if (inp) { inp.value = currentRoot || ''; setTimeout(() => inp.focus(), 50); }
+}
+
+function closeRootDropdown() {
+  const dd = document.getElementById('root-dropdown');
+  const sw = document.getElementById('root-switcher');
+  if (dd) dd.style.display = 'none';
+  if (sw) sw.classList.remove('open');
+}
+
+function applyRoot(root) {
+  closeRootDropdown();
+  root = root.trim();
+  currentRoot = root || null;
+  if (currentRoot) {
+    saveRecentRoot(currentRoot);
+    localStorage.setItem('aviary-active-root', currentRoot);
+  } else {
+    localStorage.removeItem('aviary-active-root');
+  }
+  updateRootDisplay(currentRoot);
+  _firstLoad = true;
+  refreshNow();
+}
+
+function applyRootInput() {
+  const val = document.getElementById('root-path-input')?.value || '';
+  applyRoot(val);
+}
+
+// ---------------------------------------------------------------------------
+// MAG scatter plot
+// ---------------------------------------------------------------------------
+// bins: raw entry.bins array with Completeness / Contamination / Name fields
+function renderScatterPlot(bins, sample, assembler) {
+  const W = 580, H = 270;
+  const pad = { top: 28, right: 20, bottom: 42, left: 48 };
+  const iW = W - pad.left - pad.right, iH = H - pad.top - pad.bottom;
+  const maxCont = Math.max(15, ...bins.map(b => parseFloat(b.Contamination)||0)) + 3;
+
+  const sx = v => pad.left + (Math.min(parseFloat(v)||0, 100) / 100) * iW;
+  const sy = v => pad.top  + iH - (Math.min(parseFloat(v)||0, maxCont) / maxCont) * iH;
+
+  const xTicks = [0,20,40,60,80,100];
+  const yTicks = [0,5,10,15,20,25].filter(v => v <= maxCont + 1);
+
+  const grid = [
+    ...xTicks.map(v => `<line x1="${sx(v)}" y1="${pad.top}" x2="${sx(v)}" y2="${pad.top+iH}" stroke="var(--border)" stroke-width="1"/>`),
+    ...yTicks.map(v => `<line x1="${pad.left}" y1="${sy(v)}" x2="${pad.left+iW}" y2="${sy(v)}" stroke="var(--border)" stroke-width="1"/>`),
+  ].join('');
+
+  // Quality zone rectangles — layered so boundaries are implicit, no extra lines
+  // Layer order: LQ (full background) → MQ (overlays) → HQ (overlays)
+  const bottom = pad.top + iH;  // y-coordinate where contamination = 0
+  const thresh = [
+    // LQ zone: entire plot background (anything not covered by MQ/HQ)
+    `<rect x="${pad.left}" y="${pad.top}" width="${iW}" height="${iH}" fill="#f85149" opacity=".07"/>`,
+    // MQ zone: completeness ≥ 50%, contamination ≤ 10%
+    `<rect x="${sx(50).toFixed(1)}" y="${sy(10).toFixed(1)}"
+       width="${(pad.left + iW - sx(50)).toFixed(1)}"
+       height="${(bottom - sy(10)).toFixed(1)}"
+       fill="#e3b341" opacity=".09"/>`,
+    // HQ zone: completeness ≥ 90%, contamination ≤ 5%
+    `<rect x="${sx(90).toFixed(1)}" y="${sy(5).toFixed(1)}"
+       width="${(pad.left + iW - sx(90)).toFixed(1)}"
+       height="${(bottom - sy(5)).toFixed(1)}"
+       fill="#3fb950" opacity=".12"/>`,
+  ].join('');
+
+  const xLabels = xTicks.map(v => `<text x="${sx(v)}" y="${pad.top+iH+16}" text-anchor="middle" font-size="10" fill="var(--text-dim)">${v}%</text>`).join('');
+  const yLabels = yTicks.map(v => `<text x="${pad.left-7}" y="${sy(v)+4}" text-anchor="end" font-size="10" fill="var(--text-dim)">${v}%</text>`).join('');
+
+  const axTitles = `
+    <text x="${pad.left+iW/2}" y="${H-5}" text-anchor="middle" font-size="11" fill="var(--text-dim)">Completeness</text>
+    <text x="12" y="${pad.top+iH/2}" text-anchor="middle" font-size="11" fill="var(--text-dim)" transform="rotate(-90,12,${pad.top+iH/2})">Contamination</text>
+  `;
+
+  const legend = `
+    <circle cx="${pad.left+8}"   cy="${pad.top-10}" r="5" fill="var(--green)"  opacity=".8"/>
+    <text   x="${pad.left+16}"  y="${pad.top-6}"  font-size="10" fill="var(--text-dim)">HQ (≥90% / ≤5%)</text>
+    <circle cx="${pad.left+128}" cy="${pad.top-10}" r="5" fill="var(--yellow)" opacity=".8"/>
+    <text   x="${pad.left+136}" y="${pad.top-6}"  font-size="10" fill="var(--text-dim)">MQ (≥50% / ≤10%)</text>
+    <circle cx="${pad.left+256}" cy="${pad.top-10}" r="5" fill="var(--red)"    opacity=".8"/>
+    <text   x="${pad.left+264}" y="${pad.top-6}"  font-size="10" fill="var(--text-dim)">LQ</text>
+  `;
+
+  const dots = bins.map(b => {
+    const comp = parseFloat(b.Completeness) || 0;
+    const cont = parseFloat(b.Contamination) || 0;
+    const name = (b.Name || '').replace(/.*[._](\d+)$/, 'bin.$1') || b.Name || '—';
+    const tier  = qualityTier(comp, cont);
+    const color = tier === 'high' ? 'var(--green)' : tier === 'medium' ? 'var(--yellow)' : 'var(--red)';
+    // Embed tooltip data directly on the element — no global index needed
+    const tipData = encodeURIComponent(JSON.stringify({ name, comp, cont, tier }));
+    return `<circle cx="${sx(comp).toFixed(1)}" cy="${sy(cont).toFixed(1)}" r="5"
+      fill="${color}" opacity=".75" stroke="var(--bg)" stroke-width="1" style="cursor:pointer"
+      data-tip="${tipData}"
+      onmouseover="showScatterTip(event)" onmouseout="hideScatterTip()"/>`;
+  }).join('');
+
+  return `<div class="mag-scatter-wrap">
+    <div class="mag-scatter-title">Bin Quality — Completeness vs Contamination &nbsp;·&nbsp; ${bins.length} bin${bins.length !== 1 ? 's' : ''}</div>
+    <svg class="mag-scatter-svg" viewBox="0 0 ${W} ${H}" style="max-height:270px">
+      ${thresh}${grid}${xLabels}${yLabels}${axTitles}${legend}${dots}
+    </svg>
+  </div>`;
+}
+
+function showScatterTip(e) {
+  const tip = document.getElementById('scatter-tooltip'); if (!tip) return;
+  try {
+    const b = JSON.parse(decodeURIComponent(e.currentTarget.dataset.tip));
+    const tierLabel = b.tier === 'high' ? 'High Quality' : b.tier === 'medium' ? 'Medium Quality' : 'Low Quality';
+    tip.innerHTML = `<strong>${b.name}</strong><br>
+      Completeness: ${b.comp.toFixed(1)}%<br>
+      Contamination: ${b.cont.toFixed(1)}%<br>
+      Quality: ${tierLabel}`;
+  } catch(_) { return; }
+  tip.style.display = 'block';
+  tip.style.left = `${e.clientX + 14}px`;
+  tip.style.top  = `${e.clientY - 10}px`;
+}
+function hideScatterTip() { const t = document.getElementById('scatter-tooltip'); if (t) t.style.display = 'none'; }
+
+// ---------------------------------------------------------------------------
+// Export summary as TSV
+// ---------------------------------------------------------------------------
+function exportSummaryTSV() {
+  if (!_summaryData) { showToast('No summary data loaded yet.'); return; }
+  const rows = [['Date','Sample','Assembler','MAGs','HQ','MQ','LQ','Assembly_Mb','N50','Contigs']];
+  for (const [date, entries] of Object.entries(_summaryData.batches || {})) {
+    for (const e of entries) {
+      if (e.sample === 'MOCK_ERR999999') continue;
+      rows.push([date, e.sample, e.assembler,
+        e.mag_count ?? '', e.hq ?? '', e.mq ?? '', e.lq ?? '',
+        e.assembly?.total_length_mb ?? '', e.assembly?.n50 ?? '', e.assembly?.contig_count ?? '']);
+    }
+  }
+  const tsv  = rows.map(r => r.map(v => String(v).replace(/\t/g,' ')).join('\t')).join('\n');
+  const blob = new Blob([tsv], { type: 'text/tab-separated-values' });
+  const a = document.createElement('a');
+  a.href = URL.createObjectURL(blob);
+  a.download = `aviary_summary_${new Date().toISOString().slice(0,10)}.tsv`;
+  a.click();
+  showToast('Exported summary TSV');
+}
+
+function setError(msg) {
+  const el = document.getElementById('error-banner');
+  el.style.display = '';
+  document.getElementById('error-text').textContent = msg;
+  document.getElementById('pulse-dot').className = 'pulse-dot error';
+  document.getElementById('refresh-label').textContent = 'Error';
+}
+
+function clearError() {
+  document.getElementById('error-banner').style.display = 'none';
+}
+
+// Show logo splash on full-page navigations
+(function() {
+  const splash = document.getElementById('page-loading');
+  function showSplash(e) {
+    const a = e.currentTarget;
+    // Don't show for same-page or in-page links
+    if (a.target === '_blank') return;
+    splash.classList.add('visible');
+  }
+  document.querySelectorAll('a[href^="/"]').forEach(function(a) {
+    // Skip switchView links (they have onclick but no real navigation)
+    if (!a.href || a.getAttribute('onclick') && !a.href.includes('/view') && !a.href.includes('/graph') && !a.href.includes('/assembly') && !a.href.includes('/export') && !a.href.includes('/docs') && !a.href.includes('/guide')) return;
+    a.addEventListener('click', showSplash);
+  });
+  // Hide splash if back-navigation lands here
+  window.addEventListener('pageshow', function() {
+    splash.classList.remove('visible');
+  });
+})();
+</script>
+</body>
+</html>

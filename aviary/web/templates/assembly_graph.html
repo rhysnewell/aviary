@@ -1,0 +1,985 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Aviary — Contig Assembly Graph</title>
+<link rel="icon" href="/logo" type="image/png">
+<style>
+*, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+:root {
+  --bg:       #0d1117; --surface:  #161b22; --surface2: #1c2333;
+  --border:   #30363d; --text:     #c9d1d9; --muted:    #8b949e;
+  --bright:   #f0f6fc;
+  --teal:     #1abc9c; --teal-dim: rgba(26,188,156,.15);
+  --yellow:   #e3b341; --red:      #f85149; --green:    #3fb950;
+  --blue:     #58a6ff; --purple:   #bc8cff;
+  --radius:   6px; --sidebar-w: 220px; --topbar-h: 56px; --header-h: 56px;
+}
+html, body { height: 100%; overflow: hidden; }
+body { display: flex; flex-direction: column; background: var(--bg); color: var(--text);
+       font: 13px/1.5 -apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif; }
+
+/* Topbar */
+.topbar {
+  height: var(--header-h); min-height: var(--header-h);
+  background: var(--surface); border-bottom: 1px solid var(--border);
+  display: flex; align-items: center; gap: 12px; padding: 0 20px;
+  flex-shrink: 0; z-index: 50;
+}
+.topbar-title { font-size: 15px; font-weight: 700; color: var(--bright); }
+.topbar-sub   { font-size: 12px; color: var(--muted); flex: 1; }
+.topbar-badge {
+  font-size: 11px; font-weight: 600;
+  background: var(--teal-dim); border: 1px solid rgba(26,188,156,.3);
+  color: var(--teal); border-radius: 20px; padding: 3px 10px;
+  max-width: 320px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap;
+}
+.topbar-badge.hidden { display: none; }
+
+/* Layout */
+.layout { display: flex; flex: 1; overflow: hidden; }
+
+/* Sidebar */
+.sidebar {
+  width: var(--sidebar-w); min-width: var(--sidebar-w);
+  background: var(--surface); border-right: 1px solid var(--border);
+  display: flex; flex-direction: column; overflow: hidden; flex-shrink: 0;
+}
+.sidebar-logo {
+  height: var(--header-h); padding: 0 16px;
+  border-bottom: 1px solid var(--border);
+  display: flex; align-items: center; gap: 10px; flex-shrink: 0;
+}
+.sidebar-logo img { width: 32px; height: 32px; object-fit: contain; border-radius: 6px; }
+.sidebar-logo-text .title { font-size: 1.15rem; font-weight: 700; color: var(--text); letter-spacing: 0.02em; }
+.sidebar-logo-text .subtitle { font-size: 0.68rem; color: var(--teal); letter-spacing: 0.08em; text-transform: uppercase; margin-top: 1px; }
+.sidebar-body  { flex: 1; overflow-y: auto; padding: 8px 0; }
+.sidebar-footer {
+  margin-top: auto; padding: 10px 12px;
+  border-top: 1px solid var(--border); flex-shrink: 0;
+}
+.nav-section-header { padding: 12px 16px 4px; font-size: 0.62rem; font-weight: 700; letter-spacing: 0.1em; text-transform: uppercase; color: var(--muted); flex-shrink: 0; }
+.nav-item {
+  display: flex; align-items: center; gap: 10px;
+  padding: 8px 16px; font-size: 0.82rem; font-weight: 500; color: var(--muted);
+  text-decoration: none; transition: background .12s, color .12s, border-color .12s;
+  border-left: 2px solid transparent; flex-shrink: 0; user-select: none;
+}
+.nav-item:hover { color: var(--text); background: rgba(255,255,255,.04); }
+.nav-item.active { color: var(--teal); background: var(--teal-dim); border-left-color: var(--teal); }
+.nav-item svg { flex-shrink: 0; }
+.sidebar-nav-divider { height: 1px; background: var(--border); margin: 6px 0; flex-shrink: 0; }
+.nav-divider { height: 1px; background: var(--border); margin: 6px 16px; }
+.nav-link {
+  display: flex; align-items: center; gap: 6px;
+  color: var(--muted); text-decoration: none; font-size: 12px;
+  padding: 6px 8px; border-radius: 6px; transition: color .12s, background .12s;
+}
+.nav-link:hover { color: var(--text); background: var(--surface2); }
+.nav-link + .nav-link { margin-top: 2px; }
+
+/* Sample tree */
+.tree-group {}
+.tree-date {
+  padding: 10px 16px 4px;
+  font-size: 10px; font-weight: 700; letter-spacing: .1em;
+  text-transform: uppercase; color: var(--muted);
+}
+.tree-sample {
+  padding: 4px 16px 2px;
+  font-size: 11px; font-weight: 600; color: var(--text);
+}
+.tree-assembler {
+  display: flex; align-items: center; gap: 6px;
+  padding: 5px 16px 5px 28px;
+  font-size: 12px; color: var(--muted);
+  cursor: pointer; border-left: 2px solid transparent;
+  transition: color .12s, background .12s, border-color .12s;
+  text-decoration: none;
+}
+.tree-assembler:hover { color: var(--text); background: var(--surface2); }
+.tree-assembler.active {
+  color: var(--teal); border-left-color: var(--teal);
+  background: var(--teal-dim); font-weight: 600;
+}
+.tree-assembler.no-gfa { color: rgba(139,148,158,.4); cursor: default; }
+.tree-assembler.no-gfa:hover { background: none; }
+.tree-dot {
+  width: 6px; height: 6px; border-radius: 50%; flex-shrink: 0;
+  background: var(--muted);
+}
+.tree-assembler.active .tree-dot { background: var(--teal); }
+
+/* Main content */
+.main { flex: 1; display: flex; flex-direction: column; overflow: hidden; min-width: 0; }
+.content { flex: 1; overflow-y: auto; padding: 24px; }
+
+/* Empty / loading states */
+.state-box {
+  display: flex; flex-direction: column; align-items: center;
+  justify-content: center; height: 100%; gap: 12px;
+  color: var(--muted); text-align: center;
+}
+.state-box .icon { font-size: 2.5rem; }
+.state-box h3 { font-size: 15px; color: var(--text); font-weight: 600; }
+.state-box p  { font-size: 12px; max-width: 340px; line-height: 1.6; }
+.spinner {
+  width: 32px; height: 32px;
+  border: 3px solid var(--border); border-top-color: var(--teal);
+  border-radius: 50%; animation: spin .7s linear infinite;
+}
+@keyframes spin { to { transform: rotate(360deg); } }
+
+/* Stats cards */
+.stats-row {
+  display: grid; grid-template-columns: repeat(auto-fill, minmax(160px, 1fr));
+  gap: 10px; margin-bottom: 20px;
+}
+.stat-card {
+  background: var(--surface); border: 1px solid var(--border);
+  border-radius: var(--radius); padding: 14px 16px;
+}
+.stat-label { font-size: 10px; font-weight: 600; color: var(--muted);
+              letter-spacing: .08em; text-transform: uppercase; margin-bottom: 4px; }
+.stat-value { font-size: 20px; font-weight: 700; color: var(--bright); line-height: 1.1; }
+.stat-sub   { font-size: 10px; color: var(--muted); margin-top: 2px; }
+
+/* Charts grid */
+.charts-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 14px;
+}
+@media (max-width: 900px) { .charts-grid { grid-template-columns: 1fr; } }
+.chart-card.full-width { grid-column: 1 / -1; }
+
+.chart-card {
+  background: var(--surface); border: 1px solid var(--border);
+  border-radius: var(--radius); padding: 16px;
+}
+.chart-header {
+  display: flex; align-items: flex-start; justify-content: space-between;
+  gap: 8px; margin-bottom: 4px;
+}
+.chart-header-text { flex: 1; min-width: 0; }
+.chart-title {
+  font-size: 12px; font-weight: 600; color: var(--text);
+  margin-bottom: 2px;
+}
+.chart-sub { font-size: 11px; color: var(--muted); margin-bottom: 10px; }
+.chart-dl-btn {
+  flex-shrink: 0; background: none; border: 1px solid var(--border);
+  border-radius: 4px; color: var(--muted); cursor: pointer;
+  padding: 2px 6px; font-size: 11px; line-height: 1.4;
+  transition: color .12s, border-color .12s;
+}
+.chart-dl-btn:hover { color: var(--text); border-color: var(--text-dim); }
+.chart-area { width: 100%; overflow: visible; }
+
+/* Tooltip */
+#g-tooltip {
+  position: fixed; z-index: 9999;
+  background: var(--surface2); border: 1px solid var(--border);
+  border-radius: 6px; padding: 6px 10px; font-size: 11px;
+  color: var(--text); pointer-events: none; display: none;
+  max-width: 220px; line-height: 1.5;
+}
+
+::-webkit-scrollbar { width: 6px; }
+::-webkit-scrollbar-track { background: transparent; }
+::-webkit-scrollbar-thumb { background: var(--border); border-radius: 3px; }
+#page-loading { display:none; position:fixed; inset:0; z-index:9999; background:var(--bg); align-items:center; justify-content:center; }
+#page-loading.visible { display:flex; }
+#page-loading img { width:min(340px,55vw); opacity:0; animation:splash-fade .3s ease forwards; }
+@keyframes splash-fade { from{opacity:0;transform:scale(.96)} to{opacity:1;transform:scale(1)} }
+</style>
+</head>
+<body>
+<div id="page-loading"><img src="/logo" alt="Aviary"></div>
+
+<div id="g-tooltip"></div>
+
+<!-- Topbar -->
+<div class="topbar">
+  <div class="topbar-title">Contig Assembly Graph</div>
+  <div class="topbar-sub">Contig-level statistics from assembly_graph.gfa</div>
+  <div class="topbar-badge hidden" id="topbar-badge"></div>
+</div>
+
+<div class="layout">
+
+  <!-- Sidebar -->
+  <aside class="sidebar">
+    <div class="sidebar-logo">
+      <a href="/" style="text-decoration:none;display:flex;align-items:center;gap:10px;"><img src="/logo" alt="Aviary" onerror="this.style.display='none'">
+      <div class="sidebar-logo-text">
+        <div class="title">Aviary</div>
+        <div class="subtitle">Metagenomics</div>
+      </div></a>
+    </div>
+
+    <a class="nav-item" href="/dashboard">
+      <svg width="15" height="15" viewBox="0 0 16 16" fill="currentColor"><path d="M0 2a2 2 0 0 1 2-2h12a2 2 0 0 1 2 2v1a2 2 0 0 1-2 2H2a2 2 0 0 1-2-2V2zm15 2a1 1 0 0 0 1-1V2a1 1 0 0 0-1-1H1a1 1 0 0 0-1 1v1a1 1 0 0 0 1 1h14zM0 8a2 2 0 0 1 2-2h12a2 2 0 0 1 2 2v1a2 2 0 0 1-2 2H2a2 2 0 0 1-2-2V8zm15 2a1 1 0 0 0 1-1V8a1 1 0 0 0-1-1H1a1 1 0 0 0-1 1v1a1 1 0 0 0 1 1h14zm-13-1a1 1 0 1 0 0-2 1 1 0 0 0 0 2zm2 0a1 1 0 1 0 0-2 1 1 0 0 0 0 2zm2 0a1 1 0 1 0 0-2 1 1 0 0 0 0 2z"/></svg>
+      <span class="nav-item-text">Pipeline Monitor</span>
+    </a>
+    <a class="nav-item" href="/dashboard?view=summary">
+      <svg width="15" height="15" viewBox="0 0 16 16" fill="currentColor"><path d="M4 11H2v3h2v-3zm5-4H7v7h2V7zm5-5v12h-2V2h2zm-2-1a1 1 0 0 0-1 1v12a1 1 0 0 0 1 1h2a1 1 0 0 0 1-1V2a1 1 0 0 0-1-1h-2zM6 7a1 1 0 0 1 1-1h2a1 1 0 0 1 1 1v7a1 1 0 0 1-1 1H7a1 1 0 0 1-1-1V7zm-5 4a1 1 0 0 1 1-1h2a1 1 0 0 1 1 1v3a1 1 0 0 1-1 1H2a1 1 0 0 1-1-1v-3z"/></svg>
+      <span class="nav-item-text">Bin Quality Report</span>
+    </a>
+    <a class="nav-item" href="/view">
+      <svg width="15" height="15" viewBox="0 0 16 16" fill="currentColor"><path d="M4.5 1a.5.5 0 0 1 .5.5V4h3V1.5a.5.5 0 0 1 1 0V4h1a.5.5 0 0 1 0 1H9v1.293l2.354 2.353a.5.5 0 0 1-.708.708L9 7.707V9h1a.5.5 0 0 1 0 1H9v1.293l2.354 2.353a.5.5 0 0 1-.708.708L9 12.707V14.5a.5.5 0 0 1-1 0V10H5v4.5a.5.5 0 0 1-1 0V12.707l-1.646 1.647a.5.5 0 0 1-.708-.708L3.293 12H2a.5.5 0 0 1 0-1h1.293L2.146 9.854a.5.5 0 1 1 .708-.708L4 10.293V9H3a.5.5 0 0 1 0-1h1V6.707L2.854 5.561a.5.5 0 1 1 .708-.708L5 6.293V5H4a.5.5 0 0 1 0-1h1V1.5a.5.5 0 0 1 .5-.5zM5 5v2h3V5H5zm0 3v2h3V8H5z"/></svg>
+      <span class="nav-item-text">View</span>
+    </a>
+    <div class="sidebar-nav-divider"></div>
+    <a class="nav-item" href="/graph">
+      <svg width="15" height="15" viewBox="0 0 16 16" fill="currentColor"><path d="M0 0h1v16H0zm15 0h1v16h-1zM5 11.5a.5.5 0 0 1 .5-.5h5a.5.5 0 0 1 0 1h-5a.5.5 0 0 1-.5-.5zm-3-4a.5.5 0 0 1 .5-.5h11a.5.5 0 0 1 0 1h-11a.5.5 0 0 1-.5-.5zm6-4a.5.5 0 0 1 .5-.5h5a.5.5 0 0 1 0 1h-5a.5.5 0 0 1-.5-.5z"/></svg>
+      <span class="nav-item-text">Results Visualisation</span>
+    </a>
+    <a class="nav-item active" href="/assembly">
+      <svg width="15" height="15" viewBox="0 0 16 16" fill="currentColor"><path d="M8.186 1.113a.5.5 0 0 0-.372 0L1.846 3.5 8 5.961 14.154 3.5 8.186 1.113zM15 4.239l-6.5 2.6v7.922l6.5-2.6V4.24zM7.5 14.762V6.838L1 4.239v7.923l6.5 2.6zM7.443.184a1.5 1.5 0 0 1 1.114 0l7.129 2.852A.5.5 0 0 1 16 3.5v8.662a1 1 0 0 1-.629.928l-7.185 2.874a.5.5 0 0 1-.372 0L.63 13.09a1 1 0 0 1-.63-.928V3.5a.5.5 0 0 1 .314-.464L7.443.184z"/></svg>
+      <span class="nav-item-text">Contig Assembly Graph</span>
+    </a>
+    <a class="nav-item" href="/export">
+      <svg width="15" height="15" viewBox="0 0 16 16" fill="currentColor"><path d="M.5 9.9a.5.5 0 0 1 .5.5v2.5a1 1 0 0 0 1 1h12a1 1 0 0 0 1-1v-2.5a.5.5 0 0 1 1 0v2.5a2 2 0 0 1-2 2H2a2 2 0 0 1-2-2v-2.5a.5.5 0 0 1 .5-.5z"/><path d="M7.646 11.854a.5.5 0 0 0 .708 0l3-3a.5.5 0 0 0-.708-.708L8.5 10.293V1.5a.5.5 0 0 0-1 0v8.793L5.354 8.146a.5.5 0 1 0-.708.708l3 3z"/></svg>
+      <span class="nav-item-text">Export Results</span>
+    </a>
+    <div class="sidebar-nav-divider"></div>
+    <a class="nav-item" href="/docs">
+      <svg width="15" height="15" viewBox="0 0 16 16" fill="currentColor"><path d="M1 2.828c.885-.37 2.154-.769 3.388-.893 1.33-.134 2.458.063 3.112.752v9.746c-.935-.53-2.12-.603-3.213-.493-1.18.12-2.37.461-3.287.811V2.828zm7.5-.141c.654-.689 1.782-.886 3.112-.752 1.234.124 2.503.523 3.388.893v9.923c-.918-.35-2.107-.692-3.287-.81-1.094-.111-2.278-.039-3.213.492V2.687zM8 1.783C7.015.936 5.587.81 4.287.94c-1.514.153-3.042.672-3.994 1.105A.5.5 0 0 0 0 2.5v11a.5.5 0 0 0 .707.455c.882-.4 2.303-.881 3.68-1.02 1.409-.142 2.59.087 3.223.877a.5.5 0 0 0 .78 0c.633-.79 1.814-1.019 3.222-.877 1.378.139 2.8.62 3.681 1.02A.5.5 0 0 0 16 13.5v-11a.5.5 0 0 0-.293-.455c-.952-.433-2.48-.952-3.994-1.105C10.413.809 8.985.936 8 1.783z"/></svg>
+      <span class="nav-item-text">Documentation</span>
+    </a>
+    <a class="nav-item" href="/guide">
+      <svg width="15" height="15" viewBox="0 0 16 16" fill="currentColor"><path d="M8 15A7 7 0 1 1 8 1a7 7 0 0 1 0 14zm0 1A8 8 0 1 0 8 0a8 8 0 0 0 0 16z"/><path d="M5.255 5.786a.237.237 0 0 0 .241.247h.825c.138 0 .248-.113.266-.25.09-.656.54-1.134 1.342-1.134.686 0 1.314.343 1.314 1.168 0 .635-.374.927-.965 1.371-.673.489-1.206 1.06-1.168 1.987l.003.217a.25.25 0 0 0 .25.246h.811a.25.25 0 0 0 .25-.25v-.105c0-.718.273-.927 1.01-1.486.609-.463 1.244-.977 1.244-2.056 0-1.511-1.276-2.241-2.673-2.241-1.267 0-2.655.59-2.75 2.286zm1.557 5.763c0 .533.425.927 1.01.927.609 0 1.028-.394 1.028-.927 0-.552-.42-.94-1.029-.94-.584 0-1.009.388-1.009.94z"/></svg>
+      <span class="nav-item-text">User Guide</span>
+    </a>
+
+    <div class="nav-divider" style="margin: 4px 16px 8px;"></div>
+    <div class="tree-date" style="padding-top:4px">Samples</div>
+
+    <div class="sidebar-body" id="sample-tree">
+      <div class="state-box" style="height:auto;padding:24px 16px">
+        <div class="spinner"></div>
+      </div>
+    </div>
+
+    <div class="sidebar-footer">Aviary Web Interface</div>
+  </aside>
+
+  <!-- Main -->
+  <div class="main">
+    <div class="content" id="main-content">
+      <div class="state-box" id="state-empty">
+        <div class="icon">🧬</div>
+        <h3>Select a sample</h3>
+        <p>Choose a sample and assembler from the sidebar to view assembly graph statistics.</p>
+      </div>
+      <div class="state-box" id="state-loading" style="display:none">
+        <div class="spinner"></div>
+        <h3>Parsing GFA…</h3>
+        <p>Large assembly graphs may take 1–3 minutes on first load. Results are cached — subsequent loads are instant.</p>
+      </div>
+      <div id="state-data" style="display:none">
+        <div id="comparison-panel" style="display:none; margin-bottom:16px;"></div>
+        <div class="stats-row" id="stats-row"></div>
+        <div class="charts-grid" id="charts-grid"></div>
+      </div>
+    </div>
+  </div>
+
+</div>
+
+<script>
+'use strict';
+
+// ---------------------------------------------------------------------------
+// Globals
+// ---------------------------------------------------------------------------
+let _currentRoot    = null;
+let _activeKey      = null;   // "sample__assembler"
+let _samplesGfa     = {};     // sampleKey -> {assembler -> {output_dir, hasGfa}}
+
+// ---------------------------------------------------------------------------
+// Boot
+// ---------------------------------------------------------------------------
+window.addEventListener('DOMContentLoaded', () => {
+  _currentRoot = localStorage.getItem('aviary-active-root') || null;
+  loadSampleTree();
+});
+
+// ---------------------------------------------------------------------------
+// Sample tree
+// ---------------------------------------------------------------------------
+async function loadSampleTree() {
+  const qs  = _currentRoot ? `?root=${encodeURIComponent(_currentRoot)}` : '';
+  try {
+    const [structRes, gfaRes] = await Promise.all([
+      fetch('/api/structure'    + qs),
+      fetch('/api/gfa_available' + qs),
+    ]);
+    const struct = await structRes.json();
+    const avail  = await gfaRes.json();   // { output_dir: true/false }
+    buildTree(struct.samples || {}, avail);
+  } catch (e) {
+    document.getElementById('sample-tree').innerHTML =
+      `<div style="padding:16px;color:var(--red);font-size:12px">Failed to load samples</div>`;
+  }
+}
+
+function buildTree(samples, avail = {}) {
+  // Store sample→assembler→{output_dir,hasGfa} for comparison loading
+  _samplesGfa = {};
+  for (const [sampleKey, assemblers] of Object.entries(samples)) {
+    _samplesGfa[sampleKey] = {};
+    for (const [assembler, data] of Object.entries(assemblers)) {
+      const od = data.output_dir || '';
+      _samplesGfa[sampleKey][assembler] = { output_dir: od, hasGfa: avail[od] === true };
+    }
+  }
+
+  // Group by date (same logic as monitor — split on " (date)" suffix)
+  const groups = {};
+  for (const [sampleKey, assemblers] of Object.entries(samples)) {
+    const m = sampleKey.match(/^(.+?)(\s+\((\d{4}-\d{2}-\d{2})\))?$/);
+    const date = m?.[3] || 'Latest';
+    (groups[date] = groups[date] || {})[sampleKey] = assemblers;
+  }
+  // Sort dates newest first
+  const sortedDates = Object.keys(groups).sort((a, b) =>
+    a === 'Latest' ? -1 : b === 'Latest' ? 1 : b.localeCompare(a)
+  );
+
+  let html = '';
+  for (const date of sortedDates) {
+    html += `<div class="tree-group">`;
+    html += `<div class="tree-date">${date}</div>`;
+    for (const [sampleKey, assemblers] of Object.entries(groups[date])) {
+      const baseName = sampleKey.replace(/\s+\(\d{4}-\d{2}-\d{2}\)$/, '');
+      html += `<div class="tree-sample">${escHtml(baseName)}</div>`;
+      for (const [assembler, data] of Object.entries(assemblers)) {
+        const key      = `${sampleKey}__${assembler}`;
+        const outDir   = data.output_dir || '';
+        const hasGfa   = avail[outDir] === true;
+        const isActive = key === _activeKey;
+        const cls      = `tree-assembler${isActive ? ' active' : ''}${!hasGfa ? ' no-gfa' : ''}`;
+        const title    = hasGfa ? '' : 'title="No assembly_graph.gfa for this run"';
+        html += `<div class="${cls}" ${title}
+                      data-key="${escAttr(key)}" data-dir="${escAttr(outDir)}"
+                      onclick="${hasGfa ? 'selectEntry(this)' : ''}">
+                   <span class="tree-dot"></span>
+                   ${escHtml(assembler)}${!hasGfa ? ' <span style="font-size:10px;opacity:.5">(no GFA)</span>' : ''}
+                 </div>`;
+      }
+    }
+    html += `</div>`;
+  }
+  document.getElementById('sample-tree').innerHTML = html || '<div style="padding:16px;color:var(--muted);font-size:12px">No samples found</div>';
+}
+
+// ---------------------------------------------------------------------------
+// Load GFA stats
+// ---------------------------------------------------------------------------
+async function selectEntry(el) {
+  if (el.classList.contains('no-gfa')) return;
+  const key    = el.dataset.key;
+  const outDir = el.dataset.dir;
+  if (!outDir) return;
+
+  // Update active state in sidebar
+  document.querySelectorAll('.tree-assembler').forEach(e => e.classList.remove('active'));
+  el.classList.add('active');
+  _activeKey = key;
+
+  // Update topbar badge
+  const parts = key.split('__');
+  const badge = document.getElementById('topbar-badge');
+  badge.textContent = `${parts[0]} · ${parts[1]}`;
+  badge.classList.remove('hidden');
+
+  // Reset empty state content in case a previous error wrote into it
+  document.getElementById('state-empty').innerHTML =
+    `<div class="icon">🧬</div>
+     <h3>Select a sample</h3>
+     <p>Choose a sample and assembler from the sidebar to view assembly graph statistics.</p>`;
+
+  showState('loading');
+
+  try {
+    const r = await fetch(`/api/gfa_stats?output_dir=${encodeURIComponent(outDir)}`);
+    if (r.status === 404) {
+      el.classList.add('no-gfa');
+      showState('empty');
+      document.getElementById('state-empty').innerHTML =
+        `<div class="icon">📂</div>
+         <h3>No assembly graph available</h3>
+         <p>No <code>assembly/assembly_graph.gfa</code> was found for this run.<br>
+            This typically means the assembly step was not run or did not produce a GFA.</p>`;
+      return;
+    }
+    if (!r.ok) {
+      const d = await r.json().catch(() => ({}));
+      throw new Error(d.error || r.statusText);
+    }
+    const data = await r.json();
+    if (data.error) throw new Error(data.error);
+    renderData(data);
+    showState('data');
+    loadComparison(key, outDir, data);
+  } catch (e) {
+    showState('empty');
+    document.getElementById('state-empty').innerHTML =
+      `<div class="icon">⚠️</div>
+       <h3>Error loading GFA</h3>
+       <p>${escHtml(e.message)}</p>`;
+  }
+}
+
+function showState(name) {
+  document.getElementById('state-empty').style.display   = name === 'empty'   ? '' : 'none';
+  document.getElementById('state-loading').style.display = name === 'loading' ? '' : 'none';
+  document.getElementById('state-data').style.display    = name === 'data'    ? '' : 'none';
+}
+
+// ---------------------------------------------------------------------------
+// Render
+// ---------------------------------------------------------------------------
+function renderData(data) {
+  renderStats(data.stats);
+  renderCharts(data);
+}
+
+function renderStats(s) {
+  const fmt = n => n >= 1e9 ? (n/1e9).toFixed(2)+'G'
+                : n >= 1e6  ? (n/1e6).toFixed(2)+'M'
+                : n >= 1e3  ? (n/1e3).toFixed(1)+'k'
+                : String(n);
+  const fmtBp = n => n >= 1e9 ? (n/1e9).toFixed(3)+' Gbp'
+                   : n >= 1e6  ? (n/1e6).toFixed(2)+' Mbp'
+                   : n >= 1e3  ? (n/1e3).toFixed(1)+' kbp'
+                   : n+' bp';
+
+  const pct  = (n, d) => (n != null && !isNaN(n) && d > 0) ? (n / d * 100).toFixed(1) + '%' : '—';
+
+  const deadCard = s.dead_ends !== null && s.dead_ends !== undefined
+    ? `<div class="stat-card">
+         <div class="stat-label">Dead Ends / Tips</div>
+         <div class="stat-value">${fmt(s.dead_ends)}</div>
+         <div class="stat-sub">${pct(s.dead_ends, s.total_segments)} of contigs unlinked on ≥1 end</div>
+       </div>`
+    : `<div class="stat-card">
+         <div class="stat-label">Dead Ends / Tips</div>
+         <div class="stat-value" style="font-size:13px;color:var(--muted)">Too large</div>
+         <div class="stat-sub">graph too large to track exactly</div>
+       </div>`;
+
+  document.getElementById('stats-row').innerHTML = `
+    <div class="stat-card">
+      <div class="stat-label">Total Contigs</div>
+      <div class="stat-value">${fmt(s.total_segments)}</div>
+      <div class="stat-sub">${s.total_segments.toLocaleString()} segments</div>
+    </div>
+    <div class="stat-card">
+      <div class="stat-label">Total Length</div>
+      <div class="stat-value">${fmtBp(s.total_length)}</div>
+      <div class="stat-sub">${s.total_length.toLocaleString()} bp</div>
+    </div>
+    <div class="stat-card">
+      <div class="stat-label">N50 (approx.)</div>
+      <div class="stat-value">${fmtBp(s.n50)}</div>
+      <div class="stat-sub">50% of assembly in contigs ≥ this</div>
+    </div>
+    <div class="stat-card">
+      <div class="stat-label">Cov-Weighted N50</div>
+      <div class="stat-value">${fmtBp(s.n50_cov_weighted)}</div>
+      <div class="stat-sub">N50 weighted by depth × length</div>
+    </div>
+    <div class="stat-card">
+      <div class="stat-label">Longest Contig</div>
+      <div class="stat-value">${fmtBp(s.max_length)}</div>
+      <div class="stat-sub">min: ${fmtBp(s.min_length)}</div>
+    </div>
+    <div class="stat-card">
+      <div class="stat-label">Avg Depth</div>
+      <div class="stat-value">${s.avg_depth}×</div>
+      <div class="stat-sub">mean coverage across contigs</div>
+    </div>
+    <div class="stat-card">
+      <div class="stat-label">Graph Links</div>
+      <div class="stat-value">${fmt(s.total_links)}</div>
+      <div class="stat-sub">avg ${s.avg_links_per_seg} links/contig</div>
+    </div>
+    ${deadCard}
+    <div class="stat-card">
+      <div class="stat-label">Low Coverage (&lt;1×)</div>
+      <div class="stat-value">${pct(s.n_low_cov, s.total_segments)}</div>
+      <div class="stat-sub">${fmt(s.n_low_cov)} contigs typically unbinnable</div>
+    </div>
+    <div class="stat-card">
+      <div class="stat-label">Binnable ≥1 kbp</div>
+      <div class="stat-value">${pct(s.n_1kbp, s.total_segments)}</div>
+      <div class="stat-sub">${fmtBp(s.bp_1kbp)} · ${fmt(s.n_1kbp)} contigs</div>
+    </div>
+    <div class="stat-card">
+      <div class="stat-label">Binnable ≥2 kbp</div>
+      <div class="stat-value">${pct(s.n_2kbp, s.total_segments)}</div>
+      <div class="stat-sub">${fmtBp(s.bp_2kbp)} · ${fmt(s.n_2kbp)} contigs</div>
+    </div>
+  `;
+}
+
+function renderCharts(data) {
+  const grid = document.getElementById('charts-grid');
+  grid.innerHTML = '';
+
+  grid.appendChild(makeChartCard(
+    'Contig Length Distribution',
+    'Log-scale distribution of all contig lengths',
+    drawLengthHist(data.length_hist)
+  ));
+  grid.appendChild(makeChartCard(
+    'Coverage Distribution',
+    `Depth of coverage per contig (capped at ${data.depth_hist.cap}×, ${data.depth_hist.overflow.toLocaleString()} contigs above cap)`,
+    drawDepthHist(data.depth_hist)
+  ));
+
+  // Scatter is full-width so it isn't cut off
+  const scatterCard = makeChartCard(
+    'Coverage vs Length',
+    `Scatter of ${data.scatter.length.toLocaleString()} sampled contigs — high-coverage short contigs may indicate plasmid/circular elements`,
+    drawScatter(data.scatter)
+  );
+  scatterCard.classList.add('full-width');
+  grid.appendChild(scatterCard);
+
+  grid.appendChild(makeChartCard(
+    'Graph Connectivity',
+    'Estimated link-degree distribution (dead-end / single-link / multi-link contigs)',
+    drawConnectivity(data.stats)
+  ));
+}
+
+function makeChartCard(title, sub, svgEl) {
+  const card = document.createElement('div');
+  card.className = 'chart-card';
+
+  const header = document.createElement('div');
+  header.className = 'chart-header';
+  header.innerHTML = `<div class="chart-header-text">
+      <div class="chart-title">${escHtml(title)}</div>
+      <div class="chart-sub">${escHtml(sub)}</div>
+    </div>`;
+
+  const dlBtn = document.createElement('button');
+  dlBtn.className = 'chart-dl-btn';
+  dlBtn.title = 'Download SVG';
+  dlBtn.textContent = '↓ SVG';
+  dlBtn.addEventListener('click', () => {
+    const svg = card.querySelector('svg');
+    if (!svg) return;
+    // Add white background rect so standalone SVG isn't transparent
+    const clone = svg.cloneNode(true);
+    clone.setAttribute('xmlns', 'http://www.w3.org/2000/svg');
+    const bg = document.createElementNS('http://www.w3.org/2000/svg', 'rect');
+    bg.setAttribute('width', '100%'); bg.setAttribute('height', '100%');
+    bg.setAttribute('fill', '#0d1117');
+    clone.insertBefore(bg, clone.firstChild);
+    const blob = new Blob([clone.outerHTML], { type: 'image/svg+xml' });
+    const a = document.createElement('a');
+    a.href = URL.createObjectURL(blob);
+    a.download = title.replace(/[^a-z0-9]+/gi, '_').toLowerCase() + '.svg';
+    a.click();
+    URL.revokeObjectURL(a.href);
+  });
+  header.appendChild(dlBtn);
+
+  card.appendChild(header);
+  card.appendChild(svgEl);
+  return card;
+}
+
+// ---------------------------------------------------------------------------
+// Chart helpers
+// ---------------------------------------------------------------------------
+const W = 440, H = 220, PL = 52, PR = 16, PT = 10, PB = 36;
+const CW = W - PL - PR, CH = H - PT - PB;
+const TEAL = '#1abc9c', MUTED = '#8b949e', BORDER = '#30363d', YELLOW = '#e3b341', RED = '#f85149';
+
+function makeSVG() {
+  const svg = document.createElementNS('http://www.w3.org/2000/svg', 'svg');
+  svg.setAttribute('viewBox', `0 0 ${W} ${H}`);
+  svg.setAttribute('width', '100%');
+  svg.setAttribute('class', 'chart-area');
+  return svg;
+}
+
+function svgEl(tag, attrs, parent) {
+  const el = document.createElementNS('http://www.w3.org/2000/svg', tag);
+  for (const [k, v] of Object.entries(attrs)) el.setAttribute(k, v);
+  if (parent) parent.appendChild(el);
+  return el;
+}
+
+function axisLine(svg, x1, y1, x2, y2) {
+  svgEl('line', { x1, y1, x2, y2, stroke: BORDER, 'stroke-width': 1 }, svg);
+}
+
+function axisLabel(svg, x, y, text, anchor = 'middle', fill = MUTED, size = 9) {
+  const t = svgEl('text', { x, y, fill, 'font-size': size, 'text-anchor': anchor,
+                             'font-family': '-apple-system,BlinkMacSystemFont,sans-serif' }, svg);
+  t.textContent = text;
+}
+
+function fmtLen(n) {
+  return n >= 1e6 ? (n/1e6).toFixed(1)+'M'
+       : n >= 1e3 ? (n/1e3).toFixed(0)+'k'
+       : String(n);
+}
+
+function fmtNum(n) {
+  return n >= 1e6 ? (n/1e6).toFixed(1)+'M'
+       : n >= 1e3 ? (n/1e3).toFixed(0)+'k'
+       : String(n);
+}
+
+function tooltip(el, text) {
+  const tip = document.getElementById('g-tooltip');
+  el.addEventListener('mouseenter', e => {
+    tip.innerHTML = text; tip.style.display = 'block';
+    tip.style.left = (e.clientX + 12) + 'px';
+    tip.style.top  = (e.clientY - 8) + 'px';
+  });
+  el.addEventListener('mousemove', e => {
+    tip.style.left = (e.clientX + 12) + 'px';
+    tip.style.top  = (e.clientY - 8) + 'px';
+  });
+  el.addEventListener('mouseleave', () => { tip.style.display = 'none'; });
+}
+
+// ---------------------------------------------------------------------------
+// 1. Length histogram (log-scale x)
+// ---------------------------------------------------------------------------
+function drawLengthHist(hist) {
+  const svg    = makeSVG();
+  const counts = hist.counts;
+  const edges  = hist.edges;
+  const n      = counts.length;
+  const maxC   = Math.max(...counts, 1);
+
+  // Axes
+  axisLine(svg, PL, PT, PL, PT + CH);
+  axisLine(svg, PL, PT + CH, PL + CW, PT + CH);
+
+  // Bars
+  const bw = CW / n;
+  for (let i = 0; i < n; i++) {
+    const bh  = counts[i] / maxC * CH;
+    const x   = PL + i * bw;
+    const y   = PT + CH - bh;
+    const bar = svgEl('rect', {
+      x, y, width: Math.max(bw - 1, 1), height: Math.max(bh, 0),
+      fill: TEAL, opacity: '0.85', rx: 1
+    }, svg);
+    tooltip(bar, `${fmtLen(edges[i])} – ${fmtLen(edges[i+1])}<br><b>${counts[i].toLocaleString()} contigs</b>`);
+  }
+
+  // X tick labels (every ~8 bins)
+  const logMin = Math.log10(Math.max(edges[0], 1));
+  const logMax = Math.log10(Math.max(edges[n], 1));
+  const tickVals = [100, 500, 1000, 5000, 10000, 50000, 100000, 500000, 1000000, 5000000];
+  for (const v of tickVals) {
+    if (v < edges[0] || v > edges[n]) continue;
+    const xp = PL + (Math.log10(v) - logMin) / (logMax - logMin) * CW;
+    axisLine(svg, xp, PT + CH, xp, PT + CH + 3);
+    axisLabel(svg, xp, PT + CH + 12, fmtLen(v));
+  }
+  axisLabel(svg, PL + CW / 2, H - 2, 'Contig length (log scale)');
+
+  // Y ticks
+  for (const frac of [0.25, 0.5, 0.75, 1.0]) {
+    const yp = PT + CH - frac * CH;
+    svgEl('line', { x1: PL - 3, y1: yp, x2: PL, y2: yp, stroke: BORDER, 'stroke-width': 1 }, svg);
+    axisLabel(svg, PL - 5, yp + 3, fmtNum(Math.round(maxC * frac)), 'end');
+  }
+
+  return svg;
+}
+
+// ---------------------------------------------------------------------------
+// 2. Depth histogram (linear x)
+// ---------------------------------------------------------------------------
+function drawDepthHist(hist) {
+  const svg    = makeSVG();
+  const counts = hist.counts;
+  const edges  = hist.edges;
+  const n      = counts.length;
+  const maxC   = Math.max(...counts, 1);
+
+  axisLine(svg, PL, PT, PL, PT + CH);
+  axisLine(svg, PL, PT + CH, PL + CW, PT + CH);
+
+  const bw = CW / n;
+  for (let i = 0; i < n; i++) {
+    const bh  = counts[i] / maxC * CH;
+    const x   = PL + i * bw;
+    const y   = PT + CH - bh;
+    const bar = svgEl('rect', {
+      x, y, width: Math.max(bw - 1, 1), height: Math.max(bh, 0),
+      fill: TEAL, opacity: '0.85', rx: 1
+    }, svg);
+    tooltip(bar, `${edges[i].toFixed(0)}× – ${edges[i+1].toFixed(0)}×<br><b>${counts[i].toLocaleString()} contigs</b>`);
+  }
+
+  // X ticks
+  const step = hist.cap / 5;
+  for (let v = 0; v <= hist.cap; v += step) {
+    const xp = PL + (v / hist.cap) * CW;
+    axisLine(svg, xp, PT + CH, xp, PT + CH + 3);
+    axisLabel(svg, xp, PT + CH + 12, v + '×');
+  }
+  axisLabel(svg, PL + CW / 2, H - 2, 'Coverage depth');
+
+  // Y ticks
+  for (const frac of [0.25, 0.5, 0.75, 1.0]) {
+    const yp = PT + CH - frac * CH;
+    svgEl('line', { x1: PL - 3, y1: yp, x2: PL, y2: yp, stroke: BORDER, 'stroke-width': 1 }, svg);
+    axisLabel(svg, PL - 5, yp + 3, fmtNum(Math.round(maxC * frac)), 'end');
+  }
+
+  // Overflow label
+  if (hist.overflow > 0) {
+    const t = svgEl('text', {
+      x: PL + CW - 2, y: PT + 12, fill: YELLOW, 'font-size': 9,
+      'text-anchor': 'end', 'font-family': '-apple-system,sans-serif'
+    }, svg);
+    t.textContent = `+${hist.overflow.toLocaleString()} contigs > ${hist.cap}×`;
+  }
+
+  return svg;
+}
+
+// ---------------------------------------------------------------------------
+// 3. Coverage vs Length scatter (log-log)
+// ---------------------------------------------------------------------------
+function drawScatter(points) {
+  const svg = makeSVG();
+  if (!points.length) {
+    axisLabel(svg, W/2, H/2, 'No data', 'middle', MUTED, 11);
+    return svg;
+  }
+
+  const lens  = points.map(p => Math.max(p[0], 1));
+  const deps  = points.map(p => Math.max(p[1], 0.01));
+  const logLMin = Math.log10(Math.min(...lens));
+  const logLMax = Math.log10(Math.max(...lens));
+  const logDMin = Math.log10(Math.min(...deps));
+  const logDMax = Math.log10(Math.max(...deps) * 1.1);
+
+  axisLine(svg, PL, PT, PL, PT + CH);
+  axisLine(svg, PL, PT + CH, PL + CW, PT + CH);
+
+  // Plot points coloured by coverage
+  for (let i = 0; i < points.length; i++) {
+    const len = points[i][0], dep = points[i][1];
+    const xp  = PL + (Math.log10(Math.max(len, 1)) - logLMin) / (logLMax - logLMin) * CW;
+    const yp  = PT + CH - (Math.log10(Math.max(dep, 0.01)) - logDMin) / (logDMax - logDMin) * CH;
+    const col = dep > 100 ? YELLOW : dep > 5 ? TEAL : MUTED;
+    const dot = svgEl('circle', { cx: xp, cy: yp, r: 2, fill: col, opacity: '0.5' }, svg);
+    tooltip(dot, `Length: ${fmtLen(len)}<br>Depth: ${dep}×`);
+  }
+
+  // X ticks
+  const lenTicks = [100, 500, 1000, 5000, 10000, 50000, 100000, 500000, 1000000];
+  for (const v of lenTicks) {
+    const lv = Math.log10(v);
+    if (lv < logLMin || lv > logLMax) continue;
+    const xp = PL + (lv - logLMin) / (logLMax - logLMin) * CW;
+    axisLine(svg, xp, PT + CH, xp, PT + CH + 3);
+    axisLabel(svg, xp, PT + CH + 12, fmtLen(v));
+  }
+  axisLabel(svg, PL + CW / 2, H - 2, 'Contig length (log)');
+
+  // Y ticks
+  const depTicks = [0.1, 1, 5, 10, 50, 100, 500];
+  for (const v of depTicks) {
+    const lv = Math.log10(v);
+    if (lv < logDMin || lv > logDMax) continue;
+    const yp = PT + CH - (lv - logDMin) / (logDMax - logDMin) * CH;
+    svgEl('line', { x1: PL - 3, y1: yp, x2: PL, y2: yp, stroke: BORDER, 'stroke-width': 1 }, svg);
+    axisLabel(svg, PL - 5, yp + 3, v + '×', 'end');
+  }
+
+  // Legend — evenly spaced across top of chart
+  const legY    = PT + 6;
+  const legItems = [
+    { col: MUTED,  label: '< 5×'   },
+    { col: TEAL,   label: '5–100×' },
+    { col: YELLOW, label: '> 100×' },
+  ];
+  const legSpacing = CW / legItems.length;
+  legItems.forEach((item, i) => {
+    const cx = PL + legSpacing * i + legSpacing * 0.35;
+    svgEl('circle', { cx, cy: legY, r: 4, fill: item.col }, svg);
+    axisLabel(svg, cx + 8, legY + 3, item.label, 'start', MUTED, 10);
+  });
+
+  return svg;
+}
+
+// ---------------------------------------------------------------------------
+// 4. Graph connectivity
+// ---------------------------------------------------------------------------
+function drawConnectivity(stats) {
+  const svg = makeSVG();
+  const total    = stats.total_segments;
+  const avgDeg   = stats.avg_links_per_seg;
+  const perSeg   = stats.total_links / total;
+
+  // Show a horizontal bar split into connectivity zones based on avg degree
+  // Estimate: degree ~Poisson, so P(deg=0)=e^-λ, P(deg=1)=λe^-λ, rest=1-both
+  const lambda = avgDeg;
+  const pDead  = Math.exp(-lambda);
+  const pSingle= lambda * Math.exp(-lambda);
+  const pMulti = 1 - pDead - pSingle;
+
+  const nDead   = Math.round(total * pDead);
+  const nSingle = Math.round(total * pSingle);
+  const nMulti  = total - nDead - nSingle;
+
+  const barY  = PT + CH * 0.35;
+  const barH  = 32;
+  const barW  = CW;
+  const barX  = PL;
+
+  const segments = [
+    { label: 'Dead ends',    n: nDead,   frac: pDead,   fill: RED    },
+    { label: 'Single link',  n: nSingle, frac: pSingle, fill: YELLOW },
+    { label: 'Multi-link',   n: nMulti,  frac: pMulti,  fill: TEAL   },
+  ];
+
+  let cx = barX;
+  for (const seg of segments) {
+    const w = Math.max(seg.frac * barW, 0);
+    const bar = svgEl('rect', { x: cx, y: barY, width: w, height: barH, fill: seg.fill }, svg);
+    tooltip(bar, `<b>${seg.label}</b><br>${seg.n.toLocaleString()} contigs (${(seg.frac*100).toFixed(1)}%)`);
+    if (w > 40) {
+      const t = svgEl('text', {
+        x: cx + w / 2, y: barY + barH / 2 + 4,
+        fill: '#0d1117', 'font-size': 9, 'text-anchor': 'middle',
+        'font-weight': '700', 'font-family': '-apple-system,sans-serif'
+      }, svg);
+      t.textContent = `${(seg.frac * 100).toFixed(0)}%`;
+    }
+    cx += w;
+  }
+
+  // Legend below bar
+  let lx = barX;
+  for (const seg of segments) {
+    svgEl('rect', { x: lx, y: barY + barH + 8, width: 8, height: 8, fill: seg.fill, rx: 2 }, svg);
+    axisLabel(svg, lx + 11, barY + barH + 15, `${seg.label} (${fmtNum(seg.n)})`, 'start', MUTED, 9);
+    lx += 130;
+  }
+
+  // Summary line
+  axisLabel(svg, PL + CW / 2, barY - 10,
+    `Avg ${avgDeg} links/contig · ${stats.total_links.toLocaleString()} total links`,
+    'middle', MUTED, 9);
+
+  return svg;
+}
+
+// ---------------------------------------------------------------------------
+// 5. Assembler comparison
+// ---------------------------------------------------------------------------
+async function loadComparison(activeKey, activeDir, activeData) {
+  const panel = document.getElementById('comparison-panel');
+  // Extract sampleKey (everything before last __)
+  const lastSep  = activeKey.lastIndexOf('__');
+  const sampleKey = lastSep >= 0 ? activeKey.slice(0, lastSep) : activeKey;
+  const siblings  = _samplesGfa[sampleKey] || {};
+
+  // Find other assemblers with GFA for the same sample
+  const others = Object.entries(siblings).filter(([, d]) => d.hasGfa && d.output_dir !== activeDir);
+  if (others.length === 0) { panel.style.display = 'none'; return; }
+
+  // Show loading state
+  panel.style.display = '';
+  panel.innerHTML = `<div style="background:var(--surface);border:1px solid var(--border);border-radius:var(--radius);padding:14px 16px;font-size:12px;color:var(--muted)">
+    <span style="margin-right:8px">⟳</span>Loading assembler comparison…</div>`;
+
+  // Load siblings in parallel
+  const results = await Promise.all(
+    others.map(([asm, d]) =>
+      fetch(`/api/gfa_stats?output_dir=${encodeURIComponent(d.output_dir)}`)
+        .then(r => r.ok ? r.json() : null)
+        .then(j => j && !j.error ? { assembler: asm, stats: j.stats } : null)
+        .catch(() => null)
+    )
+  );
+
+  const valid = results.filter(Boolean);
+  if (valid.length === 0) { panel.style.display = 'none'; return; }
+
+  // Build comparison set: active assembler + siblings
+  const activeName = activeKey.slice(lastSep + 2);
+  const all = [{ assembler: activeName, stats: activeData.stats }, ...valid];
+
+  const fmtBp = n => n >= 1e9 ? (n/1e9).toFixed(2)+' Gbp'
+                   : n >= 1e6 ? (n/1e6).toFixed(2)+' Mbp'
+                   : n >= 1e3 ? (n/1e3).toFixed(1)+' kbp'
+                   : n + ' bp';
+  const pct = (n, d) => d > 0 ? (n/d*100).toFixed(1)+'%' : '—';
+
+  const cols = all.map(a => {
+    const s = a.stats;
+    const deadStr = s.dead_ends !== null && s.dead_ends !== undefined
+      ? `${s.dead_ends.toLocaleString()} (${pct(s.dead_ends, s.total_segments)})` : 'n/a';
+    return { label: a.assembler, cells: [
+      fmtBp(s.n50),
+      fmtBp(s.n50_cov_weighted || 0),
+      fmtBp(s.total_length),
+      `${s.avg_depth}×`,
+      deadStr,
+      fmtBp(s.bp_1kbp) + ` (${pct(s.n_1kbp, s.total_segments)})`,
+    ]};
+  });
+
+  const rows = ['N50', 'Cov-Weighted N50', 'Total Length', 'Avg Depth', 'Dead Ends', 'Binnable ≥1 kbp'];
+
+  let tHead = `<tr><th></th>${cols.map(c => `<th>${escHtml(c.label)}</th>`).join('')}</tr>`;
+  let tBody = rows.map((row, i) =>
+    `<tr><td>${row}</td>${cols.map(c => `<td>${c.cells[i]}</td>`).join('')}</tr>`
+  ).join('');
+
+  panel.innerHTML = `
+    <div style="background:var(--surface);border:1px solid var(--border);border-radius:var(--radius);padding:14px 16px;">
+      <div style="font-size:12px;font-weight:600;color:var(--text);margin-bottom:10px">Assembler Comparison — ${escHtml(sampleKey.replace(/\s+\(\d{4}-\d{2}-\d{2}\)$/,''))}</div>
+      <table style="width:100%;border-collapse:collapse;font-size:12px;">
+        <thead style="color:var(--muted);font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:.06em;">
+          ${tHead}
+        </thead>
+        <tbody>${tBody}</tbody>
+      </table>
+    </div>
+    <style>
+      #comparison-panel th, #comparison-panel td { padding:6px 12px; text-align:left; border-bottom:1px solid var(--border); }
+      #comparison-panel tbody tr:last-child td { border-bottom:none; }
+      #comparison-panel tbody td:first-child { color:var(--muted); font-size:11px; }
+      #comparison-panel tbody td:not(:first-child) { color:var(--bright); }
+    </style>`;
+}
+
+// ---------------------------------------------------------------------------
+// Utilities
+// ---------------------------------------------------------------------------
+function escHtml(s) {
+  return String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');
+}
+function escAttr(s) {
+  return String(s).replace(/"/g,'&quot;');
+}
+
+(function(){var s=document.getElementById('page-loading');document.querySelectorAll('a[href^="/"]').forEach(function(a){if(a.target!=='_blank')a.addEventListener('click',function(){s.classList.add('visible');});});window.addEventListener('pageshow',function(){s.classList.remove('visible');});})();
+</script>
+</body>
+</html>

@@ -32,11 +32,6 @@ input reads.
 If at any point the Aviary workflow is interrupted, the pipeline can be restarted and pick up from the last completed
 step.
 
-## Batch Processing
-
-Aviary allows users to supply a batch file to the `aviary batch` command. This will cause aviary to run on every line within
-the input batch file individually. Example batch files can be found at [here](/examples/example_batch.tsv) and [here](/examples/example_batch.csv).
-
 ## Advanced Usage
 
 Often users are required to send long running jobs off on to high performance clusters. Aviary and snakemake are
@@ -115,7 +110,6 @@ GTDBTK_DATA_PATH
 EGGNOG_DATA_DIR
 SINGLEM_METAPACKAGE_PATH
 CHECKM2DB
-CONDA_ENV_PATH
 ```
 
 ### Thread control

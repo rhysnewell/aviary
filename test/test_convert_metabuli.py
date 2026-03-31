@@ -4,6 +4,7 @@ import unittest
 from aviary.modules.binning.scripts.convert_metabuli import create_conversion_dict, process_classifications
 import pandas as pd
 import pandas.testing as pdt
+import numpy as np
 
 class Tests(unittest.TestCase):
     def test_create_conversion_dict(self):
@@ -164,7 +165,7 @@ class Tests(unittest.TestCase):
                 ],
             "predictions": [
                 "d__Bacteria,p__Actinomycetota",
-                None,
+                np.nan,
                 "d__Eukaryota,p__Chordata,c__Mammalia,o__Primates,f__Hominidae,g__Homo,s__Homo sapiens",
                 "d__Eukaryota,p__Chordata,c__Mammalia,o__Primates,f__Hominidae,g__Homo,s__Homo sapiens",
                 "d__Eukaryota",
@@ -174,6 +175,9 @@ class Tests(unittest.TestCase):
         })
 
         observed = process_classifications(df, conversion_dict, coverm_out)
+        # Normalize column index dtype across pandas versions (string vs object)
+        expected.columns = expected.columns.astype(object)
+        observed.columns = observed.columns.astype(object)
         pdt.assert_frame_equal(expected, observed)
 
 

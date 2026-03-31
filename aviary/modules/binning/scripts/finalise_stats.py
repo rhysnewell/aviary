@@ -3,17 +3,14 @@ from Bio import SeqIO
 import os
 from glob import glob
 
-def find_circular(checkm_output, checkm1=True):
-    if checkm1:
-        bin_column = "Bin Id"
-    else:
-        bin_column = "Name"
+def find_circular(checkm_output, assembly_info_path):
+    bin_column = "Name"
 
     circular_contigs = []
     circular_bps = []
     circular_fractions = []
 
-    assembly_info = pd.read_csv("data/flye/assembly_info.txt", sep="\t")
+    assembly_info = pd.read_csv(assembly_info_path, sep="\t")
 
     for bin_name in checkm_output[bin_column]:
 
@@ -42,7 +39,7 @@ def find_circular(checkm_output, checkm1=True):
     checkm_output["Circular contigs"], checkm_output["Circular bp"], checkm_output["Circular fraction"] = [circular_contigs, circular_bps, circular_fractions]
     return checkm_output
 
-def get_taxonomy(rename_columns="Bin Id"):
+def get_taxonomy(rename_columns="Name"):
     taxa = []
     try:
         df_bac = pd.read_csv(glob("data/gtdbtk/gtdbtk.bac*.summary.tsv")[0], sep="\t")
@@ -70,21 +67,16 @@ if __name__ == "__main__":
     except ValueError:
         coverage_file = pd.DataFrame(columns=["Genome"])
 
-    # checkm file for all bins
-    checkm1_output = pd.read_csv(snakemake.input.checkm1_done, sep='\t', comment="[")
-
-    checkm2_output = pd.read_csv(snakemake.input.checkm2_done, sep='\t')
-
-    checkm1_output.rename({'Completeness' : 'Completeness (CheckM1)', 'Contamination' : 'Contamination (CheckM1)'}, inplace=True, axis=1)
-    checkm2_output.rename({'Name' : checkm1_output.columns[0], 'Completeness' : 'Completeness (CheckM2)', 'Contamination' : 'Contamination (CheckM2)'}, inplace=True, axis=1)
-
-    checkm_output = pd.merge(checkm1_output, checkm2_output, on=[checkm1_output.columns[0]])
-    is_checkm1 = "Bin Id" in checkm_output.columns
+    # checkm2 file for all bins
+    checkm_output = pd.read_csv(snakemake.input.checkm2_done, sep='\t')
     coverage_file.rename({"Genome" : checkm_output.columns[0]}, inplace=True, axis=1)
 
 
-    if os.path.isfile("data/flye/assembly_info.txt"):
-        checkm_output = find_circular(checkm_output, is_checkm1)
+    assembly_dir = f"data/{snakemake.config.get('long_read_assembler', 'myloasm')}"
+    assembly_info_path = os.path.join(assembly_dir, "assembly_info.txt")
+
+    if os.path.isfile(assembly_info_path):
+        checkm_output = find_circular(checkm_output, assembly_info_path)
 
     taxa = get_taxonomy(checkm_output.columns[0])
 
@@ -92,8 +84,6 @@ if __name__ == "__main__":
     merged_out = pd.merge(merged_out, taxa, on=[merged_out.columns[0]], how="left")
     merged_out.to_csv(snakemake.output.bin_stats, sep='\t', index=False)
 
-    checkm_minimal = checkm_output[["Bin Id",  "Marker lineage",  "# genomes", "# markers", "# marker sets",
-                                    "0", "1", "2", "3", "4", "5+", "Completeness (CheckM1)", "Contamination (CheckM1)",
-                                    "Completeness (CheckM2)", "Contamination (CheckM2)", "Strain heterogeneity"]]
+    checkm_minimal = checkm_output[[checkm_output.columns[0], "Completeness", "Contamination"]]
 
     checkm_minimal.to_csv(snakemake.output.checkm_minimal, sep="\t", index=False)

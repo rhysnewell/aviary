@@ -5,7 +5,65 @@ title: Installation
 Installation
 ========
 
-## Requirements
+#### Option 1: Install from Bioconda
+
+Conda can handle the creation of the environment for you directly:
+
+```
+conda create -n aviary -c bioconda aviary
+```
+
+Or install into existing environment:
+```
+conda install -c bioconda aviary
+```
+
+#### Option 2: Install from pip
+
+Create the environment using the `admin/requirements.txt` file then install from pip:
+```
+conda env create -n aviary -f admin/requirements.txt
+conda activate aviary
+pip install aviary-genome
+```
+
+#### Option 3: Install from source
+
+To install from source, we recommend using [pixi](https://pixi.sh/). First clone
+the aviary repository from GitHub:
+```
+git clone https://github.com/rhysnewell/aviary.git
+cd aviary
+```
+
+Then install the main environment using pixi:
+```
+pixi run postinstall
+```
+
+Then aviary can be run using `pixi run` (or via `pixi shell`).
+```
+pixi run aviary --help
+```
+
+When installed this way, aviary is installed in an "editable" way (similar to `pip install -e .`), meaning that any changes made to aviary source are immediately available via the `aviary` command. This is useful for development and debugging.
+
+When run this way, the databases required for aviary (e.g. `CHECKM2DB`) can be symlinked from a `db/` directory in the aviary repository. An activation hook then ensures that these are available when in the pixi environments. To do this, create a `db/` directory in the aviary repository and symlink the required databases into it. For example, as of writing:
+```
+$ ls db -l
+lrwxrwxrwx 1 woodcrob default 40 Apr 23  2025 2015_01_16_v2 -> /work/microbiome/db/checkm/2015_01_16_v2
+lrwxrwxrwx 1 woodcrob default 57 May  2  2025 2024-3-28-GTDB214.1+humanT2T -> /work/microbiome/db/metabuli/2024-3-28-GTDB214.1+humanT2T
+lrwxrwxrwx 1 woodcrob default 51 Apr 23  2025 2.1.3 -> /mnt/hpccs01/work/microbiome/db/eggnog-mapper/2.1.3
+lrwxrwxrwx 1 woodcrob default 73 Nov 18 08:04 CheckM2_database -> /work/microbiome/db/CheckM2_database/CheckM2_database/uniref100.KO.1.dmnd
+lrwxrwxrwx 1 woodcrob default 95 Apr 23  2025 release220 -> /work/microbiome/db/gtdb/gtdb_release220/auxillary_files/gtdbtk_package/full_package/release220
+lrwxrwxrwx 1 woodcrob default 74 Jun 10 15:54 S5.4.0.GTDB_r226.metapackage_20250331.smpkg.zb -> /work/microbiome/db/singlem/S5.4.0.GTDB_r226.metapackage_20250331.smpkg.zb
+```
+To check the expected database symlink names, see `admin/set_env_vars.sh` in the
+aviary repository. The advantage of this approach is that locations of the
+databases are not tracked in the repository, since they are specific to the
+computing cluster of the user.
+
+## Conda channel setup
 
 Your conda channels should be configured ideally in this:
 ```
@@ -21,74 +79,6 @@ channels:
   - bioconda
   - defaults
 ```
-
-#### Option 1) Install from Bioconda
-
-Conda can handle the creation of the environment for you directly:
-
-```
-conda create -n aviary -c bioconda aviary
-```
-
-Or install into existing environment:
-```
-conda install -c bioconda aviary
-```
-
-#### Option 2) Install from pip
-
-Create the environment using the `aviary.yml` file then install from pip:
-```
-conda env create -n aviary -f aviary.yml
-conda activate aviary
-pip install aviary-genome
-```
-
-#### Option 3) Install from source
-
-Initial requirements for aviary can be downloaded using the `aviary.yml`:
-```
-git clone https://github.com/rhysnewell/aviary.git
-cd aviary
-conda env create -n aviary -f aviary.yml
-conda activate aviary
-pip install -e .
-```
-
-Whatever option you choose, running `aviary --help` should return the following
-output:
-```
-
-                    ......:::::: AVIARY ::::::......
-
-           A comprehensive metagenomics bioinformatics pipeline
-
-Metagenome assembly, binning, and annotation:
-        assemble  - Perform hybrid assembly using short and long reads, 
-                    or assembly using only short reads
-        recover   - Recover MAGs from provided assembly using a variety 
-                    of binning algorithms 
-        annotate  - Annotate MAGs using EggNOG and GTBD-tk
-        genotype  - Perform strain diversity analysis of MAGs using Lorikeet
-        complete  - Runs each stage of the pipeline: assemble, recover, 
-                    annotate, genotype in that order.
-        cluster   - Combines and dereplicates the MAGs from multiple Aviary runs
-                    using Galah
-
-Isolate assembly, binning, and annotation:
-        isolate   - Perform isolate assembly **PARTIALLY COMPLETED**
-        
-Utility modules:
-        configure - Set or overwrite the environment variables for future runs.
-
-```
-
-Upon first running aviary you will be prompted to input the location for where you would like
-your conda environments to be stored, the GTDB release installed on your system, the location of your
-EggNog database, and the location of your BUSCO database. These locations will be stored as environment
-variables, and automatically sourced by Aviary at runtime.
-
-These environment variables can be reset using `aviary configure`
 
 ## Databases
 
@@ -130,5 +120,4 @@ export GTDBTK_DATA_PATH=/path/to/gtdb/gtdb_release207/db/ # https://gtdb.ecogeno
 export EGGNOG_DATA_DIR=/path/to/eggnog-mapper/2.1.7/ # https://github.com/eggnogdb/eggnog-mapper/wiki/eggNOG-mapper-v2.1.5-to-v2.1.7#setup
 export SINGLEM_METAPACKAGE_PATH=/path/to/singlem_metapackage.smpkg/
 export CHECKM2DB=/path/to/checkm2db/
-export CONDA_ENV_PATH=/path/to/conda/envs/
 ```
