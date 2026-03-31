@@ -36,7 +36,7 @@ This creates a self-contained environment with Python and Flask. Only needed onc
 > **On an HPC?** Open the SSH tunnel first (see [Setup on a Shared HPC](#setup-on-a-shared-hpc) below), then come back here to start the server.
 
 ```bash
-~/.pixi/bin/pixi run python server.py --output-dir /path/to/aviary_output
+pixi run -e web server --output-dir /path/to/aviary_output
 ```
 
 Then open `http://localhost:8090` in your browser.
@@ -65,7 +65,7 @@ ssh -L 8090:localhost:8090 <username>@<hpc-address>
 ```powershell
 ssh <username>@<hpc-address>
 cd /path/to/aviary/aviary/web
-~/.pixi/bin/pixi run python server.py --output-dir /path/to/aviary_output
+pixi run -e web server --output-dir /path/to/aviary_output
 ```
 
 Then open your browser at `http://localhost:8090`.
@@ -225,7 +225,7 @@ Output directories are discovered by recursively searching for `.snakemake/log/`
 cd aviary/web
 
 # Start with auto-reload (server restarts on any file save)
-~/.pixi/bin/pixi run python server.py --output-dir /path/to/test/output --reload
+pixi run -e web server --output-dir /path/to/test/output --reload
 ```
 
 Templates live in `aviary/web/templates/`. The server has no build step — edit a template and reload the page.

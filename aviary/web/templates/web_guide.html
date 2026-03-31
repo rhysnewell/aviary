@@ -794,7 +794,7 @@
           <div class="step-num"></div>
           <div class="step-body">
             <p><strong>Start the server</strong> on the HPC (or locally), pointing it at your output directory:</p>
-            <pre data-lang="bash"><code>~/.pixi/bin/pixi run python server.py --output-dir /path/to/aviary_output</code></pre>
+            <pre data-lang="bash"><code>pixi run -e web server --output-dir /path/to/aviary_output</code></pre>
           </div>
         </div>
         <div class="step">
@@ -1172,7 +1172,7 @@
       <h4>Window 2 — start the server on the HPC</h4>
       <pre data-lang="powershell"><code>ssh <span class="hl">&lt;username&gt;</span>@<span class="hl">&lt;hpc-address&gt;</span>
 cd /path/to/aviary/aviary/web
-~/.pixi/bin/pixi run python server.py --output-dir /path/to/aviary_output</code></pre>
+pixi run -e web server --output-dir /path/to/aviary_output</code></pre>
 
       <h4>Then open in your browser</h4>
       <pre data-lang="url"><code>http://localhost:8090</code></pre>
