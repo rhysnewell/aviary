@@ -1361,7 +1361,7 @@ def export():
     except OSError as e:
         return _html_r(f"<pre>Template error: {e}</pre>", 500)
 
-@app.route('/phylo')
+@app.route('/view')
 def phylo():
     try:
         return _html_r(PHYLO_TEMPLATE_PATH.read_text())
