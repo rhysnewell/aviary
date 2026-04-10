@@ -8,49 +8,16 @@ Forked from [wwood/aviary](https://github.com/wwood/aviary) at v0.12.0 (`myloasm
 
 ### Added
 
-#### Web Interface (`aviary/web/`)
+#### Web Interface (`aviary/web/`) — experimental
 
-A full browser-based monitor and results explorer served via Flask with a self-contained pixi environment. Start with:
+An experimental browser-based monitor and results explorer served via Flask. Start with:
 
 ```bash
 ssh -L 8090:localhost:8090 username@address.com
 pixi run -e web server --output-dir /path/to/aviary_output
 ```
 
-Then open `http://localhost:8090` in your browser.
-
-- **Landing page** (`/`) — animated splash screen with navigation nodes linking to all pages
-- **Pipeline Monitor** (`/dashboard`) — live Snakemake job tree grouped by sample and run date; log viewer with error highlighting, attempt selector, and search; auto-refresh every 60 seconds; output directory switcher; dismiss failed run banners
-- **Bin Quality Report** (`/dashboard` → tab) — per-bin completeness, contamination, strain heterogeneity, N50, size, GC, and GTDB taxonomy; assembly stats per sample/assembler; bins sorted HQ → MQ → LQ then by completeness
-- **Results Visualisation** (`/graph`) — six interactive chart types (bar, scatter, histogram, phylum stacked bar, heatmap, donut); 11 colour palette options; font and axis label customisation; SVG and PNG export
-- **Tree View** (`/view`) — interactive taxonomy tree from GTDB-Tk bin classifications with three layout modes:
-  - **Sunburst** (default) — concentric ring chart; click any segment to zoom into that clade; click the centre to go back; scroll or use topbar buttons to zoom in/out
-  - **Radial (Circular)** — circular cladogram with phylum-level colour bands
-  - **Horizontal Cladogram** — left-to-right dendrogram for reading deep taxonomy labels
-  - Quality and sample filters; taxonomy search; label size and font controls; SVG and PNG export
-- **Contig Assembly Graph** (`/assembly`) — per-sample GFA assembly graph viewer for megahit and metaSPAdes outputs
-- **Export Results** (`/export`) — filtered bin table download as CSV or TSV; column selection grouped by category; quality filters; live preview of first 50 rows
-- **Documentation** (`/docs`) — inline Aviary pipeline documentation, citations, and external resource links
-- **User Guide** (`/guide`) — full in-browser guide covering all pages, controls, HPC/SSH tunnel setup, and API reference
-
-#### Web API
-
-All endpoints accept an optional `?root=` parameter to override the default output directory:
-
-| Endpoint | Description |
-|---|---|
-| `GET /api/structure` | Sample/assembler job tree grouped by run date |
-| `GET /api/status` | Detailed status for a single output directory |
-| `GET /api/summary` | Bins and assembly stats for all runs |
-| `GET /api/logs` | Available Snakemake log files for a directory |
-| `GET /api/job_log` | Log file content and available retry attempts |
-| `GET /api/benchmark` | Benchmark timing data for a job |
-| `GET /api/output_dirs` | All discovered output directories under the root |
-| `GET /api/gfa_stats` | Parsed GFA assembly graph statistics for an output directory |
-| `GET /api/gfa_available` | Map of output directories to GFA file availability |
-| `GET /api/taxonomy_tree` | Taxonomy tree — SingleM condensed profile when available, falls back to GTDB-Tk |
-| `GET /api/singlem_status` | Count of output directories with a SingleM condensed profile |
-| `GET /api/phylo_newick` | GTDB-Tk Newick tree with MAG annotations for the tree view |
+Then open `http://localhost:8090` in your browser. Includes a pipeline monitor for current and past runs (with log information), bin quality report, results visualisation, taxonomy tree view (sunburst, Radial and Horizontal cladogram), assembly graph viewer (GFA files), and export functionality.
 
 #### Pipeline
 
