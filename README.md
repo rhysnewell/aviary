@@ -116,9 +116,9 @@ $ ls db -l
 lrwxrwxrwx - woodcrob 23 Apr 07:56 2.1.3 -> /mnt/hpccs01/work/microbiome/db/eggnog-mapper/2.1.3
 lrwxrwxrwx - woodcrob 23 Apr 07:55 2015_01_16_v2 -> /work/microbiome/db/checkm/2015_01_16_v2
 lrwxrwxrwx - woodcrob 23 Apr 07:54 CheckM2_database -> /work/microbiome/db/CheckM2_database/uniref100.KO.1.dmnd
-lrwxrwxrwx - woodcrob 23 Apr 07:57 GTDB214.1+humanT2T -> /work/microbiome/db/metabuli/2024-3-28-GTDB214.1+humanT2T/
+lrwxrwxrwx - woodcrob 23 Apr 07:57 2024-3-28-GTDB214.1+humanT2T -> /work/microbiome/db/metabuli/2024-3-28-GTDB214.1+humanT2T/
 lrwxrwxrwx - woodcrob 23 Apr 07:56 release226 -> /work/microbiome/db/gtdb/gtdb_release226/auxillary_files/gtdbtk_package/full_package/release226
-lrwxrwxrwx - woodcrob 23 Apr 07:55 S5.4.0.GTDB_r226.metapackage_20250331.smpkg.zb -> /work/microbiome/db/singlem/S5.4.0.GTDB_r226.metapackage_20250331.smp
+lrwxrwxrwx - woodcrob 23 Apr 07:55 S5.4.0.GTDB_r226.metapackage_20250331.smpkg.zb -> /work/microbiome/db/singlem/S5.4.0.GTDB_r226.metapackage_20250331.smpkg.zb
 ```
 
 To check the expected database symlink names, see `admin/set_env_vars.sh` in the
