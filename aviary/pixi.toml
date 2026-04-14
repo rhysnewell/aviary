@@ -243,6 +243,9 @@ metabat2 = ">=2.15"
 [feature.checkm2.dependencies]
 checkm2 = ">=1.1.0"
 
+[feature.checkm2.activation]
+env = { PYTHONNOUSERSITE = "1" }
+
 [feature.coverm.dependencies]
 coverm = ">=0.6"
 galah = ">=0.3"
