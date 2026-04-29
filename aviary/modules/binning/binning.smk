@@ -84,6 +84,8 @@ rule prepare_binning_files:
         mem_mb = lambda wildcards, attempt: min(int(config["max_memory"])*1024, 512*1024*attempt),
         runtime = lambda wildcards, attempt: 24*60 + 24*60*attempt,
         log_path = lambda wildcards, attempt: setup_log(f"{logs_dir}/coverm_prepare", attempt),
+    benchmark:
+        "benchmarks/prepare_binning_files.benchmark.txt"
     shell:
         f'{pixi_run} -e coverm {BINNING_SCRIPTS_DIR}/'+\
         """get_coverage.py \
@@ -150,6 +152,8 @@ rule prepare_binning_files_split:
         mem_mb = lambda wildcards, attempt: min(int(config["max_memory"])*1024, 512*1024*attempt),
         runtime = lambda wildcards, attempt: 24*60 + 24*60*attempt,
         log_path = lambda wildcards, attempt: setup_log(f"{logs_dir}/coverm_prepare_{wildcards.split}", attempt),
+    benchmark:
+        "benchmarks/prepare_binning_files_split_{split}.benchmark.txt"
     shell:
         f'{pixi_run} -e coverm {BINNING_SCRIPTS_DIR}/'+\
         """get_coverage.py \
@@ -181,6 +185,8 @@ rule prepare_binning_files_gather:
     resources:
         mem_mb = lambda wildcards, attempt: min(int(config["max_memory"])*1024, 16*1024*attempt),
         runtime = lambda wildcards, attempt: 24*60*attempt,
+    benchmark:
+        "benchmarks/prepare_binning_files_gather.benchmark.txt"
     run:
         import pandas as pd
 
