@@ -1421,12 +1421,16 @@ def api_structure():
         suffix = "" if run_id == most_recent else f" ({run_dates[run_id]})"
         all_entries.extend((d, parts, suffix) for d, parts in entries)
 
+    COMMIT_HASH_RE = re.compile(r'^[0-9a-f]{40}(_\S+)?$')
     samples = {}
     for item in all_entries:
         suffix = item[2] if len(item) == 3 else ""
         d, parts = item[0], item[1]
         if len(parts) == 2:
             assembler, sample = parts[0], parts[1]
+            # Skip entries where the "assembler" is actually a commit hash (old 2-level layout)
+            if COMMIT_HASH_RE.match(assembler):
+                continue
         elif len(parts) == 1:
             assembler, sample = "default", parts[0]
         elif len(parts) >= 3:

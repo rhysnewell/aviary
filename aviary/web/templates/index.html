@@ -2013,20 +2013,23 @@ function renderStructure() {
     const assemblers = Object.keys(structureData[sample]);
     let dateKey = 'Unknown date';
     let dateLabel = 'Unknown date';
+    let bestDate = null;
     for (const asm of assemblers) {
       const sa = structureData[sample][asm].started_at;
       if (sa) {
-        // "Tue Mar 18 16:06:59 2026" -> sort key "2026-03-18", label "Tue 18 Mar 2026"
         const d = new Date(sa);
-        if (!isNaN(d)) {
-          const y = d.getFullYear();
-          const m = String(d.getMonth()+1).padStart(2,'0');
-          const day = String(d.getDate()).padStart(2,'0');
-          dateKey = `${y}-${m}-${day}`;
-          dateLabel = d.toLocaleDateString('en-GB', { weekday:'short', day:'numeric', month:'long', year:'numeric' });
-          break;
+        if (!isNaN(d) && (!bestDate || d > bestDate)) {
+          bestDate = d;
         }
       }
+    }
+    if (bestDate) {
+      // "Tue Mar 18 16:06:59 2026" -> sort key "2026-03-18", label "Tue 18 Mar 2026"
+      const y = bestDate.getFullYear();
+      const m = String(bestDate.getMonth()+1).padStart(2,'0');
+      const day = String(bestDate.getDate()).padStart(2,'0');
+      dateKey = `${y}-${m}-${day}`;
+      dateLabel = bestDate.toLocaleDateString('en-GB', { weekday:'short', day:'numeric', month:'long', year:'numeric' });
     }
     if (!batches[dateKey]) batches[dateKey] = { label: dateLabel, samples: [] };
     batches[dateKey].samples.push(sample);
