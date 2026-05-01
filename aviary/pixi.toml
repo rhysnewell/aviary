@@ -117,6 +117,7 @@ flye = ["flye"]
 myloasm = ["myloasm"]
 polishing = ["polishing"]
 pilon = ["pilon"]
+dnaapler = ["dnaapler"]
 minimap2 = ["minimap2"]
 spades = ["spades"]
 pysam = ["pysam"]
@@ -176,6 +177,9 @@ quast = "==5.0.2"
 [feature.bbmap.dependencies]
 bbmap = ">=39.52"
 
+[feature.dnaapler.dependencies]
+dnaapler = ">=1.0.0"
+
 [feature.flye.dependencies]
 flye = ">=2.9"
 biopython = "*"
@@ -186,7 +190,7 @@ biopython = "*"
 
 [feature.polishing.dependencies]
 flye = ">=2.9"
-medaka = ">=1.7.2,<2.1.0" # Restricted version due to https://github.com/nanoporetech/medaka/issues/566
+medaka = ">=2.2.1" # Previously restricted to <2.1.0 due to https://github.com/nanoporetech/medaka/issues/566, fixed in 2.2.x
 setuptools = "*"
 racon = ">=1.4.3"
 samtools = ">=1.16"
@@ -197,7 +201,7 @@ pigz = "*"
 [feature.pilon.dependencies]
 python = ">=3.6"
 flye = ">=2.9"
-medaka = ">=1.7.2,<2.1.0"
+medaka = ">=2.2.1"
 racon = ">=1.4.3"
 samtools = ">=1.9"
 minimap2 = ">=2.15"
