@@ -3,7 +3,7 @@ biopython==1.86
 extern==0.4.1
 numpy==2.4.1
 pandas==3.0.0
-pip==25.3
+pip==26.1
 polars==1.38.0
 pyOpenSSL==25.3.0
 ruamel.yaml==0.19.1
