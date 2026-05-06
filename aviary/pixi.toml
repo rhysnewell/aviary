@@ -108,7 +108,8 @@ singlem = ['singlem']
 singlem-appraise = ['singlem-appraise']
 # QC
 chopper = ["chopper"]
-fastqc = ["fastqc"]
+rastqc = ["rastqc"]
+rastqc-long = ["rastqc-long"]
 nanoplot = ["nanoplot"]
 quast = ["quast"]
 bbmap = ["bbmap"]
@@ -164,8 +165,11 @@ singlem = "==0.19.0"
 chopper = ">=0.6"
 pigz = '*'
 
-[feature.fastqc.dependencies]
-fastqc = "==0.11.9"
+[feature.rastqc.dependencies]
+rastqc = "==0.1.0"
+
+[feature.rastqc-long.dependencies]
+rastqc-nanopore = "==0.1.0"
 
 [feature.nanoplot.dependencies]
 # Min 1.44 to fix https://github.com/rhysnewell/aviary/issues/272
