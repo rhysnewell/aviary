@@ -25,6 +25,7 @@ Then open `http://localhost:8090` in your browser. Includes a pipeline monitor f
 - **GFA graph generation for short and long read assembly** — assembly graphs produced and retained for use in the assembly graph viewer
 - **`skip_reads_check` parameter** — added to `template_config.yaml` and config handling to support running subcommands without providing reads
 - **SingleM metapackage support in integration tests**
+- **FastQC replaced with RastQC** — RastQC is implemented as a drop-in replacement for FastQC, providing equivalent short-read QC reporting. All files are processed in a single command invocation for clean, readable log output.
 
 #### Environment
 
@@ -59,6 +60,7 @@ Then open `http://localhost:8090` in your browser. Includes a pipeline monitor f
 - Added scratch directory to gtdbtk rule for better temporary file and memory handling
 - Added sleep delays between GPU test submissions to prevent resource contention
 - Increased memory allocation for GPU and expensive tests in mqsub commands
+- Fixed isolate functionality, with updated medaka
 
 ---
 
