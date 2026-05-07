@@ -1,13 +1,12 @@
 #!/usr/bin/env python3
 from subprocess import run, Popen, STDOUT
-import multiprocessing as mp
 import os
 import argparse
 from pathlib import Path
 
 
-def spawn_rastqc(file, log, threads=1):
-    rastqc_cmd = f"rastqc -o www/fastqc/ -t {threads} {file}".split()
+def spawn_rastqc(files, log, threads=1):
+    rastqc_cmd = ['rastqc', '-o', 'www/fastqc/', '-t', str(threads)] + files
     with open(log, "a") as logf:
         run(rastqc_cmd, stdout=logf, stderr=STDOUT)
 
@@ -26,37 +25,16 @@ def run_rastqc(
             run(rastqc_cmd, stdout=logf, stderr=STDOUT)
 
     elif short_reads_2 != 'none': # paired end
-        pool = mp.Pool(threads)
         threads = max(len(short_reads_1 + short_reads_2) // threads, 1)
         reads = short_reads_1 + short_reads_2
-
-        mp_results = [pool.apply_async(spawn_rastqc, args=(read, log, threads))
-                    for read in
-                    reads]
-
-        for result in mp_results:
-            result.get()
-
-        pool.close()
-        pool.join()
+        spawn_rastqc(reads, log, threads)
     elif short_reads_1 != 'none': # interleaved
-        pool = mp.Pool(threads)
         if isinstance(short_reads_1, str):
             reads = [short_reads_1]
         else:
-            threads = max(len(short_reads_1) // threads,
-                        1)
+            threads = max(len(short_reads_1) // threads, 1)
             reads = short_reads_1
-
-        mp_results = [pool.apply_async(spawn_rastqc, args=(read, log, threads))
-                    for read in
-                    reads]
-
-        for result in mp_results:
-            result.get()
-
-        pool.close()
-        pool.join()
+        spawn_rastqc(reads, log, threads)
     else:
         echo_cmd = 'echo "no short reads"'.split()
 
