@@ -31,7 +31,7 @@ env = { PYTHONNOUSERSITE = "1" }
 
 [tasks]
 postinstall-base = { cmd = "pip install --no-build-isolation --no-deps --disable-pip-version-check -e ..", cwd = "aviary" }
-serve = { cmd = "python web/server.py", description = "Start the web interface (port 8090)", cwd = "aviary/web" }
+serve = { cmd = "python server.py", description = "Start the web interface (port 8090)", cwd = "aviary/web" }
 update_deps = { cmd = "python ../admin/build_dep_defs_from_pixi.py", depends-on = ["postinstall"] }
 
 [tasks.postinstall]

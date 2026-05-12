@@ -50,7 +50,7 @@ def _run_condense(otu_table: Path, profile: Path,
         "--taxonomic-profile", str(profile),
     ]
     try:
-        r = subprocess.run(condense_cmd, capture_output=True, text=True, timeout=600)
+        r = subprocess.run(condense_cmd, capture_output=True, text=True, timeout=int(os.environ.get("SINGLEM_CONDENSE_TIMEOUT", 600)))
         if r.returncode != 0:
             logger.warning(f"[singlem] condense failed ({profile.parent.name}): {r.stderr[-400:]}")
             return False
@@ -95,7 +95,7 @@ def run_singlem(output_dir: Path, metapackage: str, singlem_bin: str) -> bool:
             "--otu-table", str(otu_tmp),
         ]
         logger.info(f"[singlem] pipe (bins) → {output_dir.name}")
-        r = subprocess.run(pipe_cmd, capture_output=True, text=True, timeout=1800)
+        r = subprocess.run(pipe_cmd, capture_output=True, text=True, timeout=int(os.environ.get("SINGLEM_PIPE_TIMEOUT", 1800)))
         if r.returncode != 0:
             logger.warning(f"[singlem] pipe failed ({output_dir.name}): {r.stderr[-400:]}")
             return False
