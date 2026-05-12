@@ -1080,11 +1080,9 @@ async function loadPhylogram() {
     if (newickData.error) throw new Error(newickData.error);
     renderPhylogram();
   } catch (e) {
-    setupSvg();
-    gSel.append("text")
-      .attr("x", 30).attr("y", 50)
-      .attr("fill", "var(--red)").attr("font-size", "13px")
-      .text("No GTDB-Tk phylogenetic tree found: " + (e.message || String(e)));
+    document.getElementById("loading-overlay").classList.add("hidden");
+    document.getElementById("error-overlay").classList.remove("hidden");
+    document.getElementById("error-msg").textContent = "No GTDB-Tk phylogenetic tree found: " + (e.message || String(e));
   }
 }
 

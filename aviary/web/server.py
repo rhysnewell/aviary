@@ -36,6 +36,10 @@ GTDBTK_SUMMARY_SUBPATH   = Path("data") / "gtdbtk" / "classify" / "gtdbtk.bac120
 _GFA_CACHE_VERSION = 2
 _gfa_cache      = {}
 _gfa_cache_lock = threading.Lock()
+_phylo_cache      = {}
+_phylo_cache_lock = threading.Lock()
+_singlem_cache      = {}
+_singlem_cache_lock = threading.Lock()
 
 # ---------------------------------------------------------------------------
 # Log parsing
@@ -296,14 +300,10 @@ def parse_snakemake_log(log_path):
     return result
 
 
-def _quality_tier(completeness, contamination):
-    try:
-        c, x = float(completeness), float(contamination)
-        if c >= 90 and x <= 5:  return "high"
-        if c >= 50 and x <= 10: return "medium"
-    except (ValueError, TypeError):
-        pass
-    return "low"
+try:
+    from aviary.web.utils import quality_tier as _quality_tier
+except ImportError:
+    from utils import quality_tier as _quality_tier
 
 
 def _parse_assembly_stats(stats_path):
@@ -1226,7 +1226,7 @@ def _build_phylo_newick(output_dir):
         tree = _parse_newick(tree_path.read_text())
     except Exception as e:
         logger.error(f"[phylo_newick] Parse failed: {e}")
-        return None
+        return {"error": f"Failed to parse Newick tree: {e}", "tree": None}
 
     _annotate_has_user(tree)
     if not tree.get("has_user"):
@@ -1235,7 +1235,7 @@ def _build_phylo_newick(output_dir):
     # ── Prune + collapse ────────────────────────────────────────────────
     pruned = _prune_to_user_mags(tree, max_ref_context=3)
     if not pruned:
-        return None
+        return {"error": "No user MAGs found after pruning tree", "tree": None}
     pruned = _collapse_single_children(pruned)
 
     # ── Annotate leaves ──────────────────────────────────────────────────
@@ -1421,12 +1421,16 @@ def api_structure():
         suffix = "" if run_id == most_recent else f" ({run_dates[run_id]})"
         all_entries.extend((d, parts, suffix) for d, parts in entries)
 
+    COMMIT_HASH_RE = re.compile(r'^[0-9a-f]{40}(_\S+)?$')
     samples = {}
     for item in all_entries:
         suffix = item[2] if len(item) == 3 else ""
         d, parts = item[0], item[1]
         if len(parts) == 2:
             assembler, sample = parts[0], parts[1]
+            # Skip entries where the "assembler" is actually a commit hash (old 2-level layout)
+            if COMMIT_HASH_RE.match(assembler):
+                continue
         elif len(parts) == 1:
             assembler, sample = "default", parts[0]
         elif len(parts) >= 3:
@@ -1642,9 +1646,23 @@ def api_taxonomy_tree():
     if not root:
         return _json_r({"error": "No root specified"}, 400)
     try:
+        # Cache key: root dir + latest mtime of any singlem profile
+        profile_mtimes = tuple(sorted(
+            p.stat().st_mtime
+            for d in find_all_output_dirs_raw(root)
+            for p in [Path(d) / SINGLEM_PROFILE_FILENAME]
+            if p.exists()
+        ))
+        cache_key = (str(root), profile_mtimes)
+        with _singlem_cache_lock:
+            if cache_key in _singlem_cache:
+                return _json_r(_singlem_cache[cache_key])
+
         # Prefer singlem profiles when available — better taxonomy + real abundance
         singlem = _build_singlem_tree(root)
         if singlem and singlem.get("total", 0) > 0:
+            with _singlem_cache_lock:
+                _singlem_cache[cache_key] = singlem
             return _json_r(singlem)
         # Fall back to GTDB-Tk classification strings
         data = _build_taxonomy_tree(root)
@@ -1681,9 +1699,18 @@ def api_phylo_newick():
     if not output_dir:
         return _json_r({"error": "No output directory found"}, 400)
     try:
+        tree_path = Path(output_dir) / GTDBTK_NEWICK_SUBPATH
+        mtime = tree_path.stat().st_mtime if tree_path.exists() else 0
+        cache_key = (str(output_dir), mtime)
+        with _phylo_cache_lock:
+            if cache_key in _phylo_cache:
+                return _json_r(_phylo_cache[cache_key])
         result = _build_phylo_newick(output_dir)
         if not result:
             return _json_r({"error": "No GTDB-Tk Newick tree found in output directory"}, 404)
+        if result.get("tree"):
+            with _phylo_cache_lock:
+                _phylo_cache[cache_key] = result
         return _json_r(result)
     except Exception as e:
         return _json_r({"error": str(e)}, 500)

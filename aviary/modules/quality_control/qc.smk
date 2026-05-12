@@ -97,7 +97,7 @@ rule qc_long_reads:
             --log {resources.log_path}
         """
 
-rule fastqc:
+rule rastqc:
     input:
         config['short_reads_1']
     output:
@@ -109,17 +109,17 @@ rule fastqc:
     resources:
         mem_mb = lambda wildcards, attempt: min(int(config["max_memory"])*1024, 128*1024*attempt),
         runtime = lambda wildcards, attempt: 12*60*attempt,
-        log_path = lambda wildcards, attempt: setup_log(f"{logs_dir}/fastqc", attempt),
+        log_path = lambda wildcards, attempt: setup_log(f"{logs_dir}/rastqc", attempt),
     shell:
-        f'{pixi_run} -e fastqc {QC_SCRIPTS_DIR}/'+\
-        """run_fastqc.py \
+        f'{pixi_run} -e rastqc {QC_SCRIPTS_DIR}/'+\
+        """run_rastqc.py \
         --short-reads-1 {config[short_reads_1]} \
         --short-reads-2 {config[short_reads_2]} \
         --threads {threads} \
         --log {resources.log_path}
         """
 
-rule fastqc_long:
+rule rastqc_long:
     input:
         'data/long_reads.fastq.gz'
     output:
@@ -131,10 +131,10 @@ rule fastqc_long:
     resources:
         mem_mb = lambda wildcards, attempt: min(int(config["max_memory"])*1024, 128*1024*attempt),
         runtime = lambda wildcards, attempt: 12*60*attempt,
-        log_path = lambda wildcards, attempt: setup_log(f"{logs_dir}/fastqc_long", attempt),
+        log_path = lambda wildcards, attempt: setup_log(f"{logs_dir}/rastqc_long", attempt),
     shell:
-        f"{pixi_run} -e fastqc "
-        "fastqc -o www/fastqc_long/ -t {threads} {input[0]} > {resources.log_path} 2>&1; touch {output.output}"
+        f"{pixi_run} -e rastqc-long "
+        "rastqc-nanopore -o www/fastqc_long/ -t {threads} {input[0]} > {resources.log_path} 2>&1; touch {output.output}"
 
 rule nanoplot:
     input:

@@ -31,7 +31,7 @@ env = { PYTHONNOUSERSITE = "1" }
 
 [tasks]
 postinstall-base = { cmd = "pip install --no-build-isolation --no-deps --disable-pip-version-check -e ..", cwd = "aviary" }
-serve = { cmd = "python web/server.py", description = "Start the web interface (port 8090)", cwd = "aviary/web" }
+serve = { cmd = "python server.py", description = "Start the web interface (port 8090)", cwd = "aviary/web" }
 update_deps = { cmd = "python ../admin/build_dep_defs_from_pixi.py", depends-on = ["postinstall"] }
 
 [tasks.postinstall]
@@ -108,7 +108,8 @@ singlem = ['singlem']
 singlem-appraise = ['singlem-appraise']
 # QC
 chopper = ["chopper"]
-fastqc = ["fastqc"]
+rastqc = ["rastqc"]
+rastqc-long = ["rastqc-long"]
 nanoplot = ["nanoplot"]
 quast = ["quast"]
 bbmap = ["bbmap"]
@@ -117,6 +118,7 @@ flye = ["flye"]
 myloasm = ["myloasm"]
 polishing = ["polishing"]
 pilon = ["pilon"]
+dnaapler = ["dnaapler"]
 minimap2 = ["minimap2"]
 spades = ["spades"]
 pysam = ["pysam"]
@@ -163,8 +165,11 @@ singlem = "==0.19.0"
 chopper = ">=0.6"
 pigz = '*'
 
-[feature.fastqc.dependencies]
-fastqc = "==0.11.9"
+[feature.rastqc.dependencies]
+rastqc = "==0.1.0"
+
+[feature.rastqc-long.dependencies]
+rastqc-nanopore = "==0.1.0"
 
 [feature.nanoplot.dependencies]
 # Min 1.44 to fix https://github.com/rhysnewell/aviary/issues/272
@@ -176,6 +181,9 @@ quast = "==5.0.2"
 [feature.bbmap.dependencies]
 bbmap = ">=39.52"
 
+[feature.dnaapler.dependencies]
+dnaapler = ">=1.0.0"
+
 [feature.flye.dependencies]
 flye = ">=2.9"
 biopython = "*"
@@ -186,7 +194,7 @@ biopython = "*"
 
 [feature.polishing.dependencies]
 flye = ">=2.9"
-medaka = ">=1.7.2,<2.1.0" # Restricted version due to https://github.com/nanoporetech/medaka/issues/566
+medaka = ">=2.2.1" # Previously restricted to <2.1.0 due to https://github.com/nanoporetech/medaka/issues/566, fixed in 2.2.x
 setuptools = "*"
 racon = ">=1.4.3"
 samtools = ">=1.16"
@@ -197,7 +205,7 @@ pigz = "*"
 [feature.pilon.dependencies]
 python = ">=3.6"
 flye = ">=2.9"
-medaka = ">=1.7.2,<2.1.0"
+medaka = ">=2.2.1"
 racon = ">=1.4.3"
 samtools = ">=1.9"
 minimap2 = ">=2.15"
