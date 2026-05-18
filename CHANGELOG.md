@@ -60,7 +60,7 @@ Then open `http://localhost:8090` in your browser. Includes a pipeline monitor f
 - Added scratch directory to gtdbtk rule for better temporary file and memory handling
 - Added sleep delays between GPU test submissions to prevent resource contention
 - Increased memory allocation for GPU and expensive tests in mqsub commands
-- Fixed isolate functionality, with updated medaka
+- Fixed isolate functionality, with updated medaka and dnaapler 
 
 ---
 
