@@ -37,7 +37,7 @@ This creates a self-contained environment with Python and Flask. Only needed onc
 > **On an HPC?** Open the SSH tunnel first (see [Setup on a Shared HPC](#setup-on-a-shared-hpc) below), then come back here to start the server.
 
 ```bash
-pixi run -e web serve --output-dir /path/to/aviary_output
+pixi run -e web server --output-dir /path/to/aviary_output
 ```
 
 Then open `http://localhost:8090` in your browser.
@@ -65,7 +65,7 @@ ssh -L 8090:localhost:8090 <username>@<hpc-address>
 **Window 2 — start the server on the HPC:**
 ```powershell
 ssh <username>@<hpc-address>
-cd /path/to/aviary/aviary/web
+cd /path/to/aviary
 pixi run -e web server --output-dir /path/to/aviary_output
 ```
 
