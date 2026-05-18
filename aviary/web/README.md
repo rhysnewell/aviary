@@ -24,9 +24,10 @@ A live run monitor and results explorer for Aviary/Snakemake workflows. Powered 
 
 ### First time — install the environment
 
+From the aviary root directory:
+
 ```bash
-cd /path/to/aviary/aviary/web
-~/.pixi/bin/pixi install
+pixi install -e web
 ```
 
 This creates a self-contained environment with Python and Flask. Only needed once.
@@ -36,7 +37,7 @@ This creates a self-contained environment with Python and Flask. Only needed onc
 > **On an HPC?** Open the SSH tunnel first (see [Setup on a Shared HPC](#setup-on-a-shared-hpc) below), then come back here to start the server.
 
 ```bash
-pixi run -e web server --output-dir /path/to/aviary_output
+pixi run -e web serve --output-dir /path/to/aviary_output
 ```
 
 Then open `http://localhost:8090` in your browser.

@@ -14,6 +14,7 @@ An experimental browser-based monitor and results explorer served via Flask. Sta
 
 ```bash
 ssh -L 8090:localhost:8090 username@address.com
+pixi install -e web
 pixi run -e web server --output-dir /path/to/aviary_output
 ```
 
@@ -21,7 +22,7 @@ Then open `http://localhost:8090` in your browser. Includes a pipeline monitor f
 
 #### Pipeline
 
-- **myloasm assembler support** — myloasm added as an alternative long-read assembler alongside Flye (`--long-read-assembler myloasm`)
+- **myloasm assembler support** — myloasm added as an alternative long-read assembler alongside Flye (Myloasm default)
 - **GFA graph generation for short and long read assembly** — assembly graphs produced and retained for use in the assembly graph viewer
 - **`skip_reads_check` parameter** — added to `template_config.yaml` and config handling to support running subcommands without providing reads
 - **SingleM metapackage support in integration tests**
