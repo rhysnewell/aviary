@@ -197,7 +197,7 @@ def run_polish(
                                 Popen(cat_cmd, stdout=out, stderr=logf).wait()
 
                     with open(log, "a") as logf:
-                        run("pigz -p {threads} --fast data/short_reads.1.fastq".split(), stdout=logf, stderr=STDOUT)
+                        run(f"pigz -p {threads} --fast data/short_reads.1.fastq".split(), stdout=logf, stderr=STDOUT)
 
                 pe1 = "data/short_reads.1.fastq.gz"
             reads = [pe1]
