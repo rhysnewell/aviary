@@ -4,6 +4,28 @@ import os
 import sys
 import subprocess
 
+
+def _score_bin_info(bin_info_path):
+    score = 0
+    genomes = 0
+    with open(bin_info_path) as f:
+        header = True
+        for line in f:
+            columns = line.strip().split("\t")
+            if header:
+                comp_col = columns.index("Completeness")
+                cont_col = columns.index("Contamination")
+                header = False
+            else:
+                completeness = float(columns[comp_col])
+                contamination = float(columns[cont_col])
+                quality = completeness - 5 * contamination
+                if quality >= 50:
+                    score += quality
+                    genomes += 1
+    return score, genomes
+
+
 # Setup
 # $ pixi run -e dev postinstall
 # $ pixi run -e dev aviary build # or setup db folder as in README
@@ -15,6 +37,11 @@ import subprocess
 # Gut: SRR29134037, SRR6028613, SRR17283995
 # Soil: SRR28059992, SRR30718229, SRR26545921
 # Ocean: ERR599108, SRR13153254, ERR12716859
+#
+# Two fastest samples (by primary read size) used for full recover and semibin multi runs:
+# SRR13153254 (~800M), ERR4283370 (~2.8G)
+# These run full recover (assembly + binning) instead of --binning-only,
+# and also run a semibin multi variant to test SemiBin2 multi_easy_bin mode.
 
 DATA_DIR = "/work/microbiome/aviary_module_benchmarking/data/test_data"
 COMMIT = subprocess.Popen(["git", "rev-parse", "HEAD"], stdout=subprocess.PIPE, text=True).communicate()[0].strip()
@@ -23,6 +50,9 @@ ASSEMBLERS = {
     "megahit": "--use-megahit",
     "metaspades": "",
 }
+
+# Two fastest samples for full recover and semibin multi testing
+FULL_RECOVER_SAMPLES = {"SRR13153254", "ERR4283370"}
 
 SAMPLES_LIST = "test/test_samples.tsv"
 samples_list = {}
@@ -35,10 +65,12 @@ with open(SAMPLES_LIST) as f:
 
 os.makedirs(OUTPUT_DIR, exist_ok=True)
 for assembler in ASSEMBLERS.keys():
-    OUTPUT_DIR_ASM = f"{OUTPUT_DIR}/{assembler}"
-    os.makedirs(OUTPUT_DIR_ASM, exist_ok=True)
+    os.makedirs(f"{OUTPUT_DIR}/{assembler}", exist_ok=True)
+    os.makedirs(f"{OUTPUT_DIR}/{assembler}_stageguard", exist_ok=True)
+    os.makedirs(f"{OUTPUT_DIR}/{assembler}_semibin_multi", exist_ok=True)
 
 with open(f"{OUTPUT_DIR}/cmds.sh", "w") as cmd_file:
+    # Standard runs: binning-only for most samples, full recover for two fastest
     for sample, cobinning in samples_list.items():
         for assembler, asm_flag in ASSEMBLERS.items():
             sample_output = f"{OUTPUT_DIR}/{assembler}/{sample}"
@@ -48,9 +80,10 @@ with open(f"{OUTPUT_DIR}/cmds.sh", "w") as cmd_file:
                 continue
 
             log_file = f"{OUTPUT_DIR}/{assembler}/{sample}.log"
-            forward_reads = [f"{DATA_DIR}/{sample}_1.fastq.gz" for sample in cobinning]
-            reverse_reads = [f"{DATA_DIR}/{sample}_2.fastq.gz" for sample in cobinning]
-            print(f"Preparing sample {sample} with {assembler}, outputting to {sample_output}")
+            forward_reads = [f"{DATA_DIR}/{s}_1.fastq.gz" for s in cobinning]
+            reverse_reads = [f"{DATA_DIR}/{s}_2.fastq.gz" for s in cobinning]
+            binning_flag = "" if sample in FULL_RECOVER_SAMPLES else "--binning-only"
+            print(f"Preparing sample {sample} with {assembler} {'(full recover)' if sample in FULL_RECOVER_SAMPLES else '(binning-only)'}, outputting to {sample_output}")
 
             aviary_cmd = (
                 f"pixi run --frozen --manifest-path aviary/pixi.toml -e dev "
@@ -58,7 +91,66 @@ with open(f"{OUTPUT_DIR}/cmds.sh", "w") as cmd_file:
                 f"-o {sample_output} "
                 f"-1 {' '.join(forward_reads)} "
                 f"-2 {' '.join(reverse_reads)} "
-                f"--binning-only --request-gpu --strict "
+                f"{binning_flag} --request-gpu --strict "
+                f"-n 32 -t 32 --local-cores 1 "
+                f"-m 280 --coassemble no "
+                f"--snakemake-profile aqua --cluster-retries 3 "
+                f"&> {log_file}"
+            )
+            cmd_file.write(aviary_cmd + "\n")
+
+    # Stageguard full-recover runs for two fastest samples (single sample reads, assembly focus)
+    for sample in FULL_RECOVER_SAMPLES:
+        cobinning = samples_list[sample]
+        for assembler, asm_flag in ASSEMBLERS.items():
+            sample_output = f"{OUTPUT_DIR}/{assembler}_stageguard/{sample}_stageguard"
+            bin_info = f"{sample_output}/bins/bin_info.tsv"
+            if os.path.exists(bin_info):
+                print(f"Skipping stageguard sample {sample} with {assembler}, already complete")
+                continue
+
+            log_file = f"{OUTPUT_DIR}/{assembler}_stageguard/{sample}_stageguard.log"
+            forward_reads = [f"{DATA_DIR}/{s}_1.fastq.gz" for s in cobinning]
+            reverse_reads = [f"{DATA_DIR}/{s}_2.fastq.gz" for s in cobinning]
+            print(f"Preparing stageguard sample {sample} with {assembler}, outputting to {sample_output}")
+
+            aviary_cmd = (
+                f"pixi run --frozen --manifest-path aviary/pixi.toml -e dev "
+                f"aviary recover {asm_flag} "
+                f"-o {sample_output} "
+                f"-1 {forward_reads[0]} "
+                f"-2 {reverse_reads[0]} "
+                f"--request-gpu --strict "
+                f"-n 32 -t 32 --local-cores 1 "
+                f"-m 280 --coassemble no "
+                f"--snakemake-profile aqua --cluster-retries 3 "
+                f"&> {log_file}"
+            )
+            cmd_file.write(aviary_cmd + "\n")
+
+    # Semibin multi runs for two fastest samples — tests SemiBin2 multi_easy_bin mode
+    # All cobinning reads are passed so SemiBin2 gets coverage across multiple timepoints
+    for sample in FULL_RECOVER_SAMPLES:
+        cobinning = samples_list[sample]
+        for assembler, asm_flag in ASSEMBLERS.items():
+            sample_output = f"{OUTPUT_DIR}/{assembler}_semibin_multi/{sample}_semibin_multi"
+            bin_info = f"{sample_output}/bins/bin_info.tsv"
+            if os.path.exists(bin_info):
+                print(f"Skipping semibin multi sample {sample} with {assembler}, already complete")
+                continue
+
+            log_file = f"{OUTPUT_DIR}/{assembler}_semibin_multi/{sample}_semibin_multi.log"
+            forward_reads = [f"{DATA_DIR}/{s}_1.fastq.gz" for s in cobinning]
+            reverse_reads = [f"{DATA_DIR}/{s}_2.fastq.gz" for s in cobinning]
+            print(f"Preparing semibin multi sample {sample} with {assembler}, outputting to {sample_output}")
+
+            aviary_cmd = (
+                f"pixi run --frozen --manifest-path aviary/pixi.toml -e dev "
+                f"aviary recover {asm_flag} "
+                f"-o {sample_output} "
+                f"-1 {' '.join(forward_reads)} "
+                f"-2 {' '.join(reverse_reads)} "
+                f"--semibin-mode multi --request-gpu --strict "
                 f"-n 32 -t 32 --local-cores 1 "
                 f"-m 280 --coassemble no "
                 f"--snakemake-profile aqua --cluster-retries 3 "
@@ -88,31 +180,34 @@ else:
 
     with open(f"{OUTPUT_DIR}/summary.tsv", "w") as summary_file:
         summary_file.write("Env\tSample\tAssembler\tScore\tGenomes\n")
+
+        # Summarise standard runs (binning-only for most, full recover for two fastest)
         for sample in samples_list:
             for assembler in ASSEMBLERS.keys():
-                print(f"Processing results for sample {sample} with {assembler} in {OUTPUT_DIR}/{assembler}/{sample}")
-
-                sample_score = 0
-                sample_genomes = 0
-                with open(f"{OUTPUT_DIR}/{assembler}/{sample}/bins/bin_info.tsv") as bin_info_file:
-                    header = True
-                    for line in bin_info_file:
-                        columns = line.strip().split("\t")
-
-                        if header:
-                            comp_col = columns.index("Completeness")
-                            cont_col = columns.index("Contamination")
-                            header = False
-                        else:
-                            completeness = float(columns[comp_col])
-                            contamination = float(columns[cont_col])
-                            quality = completeness - 5 * contamination
-
-                            if quality >= 50:
-                                sample_score += quality
-                                sample_genomes += 1
-
+                bin_info_path = f"{OUTPUT_DIR}/{assembler}/{sample}/bins/bin_info.tsv"
+                print(f"Processing results for sample {sample} with {assembler}")
+                sample_score, sample_genomes = _score_bin_info(bin_info_path)
                 print(f"Sample {sample} with {assembler} has {sample_genomes} genomes with total score {sample_score}")
                 summary_file.write(f"{samples_env[sample]}\t{sample}\t{assembler}\t{int(sample_score)}\t{sample_genomes}\n")
+
+        # Summarise stageguard full-recover runs
+        for sample in FULL_RECOVER_SAMPLES:
+            for assembler in ASSEMBLERS.keys():
+                label = f"{assembler}_stageguard"
+                bin_info_path = f"{OUTPUT_DIR}/{label}/{sample}_stageguard/bins/bin_info.tsv"
+                print(f"Processing stageguard results for sample {sample} with {assembler}")
+                sample_score, sample_genomes = _score_bin_info(bin_info_path)
+                print(f"Sample {sample} stageguard with {assembler} has {sample_genomes} genomes with total score {sample_score}")
+                summary_file.write(f"{samples_env[sample]}\t{sample}_stageguard\t{label}\t{int(sample_score)}\t{sample_genomes}\n")
+
+        # Summarise semibin multi runs
+        for sample in FULL_RECOVER_SAMPLES:
+            for assembler in ASSEMBLERS.keys():
+                label = f"{assembler}_semibin_multi"
+                bin_info_path = f"{OUTPUT_DIR}/{label}/{sample}_semibin_multi/bins/bin_info.tsv"
+                print(f"Processing semibin multi results for sample {sample} with {assembler}")
+                sample_score, sample_genomes = _score_bin_info(bin_info_path)
+                print(f"Sample {sample} semibin multi with {assembler} has {sample_genomes} genomes with total score {sample_score}")
+                summary_file.write(f"{samples_env[sample]}\t{sample}_semibin_multi\t{label}\t{int(sample_score)}\t{sample_genomes}\n")
 
     sys.exit(0)
