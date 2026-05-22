@@ -2,6 +2,7 @@
 
 import unittest
 import os
+import subprocess
 import tempfile
 import extern
 from snakemake.common.configfile import load_configfile
@@ -464,6 +465,60 @@ class Tests(unittest.TestCase):
             self.assertEqual(config["pplacer_threads"], 8)
             self.assertEqual(config["filter_bins_min_completeness"], 62.0)
             self.assertEqual(config["filter_bins_max_contamination"], 3.0)
+            self.assertEqual(config["semibin_mode"], "single")
+
+    def test_recover_semibin_mode_config(self):
+        with tempfile.TemporaryDirectory() as tmpdir:
+            cmd = (
+                f"GTDBTK_DATA_PATH=. "
+                f"CHECKM2DB=. "
+                f"EGGNOG_DATA_DIR=. "
+                f"METABULI_DB_PATH=. "
+                f"SINGLEM_METAPACKAGE_PATH=. "
+                f"aviary recover "
+                f"--semibin-mode multi "
+                f"--assembly {ASSEMBLY} "
+                f"-1 {FORWARD_READS} "
+                f"-2 {REVERSE_READS} "
+                f"--output {tmpdir}/test --tmpdir {tmpdir} "
+                f"--dryrun "
+                #f"--snakemake-cmds \" --quiet\" "
+            )
+            extern.run(cmd)
+
+            config_path = os.path.join(tmpdir, "test", "config.yaml")
+            self.assertTrue(os.path.exists(config_path))
+            config = load_configfile(config_path)
+
+            self.assertEqual(config["semibin_mode"], "multi")
+
+    def test_recover_semibin_multi_single_assembly_warning(self):
+        """A single assembly with --semibin-mode multi should warn but not fail."""
+        with tempfile.TemporaryDirectory() as tmpdir:
+            cmd = (
+                f"GTDBTK_DATA_PATH=. "
+                f"CHECKM2DB=. "
+                f"EGGNOG_DATA_DIR=. "
+                f"METABULI_DB_PATH=. "
+                f"SINGLEM_METAPACKAGE_PATH=. "
+                f"aviary recover "
+                f"--semibin-mode multi "
+                f"--assembly {ASSEMBLY} "
+                f"-1 {FORWARD_READS} "
+                f"-2 {REVERSE_READS} "
+                f"--output {tmpdir}/test --tmpdir {tmpdir} "
+                f"--dryrun"
+            )
+            result = subprocess.run(
+                ["bash", "-o", "pipefail", "-c", cmd],
+                stdout=subprocess.PIPE,
+                stderr=subprocess.PIPE,
+            )
+            # Run must succeed — warning does not abort the pipeline
+            self.assertEqual(result.returncode, 0)
+            stderr = result.stderr.decode()
+            self.assertIn("--semibin-mode multi", stderr)
+            self.assertIn("only one assembly", stderr)
 
     def test_recover_config_many_threads(self):
         with tempfile.TemporaryDirectory() as tmpdir:
