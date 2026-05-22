@@ -43,7 +43,7 @@ depends-on = [
 
 [tasks.run-a-test-base]
 args = ["test_name"]
-cmd = "pytest test --run-expensive -k {{ test_name }}"
+cmd = "pytest --import-mode=importlib test /home/herholdt/assembly_checkpointing/test --run-expensive -k {{ test_name }}"
 depends-on = [
     {task = "postinstall-base", environment = "dev" }
 ]
@@ -121,6 +121,8 @@ pilon = ["pilon"]
 dnaapler = ["dnaapler"]
 minimap2 = ["minimap2"]
 spades = ["spades"]
+megahit = ["spades"]
+stageguard = ["stageguard"]
 pysam = ["pysam"]
 mfqe = ["mfqe"]
 final-assembly = ["final-assembly"]
@@ -227,6 +229,15 @@ megahit = ">=1.2.9"
 pyyaml = ">=6.0.2"
 joblib = ">=1.4.2"
 agtools = ">=1.0.0"
+
+[feature.stageguard.dependencies]
+python = ">=3.8"
+pixi = "*"
+snakemake = ">=7,<8"
+snakemake-executor-plugin-cluster-generic = "*"
+
+[feature.stageguard.pypi-dependencies]
+assembly-checkpointing = { path = "/home/herholdt/assembly_checkpointing", editable = true }
 
 [feature.pysam.dependencies]
 python = ">=3.6"
