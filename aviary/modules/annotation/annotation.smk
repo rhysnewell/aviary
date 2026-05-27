@@ -89,7 +89,7 @@ rule download_gtdb:
         'mkdir -p {params.gtdbtk_folder}; '
         # Configuration
         # NOTE: Updating the database version here might require an update to the GTDB-Tk version in pixi.toml
-        'DB_URL="https://data.gtdb.ecogenomic.org/releases/release226/226.0/auxillary_files/gtdbtk_package/full_package/gtdbtk_r226_data.tar.gz"; '
+        'DB_URL="https://data.gtdb.ecogenomic.org/releases/release232/232.0/auxillary_files/gtdbtk_package/full_package/gtdbtk_r232_data.tar.gz"; '
         'TARGET_TAR_NAME="gtdbtk_data.tar.gz"; '
 
         # Script variables (no need to configure)
@@ -229,7 +229,7 @@ rule gtdbtk:
         "rm -rf data/gtdbtk data/gtdbtk_scratch && "
         "mkdir -p data/gtdbtk_scratch && "
         f'{pixi_run} -e gtdbtk '
-        "gtdbtk classify_wf --skip_ani_screen --cpus {threads} --pplacer_cpus {params.pplacer_threads} --extension {params.extension} "
+        "gtdbtk classify_wf --place_species --cpus {threads} --pplacer_cpus {params.pplacer_threads} --extension {params.extension} "
         "--genome_dir {input.mag_folder} --out_dir data/gtdbtk --scratch_dir data/gtdbtk_scratch "
         "> {resources.log_path} 2>&1 "
 

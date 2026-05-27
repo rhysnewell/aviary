@@ -150,16 +150,14 @@ pggb = ["pggb"]
 metabuli = "~=1.1.0"
 
 [feature.singlem.dependencies]
-singlem = ">=0.20.3"
+singlem = ">=0.21.3"
 diamond = ">=2.1.21"
 
 [feature.singlem.pypi-dependencies]
 bird-tool-utils = "*"
 
 [feature.singlem-appraise.dependencies]
-# We use singlem v0.19 here because 0.20 introduced a major performance
-# regression for --genome-fasta-files input.
-singlem = "==0.19.0"
+singlem = ">=0.21.3"
 
 [feature.chopper.dependencies]
 chopper = ">=0.6"
@@ -325,7 +323,7 @@ parallel = "*"
 [feature.gtdbtk.dependencies]
 # When updating GTDB-Tk, please also update admin/set_env_vars.sh accordingly.
 # and configure?
-gtdbtk = ">=2.6.1" # Required given R226 data is used, and 
+gtdbtk = ">=2.7.2" # Required given R232 data is used, and
 # numpy = "==2.2.6" # Required because of https://github.com/Ecogenomics/GTDBTk/issues/641
 fastani = "*"
 
