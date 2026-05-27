@@ -101,9 +101,9 @@ rule rastqc:
     input:
         config['short_reads_1']
     output:
-        output = "www/fastqc/done"
+        output = "www/rastqc/done"
     benchmark:
-        "benchmarks/fastqc_short.benchmark.txt"
+        "benchmarks/rastqc_short.benchmark.txt"
     threads:
         config["max_threads"]
     resources:
@@ -123,9 +123,9 @@ rule rastqc_long:
     input:
         'data/long_reads.fastq.gz'
     output:
-        output = "www/fastqc_long/done"
+        output = "www/rastqc_long/done"
     benchmark:
-        "benchmarks/fastqc_long.benchmark.txt"
+        "benchmarks/rastqc_long.benchmark.txt"
     threads:
         config["max_threads"]
     resources:
@@ -134,7 +134,7 @@ rule rastqc_long:
         log_path = lambda wildcards, attempt: setup_log(f"{logs_dir}/rastqc_long", attempt),
     shell:
         f"{pixi_run} -e rastqc-long "
-        "rastqc-nanopore -o www/fastqc_long/ -t {threads} {input[0]} > {resources.log_path} 2>&1; touch {output.output}"
+        "rastqc-nanopore -o www/rastqc_long/ -t {threads} {input[0]} > {resources.log_path} 2>&1; touch {output.output}"
 
 rule nanoplot:
     input:
@@ -228,7 +228,7 @@ rule assembly_quality:
 
 rule complete_qc_short:
     input:
-        'www/fastqc/done',
+        'www/rastqc/done',
     output:
         temp('data/qc_done')
     shell:
@@ -237,7 +237,7 @@ rule complete_qc_short:
 rule complete_qc_long:
     input:
         'www/nanoplot/done',
-        'www/fastqc_long/done',
+        'www/rastqc_long/done',
         'data/long_reads.fastq.gz'
     output:
         temp('data/qc_done')
@@ -247,8 +247,8 @@ rule complete_qc_long:
 rule complete_qc_all:
     input:
         'www/nanoplot/done',
-        'www/fastqc/done',
-        'www/fastqc_long/done',
+        'www/rastqc/done',
+        'www/rastqc_long/done',
         'data/long_reads.fastq.gz'
     output:
         temp('data/qc_done')
