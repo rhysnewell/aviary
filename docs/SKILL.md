@@ -218,7 +218,7 @@ assembly/
   final_contigs.fasta        # assembled contigs (use this as --assembly for recover)
 www/
   assembly_stats.txt         # assembly summary statistics
-  fastqc/                    # FastQC short-read QC reports
+  rastqc/                    # RastQC short-read QC reports
   nanoplot/                  # NanoPlot long-read QC reports
 ```
 

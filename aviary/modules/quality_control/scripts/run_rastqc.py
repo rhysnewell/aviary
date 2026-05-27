@@ -6,7 +6,7 @@ from pathlib import Path
 
 
 def spawn_rastqc(files, log, threads=1):
-    rastqc_cmd = ['rastqc', '-o', 'www/fastqc/', '-t', str(threads)] + files
+    rastqc_cmd = ['rastqc', '-o', 'www/rastqc/', '-t', str(threads)] + files
     with open(log, "a") as logf:
         run(rastqc_cmd, stdout=logf, stderr=STDOUT)
 
@@ -20,7 +20,7 @@ def run_rastqc(
     with open(log, "w") as logf: pass
 
     if os.path.exists('data/short_reads.fastq.gz'):
-        rastqc_cmd = f"rastqc -o www/fastqc/ -t {threads} data/short_reads.fastq.gz".split()
+        rastqc_cmd = f"rastqc -o www/rastqc/ -t {threads} data/short_reads.fastq.gz".split()
         with open(log, "a") as logf:
             run(rastqc_cmd, stdout=logf, stderr=STDOUT)
 
@@ -41,10 +41,10 @@ def run_rastqc(
         with open(log, 'a') as f:
             Popen(echo_cmd, stdout=f).wait()
 
-        with open('www/fastqc/short_reads_fastqc.html', 'w') as f:
+        with open('www/rastqc/short_reads_rastqc.html', 'w') as f:
             Popen(echo_cmd, stdout=f).wait()
 
-    Path('www/fastqc/done').touch()
+    Path('www/rastqc/done').touch()
 
 
 if __name__ == '__main__':
