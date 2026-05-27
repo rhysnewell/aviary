@@ -6,7 +6,7 @@ Concepts
 ========
 
 Aviary provides the user with a lot of different outputs for each genome and some of the information present
-in those outputs requires.
+in those outputs requires some explanation.
 
 # File types
 

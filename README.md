@@ -117,8 +117,8 @@ lrwxrwxrwx - woodcrob 23 Apr 07:56 2.1.3 -> /mnt/hpccs01/work/microbiome/db/eggn
 lrwxrwxrwx - woodcrob 23 Apr 07:55 2015_01_16_v2 -> /work/microbiome/db/checkm/2015_01_16_v2
 lrwxrwxrwx - woodcrob 23 Apr 07:54 CheckM2_database -> /work/microbiome/db/CheckM2_database/uniref100.KO.1.dmnd
 lrwxrwxrwx - woodcrob 23 Apr 07:57 2024-3-28-GTDB214.1+humanT2T -> /work/microbiome/db/metabuli/2024-3-28-GTDB214.1+humanT2T/
-lrwxrwxrwx - woodcrob 23 Apr 07:56 release226 -> /work/microbiome/db/gtdb/gtdb_release226/auxillary_files/gtdbtk_package/full_package/release226
-lrwxrwxrwx - woodcrob 23 Apr 07:55 S5.4.0.GTDB_r226.metapackage_20250331.smpkg.zb -> /work/microbiome/db/singlem/S5.4.0.GTDB_r226.metapackage_20250331.smpkg.zb
+lrwxrwxrwx - woodcrob 23 Apr 07:56 release232 -> /work/microbiome/db/gtdb/gtdb_release232/auxillary_files/gtdbtk_package/full_package/release232
+lrwxrwxrwx - woodcrob 23 Apr 07:55 S6.5.0.GTDB_r232.metapackage_20260319.smpkg.zb -> /work/microbiome/db/singlem/S6.5.0.GTDB_r232.metapackage_20260319.smpkg.zb
 ```
 
 To check the expected database symlink names, see `admin/set_env_vars.sh` in the
@@ -198,7 +198,7 @@ use the `aviary configure` module to update the environment variables used by av
 These environment variables can also be configured manually, just set the following variables in your `.bashrc` file:
 
 ```bash
-export GTDBTK_DATA_PATH=/path/to/gtdb/gtdb_release226/db/ # https://gtdb.ecogenomic.org/downloads
+export GTDBTK_DATA_PATH=/path/to/gtdb/gtdb_release232/db/ # https://gtdb.ecogenomic.org/downloads
 export EGGNOG_DATA_DIR=/path/to/eggnog-mapper/2.1.8/ # https://github.com/eggnogdb/eggnog-mapper/wiki/eggNOG-mapper-v2.1.5-to-v2.1.8#setup
 export SINGLEM_METAPACKAGE_PATH=/path/to/singlem_metapackage.smpkg/
 export CHECKM2DB=/path/to/checkm2db/uniref100.KO.1.dmnd

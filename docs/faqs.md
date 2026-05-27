@@ -23,7 +23,7 @@ Yes! Consult the examples page for more information.
 
 ### I have access to a GPU, can I use it?
 
-Yes! Aviary supports the use of GPUs for the assembly process. If the GPU is on a local machine, you must first install the `cuda` package into your conda environment. Then, programs that use GPUs should automatically detect its presence.
+Yes! Aviary supports the use of GPUs for the binning process (taxvamb, comebin, semibin). If the GPU is on a local machine, you must first install the `cuda` package into your conda environment. Then, programs that use GPUs should automatically detect its presence.
 
 If you are using a cluster, you can supply the `--request-gpu` flag and Aviary will attempt to place rules that use GPUs on to a machine that has GPUs available.
 
@@ -57,15 +57,15 @@ For the GTDB:
 * [GTDB](https://gtdb.ecogenomic.org/downloads) Required for taxonomic annotation
 Download and point the GTDB environment variable to the `db/` folder inside of that download.
 
-The **optional** databases are as follows:
+The **required** databases are as follows:
 * [EggNog](https://github.com/eggnogdb/eggnog-mapper/wiki/eggNOG-mapper-v2.1.5-to-v2.1.7#setup).
-Download this databse and point to the root folder of the databse.
+Download this database and point to the root folder of the database.
 
 Aviary will ask for the paths to these database files if they don't exist, otherwise you can place these lines into
 the `activate.d/aviary.sh` or `.bashrc` files changing the specific paths:
 ```
-export GTDBTK_DATA_PATH=/path/to/gtdb/gtdb_release207/db/ # https://gtdb.ecogenomic.org/downloads
-export EGGNOG_DATA_DIR=/path/to/eggnog-mapper/2.1.7/ # https://github.com/eggnogdb/eggnog-mapper/wiki/eggNOG-mapper-v2.1.5-to-v2.1.7#setup
+export GTDBTK_DATA_PATH=/path/to/gtdb/gtdb_release232/db/ # https://gtdb.ecogenomic.org/downloads
+export EGGNOG_DATA_DIR=/path/to/eggnog-mapper/2.1.3/ # https://github.com/eggnogdb/eggnog-mapper/wiki/eggNOG-mapper-v2.1.5-to-v2.1.8#setup
 export SINGLEM_METAPACKAGE_PATH=/path/to/singlem_metapackage.smpkg/
 export CHECKM2DB=/path/to/checkm2db/
 ```
@@ -82,4 +82,8 @@ feel like making something similar.
 
 ### Where's the paper?
 
-You sound like my supervisor.
+Please cite:
+
+> Newell RJP, Aroney STN, Zaugg J, Sternes P, Tyson GW, Woodcroft BJ.
+> **Aviary: Hybrid assembly and genome recovery from metagenomes with Aviary.**
+> Zenodo (2024). https://doi.org/10.5281/zenodo.10806928

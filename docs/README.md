@@ -23,7 +23,11 @@ comprehensive binning pipeline. Each module can be run independently or as a sin
 
 ## Citation
 
-On its way :P
+If you use Aviary in your research, please cite:
+
+> Newell RJP, Aroney STN, Zaugg J, Sternes P, Tyson GW, Woodcroft BJ.
+> **Aviary: Hybrid assembly and genome recovery from metagenomes with Aviary.**
+> Zenodo (2024). https://doi.org/10.5281/zenodo.10806928
 
 ## License
 
