@@ -229,7 +229,7 @@ rule gtdbtk:
         "rm -rf data/gtdbtk data/gtdbtk_scratch && "
         "mkdir -p data/gtdbtk_scratch && "
         f'{pixi_run} -e gtdbtk '
-        "gtdbtk classify_wf --place_species --cpus {threads} --pplacer_cpus {params.pplacer_threads} --extension {params.extension} "
+        "gtdbtk classify_wf --cpus {threads} --pplacer_cpus {params.pplacer_threads} --extension {params.extension} "
         "--genome_dir {input.mag_folder} --out_dir data/gtdbtk --scratch_dir data/gtdbtk_scratch "
         "> {resources.log_path} 2>&1 "
 
