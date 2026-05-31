@@ -29,6 +29,14 @@ MQSUB_OUT="mqsub.out"
 if os.path.exists(MQSUB_OUT):
     os.remove(MQSUB_OUT)
 
+# Assembly checkpointing tests
+print("mqsub assembly_checkpointing tests ..")
+cmd = "mqsub -t32 --segregated-log-files --bg --hours 2 -m 64 -- " \
+    "bash -c \"'cd /home/herholdt/assembly_checkpointing && rm -rf test/tmp && pixi run pytest'\" " \
+    f"&>>{MQSUB_OUT}"
+extern.run(cmd)
+time.sleep(30)
+
 # GPU testing - taxvamb
 print("mqsub GPU testing - taxvamb ..")
 cmd = "mqsub -t32 --A100 --segregated-log-files --bg --hours 4 -m 128 -- " \
