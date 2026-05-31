@@ -237,7 +237,7 @@ snakemake = ">=7,<8"
 snakemake-executor-plugin-cluster-generic = "*"
 
 [feature.stageguard.pypi-dependencies]
-assembly-checkpointing = { path = "/home/herholdt/assembly_checkpointing", editable = true }
+assembly-checkpointing = { git = "https://github.com/SNH-star/assembly_checkpointing.git", branch = "assembly-stageguard" }
 
 [feature.pysam.dependencies]
 python = ">=3.6"
