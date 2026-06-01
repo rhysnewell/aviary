@@ -1,0 +1,1040 @@
+<!doctype html>
+
+<html lang="en">
+
+<head>
+    <meta charset="utf-8">
+
+    <title>Aviary Skill File</title>
+    <meta name="description" content="Documentation for Aviary">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+
+    <link
+        href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700&family=Source+Sans+Pro:ital,wght@0,400;0,600;0,700;1,400;1,600;1,700&display=swap"
+        rel="stylesheet">
+
+    <link rel="stylesheet" type="text/css" href="/aviary/assets/normalize.css?v=1780277936"
+        media="screen" />
+    <link rel="stylesheet" type="text/css" href="/aviary/assets/doctave-style.css?v=1780277936"
+        media="screen" />
+    <link rel="stylesheet" type="text/css" href="/aviary/assets/katex.css?v=1780277936" media="screen" />
+    <link rel="stylesheet" type="text/css" href="/aviary/assets/prism-ghcolors.css?v=1780277936"
+        media="screen" />
+
+    <script>
+        var DOCTAVE_TIMESTAMP = "1780277936";
+        var BASE_PATH = "/aviary/";
+        var color = localStorage.getItem('doctave-color')
+
+        if (color === 'dark') {
+            document.getElementsByTagName('html')[0].classList.remove('light');
+            document.getElementsByTagName('html')[0].classList.add('dark');
+        } else {
+            document.getElementsByTagName('html')[0].classList.remove('dark');
+            document.getElementsByTagName('html')[0].classList.add('light');
+        }
+    </script>
+
+    
+</head>
+
+<body>
+    <label for='menu-toggle-switch' class='menu-toggle-button'>
+        ☰
+    </label>
+    <input type="checkbox" id="menu-toggle-switch" value='0' />
+    <div class='page'>
+        <div class='header'>
+            <div class='logo'>
+                
+                <a href="/aviary/">
+                    <img src="/aviary/images/mini_logo.png" alt='Aviary logo'></img>
+                </a>
+                
+                <h2 class='project-name'>
+                    <a href="/aviary/">
+                        Aviary
+                    </a>
+                </h2>
+            </div>
+            <div class='search'>
+                <form id='search-form'>
+    <input type='text' id='search-box' autocomplete="off" placeholder="Search..."></input>
+    <span class='search-icon'>S</span>
+    <ul id='search-results'></ul>
+</form>
+
+            </div>
+            <div class='header-dummy-right'>
+            </div>
+        </div>
+        <div class='container'>
+            <div class='sidebar-left'>
+                <nav class='site-nav'>
+    <ul>
+        
+            <li><a href="/aviary/installation">Installation</a></li>
+            
+        
+            <li><a href="/aviary/examples">Examples</a></li>
+            
+        
+            <li><a href="/aviary/faqs">FAQs &amp; Troubleshooting</a></li>
+            
+        
+            <li><a href="/aviary/concepts">Concepts</a></li>
+            
+        
+            <li><a href="/aviary/citations">Citations</a></li>
+            
+        
+            <li><a href="/aviary/development">Development</a></li>
+            
+        
+    </ul>
+    <span id='light-dark-mode-switch'>
+        <svg xmlns="http://www.w3.org/2000/svg" id="dark-mode-icon" viewBox="0 0 20 20" fill="currentColor">
+            <path d="M17.293 13.293A8 8 0 016.707 2.707a8.001 8.001 0 1010.586 10.586z" />
+        </svg>
+
+        <svg xmlns="http://www.w3.org/2000/svg" id="light-mode-icon" viewBox="0 0 20 20" fill="currentColor">
+            <path fill-rule="evenodd" d="M10 2a1 1 0 011 1v1a1 1 0 11-2 0V3a1 1 0 011-1zm4 8a4 4 0 11-8 0 4 4 0 018 0zm-.464 4.95l.707.707a1 1 0 001.414-1.414l-.707-.707a1 1 0 00-1.414 1.414zm2.12-10.607a1 1 0 010 1.414l-.706.707a1 1 0 11-1.414-1.414l.707-.707a1 1 0 011.414 0zM17 11a1 1 0 100-2h-1a1 1 0 100 2h1zm-7 4a1 1 0 011 1v1a1 1 0 11-2 0v-1a1 1 0 011-1zM5.05 6.464A1 1 0 106.465 5.05l-.708-.707a1 1 0 00-1.414 1.414l.707.707zm1.414 8.486l-.707.707a1 1 0 01-1.414-1.414l.707-.707a1 1 0 011.414 1.414zM4 11a1 1 0 100-2H3a1 1 0 000 2h1z" clip-rule="evenodd" />
+        </svg>
+    </span>
+</nav>
+
+            </div>
+            <div class='doctave-content'>
+                <h1 id="aviary">Aviary</h1>
+<p><strong>Comprehensive Snakemake-based metagenomics pipeline: assembly → binning → annotation → dereplication.</strong>
+Supports short-read, long-read, and hybrid workflows. Each module runs independently or as a chained pipeline.</p>
+<blockquote>
+<p><strong>GitHub:</strong> https://github.com/rhysnewell/aviary
+<strong>Docs:</strong> https://rhysnewell.github.io/aviary
+<strong>Latest version:</strong> 0.13.0</p>
+</blockquote>
+<hr>
+<h2 id="1.-installation">1. INSTALLATION</h2>
+<pre><code class="language-bash"># Set conda channels first (required)
+conda config --add channels defaults
+conda config --add channels bioconda
+conda config --add channels conda-forge
+
+# Option A — Bioconda
+conda create -n aviary -c bioconda aviary
+# OR into an existing environment:
+conda install -c bioconda aviary
+
+# Option B — Pip (create environment from admin/requirements.txt first)
+pip install aviary-genome
+
+# Option C — Source with pixi (recommended for development)
+git clone https://github.com/rhysnewell/aviary.git
+cd aviary
+pixi run postinstall     # installs all dependencies
+
+# Editable install for development
+pip install -e .
+</code></pre>
+<hr>
+<h2 id="2.-quick-reference-—-subcommands">2. QUICK REFERENCE — SUBCOMMANDS</h2>
+<pre><code class="language-bash">aviary --version            # show installed version
+aviary --help               # top-level help
+aviary &lt;subcommand&gt; --help  # help for a specific subcommand
+</code></pre>
+<table><thead><tr><th>Subcommand</th><th>Description</th></tr></thead><tbody>
+<tr><td><code>assemble</code></td><td>QC + de novo assembly (short, long, or hybrid reads)</td></tr>
+<tr><td><code>recover</code></td><td>MAG recovery from an assembly using multiple binning algorithms</td></tr>
+<tr><td><code>annotate</code></td><td>Functional (EggNOG) + taxonomic (GTDB-tk) annotation of MAGs</td></tr>
+<tr><td><code>complete</code></td><td>Runs assemble → recover → annotate in sequence</td></tr>
+<tr><td><code>cluster</code></td><td>Combines and dereplicates the MAGs from multiple Aviary runs (Galah-based)</td></tr>
+<tr><td><code>isolate</code></td><td>Isolate (single-organism) hybrid assembly — separate from the meta pipeline</td></tr>
+<tr><td><code>configure</code></td><td>Set database paths and environment variables</td></tr>
+</tbody></table>
+<hr>
+<h2 id="3.-required-databases">3. REQUIRED DATABASES</h2>
+<table><thead><tr><th>Database</th><th>Tool</th><th>Typical size</th><th>Required?</th></tr></thead><tbody>
+<tr><td>GTDB</td><td>GTDB-tk (taxonomy)</td><td>~85 GB</td><td>Yes (for taxonomy in recover/annotate)</td></tr>
+<tr><td>EggNOG</td><td>EggNOG-mapper</td><td>~50 GB</td><td>Yes (for functional annotation)</td></tr>
+<tr><td>CheckM2</td><td>CheckM2 (quality)</td><td>~3 GB</td><td>Yes (for MAG QC)</td></tr>
+<tr><td>SingleM</td><td>SingleM (profiling)</td><td>~14 GB</td><td>Yes (for recovery assessment)</td></tr>
+<tr><td>Metabuli</td><td>TaxVAMB binner</td><td>varies</td><td>Optional (only for taxvamb binner)</td></tr>
+</tbody></table>
+<p>Use <code>aviary configure --download</code> to auto-install all databases (see Section 4).</p>
+<h3 id="environment-variable-paths-(set-in-~/.bashrc-or-conda-activate-script)">Environment variable paths (set in <code>~/.bashrc</code> or conda activate script)</h3>
+<pre><code class="language-bash">export GTDBTK_DATA_PATH=/path/to/gtdb/db/
+export EGGNOG_DATA_DIR=/path/to/eggnog/
+export SINGLEM_METAPACKAGE_PATH=/path/to/singlem.smpkg/
+export CHECKM2DB=/path/to/checkm2db/
+export CONDA_ENV_PATH=/path/to/conda/envs/
+</code></pre>
+<hr>
+<h2 id="4.-configure-—-set-database-paths-and-optionally-download">4. CONFIGURE — set database paths and optionally download</h2>
+<pre><code class="language-bash">aviary configure \
+  -o logs/ \
+  --eggnog-db-path /path/to/eggnog/ \
+  --gtdb-path /path/to/gtdb/ \
+  --checkm2-db-path /path/to/checkm2/ \
+  --singlem-metapackage-path /path/to/singlem/ \
+  --metabuli-db-path /path/to/metabuli/ \    # optional, for taxvamb
+  --download                                  # auto-download missing databases
+
+# Also set a persistent tmpdir via configure
+aviary configure --tmpdir /scratch/tmp/
+</code></pre>
+<table><thead><tr><th>Flag</th><th>Description</th></tr></thead><tbody>
+<tr><td><code>-o</code></td><td>Output / log directory</td></tr>
+<tr><td><code>--eggnog-db-path</code></td><td>EggNOG functional annotation database path</td></tr>
+<tr><td><code>--gtdb-path</code></td><td>GTDB taxonomy database path</td></tr>
+<tr><td><code>--checkm2-db-path</code></td><td>CheckM2 quality assessment database path</td></tr>
+<tr><td><code>--singlem-metapackage-path</code></td><td>SingleM marker gene database path</td></tr>
+<tr><td><code>--metabuli-db-path</code></td><td>Metabuli database (optional; required for taxvamb)</td></tr>
+<tr><td><code>--download</code></td><td>Auto-download all missing databases</td></tr>
+<tr><td><code>--tmpdir</code></td><td>Persist a custom TMPDIR for all future runs</td></tr>
+</tbody></table>
+<hr>
+<h2 id="5.-assemble-—-de-novo-assembly-from-sequencing-reads">5. ASSEMBLE — de novo assembly from sequencing reads</h2>
+<p>QC runs automatically before assembly unless <code>--skip-qc</code> is set.</p>
+<pre><code class="language-bash"># Short-read only (metaSPAdes by default)
+aviary assemble \
+  -1 sample_R1.fastq.gz \
+  -2 sample_R2.fastq.gz \
+  -o output_dir/ \
+  --n-cores 16
+
+# Short-read only with MEGAHIT (faster, lower memory than metaSPAdes)
+aviary assemble \
+  -1 sample_R1.fastq.gz \
+  -2 sample_R2.fastq.gz \
+  -o output_dir/ \
+  --n-cores 16 \
+  --use-megahit
+
+# Long-read only (myloasm assembler, default)
+aviary assemble \
+  -l sample.fastq.gz \
+  -z ont \
+  -o output_dir/ \
+  --n-cores 16
+
+# Long-read only with Flye
+aviary assemble \
+  -l sample.fastq.gz \
+  -z ont \
+  --long-read-assembler flye \
+  -o output_dir/ \
+  --n-cores 16
+
+# Hybrid (short + long reads)
+aviary assemble \
+  -1 sample_R1.fastq.gz \
+  -2 sample_R2.fastq.gz \
+  -l sample.fastq.gz \
+  -z ont \
+  -o output_dir/ \
+  --n-cores 16
+
+# Host contamination removal before assembly
+aviary assemble \
+  -1 sample_R1.fastq.gz \
+  -2 sample_R2.fastq.gz \
+  -r host_genome.fasta \
+  -o output_dir/ \
+  --n-cores 16
+
+# Co-assembly of multiple samples
+aviary assemble \
+  -1 s1_R1.fq.gz s2_R1.fq.gz \
+  -2 s1_R2.fq.gz s2_R2.fq.gz \
+  --coassemble \
+  -o output_dir/ \
+  --n-cores 16
+</code></pre>
+<h3 id="read-input-flags">Read input flags</h3>
+<table><thead><tr><th>Flag</th><th>Description</th></tr></thead><tbody>
+<tr><td><code>-1 PATH ..</code></td><td>Forward short reads</td></tr>
+<tr><td><code>-2 PATH ..</code></td><td>Reverse short reads</td></tr>
+<tr><td><code>-i / --interleaved PATH ..</code></td><td>Interleaved short read files</td></tr>
+<tr><td><code>-c / --coupled PATH ..</code></td><td>Coupled forward/reverse list</td></tr>
+<tr><td><code>-l / --longreads PATH ..</code></td><td>Nanopore or PacBio reads</td></tr>
+<tr><td><code>-z / --longread-type TYPE</code></td><td>Read type: <code>ont</code> | <code>ont_hq</code> | <code>rs</code> | <code>sq</code> | <code>ccs</code> | <code>hifi</code> (default: <code>ont</code>)</td></tr>
+</tbody></table>
+<h3 id="assembly-flags">Assembly flags</h3>
+<table><thead><tr><th>Flag</th><th>Description</th><th>Default</th></tr></thead><tbody>
+<tr><td><code>--long-read-assembler</code></td><td><code>myloasm</code> | <code>flye</code></td><td><code>myloasm</code></td></tr>
+<tr><td><code>--use-megahit</code></td><td>Use MEGAHIT instead of metaSPAdes for short reads</td><td>off</td></tr>
+<tr><td><code>--use-unicycler</code></td><td>Use Unicycler for metaSPAdes reassembly</td><td>off</td></tr>
+<tr><td><code>--coassemble</code></td><td>Co-assemble multiple input read sets</td><td>off</td></tr>
+<tr><td><code>-k / --kmer-sizes</code></td><td>Kmer sizes for SPAdes (odd integers &lt;128)</td><td>auto</td></tr>
+<tr><td><code>--medaka-model</code></td><td>Medaka model for long-read polishing</td><td><code>r941_min_hac_g507</code></td></tr>
+</tbody></table>
+<h3 id="contig-filtering-flags-(applied-post-assembly)">Contig filtering flags (applied post-assembly)</h3>
+<table><thead><tr><th>Flag</th><th>Description</th><th>Default</th></tr></thead><tbody>
+<tr><td><code>--min-cov-long</code></td><td>Minimum long read coverage for contigs</td><td><code>5</code></td></tr>
+<tr><td><code>--min-cov-short</code></td><td>Minimum short read coverage for contigs</td><td><code>5</code></td></tr>
+<tr><td><code>--exclude-contig-cov</code></td><td>Exclude contigs with coverage ≤ this value</td><td><code>10</code></td></tr>
+<tr><td><code>--exclude-contig-size</code></td><td>Exclude contigs shorter than this bp</td><td><code>2500</code></td></tr>
+<tr><td><code>--include-contig-size</code></td><td>Always include contigs longer than this bp</td><td><code>10000</code></td></tr>
+</tbody></table>
+<h3 id="expected-outputs-(-output_dir/-)">Expected outputs (<code>output_dir/</code>)</h3>
+<pre><code>assembly/
+  final_contigs.fasta        # assembled contigs (use this as --assembly for recover)
+www/
+  assembly_stats.txt         # assembly summary statistics
+  rastqc/                    # RastQC short-read QC reports
+  nanoplot/                  # NanoPlot long-read QC reports
+</code></pre>
+<hr>
+<h2 id="6.-qc-/-read-filtering-flags-(apply-to-assemble,-recover,-complete)">6. QC / READ FILTERING FLAGS (apply to assemble, recover, complete)</h2>
+<p>QC runs automatically. Use these flags to tune or skip it.</p>
+<table><thead><tr><th>Flag</th><th>Description</th><th>Default</th></tr></thead><tbody>
+<tr><td><code>--skip-qc</code></td><td>Skip all QC steps</td><td>off</td></tr>
+<tr><td><code>-r / --host-filter PATH ..</code></td><td>Host reference fasta(s) to remove host reads</td><td>—</td></tr>
+<tr><td><code>--min-read-size INT</code></td><td>Minimum long read size for Filtlong</td><td><code>100</code></td></tr>
+<tr><td><code>--min-mean-q FLOAT</code></td><td>Minimum long read mean quality</td><td><code>10</code></td></tr>
+<tr><td><code>--min-short-read-length INT</code></td><td>Minimum short read length to keep</td><td><code>15</code></td></tr>
+<tr><td><code>--max-short-read-length INT</code></td><td>Maximum short read length (0 = no max)</td><td><code>0</code></td></tr>
+<tr><td><code>--disable-adapter-trimming</code></td><td>Disable fastp adapter trimming</td><td>off</td></tr>
+<tr><td><code>--unqualified-percent-limit FLOAT</code></td><td>Max % bases allowed unqualified</td><td><code>40</code></td></tr>
+<tr><td><code>--quality-cutoff INT</code></td><td>Short read quality threshold</td><td><code>15</code></td></tr>
+<tr><td><code>--extra-fastp-params STR</code></td><td>Extra params passed to fastp as string</td><td>—</td></tr>
+</tbody></table>
+<hr>
+<h2 id="7.-recover-—-extract-mags-from-an-assembly-using-multiple-binners">7. RECOVER — extract MAGs from an assembly using multiple binners</h2>
+<h3 id="default-binners-(always-run-unless-skipped)">Default binners (always run unless skipped)</h3>
+<table><thead><tr><th>Binner</th><th>Type</th><th>GPU?</th><th>Notes</th></tr></thead><tbody>
+<tr><td>Rosella</td><td>short+long</td><td>No</td><td>CoverM-based differential coverage binner (default lead binner)</td></tr>
+<tr><td>MetaBAT2</td><td>short</td><td>No</td><td>Coverage-based</td></tr>
+<tr><td>SemiBin2</td><td>short+long</td><td>Yes</td><td>Deep learning, self-supervised</td></tr>
+<tr><td>VAMB</td><td>short</td><td>No</td><td>Variational autoencoder coverage binner</td></tr>
+</tbody></table>
+<h3 id="das_tool-is-always-run-to-produce-a-final-consensus-bin-set-from-all-binner-outputs.">DAS_Tool is always run to produce a final consensus bin set from all binner outputs.</h3>
+<pre><code class="language-bash"># Short reads only
+aviary recover \
+  --assembly assembly.fasta \
+  -1 sample_R1.fastq.gz \
+  -2 sample_R2.fastq.gz \
+  -o output_dir/ \
+  --n-cores 16 \
+  --max-threads 32
+
+# With long reads for coverage (improves binning)
+aviary recover \
+  --assembly assembly.fasta \
+  -1 sample_R1.fastq.gz \
+  -2 sample_R2.fastq.gz \
+  -l sample.fastq.gz \
+  -z ont \
+  -o output_dir/ \
+  --n-cores 16
+
+# GPU-accelerated binners (taxvamb, comebin, semibin use CUDA)
+aviary recover \
+  --assembly assembly.fasta \
+  -1 sample_R1.fastq.gz \
+  -2 sample_R2.fastq.gz \
+  -o output_dir/ \
+  --n-cores 16 \
+  --max-threads 32 \
+  --request-gpu
+
+# Add extra binners beyond defaults
+aviary recover \
+  --assembly assembly.fasta \
+  -1 sample_R1.fastq.gz \
+  -2 sample_R2.fastq.gz \
+  -o output_dir/ \
+  --n-cores 16 \
+  --extra-binners taxvamb comebin
+
+# Skip specific binners
+aviary recover \
+  --assembly assembly.fasta \
+  -1 sample_R1.fastq.gz \
+  -2 sample_R2.fastq.gz \
+  -o output_dir/ \
+  --n-cores 16 \
+  --skip-binners vamb semibin
+
+# Binning only (skip annotation — useful for quick MAG recovery)
+aviary recover \
+  --assembly assembly.fasta \
+  -1 sample_R1.fastq.gz \
+  -2 sample_R2.fastq.gz \
+  -o output_dir/ \
+  --n-cores 16 \
+  --binning-only
+
+# Target a specific snakemake rule (run only up to this step)
+aviary recover \
+  --assembly assembly.fasta \
+  -1 sample_R1.fastq.gz \
+  -2 sample_R2.fastq.gz \
+  -o output_dir/ \
+  -w rosella \
+  --max-threads 12
+</code></pre>
+<h3 id="recover-flags">Recover flags</h3>
+<table><thead><tr><th>Flag</th><th>Description</th><th>Default</th></tr></thead><tbody>
+<tr><td><code>--assembly PATH</code></td><td>Input assembled contigs (.fasta) — required</td><td>—</td></tr>
+<tr><td><code>-1 / -2</code></td><td>Short reads for coverage calculation</td><td>—</td></tr>
+<tr><td><code>-l / --longreads</code></td><td>Long reads for coverage calculation</td><td>—</td></tr>
+<tr><td><code>-z / --longread-type</code></td><td>Long read type (see Section 5)</td><td><code>ont</code></td></tr>
+<tr><td><code>--request-gpu</code></td><td>Enable GPU-accelerated binners (taxvamb, comebin, semibin)</td><td>off</td></tr>
+<tr><td><code>--binning-only</code></td><td>Stop after binning; skip quality check and annotation</td><td>off</td></tr>
+<tr><td><code>--strict</code></td><td>Fail immediately if any binner errors</td><td>off</td></tr>
+<tr><td><code>--extra-binners LIST</code></td><td>Add extra binners: <code>maxbin</code> | <code>maxbin2</code> | <code>concoct</code> | <code>comebin</code> | <code>taxvamb</code> | <code>quickbin</code></td><td>—</td></tr>
+<tr><td><code>--skip-binners LIST</code></td><td>Skip default binners: <code>rosella</code> | <code>semibin</code> | <code>metabat1</code> | <code>metabat2</code> | <code>metabat</code> | <code>vamb</code> | <code>quickbin</code></td><td>—</td></tr>
+<tr><td><code>--min-contig-size INT</code></td><td>Minimum contig size for binning (bp)</td><td><code>1500</code></td></tr>
+<tr><td><code>--min-bin-size INT</code></td><td>Minimum MAG size (bp)</td><td><code>200000</code></td></tr>
+<tr><td><code>--min-completeness FLOAT</code></td><td>Minimum CheckM2 completeness % for bins passed to annotation</td><td><code>50.0</code></td></tr>
+<tr><td><code>--max-contamination FLOAT</code></td><td>Maximum CheckM2 contamination % for bins passed to annotation</td><td><code>5.0</code></td></tr>
+<tr><td><code>--semibin-model NAME</code></td><td>SemiBin2 environment model</td><td><code>global</code></td></tr>
+<tr><td><code>--refinery-max-iterations INT</code></td><td>Rosella refinery max iterations</td><td><code>5</code></td></tr>
+<tr><td><code>--refinery-max-retries INT</code></td><td>Rosella refinery max retries</td><td><code>3</code></td></tr>
+<tr><td><code>--coverage-job-strategy STR</code></td><td>Strategy for coverage jobs: <code>default</code> | <code>never</code> | <code>always</code></td><td><code>default</code></td></tr>
+<tr><td><code>--coverage-samples-per-job INT</code></td><td>Samples per coverage job</td><td><code>5</code></td></tr>
+<tr><td><code>--skip-abundances</code></td><td>Skip CoverM post-binning abundance calculations</td><td>off</td></tr>
+<tr><td><code>--skip-taxonomy</code></td><td>Skip GTDB-tk taxonomy assignment</td><td>off</td></tr>
+<tr><td><code>--skip-singlem</code></td><td>Skip SingleM recovery assessment</td><td><strong>on</strong></td></tr>
+<tr><td><code>--min-percent-read-identity-short FLOAT</code></td><td>Min % identity for short-read CoverM</td><td><code>95</code></td></tr>
+<tr><td><code>--min-percent-read-identity-long FLOAT</code></td><td>Min % identity for long-read CoverM</td><td><code>85</code></td></tr>
+<tr><td><code>-w / --workflow RULE</code></td><td>Target a specific Snakemake rule (runs all prerequisites first)</td><td>—</td></tr>
+</tbody></table>
+<h3 id="expected-outputs-(-output_dir/-)">Expected outputs (<code>output_dir/</code>)</h3>
+<pre><code>bins/
+  final_bins/                  # final consensus MAG FASTA files (use these downstream)
+  bin_info.tsv                 # taxonomy, QC (completeness/contamination), size, N50 for all MAGs
+  checkm_minimal.tsv           # minimal CheckM2 summary
+  coverm_abundances.tsv        # CoverM relative abundance of each MAG per sample
+diversity/
+  singlem_out/                 # SingleM read-based community profiling output
+taxonomy/                      # GTDB-tk raw output
+benchmarks/                    # Snakemake rule benchmarks (time, memory per rule)
+logs/                          # Rule-level logs — check here first on errors
+</code></pre>
+<hr>
+<h2 id="8.-annotate-—-functional-(eggnog)-+-taxonomic-(gtdb-tk)-annotation">8. ANNOTATE — functional (EggNOG) + taxonomic (GTDB-tk) annotation</h2>
+<pre><code class="language-bash">aviary annotate \
+  -d recover/bins/final_bins/ \
+  -o output_dir/ \
+  --n-cores 16
+</code></pre>
+<table><thead><tr><th>Flag</th><th>Description</th><th>Default</th></tr></thead><tbody>
+<tr><td><code>-d / --genome-fasta-directory</code></td><td>Directory containing MAG FASTA files</td><td>—</td></tr>
+<tr><td><code>-x / --fasta-extension</code></td><td>File extension of MAG files (<strong>default: <code>fna</code></strong>, not <code>.fasta</code>)</td><td><code>fna</code></td></tr>
+</tbody></table>
+<blockquote>
+<p><strong>Note:</strong> The default extension is <code>.fna</code>. If your bins have a different extension (e.g. <code>.fa</code>,
+<code>.fasta</code>), always set <code>-x</code> accordingly.</p>
+</blockquote>
+<h3 id="expected-outputs-(-output_dir/-)">Expected outputs (<code>output_dir/</code>)</h3>
+<pre><code>annotation/
+  eggnog/                      # EggNOG-mapper functional annotation output
+  gtdbtk/                      # GTDB-tk taxonomic classification output
+</code></pre>
+<hr>
+<h2 id="9.-complete-—-assemble-+-recover-+-annotate-in-one-command">9. COMPLETE — assemble + recover + annotate in one command</h2>
+<p><code>complete</code> does NOT include <code>cluster</code> (dereplication). Run that separately after all samples.</p>
+<pre><code class="language-bash"># Short reads only
+aviary complete \
+  -1 sample_R1.fastq.gz \
+  -2 sample_R2.fastq.gz \
+  -o output_dir/ \
+  --n-cores 16
+
+# Hybrid with myloasm (default)
+aviary complete \
+  -1 sample_R1.fastq.gz \
+  -2 sample_R2.fastq.gz \
+  -l sample.fastq.gz \
+  -z ont \
+  -o output_dir/ \
+  --n-cores 16
+
+# Hybrid with Flye
+aviary complete \
+  -1 sample_R1.fastq.gz \
+  -2 sample_R2.fastq.gz \
+  -l sample.fastq.gz \
+  -z ont \
+  --long-read-assembler flye \
+  -o output_dir/ \
+  --n-cores 16
+
+# With GPU binners
+aviary complete \
+  -1 sample_R1.fastq.gz \
+  -2 sample_R2.fastq.gz \
+  -l sample.fastq.gz \
+  -z ont \
+  -o output_dir/ \
+  --n-cores 16 \
+  --request-gpu
+
+# Preview the workflow without running
+aviary complete \
+  -1 sample_R1.fastq.gz \
+  -2 sample_R2.fastq.gz \
+  -o output_dir/ \
+  --dry-run
+</code></pre>
+<hr>
+<h2 id="10.-cluster-—-dereplicate-mags-across-multiple-aviary-runs">10. CLUSTER — dereplicate MAGs across multiple Aviary runs</h2>
+<p>Run this <strong>once, after all samples are processed</strong>, to dereplicate the combined MAG set.</p>
+<pre><code class="language-bash">aviary cluster \
+  -i run1/ run2/ run3/ \
+  -o cluster_output/ \
+  --n-cores 16
+</code></pre>
+<table><thead><tr><th>Flag</th><th>Description</th><th>Default</th></tr></thead><tbody>
+<tr><td><code>-i / --input-runs PATH..</code></td><td>Space-separated previous Aviary output directories</td><td>—</td></tr>
+<tr><td><code>--ani FLOAT</code></td><td>ANI threshold for dereplication</td><td><code>97</code></td></tr>
+<tr><td><code>--precluster-ani FLOAT</code></td><td>Minimum ANI for preclustering</td><td><code>95</code></td></tr>
+<tr><td><code>--precluster-method NAME</code></td><td>Rough ANI method: <code>dashing</code> | <code>finch</code></td><td><code>dashing</code></td></tr>
+<tr><td><code>--min-completeness FLOAT</code></td><td>Exclude genomes below this completeness %</td><td>—</td></tr>
+<tr><td><code>--max-contamination FLOAT</code></td><td>Exclude genomes above this contamination %</td><td>—</td></tr>
+<tr><td><code>--use-checkm2-scores</code></td><td>Use CheckM2 scores for representative selection</td><td>off</td></tr>
+<tr><td><code>--pggb-params STR</code></td><td>Parameters passed to pggb (surround with quotes)</td><td><code>-k 79 -G 7919,8069</code></td></tr>
+</tbody></table>
+<h3 id="expected-outputs-(-cluster_output/-)">Expected outputs (<code>cluster_output/</code>)</h3>
+<pre><code>dereplicated_bins/             # final dereplicated representative MAG FASTA files
+</code></pre>
+<hr>
+<h2 id="11.-isolate-—-isolate-(single-organism)-assembly">11. ISOLATE — isolate (single-organism) assembly</h2>
+<p>Separate workflow from metagenomics. For isolated pure culture sequencing (e.g. bacterial isolates with Nanopore + Illumina).</p>
+<h3 id="pipeline-steps">Pipeline steps</h3>
+<ol>
+<li><strong>Flye</strong> — assembles long reads → <code>isolate/flye/assembly.fasta</code></li>
+<li><strong>Racon</strong> (4 rounds, long reads) — polishes the Flye assembly → <code>isolate/isolate.pol.rac.fasta</code></li>
+<li><strong>Medaka</strong> — further long-read polishing → <code>isolate/isolate.pol.med.fasta</code></li>
+<li><strong>Pilon</strong> (short reads, if provided) — short-read polishing → <code>isolate/isolate.pol.pil.fasta</code></li>
+<li><strong>Racon</strong> (1 round, short reads, if provided) — final short-read polish → <code>isolate/isolate.pol.fin.fasta</code></li>
+<li><strong>dnaapler</strong> — reorients circular chromosomes to a standard start position → <code>isolate/completed_assembly.fasta</code></li>
+</ol>
+<p>Short reads are optional. If provided, Pilon and illumina Racon polishing steps are added after Medaka.</p>
+<h3 id="final-output">Final output</h3>
+<pre><code>isolate/completed_assembly.fasta    ← use this as the final assembly
+</code></pre>
+<pre><code class="language-bash"># Hybrid (long + short reads) — recommended
+aviary isolate \
+  -1 sample_R1.fastq.gz \
+  -2 sample_R2.fastq.gz \
+  -l sample.fastq.gz \
+  -z ont \
+  -o output_dir/ \
+  --n-cores 16
+
+# Long reads only
+aviary isolate \
+  -l sample.fastq.gz \
+  -z ont \
+  -o output_dir/ \
+  --n-cores 16
+
+# Run only up to dnaapler (reorientation) step
+aviary isolate \
+  -l sample.fastq.gz \
+  -z ont \
+  -o output_dir/ \
+  --n-cores 16 \
+  -w dnaapler
+</code></pre>
+<table><thead><tr><th>Flag</th><th>Description</th><th>Default</th></tr></thead><tbody>
+<tr><td><code>--guppy-model</code></td><td>Medaka model for polishing</td><td><code>r941_min_hac_g507</code></td></tr>
+<tr><td><code>--genome-size</code></td><td>Approximate genome size in bp (informational)</td><td><code>5000000</code></td></tr>
+</tbody></table>
+<hr>
+<h2 id="12.-common-flags-(apply-across-most-subcommands)">12. COMMON FLAGS (apply across most subcommands)</h2>
+<table><thead><tr><th>Flag</th><th>Description</th><th>Default</th></tr></thead><tbody>
+<tr><td><code>-n / --n-cores INT</code></td><td>Max CPU cores (total for Snakemake)</td><td><code>16</code></td></tr>
+<tr><td><code>--max-threads INT</code></td><td>Max threads for any single process</td><td><code>8</code></td></tr>
+<tr><td><code>-m / --max-memory INT</code></td><td>Max memory in GB</td><td><code>250</code></td></tr>
+<tr><td><code>-p / --pplacer-threads INT</code></td><td>Threads for pplacer (dedicated — avoid high values to prevent deadlocks)</td><td><code>8</code></td></tr>
+<tr><td><code>-o / --output PATH</code></td><td>Output directory</td><td><code>./</code></td></tr>
+<tr><td><code>--request-gpu</code></td><td>Enable GPU-accelerated steps (taxvamb, comebin, semibin)</td><td>off</td></tr>
+<tr><td><code>--dry-run</code></td><td>Show workflow steps without executing</td><td>off</td></tr>
+<tr><td><code>-w / --workflow RULE</code></td><td>Target a specific Snakemake rule (all prerequisites still run)</td><td>—</td></tr>
+<tr><td><code>--snakemake-cmds STR</code></td><td>Extra arguments passed directly to Snakemake</td><td>—</td></tr>
+<tr><td><code>--snakemake-profile NAME/PATH</code></td><td>Snakemake cluster profile for HPC submission</td><td>—</td></tr>
+<tr><td><code>--local-cores INT</code></td><td>Max cores for local-only steps</td><td><code>16</code></td></tr>
+<tr><td><code>--cluster-retries INT</code></td><td>Retry failed cluster jobs N times (memory/time auto-scaled on retry)</td><td><code>0</code></td></tr>
+<tr><td><code>--tmpdir PATH</code></td><td>Directory for temporary files</td><td><code>/tmp</code></td></tr>
+<tr><td><code>--clean</code></td><td>Clean up temp files after run</td><td><code>True</code></td></tr>
+<tr><td><code>--rerun-triggers VALUE</code></td><td>What triggers rule reruns</td><td><code>mtime</code></td></tr>
+<tr><td><code>--default-resources STR</code></td><td>Snakemake default resource config string</td><td>—</td></tr>
+</tbody></table>
+<h3 id="thread-control-explained">Thread control explained</h3>
+<ul>
+<li><code>-t / --max-threads</code> — threads <strong>per program</strong> (how many each tool gets)</li>
+<li><code>-n / --n-cores</code> — total cores Snakemake can use (if &gt; <code>--max-threads</code>, multiple rules run in parallel)</li>
+<li><code>-p / --pplacer-threads</code> — pplacer gets its own limit (deadlocks on too many threads)</li>
+</ul>
+<h3 id="unlock-a-directory-after-a-crash">Unlock a directory after a crash</h3>
+<pre><code class="language-bash">aviary complete \
+  -1 sample_R1.fastq.gz \
+  -2 sample_R2.fastq.gz \
+  -o output_dir/ \
+  --snakemake-cmds '--unlock'
+</code></pre>
+<h3 id="resume-an-interrupted-run">Resume an interrupted run</h3>
+<p>Snakemake automatically skips completed steps. Just re-run the exact same command.</p>
+<hr>
+<h2 id="13.-hpc-/-cluster-job-submission">13. HPC / CLUSTER JOB SUBMISSION</h2>
+<h3 id="pbs/qsub">PBS/qsub</h3>
+<pre><code class="language-bash"># Inline qsub submission
+aviary complete \
+  -1 sample_R1.fastq.gz \
+  -2 sample_R2.fastq.gz \
+  -o output_dir/ \
+  --n-cores 16 \
+  --snakemake-cmds '--cluster "qsub -V" '
+  # NOTE: space after the closing quote is required (argparse quirk)
+
+# Using a named Snakemake profile (e.g. ~/.config/snakemake/aqua/config.yaml)
+aviary complete \
+  -1 sample_R1.fastq.gz \
+  -2 sample_R2.fastq.gz \
+  -o output_dir/ \
+  --n-cores 16 \
+  --snakemake-profile aqua \
+  --cluster-retries 2
+</code></pre>
+<h3 id="example-pbs-~/.config/snakemake/aqua/config.yaml">Example PBS <code>~/.config/snakemake/aqua/config.yaml</code></h3>
+<pre><code class="language-yaml">cluster: qsub
+cluster-status: qstat
+jobs: 10000
+cluster-cancel: qdel
+</code></pre>
+<blockquote>
+<p><strong>PBS quirk:</strong> Add <code>-V</code> to your qsub command to pass environment variables to jobs.
+Without <code>-V</code>, pysam fails to activate properly in submitted jobs.</p>
+</blockquote>
+<h3 id="slurm">SLURM</h3>
+<pre><code class="language-bash">aviary complete \
+  -1 sample_R1.fastq.gz \
+  -2 sample_R2.fastq.gz \
+  -o output_dir/ \
+  --n-cores 16 \
+  --snakemake-profile /path/to/slurm-profile/
+</code></pre>
+<h3 id="example-slurm-wrapper-script-(-submit_aviary.sh-)">Example SLURM wrapper script (<code>submit_aviary.sh</code>)</h3>
+<pre><code class="language-bash">#!/bin/bash
+#SBATCH --job-name=aviary
+#SBATCH --ntasks=1
+#SBATCH --cpus-per-task=16
+#SBATCH --mem=64G
+#SBATCH --time=48:00:00
+#SBATCH --output=aviary_%j.log
+
+conda activate aviary
+aviary complete \
+  -1 sample_R1.fastq.gz \
+  -2 sample_R2.fastq.gz \
+  -o output_dir/ \
+  --n-cores 16
+</code></pre>
+<pre><code class="language-bash">sbatch submit_aviary.sh
+</code></pre>
+<h3 id="cluster-retry-behaviour">Cluster retry behaviour</h3>
+<p>With <code>--cluster-retries N</code>, failed jobs are automatically resubmitted up to N times.
+Each retry increases the requested memory and wall time. Set <code>--max-memory</code> and
+<code>--max-threads</code> to cap these values.</p>
+<blockquote>
+<p><strong>Note on job resources:</strong> Job CPU and memory requirements were empirically derived from
+1,000 Aviary runs. Binner rules are standardised at 24 CPUs. Memory is set to the nearest
+power of 2 above max RSS. These are capped by <code>--max-memory</code> / <code>--max-threads</code>.</p>
+</blockquote>
+<hr>
+<h2 id="14.-full-workflow-walkthrough-(end-to-end)">14. FULL WORKFLOW WALKTHROUGH (end-to-end)</h2>
+<h3 id="step-by-step-(maximum-control)">Step-by-step (maximum control)</h3>
+<pre><code class="language-bash"># Step 1 — Configure databases (once per system)
+aviary configure \
+  -o logs/ \
+  --eggnog-db-path /path/to/db/eggnog/ \
+  --gtdb-path /path/to/db/gtdb/ \
+  --checkm2-db-path /path/to/db/checkm2/ \
+  --singlem-metapackage-path /path/to/db/singlem/ \
+  --download
+
+# Step 2 — QC + Assembly
+aviary assemble \
+  -1 sample_R1.fastq.gz \
+  -2 sample_R2.fastq.gz \
+  -l sample.fastq.gz \
+  -z ont \
+  -o 01_assemble/ \
+  --n-cores 16
+
+# Step 3 — MAG Recovery
+aviary recover \
+  --assembly 01_assemble/assembly/final_contigs.fasta \
+  -1 sample_R1.fastq.gz \
+  -2 sample_R2.fastq.gz \
+  -l sample.fastq.gz \
+  -z ont \
+  -o 02_recover/ \
+  --n-cores 16 \
+  --max-threads 32 \
+  --request-gpu       # only if GPU node available
+
+# Step 4 — Annotate MAGs
+aviary annotate \
+  -d 02_recover/bins/final_bins/ \
+  -o 03_annotate/ \
+  --n-cores 16
+
+# Step 5 — Dereplicate across all samples (run once all samples processed)
+aviary cluster \
+  -i 02_recover/ run2/ run3/ \
+  -o 04_cluster/ \
+  --n-cores 16
+</code></pre>
+<h3 id="single-command-alternative-(steps-2–4-only)">Single-command alternative (steps 2–4 only)</h3>
+<pre><code class="language-bash">aviary complete \
+  -1 sample_R1.fastq.gz \
+  -2 sample_R2.fastq.gz \
+  -l sample.fastq.gz \
+  -z ont \
+  -o output_dir/ \
+  --n-cores 16 \
+  --request-gpu
+
+# Then run cluster (step 5) separately after all samples are done
+aviary cluster -i output_dir/ run2/ run3/ -o cluster/ --n-cores 16
+</code></pre>
+<hr>
+<h2 id="15.-key-output-files">15. KEY OUTPUT FILES</h2>
+<pre><code># After assemble:
+output_dir/assembly/final_contigs.fasta     ← use as --assembly in recover
+
+# After recover:
+output_dir/bins/final_bins/*.fna            ← final MAG FASTA files (use these downstream)
+output_dir/bins/bin_info.tsv                ← taxonomy, completeness, contamination, size, N50
+output_dir/bins/checkm_minimal.tsv          ← minimal CheckM2 QC summary
+output_dir/bins/coverm_abundances.tsv       ← relative abundance per MAG per sample
+output_dir/diversity/singlem_out/           ← SingleM community profiling
+output_dir/taxonomy/                        ← raw GTDB-tk output
+output_dir/benchmarks/                      ← per-rule resource benchmarks
+output_dir/logs/                            ← per-rule logs — always check here first on errors
+
+# After annotate:
+output_dir/annotation/eggnog/               ← EggNOG-mapper functional annotation
+output_dir/annotation/gtdbtk/              ← GTDB-tk taxonomic annotation
+
+# After cluster:
+output_dir/dereplicated_bins/               ← final dereplicated representative MAGs
+</code></pre>
+<hr>
+<h2 id="16.-web-interface">16. WEB INTERFACE</h2>
+<p>A live log viewer for monitoring running Aviary jobs in the browser. Parses the Snakemake log in real time and displays rule progress, resource usage, errors, assembly stats, and (if available) SingleM phylo tree and GTDB-tk results.</p>
+<p>Requires the <code>web</code> pixi environment (Flask).</p>
+<pre><code class="language-bash"># Recommended — via pixi task
+pixi run -e web server
+
+# Or pin to a specific output directory
+python -m aviary.web.server --output-dir /path/to/aviary/output
+</code></pre>
+<table><thead><tr><th>Flag</th><th>Description</th><th>Default</th></tr></thead><tbody>
+<tr><td><code>--output-dir</code></td><td>Pin to a specific Aviary output directory</td><td>cwd</td></tr>
+<tr><td><code>--port</code></td><td>Port to listen on (auto-increments if in use)</td><td><code>8090</code></td></tr>
+<tr><td><code>--host</code></td><td>Interface to bind to</td><td><code>127.0.0.1</code></td></tr>
+<tr><td><code>--reload</code></td><td>Auto-reload server on source file changes (dev only)</td><td>off</td></tr>
+</tbody></table>
+<blockquote>
+<p><strong>Note:</strong> The server binds to <code>127.0.0.1</code> (loopback only). On a shared HPC you must use an
+SSH tunnel to view it locally.</p>
+</blockquote>
+<h3 id="ssh-tunnel-(hpc)">SSH tunnel (HPC)</h3>
+<p><strong>Terminal 1</strong> — open the SSH tunnel (keep this running):</p>
+<pre><code class="language-bash">ssh -L 8090:localhost:8090 &lt;username&gt;@&lt;hpc-address&gt;
+</code></pre>
+<p><strong>Terminal 2</strong> — start the server on the HPC:</p>
+<pre><code class="language-bash">python -m aviary.web.server --output-dir /path/to/aviary/output --port 8090
+</code></pre>
+<p><strong>Browser</strong>: open <code>http://localhost:8090</code></p>
+<p>If port 8090 is already in use the server automatically tries 8091, 8092, … up to 8109.
+Update the <code>-L</code> tunnel port to match whichever port the server reports.</p>
+<hr>
+<h2 id="17.-tips,-gotchas-&amp;-common-errors">17. TIPS, GOTCHAS &amp; COMMON ERRORS</h2>
+<ol>
+<li>
+<p><strong><code>/tmp</code> filling up</strong> is the most common error (<code>Error in prepare_binning_files</code>). CoverM
+mapping during binning uses <code>/tmp</code>. Fix: <code>--tmpdir /scratch/tmp/</code> or
+<code>aviary configure --tmpdir /scratch/tmp/</code>.</p>
+</li>
+<li>
+<p><strong>SPAdes "Error code: -9"</strong> almost always means out of memory. Increase with <code>-m</code> (GB).</p>
+</li>
+<li>
+<p><strong>qsub + pysam ModuleNotFoundError:</strong> Add <code>-V</code> to your qsub command to pass environment
+variables: <code>--snakemake-cmds '--cluster "qsub -V" '</code></p>
+</li>
+<li>
+<p><strong>Note the trailing space</strong> in <code>--snakemake-cmds '--cluster qsub '</code>. The space after
+<code>qsub</code> is required due to a Python argparse quirk.</p>
+</li>
+<li>
+<p><strong><code>--request-gpu</code> on a local machine:</strong> First install the <code>cuda</code> package into your conda
+environment. GPU-capable programs will detect it automatically.</p>
+</li>
+<li>
+<p><strong>Resuming a run:</strong> Snakemake automatically skips completed rules. Just re-run the exact
+same command with the same <code>-o</code> output directory.</p>
+</li>
+<li>
+<p><strong>Default fasta extension for <code>annotate</code> is <code>.fna</code></strong>, not <code>.fasta</code>. If your bins have a
+different extension, always specify <code>-x</code>.</p>
+</li>
+<li>
+<p><strong><code>aviary complete</code> does NOT run <code>cluster</code>.</strong> You must always run <code>aviary cluster</code> separately
+after all samples have been processed.</p>
+</li>
+<li>
+<p><strong><code>--binning-only</code></strong> in recover skips CheckM2 QC and GTDB-tk — useful when you just want
+fast MAG binning without annotation and plan to run <code>aviary annotate</code> separately.</p>
+</li>
+<li>
+<p><strong><code>--cluster-retries</code></strong> is highly recommended on HPC. Failed jobs are retried with
+progressively more memory and time, up to <code>--max-memory</code> / <code>--max-threads</code> caps.</p>
+</li>
+<li>
+<p><strong>Setting GTDB path:</strong> Point <code>GTDBTK_DATA_PATH</code> to the <code>db/</code> folder <em>inside</em> the GTDB
+download directory, not the download root itself.</p>
+</li>
+<li>
+<p><strong>GPU binners require a GPU node.</strong> If using <code>--request-gpu</code> with a PBS/SLURM profile,
+ensure the profile is configured to submit GPU jobs to a GPU partition/queue.</p>
+</li>
+<li>
+<p><strong><code>--skip-singlem</code> is on by default.</strong> SingleM recovery assessment is skipped unless you
+explicitly pass <code>--skip-singlem False</code>.</p>
+</li>
+</ol>
+<hr>
+<h2 id="18.-citation">18. CITATION</h2>
+<p>If you use Aviary in your research, please cite:</p>
+<blockquote>
+<p>Newell RJP, Aroney STN, Zaugg J, Sternes P, Tyson GW, Woodcroft BJ.
+<strong>Aviary: Hybrid assembly and genome recovery from metagenomes with Aviary.</strong>
+Zenodo (2024). https://doi.org/10.5281/zenodo.10806928</p>
+</blockquote>
+<pre><code>@software{aviary,
+  author  = {Newell, Rhys J. P. and Aroney, Samuel T. N. and Zaugg, Julian and
+             Sternes, Peter and Tyson, Gene W. and Woodcroft, Ben J.},
+  title   = {Aviary: Hybrid assembly and genome recovery from metagenomes with Aviary},
+  year    = {2024},
+  doi     = {10.5281/zenodo.10806928},
+  url     = {https://doi.org/10.5281/zenodo.10806928}
+}
+</code></pre>
+<p>You should also cite the individual tools used in your run. A full up-to-date list is at:
+https://rhysnewell.github.io/aviary/citations</p>
+
+            </div>
+            <div class='sidebar-right'>
+                <div class='page-nav' id='page-nav'>
+                    <p class='page-nav-header'>On this page</p>
+                    <ul>
+                        
+                        <li class='page-nav-level-1'>
+                            <a href='#aviary'>Aviary</a>
+                        </li>
+                        
+                        <li class='page-nav-level-2'>
+                            <a href='#1.-installation'>1. INSTALLATION</a>
+                        </li>
+                        
+                        <li class='page-nav-level-2'>
+                            <a href='#2.-quick-reference-—-subcommands'>2. QUICK REFERENCE — SUBCOMMANDS</a>
+                        </li>
+                        
+                        <li class='page-nav-level-2'>
+                            <a href='#3.-required-databases'>3. REQUIRED DATABASES</a>
+                        </li>
+                        
+                        <li class='page-nav-level-3'>
+                            <a href='#environment-variable-paths-(set-in-~/.bashrc-or-conda-activate-script)'>Environment variable paths (set in ~/.bashrc or conda activate script)</a>
+                        </li>
+                        
+                        <li class='page-nav-level-2'>
+                            <a href='#4.-configure-—-set-database-paths-and-optionally-download'>4. CONFIGURE — set database paths and optionally download</a>
+                        </li>
+                        
+                        <li class='page-nav-level-2'>
+                            <a href='#5.-assemble-—-de-novo-assembly-from-sequencing-reads'>5. ASSEMBLE — de novo assembly from sequencing reads</a>
+                        </li>
+                        
+                        <li class='page-nav-level-3'>
+                            <a href='#read-input-flags'>Read input flags</a>
+                        </li>
+                        
+                        <li class='page-nav-level-3'>
+                            <a href='#assembly-flags'>Assembly flags</a>
+                        </li>
+                        
+                        <li class='page-nav-level-3'>
+                            <a href='#contig-filtering-flags-(applied-post-assembly)'>Contig filtering flags (applied post-assembly)</a>
+                        </li>
+                        
+                        <li class='page-nav-level-3'>
+                            <a href='#expected-outputs-(-output_dir/-)'>Expected outputs (output_dir/)</a>
+                        </li>
+                        
+                        <li class='page-nav-level-2'>
+                            <a href='#6.-qc-/-read-filtering-flags-(apply-to-assemble,-recover,-complete)'>6. QC / READ FILTERING FLAGS (apply to assemble, recover, complete)</a>
+                        </li>
+                        
+                        <li class='page-nav-level-2'>
+                            <a href='#7.-recover-—-extract-mags-from-an-assembly-using-multiple-binners'>7. RECOVER — extract MAGs from an assembly using multiple binners</a>
+                        </li>
+                        
+                        <li class='page-nav-level-3'>
+                            <a href='#default-binners-(always-run-unless-skipped)'>Default binners (always run unless skipped)</a>
+                        </li>
+                        
+                        <li class='page-nav-level-3'>
+                            <a href='#das_tool-is-always-run-to-produce-a-final-consensus-bin-set-from-all-binner-outputs.'>DAS_Tool is always run to produce a final consensus bin set from all binner outputs.</a>
+                        </li>
+                        
+                        <li class='page-nav-level-3'>
+                            <a href='#recover-flags'>Recover flags</a>
+                        </li>
+                        
+                        <li class='page-nav-level-3'>
+                            <a href='#expected-outputs-(-output_dir/-)'>Expected outputs (output_dir/)</a>
+                        </li>
+                        
+                        <li class='page-nav-level-2'>
+                            <a href='#8.-annotate-—-functional-(eggnog)-+-taxonomic-(gtdb-tk)-annotation'>8. ANNOTATE — functional (EggNOG) + taxonomic (GTDB-tk) annotation</a>
+                        </li>
+                        
+                        <li class='page-nav-level-3'>
+                            <a href='#expected-outputs-(-output_dir/-)'>Expected outputs (output_dir/)</a>
+                        </li>
+                        
+                        <li class='page-nav-level-2'>
+                            <a href='#9.-complete-—-assemble-+-recover-+-annotate-in-one-command'>9. COMPLETE — assemble + recover + annotate in one command</a>
+                        </li>
+                        
+                        <li class='page-nav-level-2'>
+                            <a href='#10.-cluster-—-dereplicate-mags-across-multiple-aviary-runs'>10. CLUSTER — dereplicate MAGs across multiple Aviary runs</a>
+                        </li>
+                        
+                        <li class='page-nav-level-3'>
+                            <a href='#expected-outputs-(-cluster_output/-)'>Expected outputs (cluster_output/)</a>
+                        </li>
+                        
+                        <li class='page-nav-level-2'>
+                            <a href='#11.-isolate-—-isolate-(single-organism)-assembly'>11. ISOLATE — isolate (single-organism) assembly</a>
+                        </li>
+                        
+                        <li class='page-nav-level-3'>
+                            <a href='#pipeline-steps'>Pipeline steps</a>
+                        </li>
+                        
+                        <li class='page-nav-level-3'>
+                            <a href='#final-output'>Final output</a>
+                        </li>
+                        
+                        <li class='page-nav-level-2'>
+                            <a href='#12.-common-flags-(apply-across-most-subcommands)'>12. COMMON FLAGS (apply across most subcommands)</a>
+                        </li>
+                        
+                        <li class='page-nav-level-3'>
+                            <a href='#thread-control-explained'>Thread control explained</a>
+                        </li>
+                        
+                        <li class='page-nav-level-3'>
+                            <a href='#unlock-a-directory-after-a-crash'>Unlock a directory after a crash</a>
+                        </li>
+                        
+                        <li class='page-nav-level-3'>
+                            <a href='#resume-an-interrupted-run'>Resume an interrupted run</a>
+                        </li>
+                        
+                        <li class='page-nav-level-2'>
+                            <a href='#13.-hpc-/-cluster-job-submission'>13. HPC / CLUSTER JOB SUBMISSION</a>
+                        </li>
+                        
+                        <li class='page-nav-level-3'>
+                            <a href='#pbs/qsub'>PBS/qsub</a>
+                        </li>
+                        
+                        <li class='page-nav-level-3'>
+                            <a href='#example-pbs-~/.config/snakemake/aqua/config.yaml'>Example PBS ~/.config/snakemake/aqua/config.yaml</a>
+                        </li>
+                        
+                        <li class='page-nav-level-3'>
+                            <a href='#slurm'>SLURM</a>
+                        </li>
+                        
+                        <li class='page-nav-level-3'>
+                            <a href='#example-slurm-wrapper-script-(-submit_aviary.sh-)'>Example SLURM wrapper script (submit_aviary.sh)</a>
+                        </li>
+                        
+                        <li class='page-nav-level-3'>
+                            <a href='#cluster-retry-behaviour'>Cluster retry behaviour</a>
+                        </li>
+                        
+                        <li class='page-nav-level-2'>
+                            <a href='#14.-full-workflow-walkthrough-(end-to-end)'>14. FULL WORKFLOW WALKTHROUGH (end-to-end)</a>
+                        </li>
+                        
+                        <li class='page-nav-level-3'>
+                            <a href='#step-by-step-(maximum-control)'>Step-by-step (maximum control)</a>
+                        </li>
+                        
+                        <li class='page-nav-level-3'>
+                            <a href='#single-command-alternative-(steps-2–4-only)'>Single-command alternative (steps 2–4 only)</a>
+                        </li>
+                        
+                        <li class='page-nav-level-2'>
+                            <a href='#15.-key-output-files'>15. KEY OUTPUT FILES</a>
+                        </li>
+                        
+                        <li class='page-nav-level-2'>
+                            <a href='#16.-web-interface'>16. WEB INTERFACE</a>
+                        </li>
+                        
+                        <li class='page-nav-level-3'>
+                            <a href='#ssh-tunnel-(hpc)'>SSH tunnel (HPC)</a>
+                        </li>
+                        
+                        <li class='page-nav-level-2'>
+                            <a href='#17.-tips,-gotchas-&amp;-common-errors'>17. TIPS, GOTCHAS &amp; COMMON ERRORS</a>
+                        </li>
+                        
+                        <li class='page-nav-level-2'>
+                            <a href='#18.-citation'>18. CITATION</a>
+                        </li>
+                        
+                    </ul>
+                </div>
+            </div>
+            <div class='wave-container'>
+                <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1440 320">
+                    <path fill-opacity="0.35"
+                        d="M0,192L60,213.3C120,235,240,277,360,277.3C480,277,600,235,720,192C840,149,960,107,1080,122.7C1200,139,1320,213,1380,250.7L1440,288L1440,320L1380,320C1320,320,1200,320,1080,320C960,320,840,320,720,320C600,320,480,320,360,320C240,320,120,320,60,320L0,320Z">
+                    </path>
+                    <path fill-opacity="0.5"
+                        d="M0,160L60,181.3C120,203,240,245,360,229.3C480,213,600,139,720,138.7C840,139,960,213,1080,229.3C1200,245,1320,203,1380,181.3L1440,160L1440,320L1380,320C1320,320,1200,320,1080,320C960,320,840,320,720,320C600,320,480,320,360,320C240,320,120,320,60,320L0,320Z">
+                    </path>
+                    <path fill-opacity="0.2"
+                        d="M0,224L60,197.3C120,171,240,117,360,117.3C480,117,600,171,720,186.7C840,203,960,181,1080,186.7C1200,192,1320,224,1380,240L1440,256L1440,320L1380,320C1320,320,1200,320,1080,320C960,320,840,320,720,320C600,320,480,320,360,320C240,320,120,320,60,320L0,320Z">
+                    </path>
+                </svg>
+                <p>Powered by <a href='https://cli.doctave.com' target='_blank'>Doctave</a></p>
+            </div>
+        </div>
+    </div>
+    <script type="text/javascript" src="/aviary/assets/katex.js?v=1780277936"></script>
+    <script type="text/javascript" src="/aviary/assets/mermaid.js?v=1780277936"></script>
+    <script type="text/javascript" src="/aviary/assets/elasticlunr.js?v=1780277936"></script>
+    <script type="text/javascript" src="/aviary/assets/prism.js?v=1780277936"></script>
+    <script type="text/javascript" src="/aviary/assets/doctave-app.js?v=1780277936"></script>
+
+    
+</body>
+
+</html>
