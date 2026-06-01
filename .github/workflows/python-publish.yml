@@ -40,14 +40,3 @@ jobs:
       with:
         password: ${{ secrets.PYPI_API_TOKEN }}
         skip_existing: true
-        
-    - name: Create a Release
-      if: github.actor != 'dependabot[bot]'
-      uses: "marvinpinto/action-automatic-releases@latest"
-      with:
-        repo_token: "${{ secrets.GITHUB_TOKEN }}"
-        prerelease: false
-        automatic_release_tag: "${{ github.ref_name }}"
-        title: "${{ github.ref_name }}"
-        files: |
-          dist/aviary_genome-${{ env.RELEASE_VERSION }}.tar.gz

@@ -55,3 +55,4 @@ if __name__ == "__main__":
 
     print("Now run 'git push && git push --tags' and GitHub actions will build and upload to PyPI")
     print("REMINDER: Don't forget to build and push the Docker image!")
+    print("REMINDER: Don't forget to update and do a release on GitHub!")
