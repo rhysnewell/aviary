@@ -54,3 +54,4 @@ if __name__ == "__main__":
     extern.run('git tag v{}'.format(version))
 
     print("Now run 'git push && git push --tags' and GitHub actions will build and upload to PyPI")
+    print("REMINDER: Don't forget to build and push the Docker image!")
