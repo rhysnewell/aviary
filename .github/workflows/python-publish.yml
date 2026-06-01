@@ -46,7 +46,7 @@ jobs:
       with:
         repo_token: "${{ secrets.GITHUB_TOKEN }}"
         prerelease: false
-        automatic_release_tag: "${{ env.RELEASE_VERSION }}"
-        title: "${{ env.RELEASE_VERSION }}"
+        automatic_release_tag: "${{ github.ref_name }}"
+        title: "${{ github.ref_name }}"
         files: |
           dist/aviary_genome-${{ env.RELEASE_VERSION }}.tar.gz
