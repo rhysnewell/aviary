@@ -60,7 +60,7 @@ with open(f"{OUTPUT_DIR}/cmds.sh", "w") as cmd_file:
                 f"-2 {' '.join(reverse_reads)} "
                 f"--binning-only --request-gpu --strict "
                 f"-n 32 -t 32 --local-cores 1 "
-                f"-m 256 --coassemble no "
+                f"-m 280 --coassemble no "
                 f"--snakemake-profile aqua --cluster-retries 3 "
                 f"&> {log_file}"
             )

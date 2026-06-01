@@ -137,18 +137,10 @@ def get_snakemake_logs(output_dir):
 # ---------------------------------------------------------------------------
 # Quality helpers
 # ---------------------------------------------------------------------------
-
-def quality_tier(completeness, contamination):
-    try:
-        c = float(completeness)
-        x = float(contamination)
-    except (ValueError, TypeError):
-        return "low"
-    if c >= 90 and x <= 5:
-        return "high"
-    if c >= 50 and x <= 10:
-        return "medium"
-    return "low"
+try:
+    from aviary.web.utils import quality_tier
+except ImportError:
+    from utils import quality_tier
 
 
 def parse_taxonomy(classification_str):
@@ -293,7 +285,9 @@ def render_bins_table(bins):
             size_mb = "N/A"
 
         try:
-            gc = f"{float(b.get('GC_Content', 0)) * 100:.1f}%" if float(b.get('GC_Content', 0)) <= 1 else f"{float(b.get('GC_Content', 0)):.1f}%"
+            gc_raw = b.get('GC_Content', 0)
+            gc_val = float(str(gc_raw).rstrip('%'))
+            gc = f"{gc_val * 100:.1f}%" if gc_val <= 1 else f"{gc_val:.1f}%"
         except (ValueError, TypeError):
             gc = "N/A"
 

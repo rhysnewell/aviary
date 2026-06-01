@@ -1202,6 +1202,8 @@ rule singlem_appraise:
         singlem = "data/singlem_out/singlem_appraisal.tsv"
     params:
         package_path = config['singlem_metapackage'],
+    benchmark:
+        "benchmarks/singlem_appraise.benchmark.txt"
     threads: min(config["max_threads"], 4) # Should not generally take a long time
     resources:
         # 16G since failed with 8G when running (with SingleM v0.20.3)

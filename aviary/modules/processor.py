@@ -248,6 +248,7 @@ class Processor:
             self.longread_type = 'none'
             self.medaka_model = 'none'
             self.long_read_assembler = 'myloasm'
+        self.guppy_model = getattr(args, 'guppy_model', 'r941_min_hac_g507')
 
         try:
             self.short_percent_identity = args.short_percent_identity
@@ -468,6 +469,7 @@ class Processor:
         conf["long_read_type"] = self.longread_type
         conf["long_read_assembler"] = self.long_read_assembler
         conf["medaka_model"] = self.medaka_model
+        conf["guppy_model"] = self.guppy_model
         conf["kmer_sizes"] = self.kmer_sizes
         conf["use_unicycler"] = self.use_unicycler
         conf["use_megahit"] = self.use_megahit

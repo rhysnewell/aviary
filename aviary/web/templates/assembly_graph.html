@@ -405,7 +405,10 @@ async function selectEntry(el) {
   showState('loading');
 
   try {
-    const r = await fetch(`/api/gfa_stats?output_dir=${encodeURIComponent(outDir)}`);
+    const _ctrl = new AbortController();
+    const _tid = setTimeout(() => _ctrl.abort(), 120000); // 2min timeout
+    const r = await fetch(`/api/gfa_stats?output_dir=${encodeURIComponent(outDir)}`, { signal: _ctrl.signal });
+    clearTimeout(_tid);
     if (r.status === 404) {
       el.classList.add('no-gfa');
       showState('empty');

@@ -55,8 +55,8 @@ lrwxrwxrwx 1 woodcrob default 40 Apr 23  2025 2015_01_16_v2 -> /work/microbiome/
 lrwxrwxrwx 1 woodcrob default 57 May  2  2025 2024-3-28-GTDB214.1+humanT2T -> /work/microbiome/db/metabuli/2024-3-28-GTDB214.1+humanT2T
 lrwxrwxrwx 1 woodcrob default 51 Apr 23  2025 2.1.3 -> /mnt/hpccs01/work/microbiome/db/eggnog-mapper/2.1.3
 lrwxrwxrwx 1 woodcrob default 73 Nov 18 08:04 CheckM2_database -> /work/microbiome/db/CheckM2_database/CheckM2_database/uniref100.KO.1.dmnd
-lrwxrwxrwx 1 woodcrob default 95 Apr 23  2025 release220 -> /work/microbiome/db/gtdb/gtdb_release220/auxillary_files/gtdbtk_package/full_package/release220
-lrwxrwxrwx 1 woodcrob default 74 Jun 10 15:54 S5.4.0.GTDB_r226.metapackage_20250331.smpkg.zb -> /work/microbiome/db/singlem/S5.4.0.GTDB_r226.metapackage_20250331.smpkg.zb
+lrwxrwxrwx 1 woodcrob default 95 Apr 23  2025 release232 -> /work/microbiome/db/gtdb/gtdb_release232/auxillary_files/gtdbtk_package/full_package/release232
+lrwxrwxrwx 1 woodcrob default 74 Jun 10 15:54 S6.5.0.GTDB_r232.metapackage_20260319.smpkg.zb -> /work/microbiome/db/singlem/S6.5.0.GTDB_r232.metapackage_20260319.smpkg.zb
 ```
 To check the expected database symlink names, see `admin/set_env_vars.sh` in the
 aviary repository. The advantage of this approach is that locations of the
@@ -116,7 +116,7 @@ use the the `aviary configure` module to update the environment variables used b
 
 These environment variables can also be configured manually, just set the following variables in your `.bashrc` file:
 ```
-export GTDBTK_DATA_PATH=/path/to/gtdb/gtdb_release207/db/ # https://gtdb.ecogenomic.org/downloads
+export GTDBTK_DATA_PATH=/path/to/gtdb/gtdb_release232/db/ # https://gtdb.ecogenomic.org/downloads
 export EGGNOG_DATA_DIR=/path/to/eggnog-mapper/2.1.7/ # https://github.com/eggnogdb/eggnog-mapper/wiki/eggNOG-mapper-v2.1.5-to-v2.1.7#setup
 export SINGLEM_METAPACKAGE_PATH=/path/to/singlem_metapackage.smpkg/
 export CHECKM2DB=/path/to/checkm2db/

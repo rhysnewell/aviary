@@ -1,0 +1,71 @@
+# Use a lightweight base image
+FROM debian:bullseye-slim
+
+# This dockerfile uses cached mounts, so to build use e.g.
+# $ DOCKER_BUILDKIT=1 docker build .
+
+WORKDIR /aviary
+
+# Install dependencies
+RUN apt-get update && apt-get install -y \
+    curl \
+    ca-certificates \
+    git \
+    man-db \
+    unzip \
+    && rm -rf /var/lib/apt/lists/*
+
+# Install Pixi (via install script)
+RUN curl -fsSL https://pixi.sh/install.sh | bash
+
+# Add Pixi to PATH
+ENV PATH="/root/.pixi/bin:${PATH}"
+ENV PYTHONNOUSERSITE=1
+
+# re-add the first line when setup here - the second line enables running from arbitrary commits rather than a tag
+RUN git clone https://github.com/rhysnewell/aviary . && git checkout vAVIARY_VERSION
+# RUN git clone https://github.com/rhysnewell/aviary . && git checkout AVIARY_VERSION
+
+# We install through pip, because installing via pip install -e . causes issues for apptainer
+# https://github.com/prefix-dev/pixi/issues/1387
+RUN pixi run --frozen bash -c 'pip install aviary-genome==AVIARY_VERSION'
+
+# Build all non-GPU pixi environments. Aviary workflows invoke these at runtime.
+RUN pixi run --frozen aviary build
+
+# Database paths are intentionally runtime-configurable. The databases are very
+# large, so the default image is software-only and users can mount shared DB
+# directories with -v and override these environment variables.
+ENV GTDBTK_DATA_PATH=/db/gtdb \
+    EGGNOG_DATA_DIR=/db/eggnog \
+    SINGLEM_METAPACKAGE_PATH=/db/singlem/singlem.smpkg \
+    CHECKM2DB=/db/checkm2/uniref100.KO.1.dmnd \
+    METABULI_DB_PATH=/db/metabuli \
+    TMPDIR=/tmp
+
+# Run some tests
+RUN pixi run --frozen aviary --version
+RUN pixi run --frozen aviary --help
+
+# # Remove all the build dependencies / image layers for a smaller image overall
+FROM scratch
+COPY --from=0 / /
+
+WORKDIR /data
+# Add Pixi to PATH
+ENV PATH="/root/.pixi/bin:${PATH}"
+ENV PYTHONNOUSERSITE=1
+ENV GTDBTK_DATA_PATH=/db/gtdb \
+    EGGNOG_DATA_DIR=/db/eggnog \
+    SINGLEM_METAPACKAGE_PATH=/db/singlem/singlem.smpkg \
+    CHECKM2DB=/db/checkm2/uniref100.KO.1.dmnd \
+    METABULI_DB_PATH=/db/metabuli \
+    TMPDIR=/tmp
+
+RUN pixi shell-hook --frozen --no-install --manifest-path /aviary/pixi.toml | grep -v set_env_vars.sh >> /run_via_pixi.profile
+RUN echo 'source /run_via_pixi.profile' > /run_via_pixi.bash
+RUN echo 'exec "$@"' >> /run_via_pixi.bash
+RUN chmod +x /run_via_pixi.bash
+
+CMD ["--help"]
+ENTRYPOINT ["bash", "/run_via_pixi.bash", "aviary"]

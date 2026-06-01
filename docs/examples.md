@@ -78,7 +78,7 @@ The `data/` folder contains various output from the different programs that have
 
 - `assembly/final_contigs.fasta` - The assembled genome in FASTA format
 - `www/assembly_stats.txt` - A summary of the assembly statistics
-- `www/fastqc` - A folder containing the output from fastqc
+- `www/rastqc` - A folder containing the output from RastQC
 - `www/nanoplot` - A folder containing the output from NanoPlot
 
 #### 2. Recover
@@ -88,8 +88,8 @@ If assembly is performed during the recover process, then the outputs from the a
 - `bins/checkm_minimal.tsv` - A minimal version of the `bin_info.tsv` file.
 - `bins/coverm_abundances.tsv` - The abundance of each MAG in each sample.
 - `bins/final_bins` - A folder containing the final MAGs in FASTA format.
-- `diversity/singlem_out` - A folder containing the output from singlem.
-- `taxonomy/` - A folder containing the output from GTDB-tk
+- `diversity/` - A folder containing the output from SingleM.
+- `taxonomy/` - A folder containing the output from GTDB-Tk.
 
 #### 3. Annotate
 
@@ -106,10 +106,10 @@ use the the `aviary configure` module to update the environment variables used b
 
 These environment variables can also be configured manually, just set the following variables in your `.bashrc` file:
 ```
-GTDBTK_DATA_PATH
-EGGNOG_DATA_DIR
-SINGLEM_METAPACKAGE_PATH
-CHECKM2DB
+export GTDBTK_DATA_PATH=/path/to/gtdb/gtdb_release232/db/
+export EGGNOG_DATA_DIR=/path/to/eggnog-mapper/2.1.3/
+export SINGLEM_METAPACKAGE_PATH=/path/to/singlem/S6.5.0.GTDB_r232.metapackage_20260319.smpkg.zb
+export CHECKM2DB=/path/to/checkm2db/uniref100.KO.1.dmnd
 ```
 
 ### Thread control
@@ -135,6 +135,7 @@ can also be kind of memory intensive when given extra threads.
 
 When performing assembly, users are required to estimate how much RAM they will need to use via `-m, --max-memory, --max_memory`.
 With HPC cluster submission (see above), requested job memory is increased with each rerun and capped at `max_memory`.
+**Additionally**, GTDB-Tk v2.7.0+ requires at least 140 GB of RAM for R232.
 
 ### Temporary directory
 

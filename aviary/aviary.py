@@ -779,7 +779,7 @@ def main():
         dest='guppy_model',
         nargs=1,
         required=False,
-        default='r941_min_high_g360'
+        default='r941_min_hac_g507'
     )
 
     isolate_group.add_argument(
@@ -1126,7 +1126,7 @@ def main():
                                  
                                              ''')
 
-    add_workflow_arg(isolate_options, ['circlator'])
+    add_workflow_arg(isolate_options, ['dnaapler'])
 
     ##########################   ~ configure ~  ###########################
 

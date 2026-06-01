@@ -11,9 +11,10 @@ we have provided the following list of citations for you to use in alphabetical 
 modules are added to aviary.
 
 ## Aviary
-- **Aviary**: Newell R.J.P., Aroney S.T.N., Zaugg J., Sternes P., Tyson G.W., Woodcroft B.J. Available at https://github.com/rhysnewell/aviary
+- **Aviary**: Newell RJP, Aroney STN, Zaugg J, Sternes P, Tyson GW, Woodcroft BJ. Aviary: Hybrid assembly and genome recovery from metagenomes with Aviary. Zenodo (2024). https://doi.org/10.5281/zenodo.10806928
 
 ## QC
+- **RastQC**: Huang, K.L. RastQC: High-Performance Sequencing Quality Control Written in Rust. bioRxiv (2026). https://doi.org/10.64898/2026.03.31.715630
 - **NanoPack**: De Coster, W., D’Hert, S., Schultz, D.T., Cruts, M. & Van Broeckhoven, C. NanoPack: visualizing and processing long-read sequencing data. Bioinformatics 34, 2666–2669 (2018). https://doi.org/10.1093/bioinformatics/bty149
 - **NanoPack2**: De Coster, W. & Rademakers, R. NanoPack2: population-scale evaluation of long-read sequencing data. Bioinformatics 39, (2023). https://doi.org/10.1093/bioinformatics/btad311
 - **fastp**: Chen, S., Zhou, Y., Chen, Y. & Gu, J. fastp: an ultra-fast all-in-one FASTQ preprocessor. Bioinformatics 34, i884–i890 (2018). https://doi.org/10.1093/bioinformatics/bty560
@@ -26,6 +27,7 @@ modules are added to aviary.
 - **metaSPAdes**: Nurk, S., Meleshko, D., Korobeynikov, A., & Pevzner, P.A. (2017). metaSPAdes: a new versatile metagenomic assembler. Genome research, 27(5), 824-834. https://doi.org/10.1101/gr.213959.116
 - **Unicycler**: Wick, R.R., Judd, L.M., Gorrie, C.L. & Holt, K.E. Unicycler: Resolving bacterial genome assemblies from short and long sequencing reads. PLOS Computational Biology 13, e1005595 (2017). https://doi.org/10.1371/journal.pcbi.1005595
 - **MEGAHIT**: Li, D., Liu, C.-M., Luo, R., Sadakane, K. & Lam, T.-W. MEGAHIT: an ultra-fast single-node solution for large and complex metagenomics assembly via succinct de Bruijn graph. Bioinformatics 31, 1674–1676 (2015). https://doi.org/10.1093/bioinformatics/btv033
+- **Dnaapler**: Bouras, G., Houtak, G., Wick, R.R., Mallawaarachchi, V., Roach, M.J., Papudeshi, B., Judd, L.M., Sheppard, A.E., Edwards, R.A. & Vreugde, S. Dnaapler: A tool to reorient circular microbial genomes. Journal of Open Source Software 9, 6736 (2024). https://doi.org/10.21105/joss.06736
 - **myloasm**: Shaw, J., Marin, M.G. & Li, H. High-resolution metagenome assembly for modern long reads with myloasm. bioRxiv (2025). https://doi.org/10.1101/2025.09.05.674543
 
 ## Read mapping

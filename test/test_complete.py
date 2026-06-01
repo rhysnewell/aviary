@@ -72,8 +72,8 @@ class Tests(unittest.TestCase):
             # QC
             self.assertTrue("qc_short_reads" in output)
             self.assertTrue("qc_long_reads" not in output)
-            self.assertTrue("fastqc " in output)
-            self.assertTrue("fastqc_long" not in output)
+            self.assertTrue("rastqc " in output)
+            self.assertTrue("rastqc_long" not in output)
             self.assertTrue("nanoplot" not in output)
             self.assertTrue("metaquast" not in output)
 
@@ -180,8 +180,8 @@ class Tests(unittest.TestCase):
             # QC
             self.assertTrue("qc_short_reads" not in output)
             self.assertTrue("qc_long_reads" not in output)
-            self.assertTrue("fastqc " not in output)
-            self.assertTrue("fastqc_long" not in output)
+            self.assertTrue("rastqc " not in output)
+            self.assertTrue("rastqc_long" not in output)
             self.assertTrue("nanoplot" not in output)
             self.assertTrue("metaquast" not in output)
 
@@ -289,8 +289,8 @@ class Tests(unittest.TestCase):
             # QC
             self.assertTrue("qc_short_reads" in output)
             self.assertTrue("qc_long_reads" in output)
-            self.assertTrue("fastqc " in output)
-            self.assertTrue("fastqc_long" in output)
+            self.assertTrue("rastqc " in output)
+            self.assertTrue("rastqc_long" in output)
             self.assertTrue("nanoplot" in output)
             self.assertTrue("metaquast" not in output)
 
@@ -396,8 +396,8 @@ class Tests(unittest.TestCase):
             # QC
             self.assertTrue("qc_short_reads" not in output)
             self.assertTrue("qc_long_reads" in output)
-            self.assertTrue("fastqc " not in output)
-            self.assertTrue("fastqc_long" in output)
+            self.assertTrue("rastqc " not in output)
+            self.assertTrue("rastqc_long" in output)
             self.assertTrue("nanoplot" in output)
             self.assertTrue("metaquast" not in output)
 
@@ -504,8 +504,8 @@ class Tests(unittest.TestCase):
             # QC
             self.assertTrue("qc_short_reads" in output)
             self.assertTrue("qc_long_reads" not in output)
-            self.assertTrue("fastqc " in output)
-            self.assertTrue("fastqc_long" not in output)
+            self.assertTrue("rastqc " in output)
+            self.assertTrue("rastqc_long" not in output)
             self.assertTrue("nanoplot" not in output)
             self.assertTrue("metaquast" not in output)
 
@@ -612,8 +612,8 @@ class Tests(unittest.TestCase):
             # QC
             self.assertTrue("qc_short_reads" in output)
             self.assertTrue("qc_long_reads" not in output)
-            self.assertTrue("fastqc " in output)
-            self.assertTrue("fastqc_long" not in output)
+            self.assertTrue("rastqc " in output)
+            self.assertTrue("rastqc_long" not in output)
             self.assertTrue("nanoplot" not in output)
             self.assertTrue("metaquast" not in output)
 
@@ -720,8 +720,8 @@ class Tests(unittest.TestCase):
             # QC
             self.assertTrue("qc_short_reads" in output)
             self.assertTrue("qc_long_reads" not in output)
-            self.assertTrue("fastqc " in output)
-            self.assertTrue("fastqc_long" not in output)
+            self.assertTrue("rastqc " in output)
+            self.assertTrue("rastqc_long" not in output)
             self.assertTrue("nanoplot" not in output)
             self.assertTrue("metaquast" not in output)
 
@@ -828,8 +828,8 @@ class Tests(unittest.TestCase):
             # QC
             self.assertTrue("qc_short_reads" in output)
             self.assertTrue("qc_long_reads" not in output)
-            self.assertTrue("fastqc " in output)
-            self.assertTrue("fastqc_long" not in output)
+            self.assertTrue("rastqc " in output)
+            self.assertTrue("rastqc_long" not in output)
             self.assertTrue("nanoplot" not in output)
             self.assertTrue("metaquast" not in output)
 
@@ -936,8 +936,8 @@ class Tests(unittest.TestCase):
             # QC
             self.assertTrue("qc_short_reads" in output)
             self.assertTrue("qc_long_reads" not in output)
-            self.assertTrue("fastqc " in output)
-            self.assertTrue("fastqc_long" not in output)
+            self.assertTrue("rastqc " in output)
+            self.assertTrue("rastqc_long" not in output)
             self.assertTrue("nanoplot" not in output)
             self.assertTrue("metaquast" not in output)
 

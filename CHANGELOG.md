@@ -6,6 +6,13 @@ Forked from [wwood/aviary](https://github.com/wwood/aviary) at v0.12.0 (`myloasm
 
 ---
 
+### Changed
+
+- **SingleM updated to v0.21.3** — minimum version bumped from 0.20.3 to 0.21.3; `singlem-appraise` environment unpinned from 0.19.0 now that the v0.20 performance regression for `--genome-fasta-files` input is fixed in v0.21
+- **GTDB-Tk updated to v2.7.2** — minimum version bumped from 2.6.1 to 2.7.2. v2.7+ removes the `--skip_ani_screen` flag; replaced by `--place_species`
+- **Database updated to GTDB R232** — SingleM metapackage updated to `S6.5.0.GTDB_r232` and GTDB-Tk database updated to `release232`; download URL in `aviary configure --download` updated accordingly
+- **Benchmark added to `singlem_appraise` rule** — runtime now recorded in `benchmarks/singlem_appraise.benchmark.txt`
+
 ### Added
 
 #### Web Interface (`aviary/web/`) — experimental
@@ -14,6 +21,7 @@ An experimental browser-based monitor and results explorer served via Flask. Sta
 
 ```bash
 ssh -L 8090:localhost:8090 username@address.com
+pixi install -e web
 pixi run -e web server --output-dir /path/to/aviary_output
 ```
 
@@ -21,10 +29,11 @@ Then open `http://localhost:8090` in your browser. Includes a pipeline monitor f
 
 #### Pipeline
 
-- **myloasm assembler support** — myloasm added as an alternative long-read assembler alongside Flye (`--long-read-assembler myloasm`)
+- **myloasm assembler support** — myloasm added as an alternative long-read assembler alongside Flye (Myloasm default)
 - **GFA graph generation for short and long read assembly** — assembly graphs produced and retained for use in the assembly graph viewer
 - **`skip_reads_check` parameter** — added to `template_config.yaml` and config handling to support running subcommands without providing reads
 - **SingleM metapackage support in integration tests**
+- **FastQC replaced with RastQC** — RastQC is implemented as a drop-in replacement for FastQC, providing equivalent short-read QC reporting. All files are processed in a single command invocation for clean, readable log output.
 
 #### Environment
 
@@ -57,8 +66,10 @@ Then open `http://localhost:8090` in your browser. Includes a pipeline monitor f
 - Removed unnecessary `--no-assign-taxonomy` flag from SingleM commands
 - Handle `"none"` input for read lists in `ReadContainer` initialisation
 - Added scratch directory to gtdbtk rule for better temporary file and memory handling
+- Replaced deprecated `--skip_ani_screen` flag with `--place_species` in gtdbtk rule (removed in GTDB-Tk v2.7.0)
 - Added sleep delays between GPU test submissions to prevent resource contention
 - Increased memory allocation for GPU and expensive tests in mqsub commands
+- Fixed isolate functionality, with medaka updated to `>=2.2.1` (previously restricted to `<2.1.0` due to [nanoporetech/medaka#566](https://github.com/nanoporetech/medaka/issues/566), fixed in 2.2.x) and dnaapler updated to `>=1.0.0`
 
 ---
 

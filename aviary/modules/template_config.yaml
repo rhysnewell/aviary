@@ -49,7 +49,7 @@ keep_percent:
 min_mean_q:
     40
 guppy_model:
-    r941_min_high_g360
+    r941_min_hac_g507
 gtdbtk_folder:
     none
 busco_folder:
