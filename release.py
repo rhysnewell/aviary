@@ -25,7 +25,7 @@ if __name__ == "__main__":
     print("version is {}".format(version))
 
     print("Updating dependencies ..")
-    extern.run('pixi run --manifest-path aviary/pixi.toml update_deps')
+    extern.run('python aviary/admin/build_dep_defs_from_pixi.py')
 
     # Update version in aviary/__init__.py
     print("Updating version in aviary/__init__.py")
@@ -54,3 +54,5 @@ if __name__ == "__main__":
     extern.run('git tag v{}'.format(version))
 
     print("Now run 'git push && git push --tags' and GitHub actions will build and upload to PyPI")
+    print("REMINDER: Don't forget to build and push the Docker image!")
+    print("REMINDER: Don't forget to update and do a release on GitHub!")

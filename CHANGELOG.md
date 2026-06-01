@@ -66,7 +66,7 @@ Then open `http://localhost:8090` in your browser. Includes a pipeline monitor f
 - Removed unnecessary `--no-assign-taxonomy` flag from SingleM commands
 - Handle `"none"` input for read lists in `ReadContainer` initialisation
 - Added scratch directory to gtdbtk rule for better temporary file and memory handling
-- Replaced deprecated `--skip_ani_screen` flag with `--place_species` in gtdbtk rule (removed in GTDB-Tk v2.7.0)
+- Removed `--skip_ani_screen` flag in gtdbtk rule (removed in GTDB-Tk v2.7.0)
 - Added sleep delays between GPU test submissions to prevent resource contention
 - Increased memory allocation for GPU and expensive tests in mqsub commands
 - Fixed isolate functionality, with medaka updated to `>=2.2.1` (previously restricted to `<2.1.0` due to [nanoporetech/medaka#566](https://github.com/nanoporetech/medaka/issues/566), fixed in 2.2.x) and dnaapler updated to `>=1.0.0`

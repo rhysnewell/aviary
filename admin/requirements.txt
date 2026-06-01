@@ -8,4 +8,4 @@ polars==1.38.0
 pyOpenSSL==25.3.0
 ruamel.yaml==0.19.1
 setuptools==80.10.1
-snakemake==9.15.0
+snakemake
