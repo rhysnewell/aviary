@@ -43,7 +43,7 @@ RUN mkdir -p /db/singlem /db/checkm2 && \
     mv /db/checkm2/CheckM2_database/*.dmnd /db/checkm2/
 
 RUN mkdir -p /db/checkm && \
-    wget -q https://data.ace.uq.edu.au/public/CheckM_databases/checkm_data_2015_01_16.tar.gz -O /tmp/checkm.tar.gz && \
+    curl -fsSL https://data.ace.uq.edu.au/public/CheckM_databases/checkm_data_2015_01_16.tar.gz -o /tmp/checkm.tar.gz && \
     tar -xzf /tmp/checkm.tar.gz -C /db/checkm && \
     rm /tmp/checkm.tar.gz
 
