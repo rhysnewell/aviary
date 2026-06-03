@@ -33,22 +33,19 @@ RUN pixi run --frozen bash -c 'pip install aviary-genome==AVIARY_VERSION'
 # Build all non-GPU pixi environments. Aviary workflows invoke these at runtime.
 RUN pixi run --frozen aviary build
 
-# Download all standard databases into /db/
+# Download core databases (SingleM and CheckM2).
+# GTDB-Tk, EggNOG, and Metabuli are not included due to their size (~140GB combined).
+# Mount those databases at runtime with -v and pass their paths via --gtdb-path,
+# --eggnog-db-path, and --metabuli-db-path, or set the corresponding env vars.
 RUN mkdir -p /db && \
     pixi run --frozen aviary configure \
-        --gtdb-path /db/gtdb \
-        --eggnog-db-path /db/eggnog \
         --singlem-metapackage-path /db/singlem \
         --checkm2-db-path /db/checkm2 \
-        --metabuli-db-path /db/metabuli \
-        --download
+        --download singlem checkm2
 
-ENV GTDBTK_DATA_PATH=/db/gtdb/release232 \
-    EGGNOG_DATA_DIR=/db/eggnog \
-    SINGLEM_METAPACKAGE_PATH=/db/singlem/S6.5.0.GTDB_r232.metapackage_20260319.smpkg.zb \
-    CHECKM2DB=/db/checkm2/uniref100.KO.1.dmnd \
-    METABULI_DB_PATH=/db/metabuli
-
+ENV SINGLEM_METAPACKAGE_PATH=/db/singlem \
+    CHECKM2DB=/db/checkm2 \
+    TMPDIR=/tmp
 
 # Run some tests
 RUN pixi run --frozen aviary --version
@@ -62,11 +59,8 @@ WORKDIR /data
 # Add Pixi to PATH
 ENV PATH="/root/.pixi/bin:${PATH}"
 ENV PYTHONNOUSERSITE=1
-ENV GTDBTK_DATA_PATH=/db/gtdb \
-    EGGNOG_DATA_DIR=/db/eggnog \
-    SINGLEM_METAPACKAGE_PATH=/db/singlem \
+ENV SINGLEM_METAPACKAGE_PATH=/db/singlem \
     CHECKM2DB=/db/checkm2 \
-    METABULI_DB_PATH=/db/metabuli \
     TMPDIR=/tmp
 
 RUN pixi shell-hook --frozen --no-install --manifest-path /aviary/pixi.toml | grep -v set_env_vars.sh >> /run_via_pixi.profile

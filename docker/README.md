@@ -1,7 +1,30 @@
 # Aviary Docker image
 
-The image is intentionally software-only. Aviary databases are large and should
-normally be mounted at runtime from a shared location.
+The image includes **SingleM** and **CheckM2** databases (~5GB combined), enabling
+binning-only and assembly workflows out of the box. GTDB-Tk, EggNOG, and Metabuli
+are not bundled due to their size (~140GB combined) but can be mounted at runtime.
+
+## Included databases
+
+| Database | Path in image | Required for |
+|---|---|---|
+| SingleM metapackage | `/db/singlem` | Read fraction estimation |
+| CheckM2 | `/db/checkm2` | Bin quality assessment |
+
+## Commands that work without extra databases
+
+```bash
+aviary assemble
+aviary recover --binning-only
+```
+
+## Commands requiring mounted databases
+
+| Command | Requires |
+|---|---|
+| `aviary recover` (full) | GTDB-Tk (`--gtdb-path`) |
+| `aviary annotate` | EggNOG (`--eggnog-db-path`) |
+| Taxonomic classification | Metabuli (`--metabuli-db-path`) |
 
 ## Build
 
@@ -11,34 +34,26 @@ From this directory:
 pixi run bash ./build.sh
 ```
 
-Or manually:
-
-```bash
-AVIARY_VERSION=0.13.0
-sed "s/AVIARY_VERSION/$AVIARY_VERSION/g" Dockerfile.in > Dockerfile
-DOCKER_BUILDKIT=1 docker build -t "wwood/aviary:$AVIARY_VERSION" .
-```
-
-## Runtime Databases
-
-The image sets default database paths under `/db`:
-
-```bash
-GTDBTK_DATA_PATH=/db/gtdb
-EGGNOG_DATA_DIR=/db/eggnog
-SINGLEM_METAPACKAGE_PATH=/db/singlem/singlem.smpkg
-CHECKM2DB=/db/checkm2/uniref100.KO.1.dmnd
-METABULI_DB_PATH=/db/metabuli
-```
-
-Override them with `-e` or mount databases into those paths:
+## Runtime — no extra databases
 
 ```bash
 docker run --rm \
-  -v /shared/db:/db:ro \
-  -v "$PWD":"$PWD" \
-  -w "$PWD" \
-  wwood/aviary:$AVIARY_VERSION --help
+  -v "$PWD":"$PWD" -w "$PWD" \
+  ghcr.io/snh-star/aviary:0.13.0 \
+  recover --binning-only -1 reads.1.fq.gz -2 reads.2.fq.gz -o output/
 ```
 
-For a full workflow, pass normal Aviary arguments after the image name.
+## Runtime — mounting additional databases
+
+```bash
+docker run --rm \
+  -v /shared/db/gtdb:/db/gtdb:ro \
+  -v /shared/db/eggnog:/db/eggnog:ro \
+  -v /shared/db/metabuli:/db/metabuli:ro \
+  -v "$PWD":"$PWD" -w "$PWD" \
+  ghcr.io/snh-star/aviary:0.13.0 \
+  recover -1 reads.1.fq.gz -2 reads.2.fq.gz -o output/ \
+  --gtdb-path /db/gtdb \
+  --eggnog-db-path /db/eggnog \
+  --metabuli-db-path /db/metabuli
+```
