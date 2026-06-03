@@ -28,7 +28,7 @@ RUN git clone https://github.com/rhysnewell/aviary . && git checkout vAVIARY_VER
 
 # We install through pip, because installing via pip install -e . causes issues for apptainer
 # https://github.com/prefix-dev/pixi/issues/1387
-RUN pixi run --frozen bash -c 'pip install aviary-genome==AVIARY_VERSION'
+RUN rm -rf .pixi && pixi run --frozen bash -c 'pip install aviary-genome==AVIARY_VERSION'
 
 # Build all non-GPU pixi environments. Aviary workflows invoke these at runtime.
 RUN pixi run --frozen aviary build
@@ -37,11 +37,10 @@ RUN pixi run --frozen aviary build
 # GTDB-Tk, EggNOG, and Metabuli are not included due to their size (~140GB combined).
 # Mount those databases at runtime with -v and pass their paths via --gtdb-path,
 # --eggnog-db-path, and --metabuli-db-path, or set the corresponding env vars.
-RUN mkdir -p /db && \
-    pixi run --frozen aviary configure \
-        --singlem-metapackage-path /db/singlem \
-        --checkm2-db-path /db/checkm2 \
-        --download singlem checkm2
+RUN mkdir -p /db/singlem /db/checkm2 && \
+    pixi run --frozen -e singlem singlem data --output-directory /db/singlem && \
+    pixi run --frozen -e checkm2 checkm2 database --download --path /db/checkm2 && \
+    mv /db/checkm2/CheckM2_database/*.dmnd /db/checkm2/
 
 ENV SINGLEM_METAPACKAGE_PATH=/db/singlem \
     CHECKM2DB=/db/checkm2 \
