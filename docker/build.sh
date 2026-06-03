@@ -7,7 +7,7 @@ SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 cd "$SCRIPT_DIR"
 
 export AVIARY_VERSION=`aviary --version | awk '{print $NF}'`
-export AVIARY_DOCKER_VERSION=wwood/aviary:$AVIARY_VERSION
+export AVIARY_DOCKER_VERSION=ghcr.io/snh-star/aviary:$AVIARY_VERSION
 
 # Download test reads if not already present
 if [ ! -f wgsim.1.fq.gz ]; then
