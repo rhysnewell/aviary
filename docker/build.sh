@@ -11,10 +11,10 @@ export AVIARY_DOCKER_VERSION=ghcr.io/snh-star/aviary:$AVIARY_VERSION
 
 # Download test reads if not already present
 if [ ! -f wgsim.1.fq.gz ]; then
-    wget --quiet https://github.com/rhysnewell/aviary/raw/main/test/data/wgsim.1.fq.gz
+    curl -fsSL -o wgsim.1.fq.gz https://github.com/rhysnewell/aviary/raw/main/test/data/wgsim.1.fq.gz
 fi
 if [ ! -f wgsim.2.fq.gz ]; then
-    wget --quiet https://github.com/rhysnewell/aviary/raw/main/test/data/wgsim.2.fq.gz
+    curl -fsSL -o wgsim.2.fq.gz https://github.com/rhysnewell/aviary/raw/main/test/data/wgsim.2.fq.gz
 fi
 
 sed "s/AVIARY_VERSION/$AVIARY_VERSION/g" Dockerfile.in > Dockerfile && \
@@ -27,4 +27,10 @@ docker run --rm -v `pwd`:`pwd` $AVIARY_DOCKER_VERSION assemble \
     -o `pwd`/aviary_docker_test_out \
     -n 4 -t 4
 
-echo "Seems good - now you just need to 'docker push $AVIARY_DOCKER_VERSION' to upload the image to Docker Hub"
+docker tag $AVIARY_DOCKER_VERSION ghcr.io/snh-star/aviary:v$AVIARY_VERSION
+docker tag $AVIARY_DOCKER_VERSION ghcr.io/snh-star/aviary:latest
+
+echo "Seems good - now you just need to:"
+echo "  docker push $AVIARY_DOCKER_VERSION"
+echo "  docker push ghcr.io/snh-star/aviary:v$AVIARY_VERSION"
+echo "  docker push ghcr.io/snh-star/aviary:latest"
