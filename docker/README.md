@@ -1,6 +1,6 @@
 # Aviary Docker image
 
-The image includes **SingleM** and **CheckM2** databases (~5GB combined), enabling
+The image includes **SingleM**, **CheckM2**, and **CheckM_Data** databases (~5GB combined), enabling
 binning-only and assembly workflows out of the box. GTDB-Tk, EggNOG, and Metabuli
 are not bundled due to their size (~140GB combined) but can be mounted at runtime.
 
@@ -10,6 +10,7 @@ are not bundled due to their size (~140GB combined) but can be mounted at runtim
 |---|---|---|
 | SingleM metapackage | `/db/singlem` | Read fraction estimation |
 | CheckM2 | `/db/checkm2` | Bin quality assessment |
+| CheckM_Data | `/db/checkm` | Bin quality assessment (legacy) |
 
 ## Commands that work without extra databases
 
@@ -39,7 +40,7 @@ pixi run bash ./build.sh
 ```bash
 docker run --rm \
   -v "$PWD":"$PWD" -w "$PWD" \
-  ghcr.io/snh-star/aviary:0.13.0 \
+  ghcr.io/snh-star/aviary:v0.13.0 \
   recover --binning-only -1 reads.1.fq.gz -2 reads.2.fq.gz -o output/
 ```
 
@@ -51,7 +52,7 @@ docker run --rm \
   -v /shared/db/eggnog:/db/eggnog:ro \
   -v /shared/db/metabuli:/db/metabuli:ro \
   -v "$PWD":"$PWD" -w "$PWD" \
-  ghcr.io/snh-star/aviary:0.13.0 \
+  ghcr.io/snh-star/aviary:v0.13.0 \
   recover -1 reads.1.fq.gz -2 reads.2.fq.gz -o output/ \
   --gtdb-path /db/gtdb \
   --eggnog-db-path /db/eggnog \
