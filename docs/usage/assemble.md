@@ -130,7 +130,7 @@ aviary assemble -1 reads_1.fq.gz -2 reads_2.fq.gz --longreads reads.fastq.gz --l
 
 **`--snakemake-profile`** PROFILE
 
-  Snakemake profile for cluster submission. See [HPC usage](/examples#hpc-cluster-submission).
+  Snakemake profile for cluster submission. See the Guides section for HPC usage.
 
 **`--cluster-retries`** INT
 

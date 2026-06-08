@@ -21,7 +21,7 @@ export SINGLEM_METAPACKAGE_PATH=/path/to/singlem/S6.5.0.GTDB_r232.metapackage_20
 export CHECKM2DB=/path/to/checkm2db/uniref100.KO.1.dmnd
 ```
 
-See [`aviary configure`](/usage/configure) for all available options.
+See `aviary configure --help` for all available options.
 
 ## Thread control
 

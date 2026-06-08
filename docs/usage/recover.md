@@ -158,7 +158,7 @@ If no assembly is provided, aviary will first run the assembly pipeline.
 
 **`--snakemake-profile`** PROFILE
 
-  Snakemake profile for cluster submission. See [HPC usage](/examples#hpc-cluster-submission).
+  Snakemake profile for cluster submission. See the Guides section for HPC usage.
 
 **`--cluster-retries`** INT
 
