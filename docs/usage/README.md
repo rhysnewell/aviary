@@ -1,0 +1,17 @@
+---
+title: Usage
+---
+
+# Usage
+
+Aviary provides several subcommands for different stages of the metagenomics workflow:
+
+| Subcommand | Description |
+| --- | --- |
+| [`assemble`](/usage/assemble) | Step-down hybrid assembly using long and short reads, or assembly using only short or long reads |
+| [`recover`](/usage/recover) | Recover MAGs from an assembly using multiple binning algorithms |
+| [`annotate`](/usage/annotate) | Annotate a set of MAGs using EggNOG, GTDB-tk, and CheckM2 |
+| [`complete`](/usage/complete) | Run the full pipeline: assembly → binning → refinement → annotation |
+| [`cluster`](/usage/cluster) | Dereplicate/choose representative genomes from multiple aviary runs |
+| [`isolate`](/usage/isolate) | Hybrid isolate assembly for pure sequencing results |
+| [`configure`](/usage/configure) | Set or reset environment variables used by aviary |
