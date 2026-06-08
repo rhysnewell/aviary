@@ -89,7 +89,6 @@ depends-on = [
 [feature.dev.dependencies]
 pytest = "*"
 ipython = "*"
-toml = "*"
 bird_tool_utils_python = "*"
 snakemake-executor-plugin-cluster-generic = "*" # for run-tests-at-cmr
 
