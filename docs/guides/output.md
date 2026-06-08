@@ -19,7 +19,7 @@ Rule benchmarks are in `benchmarks/`. Logs and error messages are in `logs/`. Th
 
 ## recover
 
-If assembly is performed during `recover`, the [assemble outputs](#assemble) will also be present.
+If assembly is performed during `recover`, the assemble outputs will also be present.
 
 | Path | Description |
 | --- | --- |
@@ -38,4 +38,4 @@ If assembly is performed during `recover`, the [assemble outputs](#assemble) wil
 
 ## complete
 
-Produces all outputs from [assemble](#assemble), [recover](#recover), and [annotate](#annotate).
+Produces all outputs from assemble, recover, and annotate.
