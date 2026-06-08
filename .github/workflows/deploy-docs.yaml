@@ -4,9 +4,10 @@ on:
   push:
     branches:
       - main
+      - update_doc
     paths:
       - 'docs/**'
-      - 'doctave.yml'
+      - 'doctave.yaml'
   workflow_dispatch:
 
 jobs:
@@ -19,15 +20,16 @@ jobs:
 
     - name: 'Setup homebrew'
       uses: Homebrew/actions/setup-homebrew@master
-      
+
     - name: 'Build and deploy'
       shell: bash
       run: |
         brew install doctave/doctave/doctave
         doctave build --release --allow-failed-checks
+        touch site/.nojekyll
 
     - name: GitHub Pages
-      if: github.ref == 'refs/heads/main'
+      if: github.ref == 'refs/heads/main' || github.ref == 'refs/heads/update_doc'
       uses: crazy-max/ghaction-github-pages@v3.1.0
       with:
         build_dir: site/
