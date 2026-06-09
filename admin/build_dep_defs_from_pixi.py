@@ -11,4 +11,5 @@ build_dep_defs(
     requirements_txt_path=os.path.join(base_dir, "admin", "requirements.txt"),
     conda_to_pip_name={"bird_tool_utils_python": "bird_tool_utils"},
     project_name="aviary-genome",  # conda name differs from workspace name "aviary"
+    environment="dev",             # query the dev env for version pins
 )
