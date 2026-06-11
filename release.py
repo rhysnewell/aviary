@@ -25,7 +25,7 @@ if __name__ == "__main__":
     print("version is {}".format(version))
 
     print("Updating dependencies ..")
-    extern.run('python aviary/admin/build_dep_defs_from_pixi.py')
+    extern.run('pixi run python aviary/admin/build_dep_defs_from_pixi.py')
 
     # Update version in aviary/__init__.py
     print("Updating version in aviary/__init__.py")
@@ -43,9 +43,9 @@ if __name__ == "__main__":
         f.write(init_content)
 
     print(
-        "Checking for unexpected changes. If this fails you need to remove the git tag with 'git tag -d v{}'".format(version)
+        "Checking repo is clean. If this fails you need to remove the git tag with 'git tag -d v{}'".format(version)
     )
-    extern.run("if git diff --name-only | grep -qv 'aviary/__init__.py'; then echo 'Unexpected changed files:'; git diff --name-only; exit 1; fi")
+    extern.run("if [[ $(git diff --shortstat 2> /dev/null | tail -n1) != '' ]]; then exit 1; fi")
 
     print("Committing the version file")
     extern.run('git commit -a -m "v{}"'.format(version))

@@ -678,7 +678,7 @@ def main():
     binning_options.add_argument(
         '--skip-binners', '--skip_binners', '--skip_binner', '--skip-binner',
         help='Optional list of binning algorithms to skip. Can be any combination of: \n'
-             'rosella, semibin, metabat1, metabat2, metabat, vamb, quickbin \n'
+             'rosella, semibin, metabat1, metabat2, metabat, vamb \n'
              'N.B. specifying "metabat" will skip both MetaBAT1 and MetaBAT2. \n',
         dest='skip_binners',
         nargs='*',

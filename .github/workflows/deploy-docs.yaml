@@ -4,32 +4,47 @@ on:
   push:
     branches:
       - main
+      - update_doc
     paths:
       - 'docs/**'
-      - 'doctave.yml'
+      - 'doctave.yaml'
   workflow_dispatch:
+
+permissions:
+  contents: read
+  pages: write
+  id-token: write
 
 jobs:
   build:
-    name: Deploys
+    name: Build docs
     runs-on: ubuntu-latest
     steps:
-    - name: 'Checkout GitHub Action'
-      uses: actions/checkout@main
+    - name: Checkout
+      uses: actions/checkout@v4
 
-    - name: 'Setup homebrew'
+    - name: Setup homebrew
       uses: Homebrew/actions/setup-homebrew@master
-      
-    - name: 'Build and deploy'
-      shell: bash
+
+    - name: Build with doctave
       run: |
         brew install doctave/doctave/doctave
         doctave build --release --allow-failed-checks
+        touch site/.nojekyll
 
-    - name: GitHub Pages
-      if: github.ref == 'refs/heads/main'
-      uses: crazy-max/ghaction-github-pages@v3.1.0
+    - name: Upload Pages artifact
+      uses: actions/upload-pages-artifact@v3
       with:
-        build_dir: site/
-      env:
-        GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        path: site/
+
+  deploy:
+    name: Deploy to GitHub Pages
+    runs-on: ubuntu-latest
+    needs: build
+    environment:
+      name: github-pages
+      url: ${{ steps.deployment.outputs.page_url }}
+    steps:
+    - name: Deploy to GitHub Pages
+      id: deployment
+      uses: actions/deploy-pages@v4

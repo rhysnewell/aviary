@@ -304,7 +304,7 @@ aviary recover \
   -2 sample_R2.fastq.gz \
   -o output_dir/ \
   --n-cores 16 \
-  --skip-binners vamb semibin
+  s vamb semibin
 
 # Binning only (skip annotation — useful for quick MAG recovery)
 aviary recover \
@@ -337,7 +337,7 @@ aviary recover \
 | `--binning-only`                  | Stop after binning; skip quality check and annotation               | off        |
 | `--strict`                        | Fail immediately if any binner errors                               | off        |
 | `--extra-binners LIST`            | Add extra binners: `maxbin` \| `maxbin2` \| `concoct` \| `comebin` \| `taxvamb` \| `quickbin` | — |
-| `--skip-binners LIST`             | Skip default binners: `rosella` \| `semibin` \| `metabat1` \| `metabat2` \| `metabat` \| `vamb` \| `quickbin` | — |
+| `--skip-binners LIST`             | Skip default binners: `rosella` \| `semibin` \| `metabat1` \| `metabat2` \| `metabat` \| `vamb` | — |
 | `--min-contig-size INT`           | Minimum contig size for binning (bp)                                | `1500`     |
 | `--min-bin-size INT`              | Minimum MAG size (bp)                                               | `200000`   |
 | `--min-completeness FLOAT`        | Minimum CheckM2 completeness % for bins passed to annotation        | `50.0`     |
