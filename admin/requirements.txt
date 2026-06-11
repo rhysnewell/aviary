@@ -9,3 +9,4 @@ pyOpenSSL==25.3.0
 ruamel.yaml==0.19.1
 setuptools==80.10.1
 snakemake
+snakemake-executor-plugin-cluster-generic==1.0.9
