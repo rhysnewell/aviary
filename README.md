@@ -81,12 +81,6 @@ This can be done by simply running:
 mkdir -p aviary/.pixi
 ```
 
-For those at CMR, you can instead run:
-```bash
-cd aviary && pixi_cmr_init.py && cd -
-```
-
-
 
 #### Post-installation of aviary
 Then run postinstall so `aviary` can be run as a script. The `postinstall` task creates symlinks in the parent directory to allow running aviary directly via `pixi run aviary ...` in subsequent uses.
@@ -203,6 +197,10 @@ export EGGNOG_DATA_DIR=/path/to/eggnog-mapper/2.1.8/ # https://github.com/eggnog
 export SINGLEM_METAPACKAGE_PATH=/path/to/singlem_metapackage.smpkg/
 export CHECKM2DB=/path/to/checkm2db/uniref100.KO.1.dmnd
 ```
+
+## Running on a cluster
+
+Aviary bundles the [snakemake-executor-plugin-cluster-generic](https://github.com/snakemake/snakemake-executor-plugin-cluster-generic) and [snakemake-executor-plugin-slurm](https://github.com/snakemake/snakemake-executor-plugin-slurm) plugins, so rules can be submitted as individual cluster jobs via `aviary recover ... --snakemake-profile <profile>`. See the [HPC & cluster submission guide](https://rhysnewell.github.io/aviary/guides/hpc) for setting up a profile, including a SLURM template.
 
 # Workflow
 
