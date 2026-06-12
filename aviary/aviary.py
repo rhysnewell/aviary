@@ -242,7 +242,9 @@ def main():
         help='Snakemake profile (see https://snakemake.readthedocs.io/en/stable/executing/cli.html#profiles)\n'
              'Create profile as `~/.config/snakemake/[CLUSTER_PROFILE]/config.yaml`. \n'
              'Can be used to submit rules as jobs to cluster engine (see https://snakemake.readthedocs.io/en/stable/executing/cluster.html), \n'
-             'requires cluster, cluster-status, jobs, cluster-cancel. ',
+             'requires cluster, cluster-status, jobs, cluster-cancel. \n'
+             'For SLURM, install snakemake-executor-plugin-slurm and use an `executor: slurm` profile instead '
+             '(see HPC guide for a template); cluster-generic remains the fallback for other schedulers. ',
         dest='snakemake_profile',
         default=""
     )

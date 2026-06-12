@@ -22,6 +22,7 @@ pip = "*"
 setuptools = "*"
 bird_tool_utils_python = "*"
 snakemake-executor-plugin-cluster-generic = "*"
+snakemake-executor-plugin-slurm = "*"
 
 [feature.web.dependencies]
 python = ">=3.8"

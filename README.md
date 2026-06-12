@@ -198,6 +198,10 @@ export SINGLEM_METAPACKAGE_PATH=/path/to/singlem_metapackage.smpkg/
 export CHECKM2DB=/path/to/checkm2db/uniref100.KO.1.dmnd
 ```
 
+## Running on a cluster
+
+Aviary bundles the [snakemake-executor-plugin-cluster-generic](https://github.com/snakemake/snakemake-executor-plugin-cluster-generic) and [snakemake-executor-plugin-slurm](https://github.com/snakemake/snakemake-executor-plugin-slurm) plugins, so rules can be submitted as individual cluster jobs via `aviary recover ... --snakemake-profile <profile>`. See the [HPC & cluster submission guide](https://rhysnewell.github.io/aviary/guides/hpc) for setting up a profile, including a SLURM template.
+
 # Workflow
 
 ![Aviary workflow](figures/aviary_workflow.png)
