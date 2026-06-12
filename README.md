@@ -81,12 +81,6 @@ This can be done by simply running:
 mkdir -p aviary/.pixi
 ```
 
-For those at CMR, you can instead run:
-```bash
-cd aviary && pixi_cmr_init.py && cd -
-```
-
-
 
 #### Post-installation of aviary
 Then run postinstall so `aviary` can be run as a script. The `postinstall` task creates symlinks in the parent directory to allow running aviary directly via `pixi run aviary ...` in subsequent uses.
