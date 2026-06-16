@@ -16,6 +16,8 @@ min_contig_size:
     1500
 min_bin_size:
     200000
+semibin_mode:
+    single
 max_threads:
     8
 pplacer_threads:

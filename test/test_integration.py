@@ -24,6 +24,7 @@
 import pytest
 import os
 import os.path
+import signal
 import subprocess
 import shutil
 import signal

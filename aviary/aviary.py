@@ -648,6 +648,23 @@ def main():
     )
 
     binning_options.add_argument(
+        '--semibin-mode', '--semibin_mode',
+        help='SemiBin2 mode to use. "single" uses single_easy_bin; "multi" uses multi_easy_bin. '
+             'Multi mode ignores --semibin-model as pre-trained environments are not supported.',
+        dest='semibin_mode',
+        choices=['single', 'multi'],
+        default='single'
+    )
+
+    binning_options.add_argument(
+        '--semibin-multi', '--semibin_multi',
+        help=argparse.SUPPRESS,
+        dest='semibin_mode',
+        action='store_const',
+        const='multi'
+    )
+
+    binning_options.add_argument(
         '--refinery-max-iterations', '--refinery_max_iterations',
         help='Maximum number of iterations for Rosella refinery. Set to 0 to skip refinery. Lower values will run faster but may result in lower quality MAGs.',
         dest='refinery_max_iterations',
@@ -989,9 +1006,10 @@ def main():
     recover_input_group = recover_options.add_argument_group(title='Input options')
     recover_input_group.add_argument(
         '-a', '--assembly',
-        help='Optional FASTA file containing scaffolded contigs of the metagenome assembly',
+        help='One or more FASTA files containing scaffolded contigs of metagenome assemblies. '
+             'Provide multiple assemblies for SemiBin2 multi-sample binning (requires --semibin-mode multi).',
         dest="assembly",
-        nargs=1,
+        nargs='+',
         required=False,
     )
 

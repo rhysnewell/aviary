@@ -1,6 +1,10 @@
 ASSEMBLY_SCRIPTS_DIR = os.path.join(os.path.dirname(os.path.abspath(workflow.snakefile)), 'scripts')
+import importlib.resources
 from aviary.modules.common import pixi_run, setup_log
 logs_dir = "logs"
+
+with importlib.resources.path("aviary", "pixi.toml") as manifest_path:
+    AVIARY_PIXI_MANIFEST = str(manifest_path)
 
 
 LONG_READ_ASSEMBLER = config["long_read_assembler"]
@@ -29,6 +33,32 @@ def _validate_bool(value, key):
     if isinstance(value, bool):
         return value
     raise Exception(f"Programming error: config[{key!r}] must be a boolean.")
+
+
+NEEDS_READ_CONCATENATION = (
+    config["skip_qc"] and
+    config["coassemble"] and
+    not config["use_megahit"] and
+    config["short_reads_1"] != "none" and
+    len(config["short_reads_1"]) > 1
+)
+
+
+def _stageguard_reads(reads, mate):
+    if not config["skip_qc"]:
+        return "data/short_reads.fastq.gz" if mate == 1 else "none"
+
+    if reads == "none":
+        return "none"
+
+    if not config["coassemble"] or len(reads) == 1:
+        return reads[0]
+
+    if config["use_megahit"]:
+        return " ".join(reads)
+
+    # SPAdes + multiple readsets: reads are concatenated by concatenate_reads_for_stageguard
+    return f"data/short_reads.{mate}.fastq.gz"
 
 
 SHORT_READS_1 = config['short_reads_1']
@@ -532,9 +562,29 @@ rule spades_assembly:
 
 
 # Perform short read assembly only with no other steps
+if NEEDS_READ_CONCATENATION:
+    rule concatenate_reads_for_stageguard:
+        input:
+            reads1 = config["short_reads_1"],
+            reads2 = config["short_reads_2"] if config["short_reads_2"] != ["none"] else []
+        output:
+            reads1 = "data/short_reads.1.fastq.gz",
+            reads2 = "data/short_reads.2.fastq.gz" if config["short_reads_2"] != ["none"] else []
+        log:
+            f"{logs_dir}/concatenate_reads_for_stageguard.log"
+        shell:
+            "cat {input.reads1} > {output.reads1} 2> {log} && "
+            "cat {input.reads2} > {output.reads2} 2>> {log}"
+
+
 rule assemble_short_reads:
     input:
-        qc_reads = config["short_reads_1"] if config["skip_qc"] else "data/short_reads.fastq.gz",
+        qc_reads = (
+            ["data/short_reads.1.fastq.gz", "data/short_reads.2.fastq.gz"]
+            if NEEDS_READ_CONCATENATION
+            else config["short_reads_1"] if config["skip_qc"]
+            else "data/short_reads.fastq.gz"
+        ),
     output:
         fasta = "data/short_read_assembly/scaffolds.fasta",
         # We cannot mark the output_folder as temp as then it gets deleted,
@@ -545,14 +595,14 @@ rule assemble_short_reads:
         # reads1 = temporary("data/short_reads.1.fastq.gz"),
         # reads2 = temporary("data/short_reads.2.fastq.gz")
     params:
-        short_reads_1 = ",".join(config["short_reads_1"]) if config["skip_qc"] else "data/short_reads.fastq.gz",
-        short_reads_2 = ",".join(config["short_reads_2"]) if config["skip_qc"] else "none",
+        short_reads_1 = _stageguard_reads(config["short_reads_1"], 1),
+        short_reads_2 = _stageguard_reads(config["short_reads_2"], 2),
         max_memory = config["max_memory"],
-        kmer_sizes = config["kmer_sizes"],
-        use_megahit = config["use_megahit"],
-        coassemble = config["coassemble"],
-        tmpdir = f"--tmp-dir {config['tmpdir']}" if 'tmpdir' in config and config['tmpdir'] else "",
-        final_assembly = True
+        assembler = "megahit" if config["use_megahit"] else "spades",
+        stageguard_output = "data/stageguard_short_read_assembly",
+        pixi_manifest = AVIARY_PIXI_MANIFEST,
+        pixi_run = pixi_run,
+        runtime = "48h",
     threads:
         config["max_threads"]
     resources:
@@ -562,17 +612,34 @@ rule assemble_short_reads:
     benchmark:
         "benchmarks/short_read_assembly_short.benchmark.txt"
     shell:
-        f'{pixi_run} -e spades {ASSEMBLY_SCRIPTS_DIR}/'+\
-        """assemble_short_reads.py \
-        --short-reads-1 {params.short_reads_1} \
-        --short-reads-2 {params.short_reads_2} \
-        --max-memory {config[max_memory]} \
-        --use-megahit {params.use_megahit} \
-        --coassemble {params.coassemble} \
+        f'{pixi_run} -e stageguard '+\
+        """assembly_checkpointing \
+        --assembler {params.assembler} \
+        --r1 "{params.short_reads_1}" \
+        --r2 "{params.short_reads_2}" \
+        --output-directory {params.stageguard_output} \
         --threads {threads} \
-        {params.tmpdir} \
-        --kmer-sizes {params.kmer_sizes} \
-        --log {resources.log_path}
+        --cores {threads} \
+        --jobs 1 \
+        --mem-mb {resources.mem_mb} \
+        --runtime {params.runtime} \
+        --pixi-manifest {params.pixi_manifest} \
+        --snakemake-args=--nolock \
+        >> {resources.log_path} 2>&1 && \
+        mkdir -p data/short_read_assembly && \
+        if [ "{params.assembler}" = "megahit" ]; then \
+            cp {params.stageguard_output}/megahit/assembly_output/final.contigs.fa {output.fasta}; \
+            intermediate_dir="{params.stageguard_output}/megahit/assembly_output/intermediate_contigs"; \
+            max_kmer=$(find "$intermediate_dir" -name 'k*.contigs.fa' -printf '%f\n' | sed 's/^k//; s/\\.contigs\\.fa$//' | sort -n | tail -1); \
+            {params.pixi_run} -e spades megahit_toolkit contig2fastg "$max_kmer" "$intermediate_dir/k${{max_kmer}}.contigs.fa" > "$intermediate_dir/k${{max_kmer}}.fastg" 2>> {resources.log_path}; \
+            mkdir -p data/short_read_assembly/gfa_tmp; \
+            {params.pixi_run} -e spades agtools fastg2gfa --graph "$intermediate_dir/k${{max_kmer}}.fastg" -o data/short_read_assembly/gfa_tmp 2>> {resources.log_path}; \
+            mv data/short_read_assembly/gfa_tmp/converted_graph.gfa {output.graph}; \
+            rm -rf data/short_read_assembly/gfa_tmp; \
+        else \
+            cp {params.stageguard_output}/spades/assembly_output/scaffolds.fasta {output.fasta}; \
+            cp {params.stageguard_output}/spades/assembly_output/assembly_graph_with_scaffolds.gfa {output.graph}; \
+        fi
         """
 
 if ASSEMBLY_STRATEGY == "short_only":
