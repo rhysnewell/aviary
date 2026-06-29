@@ -141,7 +141,9 @@ rule download_checkm2:
     log:
         'logs/download_checkm2.log'
     shell:
-        pixi_run + ' -e checkm2 checkm2 database --download --path {params.checkm2_folder} 2> {log}; '
+        pixi_run + " -e checkm2 bash -e -o pipefail -c '"
+        "unset CHECKM2DB && checkm2 database --download --path {params.checkm2_folder}"
+        "' 2> {log}; "
         'mv {params.checkm2_folder}/CheckM2_database/*.dmnd {params.checkm2_folder}/; '
 
 rule download_metabuli:

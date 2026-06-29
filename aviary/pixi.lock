@@ -1761,7 +1761,7 @@ environments:
     - url: https://conda.anaconda.org/bioconda/
     packages:
       linux-64:
-      - conda: https://conda.anaconda.org/bioconda/linux-64/metabuli-1.1.0-pl5321hd6d6fdc_0.tar.bz2
+      - conda: https://conda.anaconda.org/bioconda/linux-64/metabuli-1.2.0-pl5321h0bb26bb_0.conda
       - conda: https://conda.anaconda.org/conda-forge/linux-64/_libgcc_mutex-0.1-conda_forge.tar.bz2
       - conda: https://conda.anaconda.org/conda-forge/linux-64/_openmp_mutex-4.5-2_gnu.tar.bz2
       - conda: https://conda.anaconda.org/conda-forge/linux-64/aria2-1.37.0-h4e1c2bf_3.conda
@@ -1785,7 +1785,7 @@ environments:
       - conda: https://conda.anaconda.org/conda-forge/linux-64/libunistring-0.9.10-h7f98852_0.tar.bz2
       - conda: https://conda.anaconda.org/conda-forge/linux-64/libxcrypt-4.4.36-hd590300_1.conda
       - conda: https://conda.anaconda.org/conda-forge/linux-64/libxml2-2.13.9-h04c0eec_0.conda
-      - conda: https://conda.anaconda.org/conda-forge/linux-64/libzlib-1.3.1-hb9d3cd8_2.conda
+      - conda: https://conda.anaconda.org/conda-forge/linux-64/libzlib-1.3.2-h25fd6f3_2.conda
       - conda: https://conda.anaconda.org/conda-forge/linux-64/mpfr-4.2.1-h90cbb55_3.conda
       - conda: https://conda.anaconda.org/conda-forge/linux-64/ncurses-6.5-h2d0b736_3.conda
       - conda: https://conda.anaconda.org/conda-forge/linux-64/openssl-3.6.0-h26f9b46_0.conda
@@ -1793,7 +1793,7 @@ environments:
       - conda: https://conda.anaconda.org/conda-forge/linux-64/perl-5.32.1-7_hd590300_perl5.conda
       - conda: https://conda.anaconda.org/conda-forge/linux-64/readline-8.3-h853b02a_0.conda
       - conda: https://conda.anaconda.org/conda-forge/linux-64/wget-1.25.0-hc2d8bac_0.conda
-      - conda: https://conda.anaconda.org/conda-forge/linux-64/zlib-1.3.1-hb9d3cd8_2.conda
+      - conda: https://conda.anaconda.org/conda-forge/linux-64/zlib-1.3.2-h25fd6f3_2.conda
       - conda: https://conda.anaconda.org/conda-forge/noarch/ca-certificates-2026.1.4-hbd8a1cb_0.conda
   mfqe:
     channels:
@@ -4978,23 +4978,23 @@ packages:
   license_family: BSD
   size: 483783
   timestamp: 1748466910035
-- conda: https://conda.anaconda.org/bioconda/linux-64/metabuli-1.1.0-pl5321hd6d6fdc_0.tar.bz2
-  sha256: 8dfda1af65cf25c384fe91bb1babe109cc7afc37ed88e98397d12090a1243ff0
-  md5: 8fd34a1b7fcd1ca34713e6191e0ee947
+- conda: https://conda.anaconda.org/bioconda/linux-64/metabuli-1.2.0-pl5321h0bb26bb_0.conda
+  sha256: 5ab9b889b882b6ba5efa6f0833b560d810d46692f260d3ebfbc89cfd1d34848b
+  md5: a4cb39f5349f19042b9deffe7db143e4
   depends:
   - _openmp_mutex >=4.5
   - aria2
   - bzip2 >=1.0.8,<2.0a0
   - gawk
-  - libgcc >=13
-  - libstdcxx >=13
-  - libzlib >=1.3.1,<2.0a0
+  - libgcc >=14
+  - libgomp
+  - libstdcxx >=14
+  - libzlib >=1.3.2,<2.0a0
   - perl >=5.32.1,<5.33.0a0 *_perl5
   - wget
-  - zlib
   license: GPLv3
-  size: 5380690
-  timestamp: 1739176523305
+  size: 5540488
+  timestamp: 1775448221821
 - conda: https://conda.anaconda.org/bioconda/linux-64/mfqe-0.5.0-h7b50bb2_5.tar.bz2
   sha256: 8228db07b98fd027558c644c241b22021f2639cb43b526ceabfdb4d03cfac0ce
   md5: f609228982c1a248e6f4edb2f4143585
@@ -13061,6 +13061,9 @@ packages:
   license: Zlib
   license_family: Other
   purls: []
+  run_exports:
+    weak:
+    - libzlib >=1.3.2,<2.0a0
   size: 63629
   timestamp: 1774072609062
 - conda: https://conda.anaconda.org/conda-forge/linux-64/llvm-openmp-21.1.8-h4922eb0_0.conda
@@ -17699,6 +17702,9 @@ packages:
   license: Zlib
   license_family: Other
   purls: []
+  run_exports:
+    weak:
+    - libzlib >=1.3.2,<2.0a0
   size: 95931
   timestamp: 1774072620848
 - conda: https://conda.anaconda.org/conda-forge/linux-64/zlib-ng-2.3.2-hceb46e0_1.conda

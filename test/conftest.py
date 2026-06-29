@@ -5,28 +5,37 @@ import functools
 def pytest_addoption(parser):
     parser.addoption("--run-expensive", action="store_true", help="run expensive tests")
     parser.addoption("--run-qsub", action="store_true", help="run tests that require qsub")
+    parser.addoption("--run-download", action="store_true", help="run tests that download databases")
     # snakemake profile
     parser.addoption("--profile", help="run snakemake with profile")
 
 def pytest_configure(config):
     config.addinivalue_line("markers", "expensive: mark test as requiring --run-expensive")
     config.addinivalue_line("markers", "qsub: mark test as requiring qsub")
+    config.addinivalue_line("markers", "download: mark test as requiring --run-download (downloads databases)")
     pytest.snakemake_profile_arg = ''
     if config.getoption("--profile"):
         pytest.snakemake_profile_arg = f"--snakemake-profile {config.getoption('--profile')}"
 
 def pytest_collection_modifyitems(config, items):
-    if config.getoption("--run-expensive") and config.getoption("--run-qsub"):
+    # "Run everything" shortcut only when every opt-in flag is given, so the
+    # database-download tests stay gated behind --run-download.
+    if (config.getoption("--run-expensive")
+            and config.getoption("--run-qsub")
+            and config.getoption("--run-download")):
         return
 
     skip_expensive = pytest.mark.skip(reason="need --run-expensive option")
     skip_qsub = pytest.mark.skip(reason="need --run-qsub option")
+    skip_download = pytest.mark.skip(reason="need --run-download option")
 
     for item in items:
         if "expensive" in item.keywords and not config.getoption("--run-expensive"):
             item.add_marker(skip_expensive)
         if "qsub" in item.keywords and not config.getoption("--run-qsub"):
             item.add_marker(skip_qsub)
+        if "download" in item.keywords and not config.getoption("--run-download"):
+            item.add_marker(skip_download)
 
 def skip_unless_expensive(flag_option="--run-expensive"):
     def decorator(test_func):

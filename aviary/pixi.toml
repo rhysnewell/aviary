@@ -93,6 +93,24 @@ depends-on = [
     { task = "run-tests-at-cmr-base", environment = "dev" }
 ]
 
+[tasks.run-test-aviary-download-base]
+# Downloads the databases (into the repo db/ dir by default; override with
+# AVIARY_TEST_DB_DIR) and runs the full aviary walkthrough on them.
+# Run this from an INTERACTIVE session: --profile aqua makes aviary submit each
+# download/pipeline rule to the PBS queue while pytest coordinates. Do NOT wrap
+# this in mqsub (that would nest submission). Heavy + resumable: re-run to
+# resume after an OOM/walltime kill. Build is required so the per-db pixi envs
+# (checkm2, gtdbtk, ...) exist for the downloads + `aviary complete`.
+cmd = "pytest test/test_aviary_download.py --run-download --profile aqua -v"
+depends-on = [
+    {task="build", environment = "dev"}
+]
+
+[tasks.run-test-aviary-download]
+depends-on = [
+    { task = "run-test-aviary-download-base", environment = "dev" }
+]
+
 [feature.dev.dependencies]
 pytest = "*"
 ipython = "*"
@@ -154,7 +172,7 @@ gtdbtk = ["gtdbtk", "cpu"]
 pggb = ["pggb", "cpu"]
 
 [feature.metabuli.dependencies]
-metabuli = "~=1.1.0"
+metabuli = "~=1.2.0"
 
 [feature.singlem.dependencies]
 singlem = ">=0.21.3"
