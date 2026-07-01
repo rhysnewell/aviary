@@ -59,21 +59,19 @@ DATA_DIR = os.path.join(os.path.dirname(__file__), "data")
 # Threads/cores for the full walkthrough; override with AVIARY_TEST_CORES.
 WALKTHROUGH_CORES = os.environ.get("AVIARY_TEST_CORES", "16")
 
-# ── Change these paths for your environment ───────────────────────────────────
 # Where databases are downloaded. GTDB alone is ~100 GB so use a roomy disk.
-LOCAL_DB_DIR = "/scratch/herholdt/aviary_test_dbs"
+# Override with AVIARY_TEST_DB_DIR; defaults to ~/aviary_test_dbs locally.
+# On HPC: export AVIARY_TEST_DB_DIR=/scratch/herholdt/aviary_test_dbs
+DB_BASE = os.environ.get(
+    "AVIARY_TEST_DB_DIR",
+    os.path.join(os.path.expanduser("~"), "aviary_test_dbs"),
+)
 
 # Temporary directory for aviary intermediate files. Must be set or aviary
-# will prompt interactively (which fails in pytest). Use scratch, not /tmp.
-LOCAL_TMPDIR = "/scratch/herholdt"
-# ─────────────────────────────────────────────────────────────────────────────
-
-os.environ.setdefault("TMPDIR", LOCAL_TMPDIR)
-
-DB_BASE = LOCAL_DB_DIR or os.environ.get(
-    "AVIARY_TEST_DB_DIR",
-    os.path.join(tempfile.gettempdir(), "aviary_test_databases"),
-)
+# will prompt interactively (which fails in pytest).
+# On HPC: export AVIARY_TEST_TMPDIR=/scratch/herholdt
+_tmpdir = os.environ.get("AVIARY_TEST_TMPDIR", os.path.expanduser("~"))
+os.environ.setdefault("TMPDIR", _tmpdir)
 
 # (db key passed to --download, env var that points to its install dir,
 #  list of glob patterns -- relative to the db dir -- that must match a
@@ -148,6 +146,11 @@ def _ensure_db(db, env_var, artifact_globs, cores, monkeypatch):
     """
     db_dir = os.path.join(DB_BASE, db)
     os.makedirs(db_dir, exist_ok=True)
+    # aviary `configure` resolves every db path on startup and prompts
+    # interactively for any unset one (EOFError under pytest). Point all
+    # non-target dbs at placeholder dirs so only the db under test matters.
+    for _db, _env in DB_ENV_VARS.items():
+        monkeypatch.setenv(_env, os.path.join(DB_BASE, _db))
     monkeypatch.setenv(env_var, db_dir)
 
     if os.path.isfile(_verified_marker(db)):
