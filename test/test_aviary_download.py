@@ -263,13 +263,27 @@ def test_download_then_complete_walkthrough(tmp_path, monkeypatch, aviary_build)
     for db, env_var, artifact_globs in (p.values for p in DATABASE_CASES):
         _ensure_db(db, env_var, artifact_globs, cores=WALKTHROUGH_CORES, monkeypatch=monkeypatch)
 
-    # 2) run the full assemble -> recover -> annotate pipeline on synthetic reads
+    # CheckM2 consumes CHECKM2DB as the path to the .dmnd file, not the containing
+    # directory (a dir makes DIAMOND fail with "Is a directory"). _ensure_db points
+    # CHECKM2DB at the checkm2 dir (correct for the download step); for the pipeline
+    # run, repoint it at the downloaded .dmnd.
+    checkm2_dmnds = glob.glob(os.path.join(DB_BASE, "checkm2", "*.dmnd"))
+    assert checkm2_dmnds, f"no .dmnd found in {os.path.join(DB_BASE, 'checkm2')}"
+    monkeypatch.setenv("CHECKM2DB", checkm2_dmnds[0])
+
+    # 2) run the full assemble -> recover -> annotate pipeline on synthetic reads.
+    # The synthetic wgsim bins are low quality, so the default bin filter
+    # (--min-completeness 50, --max-contamination 5) drops nearly all of them,
+    # leaving GTDB-Tk/eggnog with little-to-nothing to annotate. Loosen the
+    # thresholds so low-quality/contaminated bins survive and eggnog gets real
+    # input to produce annotations.
     out = tmp_path / "aviary_out"
     _run_aviary([
         "complete",
         "-o", str(out),
         "-1", os.path.join(DATA_DIR, "wgsim.1.fq.gz"),
         "-2", os.path.join(DATA_DIR, "wgsim.2.fq.gz"),
+        "--min-completeness", "15", "--max-contamination", "50",
         "-n", WALKTHROUGH_CORES, "-t", WALKTHROUGH_CORES,
     ])
 
@@ -290,8 +304,11 @@ def test_download_then_complete_walkthrough(tmp_path, monkeypatch, aviary_build)
     with open(gtdbtk) as f:
         assert sum(1 for _ in f) > 1, "GTDB-Tk produced no classifications"
 
-    # annotation: EggNOG (needs the downloaded eggnog db)
-    eggnog = glob.glob(str(out / "annotation" / "eggnog" / "*.annotations"))
+    # annotation: EggNOG (needs the downloaded eggnog db). The annotate rule does
+    # `ln -sr data/eggnog annotation`, which (annotation/ already exists) creates the
+    # symlink annotation/eggnog -> ../data/eggnog. So the emapper output lives at
+    # annotation/eggnog/*.emapper.annotations, one level below annotation/.
+    eggnog = glob.glob(str(out / "annotation" / "eggnog" / "*.emapper.annotations"))
     assert eggnog, "no EggNOG annotation files produced"
     for path in eggnog:
         assert os.path.getsize(path) > 0, f"empty EggNOG annotation: {path}"
