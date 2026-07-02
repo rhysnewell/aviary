@@ -86,7 +86,7 @@ def get_snakefile(file="Snakefile"):
 ################################ - Classes - ##################################
 # Subcommands that do not require short or long reads.
 # Add new subcommand names here to allow them to run without reads.
-SUBCOMMANDS_WITHOUT_READS = ['annotate', 'cluster']
+SUBCOMMANDS_WITHOUT_READS = ['annotate', 'cluster', 'download_databases']
 
 class Processor:
     def __init__(self, args):
