@@ -1,5 +1,24 @@
 # Changelog
 
+## v0.13.1 - 2026-07-08
+
+Patch release focused on repairing database downloads (`aviary configure --download`).
+
+---
+
+### Fixed
+
+- **`aviary configure --download` no longer requires read inputs** — `download_databases` added to `SUBCOMMANDS_WITHOUT_READS`; previously failed with "both long_reads and short_reads_1 are set to none"
+- **eggNOG database download** — `eggnogdb.embl.de` was decommissioned; files are now fetched from `eggnog5.embl.de`
+- **Metabuli GTDB database download** — upstream relocated the tarball to an `archive/` path. The old command 404'd but exited 0, silently leaving an empty database; it now downloads the archived index directly and fails loudly on error
+- **CheckM2 database download** — unsets `CHECKM2DB` and runs under `bash -e -o pipefail` so download failures are no longer swallowed
+
+### Changed
+
+- **pixi 0.71+ compatibility** — `pixi.toml` migrated to rich platforms (CUDA on platform entries); minimum `pixi` bumped to `>=0.71`; lockfile regenerated
+
+---
+
 ## v0.13.0 - 2026-03-31
 
 Forked from [wwood/aviary](https://github.com/wwood/aviary) at v0.12.0 (`myloasm` branch). All changes below are relative to that base.
