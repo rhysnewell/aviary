@@ -72,9 +72,17 @@ rule download_eggnog_db:
     log:
         'logs/download_eggnog.log'
     shell:
+        # eggnogdb.embl.de is decommissioned; files are served from eggnog5.embl.de
         'mkdir -p {params.eggnog_db}; '
         f'{pixi_run} -e eggnog '
-        'download_eggnog_data.py --data_dir {params.eggnog_db} -y 2> {log} '
+        'bash -c \''
+        'DB_VER=$(python -c "from eggnogmapper.version import __DB_VERSION__; print(__DB_VERSION__)"); '
+        'BASE="http://eggnog5.embl.de/download/emapperdb-${{DB_VER}}"; '
+        'cd {params.eggnog_db} && '
+        'wget -q "$BASE/eggnog.db.gz" && gunzip eggnog.db.gz && '
+        'wget -q "$BASE/eggnog.taxa.tar.gz" && tar -xzf eggnog.taxa.tar.gz && rm eggnog.taxa.tar.gz && '
+        'wget -q "$BASE/eggnog_proteins.dmnd.gz" && gunzip eggnog_proteins.dmnd.gz'
+        '\' > {log} 2>&1 '
 
 rule download_gtdb:
     output:
@@ -141,7 +149,9 @@ rule download_checkm2:
     log:
         'logs/download_checkm2.log'
     shell:
-        pixi_run + ' -e checkm2 checkm2 database --download --path {params.checkm2_folder} 2> {log}; '
+        pixi_run + " -e checkm2 bash -e -o pipefail -c '"
+        "unset CHECKM2DB && checkm2 database --download --path {params.checkm2_folder}"
+        "' 2> {log}; "
         'mv {params.checkm2_folder}/CheckM2_database/*.dmnd {params.checkm2_folder}/; '
 
 rule download_metabuli:
@@ -153,8 +163,18 @@ rule download_metabuli:
     log:
         'logs/download_metabuli.log'
     shell:
-        f'{pixi_run} -e metabuli '
-        'metabuli databases GTDB {params.metabuli_folder} tmp 2> {log} 2>&1 '
+        # `metabuli databases GTDB` requests a tarball that upstream relocated to
+        # an archive/ path, so it 404s -- and (worse) exits 0, silently leaving an
+        # empty db. wget the archived GTDB index directly with set -e so a failure
+        # actually fails the rule. aviary's classify step (binning.smk) expects the
+        # db at {metabuli_folder}/gtdb, which is the tarball's top-level dir.
+        'mkdir -p {params.metabuli_folder}; '
+        'bash -c \''
+        'set -euo pipefail; '
+        'cd {params.metabuli_folder} && '
+        'wget -q "https://steineggerlab.s3.amazonaws.com/metabuli/archive/gtdb.tar.gz" && '
+        'tar -xzf gtdb.tar.gz && rm gtdb.tar.gz'
+        '\' > {log} 2>&1 '
 
 rule checkm2:
     input:

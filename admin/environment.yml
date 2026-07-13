@@ -11,7 +11,7 @@ dependencies:
 - parallel=20251122
 - pigz=2.8
 - pip=25.3
-- pixi=0.63.2
+- pixi=0.71.0
 - polars=1.38.0
 - pyopenssl=25.3.0
 - python=3.13.11
