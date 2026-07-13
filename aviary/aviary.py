@@ -1122,9 +1122,10 @@ def main():
     complete_input_group = complete_options.add_argument_group(title='Input options')
     complete_input_group.add_argument(
         '-a', '--assembly',
-        help='Optional FASTA file containing scaffolded contigs of the metagenome assembly',
+        help='One or more FASTA files containing scaffolded contigs of metagenome assemblies. '
+             'Provide multiple assemblies for SemiBin2 multi-sample binning (requires --semibin-mode multi).',
         dest="assembly",
-        nargs=1,
+        nargs='+',
         required=False,
     )
 

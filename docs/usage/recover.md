@@ -42,6 +42,106 @@ If no assembly is provided, aviary will first run the assembly pipeline.
 
   Sequencing platform: `rs`, `sq`, `ccs`, `hifi`, `ont`, `ont_hq`. [default: ont]
 
+## Assembly options
+
+**`--long-read-assembler`** ASSEMBLER
+
+  Long-read assembler: `myloasm` or `flye`. [default: myloasm]
+
+**`--medaka-model`** MODEL
+
+  Medaka model for long read polishing. [default: r941_min_hac_g507]
+
+**`--use-unicycler`**
+
+  Use Unicycler to re-assemble the metaSPAdes hybrid assembly. Not recommended for complex metagenomes.
+
+**`--use-megahit`**
+
+  Use MEGAHIT instead of metaSPAdes for short-read-only assembly. [default: false]
+
+**`--coassemble`**, **`--co-assemble`**
+
+  When multiple read sets are given, coassemble them together. If false, aviary uses only the first short-read and first long-read set for assembly (all read sets are still used for differential-coverage binning). [default: false]
+
+**`-k`**, **`--kmer-sizes`** INT [INT ...]
+
+  Manually specify the k-mer sizes used by SPAdes during assembly. Space-separated odd integers less than 128, or `auto`. [default: auto]
+
+**`--min-cov-long`** INT
+
+  Automatically include Flye contigs with long-read coverage ≥ this value. [default: 5]
+
+**`--min-cov-short`** INT
+
+  Automatically include Flye contigs with short-read coverage ≤ this value. [default: 5]
+
+**`--exclude-contig-cov`** INT
+
+  Automatically exclude Flye contigs with long-read coverage ≤ this value, provided their length is also ≤ `--exclude-contig-size`. [default: 10]
+
+**`--exclude-contig-size`** INT
+
+  Automatically exclude Flye contigs with length ≤ this value, provided their long-read coverage is also ≤ `--exclude-contig-cov`. [default: 2500]
+
+**`--include-contig-size`** INT
+
+  Automatically include Flye contigs with length ≥ this value. [default: 10000]
+
+## QC options
+
+**`-r`**, **`--host-filter`** FILE [FILE ...]
+
+  Host reference FASTA files for removal of contaminant reads prior to assembly.
+
+**`-g`**, **`--gold-standard-assembly`** FILE [FILE ...]
+
+  A gold-standard assembly to compare the resulting (or a given input) assembly against.
+
+**`--gsa-mappings`** FILE
+
+  CAMI I & II gold-standard-assembly mappings, used alongside `--gold-standard-assembly`.
+
+**`--keep-percent`** INT
+
+  **Deprecated.** Percentage of reads passing quality thresholds kept by Filtlong. [default: 100]
+
+**`--skip-qc`**
+
+  Skip quality control steps.
+
+**`--min-read-size`** INT
+
+  Minimum long read size when filtering using Filtlong. [default: 100]
+
+**`--min-mean-q`** INT
+
+  Minimum long read mean quality threshold. [default: 10]
+
+**`--min-short-read-length`** INT
+
+  Minimum length of short reads to keep. [default: 15]
+
+**`--max-short-read-length`** INT
+
+  Maximum length of short reads to keep, 0 = no maximum. [default: 0]
+
+**`--disable-adapter-trimming`**
+
+  Disable adapter trimming of short reads.
+
+**`--quality-cutoff`** INT
+
+  Phred quality value threshold for short reads. [default: 15]
+
+**`--unqualified-percent-limit`** INT
+
+  Percentage of bases allowed to be unqualified. [default: 40]
+
+**`--extra-fastp-params`** STRING
+
+  Extra parameters to pass to fastp, e.g. `--extra-fastp-params "-V -e 10"`.
+
 ## Binning options
 
 **`-s`**, **`--min-contig-size`** INT
@@ -117,6 +217,14 @@ If no assembly is provided, aviary will first run the assembly pipeline.
 
   Number of samples per coverage job when splitting. [default: 5]
 
+**`--min-percent-read-identity-short`** FLOAT
+
+  Minimum percent read identity used by CoverM for short reads when calculating genome abundances. [default: 95]
+
+**`--min-percent-read-identity-long`** FLOAT
+
+  Minimum percent read identity used by CoverM for long reads when calculating genome abundances. [default: 85]
+
 ## Annotation / bin processing options
 
 **`--gtdb-path`** PATH
@@ -157,6 +265,10 @@ If no assembly is provided, aviary will first run the assembly pipeline.
 
   Threads for pplacer. [default: 8]
 
+**`--local-cores`** INT
+
+  Maximum cores available locally. Only relevant when submitting to a cluster (see `--snakemake-profile`), in which case `--n-cores` restricts cores requested per submitted job. [default: 16]
+
 ## Output options
 
 **`-o`**, **`--output`** DIR
@@ -188,6 +300,14 @@ If no assembly is provided, aviary will first run the assembly pipeline.
 **`--strict`**
 
   Ensure each binner completes successfully. [default: skip failing binners]
+
+**`--request-gpu`**
+
+  Request a GPU for the pipeline (taxvamb, comebin, semibin). Only takes effect when run on a cluster. [default: false]
+
+**`--snakemake-cmds`** STRING
+
+  Additional commands passed through to snakemake as a single string, e.g. `--snakemake-cmds "--print-compilation True"`. Most `snakemake -h` commands are valid, but some may clash with commands aviary supplies directly — check for conflicts before using.
 
 ## Examples
 
