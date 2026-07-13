@@ -14,9 +14,9 @@ If no assembly is provided, aviary will first run the assembly pipeline.
 
 ## Input options
 
-**`-a`**, **`--assembly`** FILE
+**`-a`**, **`--assembly`** FILE [FILE ...]
 
-  FASTA file containing scaffolded contigs. If not provided, aviary will assemble first.
+  One or more FASTA files containing scaffolded contigs of metagenome assemblies. If not provided, aviary will assemble first. Provide multiple assemblies for SemiBin2 multi-sample binning (requires `--semibin-mode multi`).
 
 **`-1`**, **`--pe-1`** FILE [FILE ...]
 
@@ -63,6 +63,19 @@ If no assembly is provided, aviary will first run the assembly pipeline.
 **`--semibin-model`** MODEL
 
   SemiBin environment model: `human_gut`, `dog_gut`, `ocean`, `soil`, `cat_gut`, `human_oral`, `mouse_gut`, `pig_gut`, `built_environment`, `wastewater`, `global`. [default: global]
+
+**`--semibin-mode`** `{single,multi}`
+
+  SemiBin2 mode to use. `single` runs `single_easy_bin` on one assembly at a time. `multi` runs `multi_easy_bin`, co-binning multiple assemblies together — pass two or more files to `--assembly` to use it. Multi mode ignores `--semibin-model`, as pre-trained environments aren't supported for multi-sample binning. [default: single]
+
+  ```
+  aviary recover --assembly sample1.fasta sample2.fasta sample3.fasta \
+    -1 sample1_1.fq.gz sample2_1.fq.gz sample3_1.fq.gz \
+    -2 sample1_2.fq.gz sample2_2.fq.gz sample3_2.fq.gz \
+    --semibin-mode multi
+  ```
+
+  Assemblies are concatenated (with unique `sample:contig` headers) into one SemiBin2 input, and reads from every sample are mapped back onto that concatenation, so co-abundance across samples improves binning. Output bins are written per-sample-prefixed into `data/semibin_bins/output_bins/`.
 
 **`--refinery-max-iterations`** INT
 

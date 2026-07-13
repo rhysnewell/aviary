@@ -7,7 +7,7 @@ title: aviary configure
 Set conda environment variables for database paths used by future aviary runs. Settings are persisted across sessions.
 
 ```
-aviary configure --gtdb-path ~/gtdbtk/release207/ --tmpdir /path/to/tmp/
+aviary configure --gtdb-path ~/gtdbtk/release232/ --tmpdir /path/to/tmp/
 ```
 
 ## Database path options
@@ -54,7 +54,7 @@ Available databases: `gtdb`, `eggnog`, `singlem`, `checkm2`, `metabuli`. If no a
 
 Configure GTDB and temp directory:
 ```
-aviary configure --gtdb-path ~/gtdbtk/release207/ --tmpdir /scratch/tmp/
+aviary configure --gtdb-path ~/gtdbtk/release232/ --tmpdir /scratch/tmp/
 ```
 
 Download all databases:

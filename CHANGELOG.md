@@ -1,5 +1,11 @@
 # Changelog
 
+## Unreleased
+
+### Added
+
+- **`aviary recover`/`aviary complete`: SemiBin2 multi-sample binning** — new `--semibin-mode {single,multi}` flag (default `single`, preserving prior behaviour). In `multi` mode, `-a/--assembly` accepts multiple FASTA files; they are concatenated via `SemiBin2 concatenate_fasta`, reads from every sample are mapped back onto the concatenation, and `SemiBin2 multi_easy_bin` co-bins across samples using cross-sample abundance correlation. Output bins are written per-sample-prefixed into `data/semibin_bins/output_bins/`. Passing multiple assemblies without `--semibin-mode multi` is now a hard error; passing `--semibin-mode multi` with only one assembly warns but proceeds.
+
 ## v0.13.1 - 2026-07-08
 
 Patch release focused on repairing database downloads (`aviary configure --download`).

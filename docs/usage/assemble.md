@@ -52,11 +52,55 @@ aviary assemble -1 reads_1.fq.gz -2 reads_2.fq.gz --longreads reads.fastq.gz --l
 
   Use Unicycler to re-assemble the metaSPAdes hybrid assembly. Not recommended for complex metagenomes.
 
+**`--use-megahit`**
+
+  Use MEGAHIT instead of metaSPAdes for short-read-only assembly. [default: false]
+
+**`--coassemble`**, **`--co-assemble`**
+
+  When multiple read sets are given, coassemble them together. If false, aviary uses only the first short-read and first long-read set for assembly (all read sets are still used for differential-coverage binning). [default: false]
+
+**`-k`**, **`--kmer-sizes`** INT [INT ...]
+
+  Manually specify the k-mer sizes used by SPAdes during assembly. Space-separated odd integers less than 128, or `auto`. [default: auto]
+
+**`--min-cov-long`** INT
+
+  Automatically include Flye contigs with long-read coverage ≥ this value. High long-read coverage indicates the overlap-layout-consensus assembly is more likely to be correct. [default: 5]
+
+**`--min-cov-short`** INT
+
+  Automatically include Flye contigs with short-read coverage ≤ this value. Low short-read coverage indicates metaSPAdes would not assemble this contig better. [default: 5]
+
+**`--exclude-contig-cov`** INT
+
+  Automatically exclude Flye contigs with long-read coverage ≤ this value, provided their length is also ≤ `--exclude-contig-size`. [default: 10]
+
+**`--exclude-contig-size`** INT
+
+  Automatically exclude Flye contigs with length ≤ this value, provided their long-read coverage is also ≤ `--exclude-contig-cov`. [default: 2500]
+
+**`--include-contig-size`** INT
+
+  Automatically include Flye contigs with length ≥ this value. [default: 10000]
+
 ## QC options
 
 **`-r`**, **`--host-filter`** FILE [FILE ...]
 
   Host reference FASTA files for removal of contaminant reads prior to assembly.
+
+**`-g`**, **`--gold-standard-assembly`** FILE [FILE ...]
+
+  A gold-standard assembly to compare the resulting (or a given input) assembly against.
+
+**`--gsa-mappings`** FILE
+
+  CAMI I & II gold-standard-assembly mappings, used alongside `--gold-standard-assembly`.
+
+**`--keep-percent`** INT
+
+  **Deprecated.** Percentage of reads passing quality thresholds kept by Filtlong. [default: 100]
 
 **`--skip-qc`**
 
