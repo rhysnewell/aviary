@@ -1,4 +1,47 @@
 [build-system]
-# XXX: If your project needs other packages to build properly, add them to this list.
-requires = ["setuptools >= 64"]
+requires = ["setuptools>=64", "wheel", "setuptools_scm"]
 build-backend = "setuptools.build_meta"
+
+[project]
+name = "aviary-genome"
+description = "aviary - metagenomics pipeline using long and short reads"
+readme = "README.md"
+license = "GPL-3.0"
+authors = [{ name = "Rhys Newell", email = "rhys.newell94@gmail.com" }]
+classifiers = ["Topic :: Scientific/Engineering :: Bio-Informatics"]
+dynamic = ["version", "dependencies"]
+
+[project.urls]
+Homepage = "https://github.com/rhysnewell/aviary"
+
+[project.scripts]
+aviary = "aviary.aviary:main"
+
+[tool.setuptools]
+packages = [
+    "aviary",
+    "aviary.modules",
+    "aviary.web",
+    "aviary.config",
+    "aviary.envs",
+    "aviary.scripts",
+    "aviary.modules.assembly",
+    "aviary.modules.binning",
+    "aviary.modules.annotation",
+    "aviary.modules.cluster",
+    "aviary.modules.quality_control",
+    "aviary.modules.assembly.scripts",
+    "aviary.modules.binning.scripts",
+    "aviary.modules.annotation.scripts",
+    "aviary.modules.cluster.scripts",
+    "aviary.modules.quality_control.scripts",
+]
+include-package-data = true
+
+[tool.setuptools.dynamic]
+dependencies = { file = ["admin/requirements.txt"] }
+
+[tool.setuptools_scm]
+version_file = "aviary/version.py"
+version_scheme = "only-version"
+local_scheme = "no-local-version"

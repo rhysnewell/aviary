@@ -1,4 +1,4 @@
-__version__ = "0.13.1"
+from .version import __version__
 
 
 # CONSTANTS
