@@ -15,3 +15,5 @@ Aviary provides several subcommands for different stages of the metagenomics wor
 | `cluster` | Dereplicate/choose representative genomes from multiple aviary runs |
 | `isolate` | Hybrid isolate assembly for pure sequencing results |
 | `configure` | Set or reset environment variables used by aviary |
+
+Every subcommand also accepts a shared set of performance/output/misc flags (`--max-threads`, `--output`, `--clean`, `--build`, `--dry-run`, etc.) — see [Centralised commands](centralised_commands.md).

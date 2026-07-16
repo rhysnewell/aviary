@@ -10,6 +10,8 @@ Annotate a given set of MAGs using EggNOG, GTDB-tk, and CheckM2.
 aviary annotate --genome-fasta-directory input_bins/
 ```
 
+> This subcommand also accepts `--dry-run`, `--clean`, `--strict`, `--request-gpu`, `--build`, `--build-gpu`, `--download`, `--rerun-triggers`, `--default-resources`, `--snakemake-profile`, `--snakemake-cmds`, `--cluster-retries`, `--local-cores`, and `--workflow`, which are shared across every aviary subcommand — see [Centralised commands](centralised_commands.md).
+
 ## Input options
 
 **`-d`**, **`--genome-fasta-directory`** DIR

@@ -10,6 +10,8 @@ Step-down hybrid assembly using long and short reads, or assembly using only sho
 aviary assemble -1 reads_1.fq.gz -2 reads_2.fq.gz --longreads reads.fastq.gz --long_read_type ont
 ```
 
+> This subcommand also accepts `--build`, `--build-gpu`, `--download`, `--rerun-triggers`, `--default-resources`, and `--workflow`, which are shared across every aviary subcommand — see [Centralised commands](centralised_commands.md).
+
 ## Input options (short reads)
 
 **`-1`**, **`--pe-1`** FILE [FILE ...]

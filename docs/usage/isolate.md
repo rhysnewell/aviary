@@ -10,6 +10,8 @@ Step-down hybrid assembly for isolated pure culture sequencing results. For use 
 aviary isolate -1 reads_1.fq.gz -2 reads_2.fq.gz --longreads reads.fastq.gz --long_read_type ont
 ```
 
+> This subcommand also accepts `--dry-run`, `--clean`, `--strict`, `--request-gpu`, `--build`, `--build-gpu`, `--download`, `--rerun-triggers`, `--default-resources`, `--snakemake-profile`, `--snakemake-cmds`, `--cluster-retries`, `--local-cores`, and `--workflow`, which are shared across every aviary subcommand — see [Centralised commands](centralised_commands.md).
+
 ## Input options (short reads)
 
 **`-1`**, **`--pe-1`** FILE [FILE ...]

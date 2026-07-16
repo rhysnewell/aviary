@@ -12,6 +12,8 @@ aviary recover --assembly scaffolds.fasta -1 reads_1.fq.gz -2 reads_2.fq.gz
 
 If no assembly is provided, aviary will first run the assembly pipeline.
 
+> This subcommand also accepts `--build`, `--build-gpu`, `--download`, `--rerun-triggers`, `--default-resources`, and `--workflow`, which are shared across every aviary subcommand — see [Centralised commands](centralised_commands.md).
+
 ## Input options
 
 **`-a`**, **`--assembly`** FILE [FILE ...]
