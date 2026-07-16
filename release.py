@@ -54,5 +54,7 @@ if __name__ == "__main__":
     extern.run('git tag v{}'.format(version))
 
     print("Now run 'git push && git push --tags' and GitHub actions will build and upload to PyPI")
+    print('You have to run "pixi run bash ./build.sh" from the docker directory to build the docker image, once the tag is on GitHub')
     print("REMINDER: Don't forget to build and push the Docker image!")
+    print("Once pushed to BioConda, also run aviary-installation to verify deployment and installation instructions")
     print("REMINDER: Don't forget to update and do a release on GitHub!")
