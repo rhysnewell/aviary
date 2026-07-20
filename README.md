@@ -81,11 +81,6 @@ This can be done by simply running:
 mkdir -p aviary/.pixi
 ```
 
-For those at CMR, you can instead run:
-```bash
-cd aviary && pixi_cmr_init.py && cd -
-```
-
 
 
 #### Post-installation of aviary
