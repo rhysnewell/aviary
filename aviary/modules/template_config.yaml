@@ -4,6 +4,8 @@ long_reads:
     none
 long_read_type:
     ont
+long_read_assembler:
+    myloasm
 medaka_model:
     r941_min_hac_g507
 short_reads_1:
@@ -14,6 +16,8 @@ min_contig_size:
     1500
 min_bin_size:
     200000
+semibin_mode:
+    single
 max_threads:
     8
 pplacer_threads:
@@ -26,10 +30,8 @@ coverage_split:
     False
 coverage_samples_per_split:
     5
-reference_filter:
+host_filter:
     none
-strain_analysis:
-    False
 unassembled_long:
     none
 mags:
@@ -49,7 +51,7 @@ keep_percent:
 min_mean_q:
     40
 guppy_model:
-    r941_min_high_g360
+    r941_min_hac_g507
 gtdbtk_folder:
     none
 busco_folder:
@@ -60,7 +62,7 @@ eggnog_folder:
     none
 singlem_metapackage:
     none
-virsorter_data:
-    none
 email:
     somename@email.co
+skip_reads_check:
+    False

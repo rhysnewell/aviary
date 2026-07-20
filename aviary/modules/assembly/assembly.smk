@@ -1,10 +1,76 @@
-localrules: get_high_cov_contigs, short_only, move_spades_assembly, pool_reads, skip_unicycler, skip_unicycler_with_qc, complete_assembly, complete_assembly_with_qc, reset_to_spades_assembly, remove_final_contigs, combine_assemblies, combine_long_only
+ASSEMBLY_SCRIPTS_DIR = os.path.join(os.path.dirname(os.path.abspath(workflow.snakefile)), 'scripts')
+from aviary.modules.common import pixi_run, setup_log
+logs_dir = "logs"
 
-ruleorder: filter_illumina_assembly > short_only > combine_long_only
-ruleorder: get_high_cov_contigs > short_only
-ruleorder: skip_unicycler_with_qc > skip_unicycler > combine_assemblies > move_spades_assembly > combine_long_only
-ruleorder: skip_unicycler_with_qc > skip_unicycler > complete_assembly_with_qc > complete_assembly
-ruleorder: skip_unicycler_with_qc > skip_unicycler > combine_assemblies > move_spades_assembly
+
+LONG_READ_ASSEMBLER = config["long_read_assembler"]
+LONG_ASSEMBLY_DIR = f"data/{LONG_READ_ASSEMBLER}"
+LONG_ASSEMBLY_FASTA = f"{LONG_ASSEMBLY_DIR}/assembly.fasta"
+LONG_ASSEMBLY_GRAPH = f"{LONG_ASSEMBLY_DIR}/assembly_graph.gfa"
+SHORT_ASSEMBLY_GRAPH = "data/short_read_assembly/assembly_graph_with_scaffolds.gfa"
+LONG_ASSEMBLY_INFO = f"{LONG_ASSEMBLY_DIR}/assembly_info.txt"
+LONG_HIGH_COV_FASTA = f"data/{LONG_READ_ASSEMBLER}_high_cov.fasta"
+if LONG_READ_ASSEMBLER == "flye":
+    ASSEMBLER_ENV = "flye"
+elif LONG_READ_ASSEMBLER == "myloasm":
+    ASSEMBLER_ENV = "myloasm"
+else:
+    raise Exception("Programming error: unexpected long_read_assembler value.")
+
+def _validate_reads(reads, key):
+    if reads == "none":
+        return "none"
+    if isinstance(reads, list):
+        return "list"
+    raise Exception(f"Programming error: config[{key!r}] must be 'none' or a list of paths.")
+
+
+def _validate_bool(value, key):
+    if isinstance(value, bool):
+        return value
+    raise Exception(f"Programming error: config[{key!r}] must be a boolean.")
+
+
+SHORT_READS_1 = config['short_reads_1']
+LONG_READS = config['long_reads']
+USE_UNICYCLER = _validate_bool(config["use_unicycler"], "use_unicycler")
+SKIP_QC = _validate_bool(config["skip_qc"], "skip_qc")
+
+SHORT_READS_KIND = _validate_reads(SHORT_READS_1, "short_reads_1")
+LONG_READS_KIND = _validate_reads(LONG_READS, "long_reads")
+
+if LONG_READS_KIND == "none" and SHORT_READS_KIND == "none":
+    if not config.get("skip_reads_check", False):
+        raise Exception("Programming error: both long_reads and short_reads_1 are set to 'none'.")
+    READ_MODE = "none"
+elif LONG_READS_KIND == "none":
+    READ_MODE = "short_only"
+elif SHORT_READS_KIND == "none":
+    READ_MODE = "long_only"
+elif LONG_READS_KIND == "list" and SHORT_READS_KIND == "list":
+    READ_MODE = "hybrid"
+else:
+    raise Exception("Programming error: unexpected long_reads/short_reads_1 configuration.")
+
+if READ_MODE == "hybrid":
+    if USE_UNICYCLER is True:
+        ASSEMBLY_STRATEGY = "hybrid_unicycler"
+    elif USE_UNICYCLER is False:
+        ASSEMBLY_STRATEGY = "hybrid_skip_unicycler"
+    else:
+        raise Exception("Programming error: unexpected use_unicycler value.")
+elif READ_MODE == "short_only":
+    ASSEMBLY_STRATEGY = "short_only"
+elif READ_MODE == "long_only":
+    if USE_UNICYCLER:
+        raise Exception("Programming error: use_unicycler requires both long and short reads.")
+    ASSEMBLY_STRATEGY = "long_only"
+elif READ_MODE == "none":
+    ASSEMBLY_STRATEGY = "none"
+else:
+    raise Exception("Programming error: unexpected assembly strategy state.")
+
+localrules: pool_reads, complete_assembly_with_qc
 
 # onsuccess:
 #     print("Assembly finished, no error")
@@ -12,13 +78,13 @@ ruleorder: skip_unicycler_with_qc > skip_unicycler > combine_assemblies > move_s
 # onerror:
 #     print("An error occurred")
 
+
+
 onstart:
     import os
     import sys
 
     from snakemake.utils import logger, min_version
-    sys.path.append(os.path.join(os.path.dirname(os.path.abspath(workflow.snakefile)),"../../scripts"))
-    sys.path.append(os.path.join(os.path.dirname(os.path.abspath(workflow.snakefile)),"scripts"))
 
     # minimum required snakemake version
     min_version("6.0")
@@ -40,73 +106,132 @@ onstart:
         sys.exit("short_reads_2 does not point to a file")
     
 
-# Assembly long reads with metaflye
-rule flye_assembly:
-    input:
-        fastq = "data/long_reads.fastq.gz"
-    output:
-        fasta = "data/flye/assembly.fasta",
-        graph = "data/flye/assembly_graph.gfa",
-        info = "data/flye/assembly_info.txt",
-        junk1 = temp(directory("data/flye/00-assembly/")),
-        junk2 = temp(directory("data/flye/10-consensus/")),
-        junk3 = temp(directory("data/flye/20-repeat/")),
-        junk4 = temp(directory("data/flye/30-contigger/")),
-        junk5 = temp(directory("data/flye/40-polishing/"))
-    params:
-        long_read_type = config["long_read_type"]
-    threads:
-        config["max_threads"]
-    resources:
-        mem_mb = lambda wildcards, attempt: min(int(config["max_memory"])*1024, 512*1024*attempt),
-        runtime = lambda wildcards, attempt: 24*60 + 24*60*attempt,
-    log:
-        "logs/flye_assembly.log"
-    conda:
-        "envs/flye.yaml"
-    benchmark:
-        "benchmarks/flye_assembly.benchmark.txt"
-    script:
-        "scripts/run_flye.py"
+if LONG_READ_ASSEMBLER == "flye":
+    # Assembly long reads with metaflye
+    rule long_read_assembly:
+        input:
+            fastq = "data/long_reads.fastq.gz"
+        output:
+            fasta = LONG_ASSEMBLY_FASTA,
+            graph = LONG_ASSEMBLY_GRAPH,
+            info = LONG_ASSEMBLY_INFO,
+            junk1 = temp(directory(f"{LONG_ASSEMBLY_DIR}/00-assembly/")),
+            junk2 = temp(directory(f"{LONG_ASSEMBLY_DIR}/10-consensus/")),
+            junk3 = temp(directory(f"{LONG_ASSEMBLY_DIR}/20-repeat/")),
+            junk4 = temp(directory(f"{LONG_ASSEMBLY_DIR}/30-contigger/")),
+            junk5 = temp(directory(f"{LONG_ASSEMBLY_DIR}/40-polishing/"))
+        params:
+            long_read_type = config["long_read_type"],
+            output_dir = LONG_ASSEMBLY_DIR
+        threads:
+            config["max_threads"]
+        resources:
+            mem_mb = lambda wildcards, attempt: min(int(config["max_memory"])*1024, 512*1024*attempt),
+            runtime = lambda wildcards, attempt: 24*60 + 24*60*attempt,
+        log:
+            "logs/flye_assembly.log"
+        benchmark:
+            "benchmarks/flye_assembly.benchmark.txt"
+        shell:
+            f'{pixi_run} -e {ASSEMBLER_ENV} {ASSEMBLY_SCRIPTS_DIR}/'+\
+            """run_flye.py \
+            --long-read-type {params.long_read_type} \
+            --input-fastq {input.fastq} \
+            --output-dir {params.output_dir} \
+            --meta-flag \
+            --threads {threads} \
+            --log {log}
+            """
+else:
+    # Assembly long reads with myloasm
+    rule long_read_assembly:
+        input:
+            fastq = "data/long_reads.fastq.gz"
+        output:
+            fasta = LONG_ASSEMBLY_FASTA,
+            graph = LONG_ASSEMBLY_GRAPH,
+            info = LONG_ASSEMBLY_INFO,
+        params:
+            long_read_type = config["long_read_type"],
+            output_dir = LONG_ASSEMBLY_DIR
+        threads:
+            config["max_threads"]
+        resources:
+            mem_mb = lambda wildcards, attempt: min(int(config["max_memory"])*1024, 512*1024*attempt),
+            runtime = lambda wildcards, attempt: 24*60 + 24*60*attempt,
+        log:
+            "logs/myloasm_assembly.log"
+        benchmark:
+            "benchmarks/myloasm_assembly.benchmark.txt"
+        shell:
+            f'{pixi_run} -e {ASSEMBLER_ENV} {ASSEMBLY_SCRIPTS_DIR}/'+\
+            """run_myloasm.py \
+            --long-read-type {params.long_read_type} \
+            --input-fastq {input.fastq} \
+            --output-dir {params.output_dir} \
+            --threads {threads} \
+            --log {log}
+            """
 
 
 # Polish the long reads assembly with Racon or Medaka
 rule polish_metagenome_flye:
     input:
         fastq = "data/long_reads.fastq.gz",
-        fasta = "data/flye/assembly.fasta",
-    conda:
-        "envs/polishing.yaml"
+        fasta = LONG_ASSEMBLY_FASTA,
+        qc_reads = [] if config["skip_qc"] or config["short_reads_1"] == "none" else "data/short_reads.fastq.gz",
     params:
         prefix = "polished",
         maxcov = 200,
         rounds = 3,
         illumina = False,
-        coassemble = config["coassemble"]
+        coassemble = config["coassemble"],
+        short_reads_1 = lambda wildcards, input: "" if config["short_reads_1"] == "none" else (
+            "--short-reads-1 "
+            + (" ".join(config["short_reads_1"]) if config["skip_qc"] else input.qc_reads)
+        ),
+        short_reads_2 = " ".join(config["short_reads_2"]) if config["skip_qc"] else "none",
     threads:
         config["max_threads"]
     resources:
         mem_mb = lambda wildcards, attempt: min(int(config["max_memory"])*1024, 512*1024*attempt),
         runtime = lambda wildcards, attempt: 24*60*attempt,
-        gpus = 1 if config["request_gpu"] else 0
-    log:
-        "logs/polish_metagenome_flye.log"
+        gpus = 1 if config["request_gpu"] else 0,
+        log_path = lambda wildcards, attempt: setup_log(f"{logs_dir}/polish_metagenome_flye", attempt),
     output:
         fasta = "data/assembly.pol.rac.fasta"
     benchmark:
         "benchmarks/polish_metagenome_flye.benchmark.txt"
-    script:
-        "scripts/polish.py"
+    shell:
+        f'{pixi_run} -e polishing {ASSEMBLY_SCRIPTS_DIR}/'+\
+        """polish.py \
+        {params.short_reads_1} \
+        --short-reads-2 {params.short_reads_2} \
+        --input-fastq {input.fastq} \
+        --reference {input.fasta} \
+        --output-dir data/polishing \
+        --output-prefix {params.prefix} \
+        --output-fasta {output.fasta} \
+        --rounds {params.rounds} \
+        --long-read-type {config[long_read_type]} \
+        --medaka-model {config[medaka_model]} \
+        --illumina {params.illumina} \
+        --max-cov {params.maxcov} \
+        --threads {threads} \
+        --coassemble {params.coassemble} \
+        --log {resources.log_path}
+        """
 
 
 # Generate BAM file for pilon, discard unmapped reads
 rule generate_pilon_sort:
     input:
-        fastq = config['short_reads_1'],
-        filtered = "data/short_filter.done",
-        fasta = "data/assembly.pol.rac.fasta"
+        fasta = "data/assembly.pol.rac.fasta",
+        qc_reads = [] if config["skip_qc"] or config["short_reads_1"] == "none" else "data/short_reads.fastq.gz",
     params:
-        coassemble = config["coassemble"]
+        coassemble = config["coassemble"],
+        short_reads_1 = " ".join(config["short_reads_1"]) if config["skip_qc"] else "",
+        short_reads_2 = " ".join(config["short_reads_2"]) if config["skip_qc"] else "none",
     output:
         bam = temp("data/pilon.sort.bam"),
         bai = temp("data/pilon.sort.bam.bai")
@@ -115,14 +240,21 @@ rule generate_pilon_sort:
     resources:
         mem_mb = lambda wildcards, attempt: min(int(config["max_memory"])*1024, 512*1024*attempt),
         runtime = lambda wildcards, attempt: 24*60*attempt,
-    log:
-        "logs/generate_pilon_sort.log"
-    conda:
-        "envs/pilon.yaml"
+        log_path = lambda wildcards, attempt: setup_log(f"{logs_dir}/generate_pilon_sort", attempt),
     benchmark:
         "benchmarks/generate_pilon_sort.benchmark.txt"
-    script:
-        "scripts/generate_pilon_sort.py"
+    shell:
+        f'{pixi_run} -e pilon {ASSEMBLY_SCRIPTS_DIR}/'+\
+        """generate_pilon_sort.py \
+        --short-reads-1 {input.qc_reads}{params.short_reads_1} \
+        --short-reads-2 {params.short_reads_2} \
+        --input-fasta {input.fasta} \
+        --output-bam {output.bam} \
+        --threads {threads} \
+        --coassemble {params.coassemble} \
+        --log {resources.log_path}
+        """
+
 
 # The racon polished long read assembly is polished again with the short reads using Pilon
 rule polish_meta_pilon:
@@ -137,25 +269,21 @@ rule polish_meta_pilon:
     resources:
         mem_mb = lambda wildcards, attempt: min(int(config["max_memory"])*1024, 512*1024*attempt),
         runtime = lambda wildcards, attempt: 24*60*attempt,
-    log:
-        "logs/polish_meta_pilon.log"
+        log_path = lambda wildcards, attempt: setup_log(f"{logs_dir}/polish_meta_pilon", attempt),
     params:
         pilon_memory = int(config["max_memory"])*512
-    conda:
-        "envs/pilon.yaml"
     benchmark:
         "benchmarks/polish_meta_pilon.benchmark.txt"
     shell:
-        """
-        pilon -Xmx{params.pilon_memory}m --genome {input.fasta} --frags data/pilon.sort.bam --output data/assembly.pol.pil --fix bases >data/pilon.err 2> {log}
-        """
+        pixi_run + \
+        " -e pilon pilon -Xmx{params.pilon_memory}m --genome {input.fasta} --frags data/pilon.sort.bam --output data/assembly.pol.pil --fix bases >data/pilon.err 2> {resources.log_path}"
 
 
 # The assembly polished with Racon and Pilon is polished again with the short reads using Racon
 rule polish_meta_racon_ill:
     input:
-        fastq = config['short_reads_1'], # check short reads are here
-        fasta = "data/assembly.pol.pil.fasta"
+        fasta = "data/assembly.pol.pil.fasta",
+        qc_reads = [] if config["skip_qc"] or config["short_reads_1"] == "none" else "data/short_reads.fastq.gz",
     output:
         fasta = "data/assembly.pol.fin.fasta",
         paf = temp("data/polishing/alignment.racon_ill.0.paf")
@@ -164,154 +292,190 @@ rule polish_meta_racon_ill:
     resources:
         mem_mb = lambda wildcards, attempt: min(int(config["max_memory"])*1024, 512*1024*attempt),
         runtime = lambda wildcards, attempt: 24*60*attempt,
-    log:
-        "logs/polish_meta_racon_ill.log"
-    conda:
-        "envs/polishing.yaml"
+        log_path = lambda wildcards, attempt: setup_log(f"{logs_dir}/polish_meta_racon_ill", attempt),
     params:
         prefix = "racon_ill",
         maxcov = 200,
         rounds = 1,
         illumina = True,
-        coassemble = config["coassemble"]
+        coassemble = config["coassemble"],
+        short_reads_1 = " ".join(config["short_reads_1"]) if config["skip_qc"] else "",
+        short_reads_2 = " ".join(config["short_reads_2"]) if config["skip_qc"] else "none",
     benchmark:
         "benchmarks/polish_meta_racon_ill.benchmark.txt"
-    script:
-        "scripts/polish.py"
+    shell:
+        f'{pixi_run} -e polishing {ASSEMBLY_SCRIPTS_DIR}/'+\
+        """polish.py \
+        --short-reads-1 {input.qc_reads}{params.short_reads_1} \
+        --short-reads-2 {params.short_reads_2} \
+        --reference {input.fasta} \
+        --output-dir data/polishing \
+        --output-prefix {params.prefix} \
+        --output-fasta {output.fasta} \
+        --rounds {params.rounds} \
+        --long-read-type {config[long_read_type]} \
+        --medaka-model {config[medaka_model]} \
+        --illumina {params.illumina} \
+        --max-cov {params.maxcov} \
+        --threads {threads} \
+        --coassemble {params.coassemble} \
+        --log {resources.log_path}
+        """
 
 
-# High coverage contigs are identified
-rule get_high_cov_contigs:
-    input:
-        info = "data/flye/assembly_info.txt",
-        fasta = "data/assembly.pol.fin.fasta",
-        graph = "data/flye/assembly_graph.gfa",
-        paf = "data/polishing/alignment.racon_ill.0.paf"
-    output:
-        fasta = "data/flye_high_cov.fasta"
-    benchmark:
-        "benchmarks/get_high_cov_contigs.benchmark.txt"
-    params:
-        min_cov_long = int(config["min_cov_long"]),
-        min_cov_short = int(config["min_cov_short"]),
-        exclude_contig_cov = int(config["exclude_contig_cov"]),
-        exclude_contig_size = int(config["exclude_contig_size"]),
-        long_contig_size = int(config["long_contig_size"])
-    run:
-        ill_cov_dict = {}
-        # populate illumina coverage dictionary using PAF
-        with open(input.paf) as paf:
-            for line in paf:
-                query, qlen, qstart, qend, strand, ref, rlen, rstart, rend = line.split()[:9]
-                ref = ref[:-6]
-                if not ref in ill_cov_dict:
-                    ill_cov_dict[ref] = 0.0
-                ill_cov_dict[ref] += (int(rend) - int(rstart)) / int(rlen)
-        count = 0
-        high_cov_set = set()
-        short_edges = {}
-        with open(input.info) as f:
-            # Based on the flye assembly_info.txt, retrieve contigs > long_contig_size
-            f.readline()
-            for line in f:
-                contig_name, contig_length, long_coverage, circular, repeat, multiplicity, alt_group, graph_path = line.split()
-                is_circular = circular == "Y"
-                if int(contig_length) >= params.long_contig_size or is_circular:
-                    high_cov_set.add(contig_name)
-                elif int(contig_length) < params.long_contig_size:
-                    # Take first and last edge in info file for this contig
-                    se1 = graph_path.split(',')[0]
-                    # Filter the '-' sign from edge name
-                    if se1.startswith('-'):
-                        se1 = ("edge_" + se1[1:], True)
-                    else:
-                        se1 = ("edge_" + se1, False)
-                    se2 = graph_path.split(',')[-1]
-                    # Filter the '-' sign from edge name
-                    if se2.startswith('-'):
-                        se2 = ("edge_" + se2[1:], False)
-                    else:
-                        se2 = ("edge_" + se2, True)
-
-                    # Append contig to associated edges in short_edges dict
-                    if not se1 in short_edges:
-                        short_edges[se1] = []
-                    short_edges[se1].append(contig_name)
-                    if not se2 in short_edges:
-                        short_edges[se2] = []
-                    short_edges[se2].append(contig_name)
-                # Filtering:
-                # 1:
-                # exclude contigs with long read coverage less than `exclude_contig_cov` and
-                # shorter than `exclude_contig_size`
-                # 2:
-                # include if a contig is covered by >= min_cov_long long reads place in high cov set
-                # Also place in high coverage set if contig was not covered by illumina reads
-                # Also place in high coverage set if illumina coverage was <= min_cov_short
-                if not (float(long_coverage) <= params.exclude_contig_cov and int(contig_length) <= params.exclude_contig_size):
-                    if float(long_coverage) >= params.min_cov_long or not contig_name in ill_cov_dict \
-                            or ill_cov_dict[contig_name] <= params.min_cov_short:
+if READ_MODE == "hybrid":
+    # High coverage contigs are identified
+    rule get_high_cov_contigs:
+        input:
+            info = LONG_ASSEMBLY_INFO,
+            fasta = "data/assembly.pol.fin.fasta",
+            graph = LONG_ASSEMBLY_GRAPH,
+            paf = "data/polishing/alignment.racon_ill.0.paf"
+        output:
+            fasta = LONG_HIGH_COV_FASTA
+        benchmark:
+            "benchmarks/get_high_cov_contigs.benchmark.txt"
+        params:
+            min_cov_long = int(config["min_cov_long"]),
+            min_cov_short = int(config["min_cov_short"]),
+            exclude_contig_cov = int(config["exclude_contig_cov"]),
+            exclude_contig_size = int(config["exclude_contig_size"]),
+            long_contig_size = int(config["long_contig_size"])
+        run:
+            ill_cov_dict = {}
+            # populate illumina coverage dictionary using PAF
+            with open(input.paf) as paf:
+                for line in paf:
+                    query, qlen, qstart, qend, strand, ref, rlen, rstart, rend = line.split()[:9]
+                    ref = ref[:-6]
+                    if not ref in ill_cov_dict:
+                        ill_cov_dict[ref] = 0.0
+                    ill_cov_dict[ref] += (int(rend) - int(rstart)) / int(rlen)
+            count = 0
+            high_cov_set = set()
+            short_edges = {}
+            with open(input.info) as f:
+                # Based on the flye assembly_info.txt, retrieve contigs > long_contig_size
+                f.readline()
+                for line in f:
+                    contig_name, contig_length, long_coverage, circular, repeat, multiplicity, alt_group, graph_path = line.split()
+                    is_circular = circular == "Y"
+                    if int(contig_length) >= params.long_contig_size or is_circular:
                         high_cov_set.add(contig_name)
+                    elif int(contig_length) < params.long_contig_size:
+                        # Take first and last edge in info file for this contig
+                        se1 = graph_path.split(',')[0]
+                        # Filter the '-' sign from edge name
+                        if se1.startswith('-'):
+                            se1 = ("edge_" + se1[1:], True)
+                        else:
+                            se1 = ("edge_" + se1, False)
+                        se2 = graph_path.split(',')[-1]
+                        # Filter the '-' sign from edge name
+                        if se2.startswith('-'):
+                            se2 = ("edge_" + se2[1:], False)
+                        else:
+                            se2 = ("edge_" + se2, True)
 
-        filtered_contigs = set()
-        # Populate filtered contigs with short contigs that were connected to two edges in short_edges dict in the correct
-        # orientation: edge_1 + to edge_2 - and edge_1 != edge_2. So the start of a sequences complements links to
-        #               the end of a sequences reverse complement.
-        with open(input.graph) as f:
-            for line in f:
-                if line.startswith("L"):
-                    if (line.split()[1], line.split()[2] == '+') in short_edges \
-                            and (line.split()[3], line.split()[4] == '-') in short_edges \
-                            and not line.split()[1] == line.split()[3]: # and not line.split()[5] == '0M':
-                        for i in short_edges[(line.split()[1], line.split()[2] == '+')]:
-                            filtered_contigs.add(i)
-                        for i in short_edges[(line.split()[3], line.split()[4] == '-')]:
-                            filtered_contigs.add(i)
+                        # Append contig to associated edges in short_edges dict
+                        if not se1 in short_edges:
+                            short_edges[se1] = []
+                        short_edges[se1].append(contig_name)
+                        if not se2 in short_edges:
+                            short_edges[se2] = []
+                        short_edges[se2].append(contig_name)
+                    # Filtering:
+                    # 1:
+                    # exclude contigs with long read coverage less than `exclude_contig_cov` and
+                    # shorter than `exclude_contig_size`
+                    # 2:
+                    # include if a contig is covered by >= min_cov_long long reads place in high cov set
+                    # Also place in high coverage set if contig was not covered by illumina reads
+                    # Also place in high coverage set if illumina coverage was <= min_cov_short
+                    if not (float(long_coverage) <= params.exclude_contig_cov and int(contig_length) <= params.exclude_contig_size):
+                        if float(long_coverage) >= params.min_cov_long or not contig_name in ill_cov_dict \
+                                or ill_cov_dict[contig_name] <= params.min_cov_short:
+                            high_cov_set.add(contig_name)
 
-        # Remove contigs that were filtered from the high coverage set
-        for i in filtered_contigs:
-            try:
-                high_cov_set.remove(i)
-            except KeyError:
-                pass
+            filtered_contigs = set()
+            # Populate filtered contigs with short contigs that were connected to two edges in short_edges dict in the correct
+            # orientation: edge_1 + to edge_2 - and edge_1 != edge_2. So the start of a sequences complements links to
+            #               the end of a sequences reverse complement.
+            with open(input.graph) as f:
+                for line in f:
+                    if line.startswith("L"):
+                        if (line.split()[1], line.split()[2] == '+') in short_edges \
+                                and (line.split()[3], line.split()[4] == '-') in short_edges \
+                                and not line.split()[1] == line.split()[3]: # and not line.split()[5] == '0M':
+                            for i in short_edges[(line.split()[1], line.split()[2] == '+')]:
+                                filtered_contigs.add(i)
+                            for i in short_edges[(line.split()[3], line.split()[4] == '-')]:
+                                filtered_contigs.add(i)
 
-        # Write high coverage contigs
-        with open(input.fasta) as f, open(output.fasta, 'w') as o:
-            write_line = False
-            for line in f:
-                if line.startswith('>') and line.split()[0][1:-6] in high_cov_set:
-                    write_line = True
-                elif line.startswith('>'):
-                    write_line = False
-                if write_line:
-                    o.write(line)
+            # Remove contigs that were filtered from the high coverage set
+            for i in filtered_contigs:
+                try:
+                    high_cov_set.remove(i)
+                except KeyError:
+                    pass
+
+            # Write high coverage contigs
+            with open(input.fasta) as f, open(output.fasta, 'w') as o:
+                write_line = False
+                for line in f:
+                    if line.startswith('>') and line.split()[0][1:-6] in high_cov_set:
+                        write_line = True
+                    elif line.startswith('>'):
+                        write_line = False
+                    if write_line:
+                        o.write(line)
+elif READ_MODE == "short_only":
+    # If only short reads are provided
+    rule short_only:
+        input:
+            fastq = config['short_reads_1'] if config["skip_qc"] else "data/short_reads.fastq.gz",
+        output:
+            fasta = touch(LONG_HIGH_COV_FASTA),
+elif READ_MODE == "long_only":
+    pass
+elif READ_MODE == "none":
+    pass
+else:
+    raise Exception("Programming error: unexpected read mode for assembly.")
 
 
 # Illumina reads are filtered against the nanopore assembly.
 # Specifically, short reads that do not map to the high coverage long contigs are collected
 rule filter_illumina_assembly:
     input:
-        fastq = "data/short_reads.fastq.gz" if config["reference_filter"] != ["none"] else config['short_reads_1'], # check short reads were supplied
-        fasta = "data/flye_high_cov.fasta"
+        fastq = config['short_reads_1'] if config["skip_qc"] else "data/short_reads.fastq.gz",
+        fasta = LONG_HIGH_COV_FASTA
     output:
         bam = temp("data/sr_vs_long.sort.bam"),
         bai = temp("data/sr_vs_long.sort.bam.bai"),
         fastq = temp("data/short_reads.filt.fastq.gz")
     params:
         coassemble = config["coassemble"]
-    conda:
-        "../../envs/minimap2.yaml"
     threads:
         config["max_threads"]
     resources:
         mem_mb = lambda wildcards, attempt: min(int(config["max_memory"])*1024, 512*1024*attempt),
         runtime = lambda wildcards, attempt: 24*60*attempt,
-    log:
-        "logs/filter_illumina_assembly.log"
+        log_path = lambda wildcards, attempt: setup_log(f"{logs_dir}/filter_illumina_assembly", attempt),
     benchmark:
         "benchmarks/filter_illumina_assembly.benchmark.txt"
-    script:
-        "scripts/filter_illumina_assembly.py"
+    shell:
+        f'{pixi_run} -e minimap2 {ASSEMBLY_SCRIPTS_DIR}/'+\
+        """filter_illumina_assembly.py \
+        --short-reads-1 {config[short_reads_1]} \
+        --short-reads-2 {config[short_reads_2]} \
+        --input-fasta {input.fasta} \
+        --output-bam {output.bam} \
+        --output-fastq {output.fastq} \
+        --threads {threads} \
+        --coassemble {params.coassemble} \
+        --log {resources.log_path}
+        """
 
 
 # # If unassembled long reads are provided, skip the long read assembly
@@ -320,7 +484,7 @@ rule filter_illumina_assembly:
 #         unassembled_long = [] if "none" in config["unassembled_long"] else config["unassembled_long"]
 #     output:
 #         # fastq = "data/short_reads.filt.fastq.gz",
-#         fasta = "data/flye_high_cov.fasta",
+#         fasta = LONG_HIGH_COV_FASTA,
 #         long_reads = temp("data/long_reads.fastq.gz")
 #     shell:
 #         """
@@ -328,19 +492,6 @@ rule filter_illumina_assembly:
 #         ln {input.unassembled_long} {output.long_reads}
 #         """
 
-
-# If only short reads are provided
-rule short_only:
-    input:
-        fastq = "data/short_reads.fastq.gz"
-    output:
-        fasta = "data/flye_high_cov.fasta",
-        # long_reads = temp("data/long_reads.fastq.gz")
-    shell:
-        """
-        touch {output.fasta}
-        """
-        # touch {output.long_reads}
 
 # Short reads that did not map to the long read assembly are hybrid assembled with metaspades
 # If no long reads were provided, long_reads.fastq.gz will be empty
@@ -356,65 +507,91 @@ rule spades_assembly:
     resources:
         mem_mb = lambda wildcards, attempt: min(int(config["max_memory"])*1024, 256*1024*attempt),
         runtime = lambda wildcards, attempt: 72*60 + 24*60*attempt,
-    log:
-        "logs/spades_assembly.log"
+        log_path = lambda wildcards, attempt: setup_log(f"{logs_dir}/spades_assembly", attempt),
     params:
         max_memory = config["max_memory"],
         long_read_type = config["long_read_type"],
         kmer_sizes = " ".join(config["kmer_sizes"]),
-        tmpdir = config["tmpdir"]
-    conda:
-        "envs/spades.yaml"
+        tmpdir = f"--tmp-dir {config['tmpdir']}" if 'tmpdir' in config and config['tmpdir'] else "",
     benchmark:
         "benchmarks/spades_assembly.benchmark.txt"
-    script:
-        "scripts/spades_assembly.py"        
+    shell:
+        f'{pixi_run} -e spades {ASSEMBLY_SCRIPTS_DIR}/'+\
+        """spades_assembly.py \
+        --input-fastq {input.fastq} \
+        --input-long-reads {input.long_reads} \
+        --output-fasta {output.fasta} \
+        --output-spades-folder {output.spades_folder} \
+        --max-memory {params.max_memory} \
+        --threads {threads} \
+        --kmer-sizes {params.kmer_sizes} \
+        {params.tmpdir} \
+        --long-read-type {params.long_read_type} \
+        --log {resources.log_path}
+    """
 
 
 # Perform short read assembly only with no other steps
 rule assemble_short_reads:
     input:
-        fastq = "data/short_reads.fastq.gz"
+        qc_reads = config["short_reads_1"] if config["skip_qc"] else "data/short_reads.fastq.gz",
     output:
         fasta = "data/short_read_assembly/scaffolds.fasta",
         # We cannot mark the output_folder as temp as then it gets deleted,
         # causing the "TypeError: '>' not supported between instances of
         # 'TBDString' and 'int'" error
-        output_folder = directory("data/short_read_assembly/")
+        output_folder = directory("data/short_read_assembly/"),
+        graph = SHORT_ASSEMBLY_GRAPH
         # reads1 = temporary("data/short_reads.1.fastq.gz"),
         # reads2 = temporary("data/short_reads.2.fastq.gz")
     params:
-         max_memory = config["max_memory"],
-         kmer_sizes = config["kmer_sizes"],
-         use_megahit = config["use_megahit"],
-         coassemble = config["coassemble"],
-         tmpdir = config["tmpdir"],
-         final_assembly = True
+        short_reads_1 = ",".join(config["short_reads_1"]) if config["skip_qc"] else "data/short_reads.fastq.gz",
+        short_reads_2 = ",".join(config["short_reads_2"]) if config["skip_qc"] else "none",
+        max_memory = config["max_memory"],
+        kmer_sizes = config["kmer_sizes"],
+        use_megahit = config["use_megahit"],
+        coassemble = config["coassemble"],
+        tmpdir = f"--tmp-dir {config['tmpdir']}" if 'tmpdir' in config and config['tmpdir'] else "",
+        final_assembly = True
     threads:
         config["max_threads"]
     resources:
         mem_mb = lambda wildcards, attempt: min(int(config["max_memory"])*1024, 512*1024*attempt),
         runtime = lambda wildcards, attempt: 72*60 + 24*60*attempt,
-    log:
-        "logs/short_read_assembly.log"
-    conda:
-        "envs/spades.yaml"
-    log:
-        "logs/short_read_assembly.log"
+        log_path = lambda wildcards, attempt: setup_log(f"{logs_dir}/assemble_short_reads", attempt),
     benchmark:
         "benchmarks/short_read_assembly_short.benchmark.txt"
-    script:
-        "scripts/assemble_short_reads.py"
-
-
-rule move_spades_assembly:
-    input:
-        assembly = "data/short_read_assembly/scaffolds.fasta"
-    output:
-        out = "data/final_contigs.fasta"
-    priority: 1
     shell:
-        "cp {input.assembly} {output.out} && rm -rf data/short_read_assembly"
+        f'{pixi_run} -e spades {ASSEMBLY_SCRIPTS_DIR}/'+\
+        """assemble_short_reads.py \
+        --short-reads-1 {params.short_reads_1} \
+        --short-reads-2 {params.short_reads_2} \
+        --max-memory {config[max_memory]} \
+        --use-megahit {params.use_megahit} \
+        --coassemble {params.coassemble} \
+        --threads {threads} \
+        {params.tmpdir} \
+        --kmer-sizes {params.kmer_sizes} \
+        --log {resources.log_path}
+        """
+
+if ASSEMBLY_STRATEGY == "short_only":
+    rule move_spades_assembly:
+        input:
+            assembly = "data/short_read_assembly/scaffolds.fasta"
+        output:
+            out = "data/final_contigs.fasta"
+        priority: 1
+        log:
+            "logs/move_spades_assembly.log"
+        shell:
+            "bash -c 'cp {input.assembly} {output.out}' &> {log}"
+elif ASSEMBLY_STRATEGY in ("hybrid_unicycler", "hybrid_skip_unicycler", "long_only"):
+    pass
+elif ASSEMBLY_STRATEGY == "none":
+    pass
+else:
+    raise Exception("Programming error: unexpected assembly strategy for short-read assembly move.")
 
 
 # Short reads are mapped to the spades assembly and jgi_summarize_bam_contig_depths from metabat
@@ -432,44 +609,37 @@ rule spades_assembly_coverage:
     resources:
         mem_mb = lambda wildcards, attempt: min(int(config["max_memory"])*1024, 512*1024*attempt),
         runtime = lambda wildcards, attempt: 24*60*attempt,
-    log:
-        "logs/spades_assembly_coverage.log"
+        log_path = lambda wildcards, attempt: setup_log(f"{logs_dir}/spades_assembly_coverage", attempt),
     params:
          tmpdir = f"TMPDIR={config['tmpdir']}" if config["tmpdir"] else ""
-    conda:
-         "../../envs/coverm.yaml"
     benchmark:
         "benchmarks/spades_assembly_coverage.benchmark.txt"
     shell:
-        """
-        {params.tmpdir} coverm contig -m metabat -t {threads} -r {input.fasta} --interleaved {input.fastq} --bam-file-cache-directory data/cached_bams/ > {output.assembly_cov} 2> {log};
-        mv data/cached_bams/*.bam {output.bam} && samtools index -@ {threads} {output.bam} 2>> {log}
-        """
+        pixi_run + \
+        " -e coverm {params.tmpdir} coverm contig -m metabat -t {threads} -r {input.fasta} --interleaved {input.fastq} --bam-file-cache-directory data/cached_bams/ > {output.assembly_cov} 2> {resources.log_path};"
+        "mv data/cached_bams/*.bam {output.bam} && " + \
+        pixi_run +\
+        " -e coverm samtools index -@ {threads} {output.bam} 2>> {resources.log_path}"
 
 rule metabat_binning_short:
     input:
          assembly_cov = "data/short_read_assembly.cov",
          fasta = "data/spades_assembly.fasta"
     output:
-         metabat_done = "data/metabat_bins/done"
-    conda:
-         "../binning/envs/metabat2.yaml"
+         metabat_done = touch("data/metabat_bins/done")
     threads:
         config["max_threads"]
     resources:
         mem_mb = lambda wildcards, attempt: min(int(config["max_memory"])*1024, 512*1024*attempt),
         runtime = lambda wildcards, attempt: 24*60*attempt,
-    log:
-        "logs/metabat_binning_short.log"
+        log_path = lambda wildcards, attempt: setup_log(f"{logs_dir}/metabat_binning_short", attempt),
     benchmark:
         "benchmarks/metabat_binning_short.benchmark.txt"
     shell:
-         """
-         mkdir -p data/metabat_bins && \
-         metabat --seed 89 --unbinned -m 1500 -l -i {input.fasta} -t {threads} -a {input.assembly_cov} \
-         -o data/metabat_bins/binned_contigs > {log} 2>&1 && \
-         touch data/metabat_bins/done
-         """
+        "mkdir -p data/metabat_bins &&" + \
+        pixi_run + \
+        " -e metabat2 metabat --seed 89 --unbinned -m 1500 -l -i {input.fasta} -t {threads} -a {input.assembly_cov}"
+        " -o data/metabat_bins/binned_contigs > {resources.log_path} 2>&1"
 
 # Long reads are mapped to the spades assembly
 rule map_long_mega:
@@ -484,18 +654,18 @@ rule map_long_mega:
     resources:
         mem_mb = lambda wildcards, attempt: min(int(config["max_memory"])*1024, 512*1024*attempt),
         runtime = lambda wildcards, attempt: 24*60*attempt,
-    log:
-        "logs/map_long_mega.log"
-    conda:
-        "../../envs/minimap2.yaml"
+        log_path = lambda wildcards, attempt: setup_log(f"{logs_dir}/map_long_mega", attempt),
     benchmark:
         "benchmarks/map_long_mega.benchmark.txt"
     shell:
-        """
-        minimap2 -t {threads} --split-prefix=tmp -ax map-ont -a {input.fasta} {input.fastq} 2> {log} | samtools view -@ {threads} -b 2>> {log} |
-        samtools sort -@ {threads} -o {output.bam} - 2>> {log} && \
-        samtools index -@ {threads} {output.bam} 2>> {log}
-        """
+        pixi_run + \
+        " -e minimap2 minimap2 -t {threads} --split-prefix=tmp -ax map-ont -a {input.fasta} {input.fastq} 2> {resources.log_path} |" + \
+        pixi_run + \
+        " -e minimap2 samtools view -@ {threads} -b 2>> {resources.log_path} |" + \
+        pixi_run + \
+        " -e minimap2 samtools sort -@ {threads} -o {output.bam} - 2>> {resources.log_path} &&" + \
+        pixi_run + \
+        " -e minimap2 samtools index -@ {threads} {output.bam} 2>> {resources.log_path}"
 
 # Long and short reads that mapped to the spades assembly are pooled (binned) together
 rule pool_reads:
@@ -507,12 +677,21 @@ rule pool_reads:
         metabat_done = "data/metabat_bins/done",
     output:
         list = "data/list_of_lists.txt"
-    conda:
-        "envs/pysam.yaml"
     benchmark:
         "benchmarks/pool_reads.benchmark.txt"
-    script:
-        "scripts/pool_reads.py"
+    resources:
+        log_path = lambda wildcards, attempt: setup_log(f"{logs_dir}/pool_reads", attempt),
+    shell:
+        f'{pixi_run} -e pysam {ASSEMBLY_SCRIPTS_DIR}/'+\
+        """pool_reads.py \
+        --long-bam {input.long_bam} \
+        --short-bam {input.short_bam} \
+        --metabat-done {input.metabat_done} \
+        --short-reads {input.short_reads} \
+        --short-reads-2 {config[short_reads_2]} \
+        --output-list {output.list}
+        &> {resources.log_path}
+        """
 
 # Binned read lists are processed to extract the reads associated with each bin
 rule get_read_pools:
@@ -520,19 +699,24 @@ rule get_read_pools:
         list = "data/list_of_lists.txt"
     output:
         "data/binned_reads/done"
-    conda:
-         "envs/mfqe.yaml"
     threads:
         config["max_threads"]
     resources:
         mem_mb = lambda wildcards, attempt: min(int(config["max_memory"])*1024, 512*1024*attempt),
         runtime = lambda wildcards, attempt: 12*60*attempt,
-    log:
-        "logs/get_read_pools.log"
+        log_path = lambda wildcards, attempt: setup_log(f"{logs_dir}/get_read_pools", attempt),
     benchmark:
         "benchmarks/get_read_pools.benchmark.txt"
     script:
-         'scripts/get_binned_reads.py'
+        f'{pixi_run} -e mfqe {ASSEMBLY_SCRIPTS_DIR}/'+\
+        """get_binned_reads.py \
+        --long-reads {config[long_reads]} \
+        --short-reads-1 {config[short_reads_1]} \
+        --short-reads-2 {config[short_reads_2]} \
+        --threads {threads} \
+        --output {output} \
+        --log {resources.log_path}
+        """
 
 # Short and long reads for each bin are hybrid assembled with Unicycler
 rule assemble_pools:
@@ -546,147 +730,172 @@ rule assemble_pools:
     resources:
         mem_mb = lambda wildcards, attempt: min(int(config["max_memory"])*1024, 512*1024*attempt),
         runtime = lambda wildcards, attempt: 72*60 + 24*60*attempt,
-    log:
-        "logs/assemble_pools.log"
+        log_path = lambda wildcards, attempt: setup_log(f"{logs_dir}/assemble_pools", attempt),
     output:
         fasta = "data/unicycler_combined.fa"
-    conda:
-        "envs/final_assembly.yaml"
     benchmark:
         "benchmarks/assemble_pools.benchmark.txt"
-    script:
-        "scripts/assemble_pools.py"
+    shell:
+        f'{pixi_run} -e final-assembly {ASSEMBLY_SCRIPTS_DIR}/'+\
+        """assemble_pools.py \
+        --input-list {input.list} \
+        --input-fasta {input.fasta} \
+        --output-fasta {output.fasta} \
+        --metabat-done {input.metabat_done} \
+        --threads {threads} \
+        --log {resources.log_path}
+        """
+
+    
 
 # The long read high coverage assembly from flye and hybrid assembly from unicycler are combined.
 # Long and short reads are mapped to this combined assembly.
-rule combine_assemblies:
-    input:
-        short_fasta = "data/unicycler_combined.fa",
-        flye_fasta = "data/flye_high_cov.fasta"
-    output:
-        output_fasta = "data/final_contigs.fasta",
-    priority: 1
-    script:
-        "scripts/combine_assemblies.py"
+if ASSEMBLY_STRATEGY == "hybrid_unicycler":
+    rule combine_assemblies:
+        input:
+            short_fasta = "data/unicycler_combined.fa",
+            flye_fasta = LONG_HIGH_COV_FASTA
+        output:
+            output_fasta = "data/final_contigs.fasta",
+        priority: 1
+        shell:
+            f'{pixi_run} {ASSEMBLY_SCRIPTS_DIR}/'+\
+            """combine_assemblies.py \
+            --flye-fasta {input.flye_fasta} \
+            --short-fasta {input.short_fasta} \
+            --output-fasta {output.output_fasta}
+            """
+elif ASSEMBLY_STRATEGY in ("short_only", "hybrid_skip_unicycler", "long_only"):
+    pass
+elif ASSEMBLY_STRATEGY == "none":
+    pass
+else:
+    raise Exception("Programming error: unexpected assembly strategy for combine_assemblies.")
 
 
+if ASSEMBLY_STRATEGY == "long_only":
+    rule combine_long_only:
+        input:
+            long_reads = "data/long_reads.fastq.gz",
+            flye_fasta = "data/assembly.pol.rac.fasta"
+        output:
+            output_fasta = "data/final_contigs.fasta",
+            # long_bam = "data/final_long.sort.bam"
+        priority: 1
+        shell:
+            f'{pixi_run} {ASSEMBLY_SCRIPTS_DIR}/'+\
+            """combine_assemblies.py \
+            --flye-fasta {input.flye_fasta} \
+            --output-fasta {output.output_fasta}
+            """
+elif ASSEMBLY_STRATEGY in ("short_only", "hybrid_unicycler", "hybrid_skip_unicycler"):
+    pass
+elif ASSEMBLY_STRATEGY == "none":
+    pass
+else:
+    raise Exception("Programming error: unexpected assembly strategy for long-read-only combine.")
 
-rule combine_long_only:
-    input:
-        long_reads = "data/long_reads.fastq.gz",
-        flye_fasta = "data/assembly.pol.rac.fasta"
-    output:
-        output_fasta = "data/final_contigs.fasta",
-        # long_bam = "data/final_long.sort.bam"
-    priority: 1
-    script:
-        "scripts/combine_assemblies.py"
 
+if ASSEMBLY_STRATEGY == "hybrid_skip_unicycler":
+    rule skip_unicycler_with_qc:
+        input:
+            short_fasta = "data/spades_assembly.fasta",
+            flye_fasta = LONG_HIGH_COV_FASTA,
+            qc_done = 'data/qc_done'
+        output:
+            fasta = "data/final_contigs.fasta",
+            unicycler_skipped = temp("data/unicycler_skipped")
+        priority: 1
+        threads:
+            config["max_threads"]
+        shell:
+            f'{pixi_run} -e bbmap bash -e -o pipefail -c "' + \
+            """cat {input.short_fasta} {input.flye_fasta} > {output.fasta}; 
+            touch data/unicycler_skipped;"
+            """
+elif ASSEMBLY_STRATEGY in ("short_only", "hybrid_unicycler", "long_only"):
+    pass
+elif ASSEMBLY_STRATEGY == "none":
+    pass
+else:
+    raise Exception("Programming error: unexpected assembly strategy for hybrid skip unicycler.")
 
+if ASSEMBLY_STRATEGY == "short_only":
+    rule complete_assembly_with_qc:
+        input:
+            fasta = 'data/final_contigs.fasta',
+            graph = SHORT_ASSEMBLY_GRAPH,
+            qc_done = 'data/qc_done'
+        output:
+            final_link = 'assembly/final_contigs.fasta',
+            graph_link = 'assembly/assembly_graph.gfa',
+            sizes = "www/assembly_stats.txt"
+        shell:
+            f'{pixi_run} -e bbmap bash -e -o pipefail -c "' + \
+            """mkdir -p www/;
+            stats.sh {input.fasta} > {output.sizes};
+            mkdir -p assembly;
+            cd assembly;
+            ln -s ../data/final_contigs.fasta ./;
+            ln -sf ../""" + SHORT_ASSEMBLY_GRAPH + """ ./assembly_graph.gfa;
+            cd ../;
+            rm -rf data/polishing;
+            rm -rf data/short_reads.fastq.gz;
+            rm -rf data/short_unmapped_ref.bam;
+            rm -rf data/short_unmapped_ref.bam.bai;
+            rm -rf data/short_filter.done; "
+            """
+elif ASSEMBLY_STRATEGY in ("hybrid_unicycler", "hybrid_skip_unicycler", "long_only"):
+    rule complete_assembly_with_qc:
+        input:
+            fasta = 'data/final_contigs.fasta',
+            graph = LONG_ASSEMBLY_GRAPH,
+            qc_done = 'data/qc_done'
+        output:
+            final_link = 'assembly/final_contigs.fasta',
+            graph_link = 'assembly/assembly_graph.gfa',
+            sizes = "www/assembly_stats.txt"
+        shell:
+            f'{pixi_run} -e bbmap bash -e -o pipefail -c "' + \
+            """mkdir -p www/;
+            stats.sh {input.fasta} > {output.sizes};
+            mkdir -p assembly;
+            cd assembly;
+            ln -s ../data/final_contigs.fasta ./;
+            ln -sf ../""" + LONG_ASSEMBLY_GRAPH + """ ./assembly_graph.gfa;
+            cd ../;
+            rm -rf data/polishing;
+            rm -rf data/short_reads.fastq.gz;
+            rm -rf data/short_unmapped_ref.bam;
+            rm -rf data/short_unmapped_ref.bam.bai;
+            rm -rf data/short_filter.done; "
+            """
+elif ASSEMBLY_STRATEGY == "none":
+    pass
+else:
+    raise Exception("Programming error: unexpected assembly strategy for completion.")
 
-rule skip_unicycler:
-    input:
-        short_fasta = "data/spades_assembly.fasta",
-        flye_fasta = "data/flye_high_cov.fasta"
-    output:
-        fasta = "data/final_contigs.fasta",
-        final_link = 'assembly/final_contigs.fasta',
-        sizes = "www/assembly_stats.txt",
-        unicycler_skipped = temp("data/unicycler_skipped")
-    priority: 1
-    threads:
-        config["max_threads"]
-    shell:
-        'cat {input.short_fasta} {input.flye_fasta} > {output.fasta}; '
-        'touch data/unicycler_skipped; '
-        'mkdir -p www/; '
-        'stats.sh {output.fasta} > {output.sizes}; '
-        'mkdir -p assembly; '
-        'cd assembly; '
-        'ln -s ../data/final_contigs.fasta ./; '
+# rule reset_to_spades_assembly:
+#     output:
+#          temp('data/reset_spades')
+#     shell:
+#          'rm -rf data/spades*; '
+#          'rm -rf assembly/; '
+#          'rm -rf data/final_contigs.fasta; '
+#          f'rm -rf {LONG_HIGH_COV_FASTA}; '
+#          'rm -rf data/list_of*; '
+#          'rm -rf data/binned_reads; '
+#          'rm -rf data/final_assemblies; '
+#          'rm -rf data/sr_vs*; '
+#          'rm -rf data/unicycler*; '
+#          'rm -rf data/metabat_bins; '
+#          'rm -rf data/cached_bams; '
+#          'touch data/reset_spades'
 
-rule skip_unicycler_with_qc:
-    input:
-        short_fasta = "data/spades_assembly.fasta",
-        flye_fasta = "data/flye_high_cov.fasta",
-        qc_done = 'data/qc_done'
-    output:
-        fasta = "data/final_contigs.fasta",
-        final_link = 'assembly/final_contigs.fasta',
-        sizes = "www/assembly_stats.txt",
-        unicycler_skipped = temp("data/unicycler_skipped")
-    priority: 1
-    threads:
-        config["max_threads"]
-    shell:
-        'cat {input.short_fasta} {input.flye_fasta} > {output.fasta}; '
-        'touch data/unicycler_skipped; '
-        'mkdir -p www/; '
-        'stats.sh {output.fasta} > {output.sizes}; '
-        'mkdir -p assembly; '
-        'cd assembly; '
-        'ln -s ../data/final_contigs.fasta ./; '
-
-rule complete_assembly:
-    input:
-        fasta = 'data/final_contigs.fasta'
-    output:
-        final_link = 'assembly/final_contigs.fasta',
-        sizes = "www/assembly_stats.txt"
-    shell:
-        'mkdir -p www/; '
-        'stats.sh {input.fasta} > {output.sizes}; '
-        'mkdir -p assembly; '
-        'cd assembly; '
-        'ln -s ../data/final_contigs.fasta ./; '
-        'cd ../;'
-        'rm -rf data/polishing; '
-        'rm -rf data/short_reads.fastq.gz; '
-        'rm -rf data/short_unmapped_ref.bam; '
-        'rm -rf data/short_unmapped_ref.bam.bai; '
-        'rm -rf data/short_filter.done; '
-
-rule complete_assembly_with_qc:
-    input:
-        fasta = 'data/final_contigs.fasta',
-        qc_done = 'data/qc_done'
-    output:
-        final_link = 'assembly/final_contigs.fasta',
-        sizes = "www/assembly_stats.txt"
-    shell:
-        'mkdir -p www/; '
-        'stats.sh {input.fasta} > {output.sizes}; '
-        'mkdir -p assembly; '
-        'cd assembly; '
-        'ln -s ../data/final_contigs.fasta ./; '
-        'cd ../;'
-        'rm -rf data/polishing; '
-        'rm -rf data/short_reads.fastq.gz; '
-        'rm -rf data/short_unmapped_ref.bam; '
-        'rm -rf data/short_unmapped_ref.bam.bai; '
-        'rm -rf data/short_filter.done; '
-
-rule reset_to_spades_assembly:
-    output:
-         temp('data/reset_spades')
-    shell:
-         'rm -rf data/spades*; '
-         'rm -rf assembly/; '
-         'rm -rf data/final_contigs.fasta; '
-         'rm -rf data/flye_high_cov.fasta; '
-         'rm -rf data/list_of*; '
-         'rm -rf data/binned_reads; '
-         'rm -rf data/final_assemblies; '
-         'rm -rf data/sr_vs*; '
-         'rm -rf data/unicycler*; '
-         'rm -rf data/metabat_bins; '
-         'rm -rf data/cached_bams; '
-         'touch data/reset_spades'
-
-rule remove_final_contigs:
-    output:
-          temp('data/rewind_time')
-    shell:
-         'rm -rf assembly/; '
-         'rm -rf data/final_contigs.fasta; '
-         'touch data/rewind_time; '
+# rule remove_final_contigs:
+#     output:
+#           temp('data/rewind_time')
+#     shell:
+#          'rm -rf assembly/; '
+#          'rm -rf data/final_contigs.fasta; '
+#          'touch data/rewind_time; '

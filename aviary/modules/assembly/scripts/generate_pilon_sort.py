@@ -1,6 +1,8 @@
+#!/usr/bin/env python3
 from subprocess import Popen, PIPE, run
 import os
 import logging
+import argparse
 
 
 def run_mapping_process(
@@ -29,7 +31,7 @@ def run_mapping_process(
         samtools_sort_p3 = Popen(samtools_sort_cmd, stdin=samtools_view_p2.stdout, stderr=logf)
         samtools_sort_p3.wait()
 
-        # thoretically p1 and p2 may still be running, this ensures we are collecting their return codes
+        # theoretically p1 and p2 may still be running, this ensures we are collecting their return codes
         minimap_p1.wait()
         samtools_view_p2.wait()
         logf.write(f"minimap return: {minimap_p1.returncode}\n")
@@ -68,10 +70,10 @@ def generate_pilon_sort(
                 with open(log, "a") as logf:
                     for reads1, reads2 in zip(short_reads_1, short_reads_2):
                         with open("data/short_reads.1.fastq.gz", "a") as f:
-                            run(f"cat {reads1}", stdout=f, stderr=logf)
+                            run(f"cat {reads1}", stdout=f, stderr=logf, shell=True)
 
                         with open("data/short_reads.2.fastq.gz", "a") as f:
-                            run(f"cat {reads2}", stdout=f, stderr=logf)
+                            run(f"cat {reads2}", stdout=f, stderr=logf, shell=True)
             pe1 = "data/short_reads.1.fastq.gz"
             pe2 = "data/short_reads.2.fastq.gz"
 
@@ -96,7 +98,7 @@ def generate_pilon_sort(
                 for reads1 in short_reads_1:
                     with open(log, "a") as logf:
                         with open("data/short_reads.1.fastq.gz", "a") as f:
-                            run(f"cat {reads1}", stdout=f, stderr=logf)
+                            run(f"cat {reads1}", stdout=f, stderr=logf, shell=True)
             pe1 = "data/short_reads.1.fastq.gz"
 
 
@@ -112,23 +114,32 @@ def generate_pilon_sort(
             os.remove("data/short_reads.1.fastq.gz")
 
 
-if __name__ == "__main__":
-    short_reads_1 = snakemake.config['short_reads_1']
-    short_reads_2 = snakemake.config['short_reads_2']
-    input_fasta = snakemake.input.fasta
-    output_bam = snakemake.output.bam
-    threads = snakemake.threads
-    coassemble = snakemake.params.coassemble
-    log = snakemake.log[0]
-
-    with open(log, "w") as logf: pass
+def main():
+    parser = argparse.ArgumentParser(description='Generate BAM files for pilon')
+    parser.add_argument('--short-reads-1', nargs='+', required=True, help='Path to short reads 1')
+    parser.add_argument('--short-reads-2', nargs='+', default='none', help='Path to short reads 2')
+    parser.add_argument('--input-fasta', required=True, help='Path to input fasta file')
+    parser.add_argument('--output-bam', required=True, help='Path to output bam file')
+    parser.add_argument('--threads', type=int, default=1, help='Number of threads')
+    parser.add_argument('--coassemble', type=lambda x: x.lower() == 'true', nargs='?', const=True, default=False, 
+                        help='Whether to coassemble reads')
+    parser.add_argument('--log', required=True, help='Path to log file')
+    
+    args = parser.parse_args()
+    
+    with open(args.log, "w") as logf:
+        pass  # Initialize empty log file
 
     generate_pilon_sort(
-        short_reads_1,
-        short_reads_2,
-        input_fasta,
-        output_bam,
-        threads,
-        coassemble,
-        log,
+        args.short_reads_1,
+        args.short_reads_2,
+        args.input_fasta,
+        args.output_bam,
+        args.threads,
+        args.coassemble,
+        args.log,
     )
+
+
+if __name__ == "__main__":
+    main()

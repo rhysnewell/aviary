@@ -1,5 +1,6 @@
 import os
 import subprocess
+import argparse
 
 def assemble_pools(
     input_list: str,
@@ -95,16 +96,25 @@ def assemble_pools(
         open(output_fasta, 'a').close()
 
 
-
 if __name__ == '__main__':
-    input_list = snakemake.input.list
-    input_fasta = snakemake.input.fasta
-    output_fasta = snakemake.output.fasta
-    metabat_done = snakemake.input.metabat_done
+    parser = argparse.ArgumentParser(description="Assemble metagenome bins using unicycler.")
+    parser.add_argument("--input-list", required=True, help="Path to the input list file.")
+    parser.add_argument("--input-fasta", required=True, help="Path to the input FASTA file.")
+    parser.add_argument("--output-fasta", required=True, help="Path to the output FASTA file.")
+    parser.add_argument("--metabat-done", required=True, help="Path to the metabat done file.")
+    parser.add_argument("--threads", type=int, required=True, help="Number of threads to use.")
+    parser.add_argument("--log", required=True, help="Path to the log file.")
 
-    threads = snakemake.threads
-    log = snakemake.log[0]
+    args = parser.parse_args()
 
-    with open(log, 'w') as logf: pass
+    with open(args.log, 'w') as logf:
+        pass
 
-    assemble_pools(input_list, input_fasta, output_fasta, metabat_done, threads, log)
+    assemble_pools(
+        input_list=args.input_list,
+        input_fasta=args.input_fasta,
+        output_fasta=args.output_fasta,
+        metabat_done=args.metabat_done,
+        threads=args.threads,
+        log=args.log
+    )

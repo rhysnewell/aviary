@@ -1,6 +1,0 @@
-channels:
-  - conda-forge
-  - bioconda
-dependencies:
-  - scikit-learn=1.1.0
-  - concoct=1.1.0

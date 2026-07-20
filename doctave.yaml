@@ -6,7 +6,23 @@ colors:
   main: "#8CD58C"
 navigation:
   - path: docs/installation.md
+  - path: docs/usage
+    children:
+    - path: docs/usage/assemble.md
+    - path: docs/usage/recover.md
+    - path: docs/usage/annotate.md
+    - path: docs/usage/complete.md
+    - path: docs/usage/cluster.md
+    - path: docs/usage/isolate.md
+    - path: docs/usage/configure.md
+  - path: docs/guides
+    children:
+    - path: docs/guides/hpc.md
+    - path: docs/guides/configuration.md
+    - path: docs/guides/output.md
+    - path: docs/guides/workflow-control.md
   - path: docs/examples.md
   - path: docs/faqs.md
   - path: docs/concepts.md
   - path: docs/citations.md
+  - path: docs/development.md

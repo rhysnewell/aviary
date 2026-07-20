@@ -25,7 +25,7 @@ class Tests(unittest.TestCase):
 
                 checkm(checkm2_db, bin_folder, "fna", 1, "output_folder", "output_file", 1, "checkm.log")
                 self.assertTrue(os.path.exists("output_file"))
-                os.environ["CHECKM2DB"] = f"{checkm2_db}/uniref100.KO.1.dmnd"
+                os.environ["CHECKM2DB"] = f"{checkm2_db}"
 
                 mock_subprocess.assert_called_once_with(
                     f"checkm2 predict -i {bin_folder}/ -x fna -o output_folder -t 1 --force".split(),

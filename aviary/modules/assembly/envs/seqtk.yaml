@@ -1,8 +1,0 @@
-channels:
-  - conda-forge
-  - bioconda
-  - anaconda
-dependencies:
-  - seqtk = 1.3
-  - bbmap = 38.69
-  - pigz = 2.4

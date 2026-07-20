@@ -1,9 +1,0 @@
-channels:
-  - conda-forge
-  - bioconda
-  - anaconda
-dependencies:
-  - samtools = 1.9
-  - minimap2 = 2.18
-  - fastp
-  - pigz
