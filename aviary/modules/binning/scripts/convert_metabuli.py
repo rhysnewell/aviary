@@ -28,6 +28,23 @@ def create_conversion_dict(ids, labels):
 
     return map_ids_metabuli
 
+def read_classifications(classifications):
+    """Read Metabuli's tax_classifications.tsv into a DataFrame with integer
+    column labels 0..7.
+
+    usecols=range(8) pins the schema to Metabuli's 8 real columns so that both
+    classified (is_classified=1) and unclassified (is_classified=0) rows parse
+    identically. Unclassified rows carry a stray trailing tab -> a phantom
+    empty 9th field; without usecols the C parser sees inconsistent field
+    counts (8 vs 9) and raises "Expected 8 fields, saw 9". Selecting the 8 real
+    columns absorbs the phantom field (it is always empty) without discarding
+    any real data. The leading '#is_classified' header line is read as row 0
+    (header=None); it carries a non-numeric taxID and is dropped downstream by
+    the inner merge in process_classifications, same as before.
+    """
+    return pd.read_csv(classifications, delimiter='\t', header=None, usecols=range(8))
+
+
 def process_classifications(df_clas, map_ids_metabuli, coverm_out):
     df_clas['contigs'] = df_clas[1]
     df_clas['predictions'] = df_clas[2].map(map_ids_metabuli)
@@ -58,7 +75,7 @@ if __name__ == '__main__':
         logf.write(f"Conversion dictionary created\n")
 
     # df_clas: classified_flag, read_id, taxonomy_identifier, ...
-    df_clas = pd.read_csv(classifications, delimiter='\t', header=None)
+    df_clas = read_classifications(classifications)
     with open(log, 'a') as logf:
         logf.write(f"{len(df_clas)} classifications read\n")
 

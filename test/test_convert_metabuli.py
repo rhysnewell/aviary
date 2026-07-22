@@ -1,12 +1,107 @@
 #!/usr/bin/env python3
 
 import unittest
-from aviary.modules.binning.scripts.convert_metabuli import create_conversion_dict, process_classifications
+import os
+import tempfile
+from aviary.modules.binning.scripts.convert_metabuli import (
+    create_conversion_dict,
+    process_classifications,
+    read_classifications,
+)
 import pandas as pd
 import pandas.testing as pdt
 import numpy as np
 
+DATA_DIR = os.path.join(os.path.dirname(os.path.abspath(__file__)), "data")
+
+# These are fast, self-contained unit tests of convert_metabuli's parsing --
+# no aviary run, no cluster, no database. They deliberately do NOT write into
+# example/: that tree holds real pipeline output, and fabricating an
+# aviary_out/logs/... layout here would imply a run happened when none did.
+#
+# End-to-end coverage of the same bug lives in
+# test_integration.py::test_short_read_recovery_metabuli_unclassified, which
+# runs the actual pipeline over unclassifiable contigs and produces a genuine
+# example/ tree. These remain alongside it because they are ~0.5s rather than
+# a 150GB/32-core job, and because they do not depend on Metabuli's behaviour:
+# if that integration test's assumption (random sequence stays unclassified)
+# ever breaks, its precondition assertion fires and it becomes inconclusive --
+# these still guard the parser.
+
+
 class Tests(unittest.TestCase):
+    def test_read_classifications_real_fixture_with_unclassified_rows(self):
+        # Same defect as the constructed fixture below, but exercised against a
+        # captured sample of REAL Metabuli output (test/data/, 30 rows taken
+        # verbatim from a taxvamb run) with 5 rows rewritten into Metabuli's
+        # unclassified shape. Kept alongside the constructed one because they
+        # fail differently if they ever diverge: this catches "our synthetic
+        # bytes drifted from what Metabuli actually emits", the constructed one
+        # documents the exact shape being defended against.
+        #
+        # The example/ test outputs cannot serve this purpose -- they are
+        # gitignored generated output, regenerated on every run, and every
+        # metabuli-producing test (queue_submission_gpus, taxvamb,
+        # taxvamb_gpu) shares one fixture in which all 7070 reads classify,
+        # i.e. 0 unclassified rows. That is why this bug shipped green.
+        path = os.path.join(DATA_DIR, "metabuli_tax_classifications_with_unclassified.tsv")
+
+        df = read_classifications(path)
+
+        # Header row + 25 classified + 5 unclassified, uniform 8 columns.
+        self.assertEqual(df.shape, (31, 8))
+        self.assertEqual((df[0] == "0").sum(), 5)
+        self.assertEqual((df[0] == "1").sum(), 25)
+
+        # Unclassified rows keep their real contig name (col 1) and taxID 0
+        # (col 2) -- i.e. the trailing tab was absorbed rather than shifting
+        # the columns rightward.
+        unclassified = df[df[0] == "0"]
+        self.assertTrue(all(n.startswith("NODE_") for n in unclassified[1]))
+        self.assertEqual(set(unclassified[2]), {"0"})
+
+    def test_read_classifications_handles_unclassified_trailing_tab(self):
+        # Reproduces the real Metabuli tax_classifications.tsv shape that
+        # crashed convert_metabuli: unclassified (is_classified=0) rows carry a
+        # stray trailing tab, giving them 9 tab-fields, while classified (1)
+        # rows have 8. A plain pd.read_csv(header=None) raises
+        # "Expected 8 fields, saw 9" on the first 0-row. read_classifications
+        # must parse both row types into a uniform 8-column frame.
+        #
+        # The prior test fixture (test_short_read_recovery...gpus) never
+        # exercised this because it happened to contain only is_classified=1
+        # rows -- so the 0-row path was completely untested until this.
+        lines = [
+            "#is_classified\tname\ttaxID\tquery_length\tscore\te_value\trank\ttaxID:match_count",
+            "1\tNODE_1_len\t370388\t138942\t0.00113\t1.2e+16\tspecies\t10051421:75 ",
+            "1\tNODE_2_len\t1\t134220\t0.00086\t1.1e+16\tno rank\t",       # empty match_count, 8 fields
+            "0\tk141_54460\t0\t1701\t0\t-\t-\t-\t",                        # trailing tab -> 9 raw fields
+            "0\tk141_239609\t0\t2124\t0\t-\t-\t-\t",                       # trailing tab -> 9 raw fields
+        ]
+        fd, path = tempfile.mkstemp(suffix=".tsv")
+        try:
+            with os.fdopen(fd, "w") as fh:
+                fh.write("\n".join(lines) + "\n")
+
+            df = read_classifications(path)
+        finally:
+            os.remove(path)
+
+        # 8 columns for every row, header + 2 classified + 2 unclassified
+        self.assertEqual(df.shape, (5, 8))
+        self.assertEqual(list(df.columns), list(range(8)))
+
+        # The two unclassified rows parsed with their real 8 fields intact
+        # (name in col 1, taxID 0 in col 2), the phantom 9th field absorbed.
+        unclassified = df[df[0] == "0"]
+        self.assertEqual(len(unclassified), 2)
+        self.assertEqual(unclassified[1].tolist(), ["k141_54460", "k141_239609"])
+        self.assertEqual(unclassified[2].tolist(), ["0", "0"])
+
+        # Classified rows still read correctly alongside them.
+        classified = df[df[0] == "1"]
+        self.assertEqual(classified[1].tolist(), ["NODE_1_len", "NODE_2_len"])
+
     def test_create_conversion_dict(self):
         ids = [
             0,
