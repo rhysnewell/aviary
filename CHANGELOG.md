@@ -1,5 +1,24 @@
 # Changelog
 
+## v0.13.2 - 2026-07-22
+
+Patch release fixing a crash in Metabuli taxonomy conversion.
+
+---
+
+### Fixed
+
+- **`convert_metabuli` crashed on unclassified reads** — Metabuli writes
+  unclassified rows (`is_classified=0`) with a trailing tab, giving 9
+  tab-separated fields against classified rows' 8, so `pd.read_csv(header=None)`
+  inferred 8 columns from the leading classified rows and aborted on the first
+  unclassified one (`ParserError: Expected 8 fields, saw 9`). The read now pins
+  `usecols=range(8)`, absorbing the phantom field without discarding data. Any
+  run with at least one unclassified read was affected.
+
+
+---
+
 ## v0.13.1 - 2026-07-08
 
 Patch release focused on repairing database downloads (`aviary configure --download`).

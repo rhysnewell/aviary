@@ -28,6 +28,7 @@ import subprocess
 import shutil
 import unittest
 import glob
+import random
 import re
 
 data = os.path.join(os.path.dirname(__file__), 'data')
@@ -567,6 +568,100 @@ class Tests(unittest.TestCase):
         self.assertTrue(num_lines > 2)
 
         self.assertFalse(os.path.isfile(f"{output_dir}/aviary_out/data/final_contigs.fasta"))
+
+    def test_short_read_recovery_metabuli_unclassified(self):
+        """Run the real pipeline over contigs Metabuli cannot classify.
+
+        convert_metabuli used to crash outright on Metabuli's unclassified
+        rows -- they carry a trailing tab, giving 9 tab-fields against the
+        8 of classified rows, so pd.read_csv(header=None) aborted with
+        "Expected 8 fields, saw 9". Any real run containing a single
+        unclassified read died.
+
+        No existing test caught it. Every metabuli-producing test
+        (queue_submission_gpus, taxvamb, taxvamb_gpu) bins the same toy
+        assembly, in which all 7070 contigs classify -- 0 unclassified rows --
+        so they pass identically against broken and fixed code.
+
+        This test forces the condition: the assembly is the usual test contigs
+        (so binning still has something real to work with) plus synthetic
+        random-sequence contigs, which are absent from Metabuli's GTDB
+        database and so come back is_classified=0.
+
+        It asserts that precondition explicitly. Without that check the test
+        would silently rot into exactly the vacuous shape of the others the
+        moment the database or input changed.
+        """
+        suffix = "_gpu" if os.environ.get("TEST_REQUEST_GPU") == "1" else ""
+        output_dir = os.path.join(
+            "example", f"test_short_read_recovery_metabuli_unclassified{suffix}")
+        setup_output_dir(output_dir)
+
+        assembly = os.path.join(output_dir, "assembly.fasta")
+
+        # Inflate the real assembly the same way the taxvamb test does, so
+        # there is enough signal for binning to produce bins at all.
+        cmd = f"cat {data}/assembly.fasta > {assembly}"
+        for i in range(100):
+            cmd += (f" && awk '/^>/ {{print $0 \"{i}\"}} !/^>/ {{print $0}}' "
+                    f"{data}/assembly.fasta >> {assembly}")
+        subprocess.run(cmd, shell=True, check=True)
+
+        # Append unclassifiable contigs. Fixed seed so the input -- and hence
+        # whether Metabuli classifies them -- is reproducible between runs.
+        rng = random.Random(1234)
+        with open(assembly, "a") as fh:
+            for n in range(20):
+                seq = "".join(rng.choice("ACGT") for _ in range(20000))
+                fh.write(f">synthetic_unclassifiable_{n}\n")
+                for j in range(0, len(seq), 80):
+                    fh.write(seq[j:j + 80] + "\n")
+
+        cmd = (
+            f"aviary recover "
+            f"--assembly {assembly} "
+            f"-o {output_dir}/aviary_out "
+            f"-1 {data}/wgsim.1.fq.gz "
+            f"-2 {data}/wgsim.2.fq.gz "
+            f"--binning-only "
+            f"--skip-binners rosella semibin metabat vamb "
+            f"--extra-binners taxvamb "   # taxvamb pulls in metabuli + convert_metabuli
+            f"{request_gpu} "
+            f"--skip-qc "
+            f"--refinery-max-iterations 0 "
+            f"-n 32 -t 32 "
+            f"--strict "
+        )
+        subprocess.run(cmd, shell=True, check=True)
+
+        # PRECONDITION: the run must actually contain unclassified rows,
+        # otherwise this test proves nothing about the bug it exists for.
+        classifications = os.path.join(
+            output_dir, "aviary_out", "data", "metabuli_taxonomy",
+            "tax_classifications.tsv")
+        self.assertTrue(os.path.isfile(classifications),
+                        "Metabuli produced no tax_classifications.tsv")
+        with open(classifications) as f:
+            rows = [l.split("\t") for l in f if not l.startswith("#")]
+        unclassified = [r for r in rows if r and r[0] == "0"]
+        self.assertGreater(
+            len(unclassified), 0,
+            "No unclassified (is_classified=0) rows were produced, so this "
+            "test is not exercising the trailing-tab path it exists for. The "
+            "synthetic contigs may now be classifiable, or the assembly "
+            "changed.")
+
+        # THE ACTUAL ASSERTION: conversion survived those rows. Before the fix
+        # this file is missing because convert_metabuli raised ParserError.
+        taxonomy = os.path.join(
+            output_dir, "aviary_out", "data", "metabuli_taxonomy", "taxonomy.tsv")
+        self.assertTrue(
+            os.path.isfile(taxonomy),
+            "convert_metabuli produced no taxonomy.tsv despite Metabuli "
+            "having run -- it crashed on the unclassified rows.")
+
+        bin_info_path = f"{output_dir}/aviary_out/bins/bin_info.tsv"
+        self.assertTrue(os.path.isfile(bin_info_path))
 
     def test_short_read_recovery_comebin(self):
         suffix = "_gpu" if os.environ.get("TEST_REQUEST_GPU") == "1" else ""

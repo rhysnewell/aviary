@@ -14,6 +14,20 @@ import numpy as np
 
 DATA_DIR = os.path.join(os.path.dirname(os.path.abspath(__file__)), "data")
 
+# These are fast, self-contained unit tests of convert_metabuli's parsing --
+# no aviary run, no cluster, no database. They deliberately do NOT write into
+# example/: that tree holds real pipeline output, and fabricating an
+# aviary_out/logs/... layout here would imply a run happened when none did.
+#
+# End-to-end coverage of the same bug lives in
+# test_integration.py::test_short_read_recovery_metabuli_unclassified, which
+# runs the actual pipeline over unclassifiable contigs and produces a genuine
+# example/ tree. These remain alongside it because they are ~0.5s rather than
+# a 150GB/32-core job, and because they do not depend on Metabuli's behaviour:
+# if that integration test's assumption (random sequence stays unclassified)
+# ever breaks, its precondition assertion fires and it becomes inconclusive --
+# these still guard the parser.
+
 
 class Tests(unittest.TestCase):
     def test_read_classifications_real_fixture_with_unclassified_rows(self):
@@ -70,23 +84,23 @@ class Tests(unittest.TestCase):
                 fh.write("\n".join(lines) + "\n")
 
             df = read_classifications(path)
-
-            # 8 columns for every row, header + 2 classified + 2 unclassified
-            self.assertEqual(df.shape, (5, 8))
-            self.assertEqual(list(df.columns), list(range(8)))
-
-            # The two unclassified rows parsed with their real 8 fields intact
-            # (name in col 1, taxID 0 in col 2), the phantom 9th field absorbed.
-            unclassified = df[df[0] == "0"]
-            self.assertEqual(len(unclassified), 2)
-            self.assertEqual(unclassified[1].tolist(), ["k141_54460", "k141_239609"])
-            self.assertEqual(unclassified[2].tolist(), ["0", "0"])
-
-            # Classified rows still read correctly alongside them.
-            classified = df[df[0] == "1"]
-            self.assertEqual(classified[1].tolist(), ["NODE_1_len", "NODE_2_len"])
         finally:
             os.remove(path)
+
+        # 8 columns for every row, header + 2 classified + 2 unclassified
+        self.assertEqual(df.shape, (5, 8))
+        self.assertEqual(list(df.columns), list(range(8)))
+
+        # The two unclassified rows parsed with their real 8 fields intact
+        # (name in col 1, taxID 0 in col 2), the phantom 9th field absorbed.
+        unclassified = df[df[0] == "0"]
+        self.assertEqual(len(unclassified), 2)
+        self.assertEqual(unclassified[1].tolist(), ["k141_54460", "k141_239609"])
+        self.assertEqual(unclassified[2].tolist(), ["0", "0"])
+
+        # Classified rows still read correctly alongside them.
+        classified = df[df[0] == "1"]
+        self.assertEqual(classified[1].tolist(), ["NODE_1_len", "NODE_2_len"])
 
     def test_create_conversion_dict(self):
         ids = [
