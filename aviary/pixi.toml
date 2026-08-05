@@ -278,7 +278,7 @@ checkm2 = ">=1.1.0"
 env = { PYTHONNOUSERSITE = "1" }
 
 [feature.coverm.dependencies]
-coverm = ">=0.6"
+coverm = ">=0.8"
 galah = ">=0.3"
 chopper = ">=0.6"
 pigz = "*"
