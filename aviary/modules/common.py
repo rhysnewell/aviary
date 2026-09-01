@@ -34,3 +34,26 @@ def setup_log(log_dir_base: str, attempt: int) -> str:
     log_dir = os.path.join(log_dir_base, workflow_identifier)
     os.makedirs(log_dir, exist_ok=True)
     return os.path.join(log_dir, f"attempt{attempt}.log")
+
+def get_semibin_mode(config: dict) -> str:
+    """Return the configured SemiBin mode.
+    Supports the older semibin_multi config key for compatibility with early test configs.
+    """
+    if "semibin_mode" in config:
+        return config["semibin_mode"]
+    return "multi" if config.get("semibin_multi", False) else "single"
+
+def primary_fasta(config: dict) -> str:
+    """A single representative assembly path for whole-run QC/reporting.
+
+    config["fasta"] is a list of paths when SemiBin2 multi-sample binning is
+    active (config["semibin_mode"] == "multi", one entry per --assembly
+    file), and a single path string otherwise. QC/reporting rules need one
+    file, not the raw list. In multi mode, the SemiBin2-concatenated fasta
+    (the file binning itself works from) is the correct single reference --
+    not any one of the pre-concatenation inputs -- since it's the assembly
+    actually used downstream.
+    """
+    if get_semibin_mode(config) == "multi":
+        return "data/semibin_multi_prep/concatenated.fa"
+    return config["fasta"]

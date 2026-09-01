@@ -1,4 +1,49 @@
 [build-system]
 # XXX: If your project needs other packages to build properly, add them to this list.
-requires = ["setuptools >= 64"]
+requires = ["setuptools >= 64", "wheel", "setuptools_scm"]
 build-backend = "setuptools.build_meta"
+
+# Version comes from the git tag via setuptools_scm, not from a hand-edited
+# constant in aviary/__init__.py. Two reasons this changed:
+#
+#  - bird_tool_utils' shared release script (`bird-release-python`) requires it:
+#    it reads [tool.setuptools_scm].version_file out of this file and exits if
+#    the section is absent, then force-writes the version with
+#    `python -m setuptools_scm --force-write-version-files`. Hand-edited
+#    versions are exactly what that script exists to stop doing per-repo.
+#  - the hand-edited value had already drifted: CHANGELOG.md's newest entry was
+#    v0.13.3 while aviary/__init__.py still said 0.13.2. A tag-derived version
+#    cannot drift.
+#
+# Keys match the rest of the bird suite (bird_tool_utils, assembly_checkpointing)
+# so all three release identically.
+[tool.setuptools_scm]
+version_file = "aviary/version.py"
+version_scheme = "only-version"
+local_scheme = "no-local-version"
+
+# Consumed by bird_tool_utils' `bird-release-python`. Everything aviary-specific
+# about releasing aviary is declared HERE rather than detected by that shared
+# script: a declared step whose file is missing is a hard error, so a renamed or
+# mistyped path fails the release instead of being silently skipped while the
+# tag ships anyway. Nothing runs that is not listed.
+[tool.bird_release]
+# Run in order, from the repo root, via `pixi run -e dev python3 <step>`.
+# aviary has no docs-building step: docs deploy from the deploy-docs.yaml
+# workflow, not at release time. That absence is deliberate and visible here,
+# rather than being inferred from admin/build_docs.py not existing.
+steps = [
+    "admin/build_dep_defs_from_pixi.py",
+]
+# Asked before anything is built; answering no aborts.
+
+confirmations = [
+    "Is docs/SKILL.md up to date for this release?",
+]
+# Printed after commit+tag. The shared script only emits the two universal
+# reminders (push, GitHub release); these are aviary's own.
+
+reminders = [
+    "Build and push the Docker image once the tag is on GitHub: pixi run bash docker/build.sh",
+    "Do Manual Aviary Release",
+]

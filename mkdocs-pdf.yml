@@ -1,0 +1,12 @@
+INHERIT: mkdocs.yml
+
+plugins:
+  - search
+  - with-pdf:
+      author: Aviary contributors
+      copyright: Released under GPL-3.0
+      cover: true
+      cover_title: Aviary
+      cover_subtitle: Metagenomic assembly, genome recovery and annotation
+      toc_title: Contents
+      output_path: pdf/aviary-manual.pdf

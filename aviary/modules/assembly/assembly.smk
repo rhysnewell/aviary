@@ -196,6 +196,11 @@ rule polish_metagenome_flye:
     resources:
         mem_mb = lambda wildcards, attempt: min(int(config["max_memory"])*1024, 512*1024*attempt),
         runtime = lambda wildcards, attempt: 24*60*attempt,
+        # Both keys are deliberate: Snakemake's SLURM executor plugin reads
+        # "gpu", snakemake_mqsub on aqua (PBS) reads "gpus". Dropping either
+        # silently schedules GPU rules onto a CPU node, where the CUDA pixi
+        # env fails to activate before any log file is written.
+        gpu = 1 if config["request_gpu"] else 0,
         gpus = 1 if config["request_gpu"] else 0,
         log_path = lambda wildcards, attempt: setup_log(f"{logs_dir}/polish_metagenome_flye", attempt),
     output:
@@ -214,6 +219,8 @@ rule polish_metagenome_flye:
         --output-fasta {output.fasta} \
         --rounds {params.rounds} \
         --long-read-type {config[long_read_type]} \
+        --long-read-mapper {config[long_read_mapper]} \
+        --short-read-mapper {config[short_read_mapper_aligner]} \
         --medaka-model {config[medaka_model]} \
         --illumina {params.illumina} \
         --max-cov {params.maxcov} \
@@ -314,6 +321,8 @@ rule polish_meta_racon_ill:
         --output-fasta {output.fasta} \
         --rounds {params.rounds} \
         --long-read-type {config[long_read_type]} \
+        --long-read-mapper {config[long_read_mapper]} \
+        --short-read-mapper {config[short_read_mapper_aligner]} \
         --medaka-model {config[medaka_model]} \
         --illumina {params.illumina} \
         --max-cov {params.maxcov} \
@@ -510,7 +519,10 @@ rule spades_assembly:
         log_path = lambda wildcards, attempt: setup_log(f"{logs_dir}/spades_assembly", attempt),
     params:
         max_memory = config["max_memory"],
-        long_read_type = config["long_read_type"],
+        # spades_assembly.py's --long-read-type only accepts spades.py's own
+        # ont/ont_hq/pacbio/pacbio_hifi vocabulary, narrower than aviary's
+        # --longread-type -- see LONG_READ_TYPE_TO_SPADES in aviary/__init__.py.
+        long_read_type = config["long_read_type_spades"],
         kmer_sizes = " ".join(config["kmer_sizes"]),
         tmpdir = f"--tmp-dir {config['tmpdir']}" if 'tmpdir' in config and config['tmpdir'] else "",
     benchmark:
@@ -616,7 +628,7 @@ rule spades_assembly_coverage:
         "benchmarks/spades_assembly_coverage.benchmark.txt"
     shell:
         pixi_run + \
-        " -e coverm {params.tmpdir} coverm contig -m metabat -t {threads} -r {input.fasta} --interleaved {input.fastq} --bam-file-cache-directory data/cached_bams/ > {output.assembly_cov} 2> {resources.log_path};"
+        " -e coverm {params.tmpdir} coverm contig -m metabat -p {config[short_read_mapper_aligner]} -t {threads} -r {input.fasta} --interleaved {input.fastq} --bam-file-cache-directory data/cached_bams/ > {output.assembly_cov} 2> {resources.log_path};"
         "mv data/cached_bams/*.bam {output.bam} && " + \
         pixi_run +\
         " -e coverm samtools index -@ {threads} {output.bam} 2>> {resources.log_path}"

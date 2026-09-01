@@ -1,37 +1,67 @@
 ---
-title: Concepts
+title: Core concepts
 ---
 
-Concepts
-========
+# Core concepts
 
-Aviary provides the user with a lot of different outputs for each genome and some of the information present
-in those outputs requires some explanation.
+Aviary is a workflow orchestrator for metagenomic assembly and genome recovery.
+Understanding four distinctions makes its commands and outputs easier to use.
 
-# File types
+## Workflow commands describe stopping points
 
-## FASTA
+`assemble`, `recover` and `annotate` are composable stages. `complete` runs the
+full path permitted by the supplied inputs, while `isolate` uses an assembly
+path intended for a cultured isolate rather than a mixed community.
 
-A FASTA file is a text based file used to represent either genomic nucleotide sequences or amino acids. It consists of 
-of headers (lines starting with `>`) and blocks of sequences immediately following the headers. Fasta files are the format
-used for the input reference/MAGs that Aviary uses and creates. The extension for such files is usually `.fasta`, `.fa`, or `.fna`.
+| Command | Begins with | Principal result |
+| --- | --- | --- |
+| `assemble` | sequencing reads | assembled contigs |
+| `recover` | assembly plus reads used for coverage | recovered MAGs |
+| `annotate` | MAG FASTA files | taxonomy and functional annotations |
+| `complete` | reads or an existing assembly | results through annotation |
+| `cluster` | completed Aviary runs | dereplicated representative genomes |
+| `isolate` | reads from a cultured isolate | isolate assembly |
 
-For more info refer to the [wikipedia article](https://en.wikipedia.org/wiki/FASTA_format)
+## Assemblies, bins and MAGs
 
-## FASTQ
+An assembly joins overlapping sequence evidence into contigs. Metagenomic
+binning then groups contigs that appear to originate from the same population.
+A final bin is treated as a metagenome-assembled genome (MAG), but its
+completeness, contamination and taxonomy remain estimates. Use
+`bins/bin_info.tsv` to assess each recovered genome rather than treating all
+FASTA files as equivalent.
 
-FASTQ or the file format used to store data resulting from sequencing. The sequences present in FASTQ files represent short 
-genomic sequences of DNA. FASTQ files are used to build assemblies, MAG binnings, genomic coverage etc. You can provide 
-both paired end and unpaired reads to Aviary, as well as short and long reads from a variety of different sequencing platforms.
-The file extension for FASTQ files is generally `.fastq`, but often they have been compressed so the extension ends in `.gz`.
-Compressed FASTQ files are accepted as input to Aviary so you do not have to uncompress them.
+## Aviary and upstream tools
 
-For more info refer to the [wikipedia article](https://en.wikipedia.org/wiki/FASTQ_format)
+Aviary owns workflow decisions: it validates command-line input, writes the run
+configuration, selects Snakemake targets, passes resource limits and links
+final products into stable output locations. Upstream programs perform the
+underlying read filtering, assembly, mapping, binning, quality estimation,
+taxonomic classification and functional annotation. The exact tools invoked
+depend on command options and available data.
 
-## BAM/SAM
+## Requested resources have different scopes
 
-BAM and SAM (Sequence Alignment/Map) format files are the standard format for indicating the alignment start, end, and quality
-of FASTQ files to FASTA files. BAM files are the binary format of SAM files, as such can not be read by conventional means.
-When performing read mapping the output from the alignment tool will most likely be in SAM/ BAM files. 
+`--max-threads` is the maximum made available to one tool. `--n-cores` is the total
+capacity Snakemake may schedule concurrently. `--local-cores` limits work kept
+on the coordinator node when using a cluster profile. `--max-memory` is a hard
+workflow cap in gigabytes, not a guarantee that every tool uses that amount.
 
-For more info refer to the [SAM specification](https://samtools.github.io/hts-specs/SAMv1.pdf)
+## Workflow state and resumability
+
+Snakemake determines whether an output is current from its inputs, rules and
+metadata. A repeated Aviary command against the same output directory normally
+continues incomplete work. Options such as `--rerun-triggers`, `--clean` and
+`--unlock` deliberately change this behaviour; use them only after reading the
+[workflow-control guide](guides/workflow-control.md).
+
+## Inputs and outputs
+
+Aviary accepts FASTQ sequencing reads and FASTA assemblies or genomes. BAM
+files are produced internally when reads are mapped to assemblies. Final
+results are presented through stable directories such as `assembly/`, `bins/`,
+`taxonomy/` and `annotation/`; working files remain in `data/`.
+
+Continue with the [assembly guide](guide/assembly.md),
+[genome-recovery guide](guide/genome-recovery.md), or
+[annotation guide](guide/annotation.md).

@@ -1,13 +1,15 @@
 #!/usr/bin/env python3
 
 import argparse
+import shlex
 from subprocess import run
 import os
 import sys
+from typing import List
 import extern
 
 class SingleMContainer:
-    def __init__(self, threads: int, output_dir: str, genomes: str, assembly: str, pipe_results: str):
+    def __init__(self, threads: int, output_dir: str, genomes: str, assembly: List[str], pipe_results: str):
         self.commands = []
         self.threads = threads
         self.pipe_results = pipe_results
@@ -56,7 +58,8 @@ class SingleMContainer:
 
     def _create_assembly_commands(self):
         threads = self.threads
-        command = f"singlem pipe --threads {threads} --genome-fasta-files {self.assembly} --otu-table {self.intermediate_dir}/metagenome.assembly_0_otu_table.csv"
+        assembly_files = " ".join(shlex.quote(path) for path in self.assembly)
+        command = f"singlem pipe --threads {threads} --genome-fasta-files {assembly_files} --otu-table {self.intermediate_dir}/metagenome.assembly_0_otu_table.csv"
         self.commands.append(command)
 
     def _create_genome_commands(self):
@@ -67,7 +70,7 @@ class SingleMContainer:
 
 def run_singlem(
     genomes_folder: str,
-    assembly: str,
+    assembly: List[str],
     pipe_results: str,
     threads: int,
     package_path: str,
@@ -87,7 +90,7 @@ def valid_path(path: str) -> bool:
 if __name__ == '__main__':
     parser = argparse.ArgumentParser(description='Run SingleM appraise on genomes and assembly')
     parser.add_argument('--genomes-folder', required=True, help='Folder containing genome fasta files')
-    parser.add_argument('--assembly', required=True, help='Assembly file path')
+    parser.add_argument('--assembly', required=True, nargs='+', help='Assembly file path(s)')
     parser.add_argument('--pipe-results', required=True, help='Path to SingleM pipe results')
     parser.add_argument('--threads', type=int, default=1, help='Number of threads to use')
     parser.add_argument('--package-path', required=True, help='Path to SingleM metapackage')

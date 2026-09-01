@@ -1,5 +1,60 @@
 # Changelog
 
+## v0.13.3 - 2026-09-01
+
+### Added
+
+- **`--semibin-mode`** — `single` (default, unchanged) or `multi` to co-bin
+  several assemblies together (pass multiple `--assembly` files). Multi mode
+  ignores `--semibin-model`.
+
+- **`--short-read-mapper`** — `strobealign` (default), `minimap2`, `rammap`,
+  `minibwa`, `bwa-mem`, `bwa-mem2`, or `strobealign-aemb` (fast direct
+  abundance estimate; coverage-only, no polishing/model support).
+
+- **`--long-read-mapper`** — `rammap` (default), `minimap2`, or `minibwa`
+  (not used for polishing).
+
+- **`--short-read-mapper-model` / `--long-read-mapper-model`** — explicit
+  CoverM preset for mappers that support more than one (`minimap2`, `rammap`).
+
+- **`--minibwa-params`**, **`--bwa-params`**, **`--strobealign-params`**,
+  **`--minimap2-params`**, **`--rammap-params`** — raw passthrough parameters
+  for the matching aligner.
+
+### Changed
+
+- **`ont_hq` and `hifi` now use their own CoverM presets** (`lr-hq`/`hifi`)
+  instead of being lumped with `ont`/`ccs` — shifts coverage/abundance
+  numbers slightly for those two read types. Override with
+  `--long-read-mapper-model` to reproduce old behaviour.
+
+- **Default aligners are now strobealign (short) and rammap (long)**,
+  matching CoverM 0.8's own default.
+
+- **Bin abundances now use the same mapper as the binners** (previously
+  hardcoded to `minimap2-sr`, causing a mismatch with binner-side coverage).
+
+- **Bird_tool_utils_python updated to v0.7.0**
+
+### Fixed
+
+- **GPU rules now schedule correctly on both SLURM and PBS** — `taxvamb`,
+  `semibin`, `comebin`, `polish_metagenome_flye` were missing SLURM's `gpu`
+  resource key (only `gpus`, which PBS reads), so SLURM silently ran them on
+  CPU nodes.
+
+- **concoct now runs** — a numpy/scipy version mismatch was crashing its
+  own version check at startup.
+
+- **`assembly_quality` can be built again** — two rules produced the same
+  output file, blocking the whole DAG.
+
+- **`read_fraction_recovered` now completes** and produces real output.
+
+
+---
+
 ## v0.13.2 - 2026-07-22
 
 Patch release fixing a crash in Metabuli taxonomy conversion.

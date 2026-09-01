@@ -30,10 +30,16 @@ if os.path.exists(MQSUB_OUT):
     os.remove(MQSUB_OUT)
 
 # GPU testing - taxvamb
+#
+# NOTE on quoting: `bash -c "..."` must NOT have inner single quotes around the
+# command. The shell strips the double quotes and hands bash -c a single
+# argument; with the single quotes present that argument still begins and ends
+# with a literal ', so bash parses the whole compound command as ONE WORD and
+# treats it as a command NAME -- exit 127.
 print("mqsub GPU testing - taxvamb ..")
 cmd = "mqsub -t32 --A100 --segregated-log-files --bg --hours 4 -m 128 -- " \
     "pixi run -e dev " \
-    "bash -c \"'export TEST_REQUEST_GPU=1 && echo gtdb=$GTDBTK_DATA_PATH && python test/test_integration.py Tests.test_short_read_recovery_taxvamb'\" " \
+    "bash -c \"export TEST_REQUEST_GPU=1 && echo gtdb=$GTDBTK_DATA_PATH && python test/test_integration.py Tests.test_short_read_recovery_taxvamb\" " \
     f"&>>{MQSUB_OUT}"
 extern.run(cmd)
 time.sleep(30)
@@ -42,7 +48,7 @@ time.sleep(30)
 print("mqsub GPU testing - comebin ..")
 cmd = "mqsub -t32 --A100 --segregated-log-files --bg --hours 4 -m 128 -- " \
     "pixi run -e dev " \
-    "bash -c \"'export TEST_REQUEST_GPU=1 && echo gtdb=$GTDBTK_DATA_PATH && python test/test_integration.py Tests.test_short_read_recovery_comebin'\" " \
+    "bash -c \"export TEST_REQUEST_GPU=1 && echo gtdb=$GTDBTK_DATA_PATH && python test/test_integration.py Tests.test_short_read_recovery_comebin\" " \
     f"&>>{MQSUB_OUT}"
 extern.run(cmd)
 time.sleep(30)
@@ -51,7 +57,7 @@ time.sleep(30)
 print("mqsub GPU testing - semibin ..")
 cmd = "mqsub -t32 --A100 --segregated-log-files --bg --hours 4 -m 128 -- " \
     "pixi run -e dev " \
-    "bash -c \"'export TEST_REQUEST_GPU=1 && echo gtdb=$GTDBTK_DATA_PATH && python test/test_integration.py Tests.test_short_read_recovery_semibin'\" " \
+    "bash -c \"export TEST_REQUEST_GPU=1 && echo gtdb=$GTDBTK_DATA_PATH && python test/test_integration.py Tests.test_short_read_recovery_semibin\" " \
     f"&>>{MQSUB_OUT}"
 extern.run(cmd)
 

@@ -94,5 +94,14 @@ use rule * from binning as *
 
 use rule * from annotation as *
 
+# assembly_size and complete_assembly_with_qc both write
+# www/assembly_stats.txt. With a user-supplied assembly aviary does not
+# assemble, so assembly_size is the real producer; without this snakemake
+# refuses the ambiguity and nothing needing that file can be built.
+# Guarded: complete_assembly_with_qc is undefined when there are no reads.
+if config["fasta"] != "none" and (
+        config["short_reads_1"] != "none" or config["long_reads"] != "none"):
+    ruleorder: assembly_size > complete_assembly_with_qc
+
 if config["fasta"] == "none":
     config["fasta"] = "assembly/final_contigs.fasta"

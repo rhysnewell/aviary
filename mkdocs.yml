@@ -1,0 +1,144 @@
+site_name: Aviary
+site_description: Metagenomic assembly, genome recovery and annotation
+site_url: https://rhysnewell.github.io/aviary/
+repo_url: https://github.com/rhysnewell/aviary
+repo_name: rhysnewell/aviary
+edit_uri: edit/main/docs/
+docs_dir: docs
+site_dir: site
+exclude_docs: |
+  SKILL.md
+  guides/README.md
+  getting-started/README.md
+  reference/README.md
+  advanced/README.md
+  project/README.md
+
+theme:
+  name: material
+  custom_dir: docs/overrides
+  logo: _include/images/mini_logo.png
+  favicon: _include/images/mini_logo.png
+  language: en
+  font:
+    text: IBM Plex Sans
+    code: IBM Plex Mono
+  features:
+    - navigation.top
+    - navigation.indexes
+    # navigation.sections removed 2026-08-13: it force-expands every
+    # top-level section (Guide, CLI reference, ...) permanently, which made
+    # the primary sidebar ~28 items tall -- taller than the viewport at any
+    # realistic window size, so it always had to scroll internally, and
+    # Material's own JS shrinks .md-sidebar__scrollwrap as the footer comes
+    # into view (see docs/stylesheets/extra.css), which read as nav items
+    # disappearing. Without this feature the nav is a normal collapsible
+    # accordion -- only the active section auto-expands -- so the always-
+    # visible list is ~14 top-level items instead, which fits without
+    # scrolling on most viewports.
+    - navigation.footer
+    - navigation.tracking
+    - content.code.copy
+    - content.code.annotate
+    - content.action.edit
+    - content.tooltips
+    - search.suggest
+    - search.highlight
+    - search.share
+    - toc.follow
+  # Base palette is 'black'/'custom' only as a structural starting point --
+  # every actual colour (header, links, accents, both schemes) is overridden
+  # in stylesheets/extra.css so the site isn't just Material's stock teal.
+  palette:
+    - media: "(prefers-color-scheme: light)"
+      scheme: default
+      primary: black
+      accent: amber
+      toggle:
+        icon: material/weather-night
+        name: Switch to dark mode
+    - media: "(prefers-color-scheme: dark)"
+      scheme: slate
+      primary: black
+      accent: amber
+      toggle:
+        icon: material/weather-sunny
+        name: Switch to light mode
+  icon:
+    repo: fontawesome/brands/github
+
+extra_css:
+  - stylesheets/extra.css
+
+extra_javascript:
+  - javascripts/reveal.js
+  - javascripts/sidebar-footer.js
+
+plugins:
+  - search
+
+markdown_extensions:
+  - admonition
+  - attr_list
+  - md_in_html
+  - tables
+  - toc:
+      permalink: true
+  - pymdownx.details
+  - pymdownx.highlight:
+      anchor_linenums: true
+  - pymdownx.inlinehilite
+  - pymdownx.snippets
+  - pymdownx.superfences
+  - pymdownx.tabbed:
+      alternate_style: true
+  - pymdownx.emoji:
+      emoji_index: !!python/name:material.extensions.emoji.twemoji
+      emoji_generator: !!python/name:material.extensions.emoji.to_svg
+
+extra:
+  generator: false
+  social:
+    - icon: fontawesome/brands/github
+      link: https://github.com/rhysnewell/aviary
+      name: Aviary on GitHub
+
+copyright: Copyright &copy; Aviary contributors · GPL-3.0
+
+nav:
+  - Home: index.md
+  - Installation: installation.md
+  - Quickstart: getting-started/quickstart.md
+  - First complete analysis: getting-started/first-analysis.md
+  - Guide:
+      - Introduction: guide/README.md
+      - Core concepts: concepts.md
+      - Metagenome assembly: guide/assembly.md
+      - Genome recovery: guide/genome-recovery.md
+      - Genome annotation: guide/annotation.md
+      - Workflow control: guides/workflow-control.md
+  - Worked analyses: examples.md
+  - CLI reference:
+      - Overview: usage/README.md
+      - Command syntax: usage/syntax.md
+      - Shared options: usage/centralised_commands.md
+      - Read mappers: usage/mappers.md
+      - assemble: usage/assemble.md
+      - recover: usage/recover.md
+      - annotate: usage/annotate.md
+      - complete: usage/complete.md
+      - cluster: usage/cluster.md
+      - isolate: usage/isolate.md
+      - configure: usage/configure.md
+      - build: usage/build.md
+  - Configuration: guides/configuration.md
+  - Input files: reference/inputs.md
+  - Output files: guides/output.md
+  - Advanced:
+      - HPC and clusters: guides/hpc.md
+      - Performance: advanced/performance.md
+      - Reproducibility: advanced/reproducibility.md
+  - Troubleshooting: faqs.md
+  - Citations: citations.md
+  - Development: development.md
+  - Download PDF manual: pdf.md

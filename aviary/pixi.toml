@@ -117,6 +117,11 @@ ipython = "*"
 toml = "*"
 bird_tool_utils_python = "*"
 snakemake-executor-plugin-cluster-generic = "*" # for run-tests-at-cmr
+# Required by `bird-release-python`, which runs
+# `python -m setuptools_scm --force-write-version-files` inside this env to
+# generate aviary/version.py at release time. Also what supplies the package
+# version at build time (see [tool.setuptools_scm] in pyproject.toml).
+setuptools_scm = "*"
 
 [feature.dev.activation]
 # Sets metapackage environment variables, which are assumed to be in the db/ of
@@ -222,6 +227,18 @@ setuptools = "*"
 racon = ">=1.4.3"
 samtools = ">=1.16"
 minimap2 = ">=2.15"
+# Selected by --long-read-mapper / --short-read-mapper; polish.py generates
+# racon's PAF with whichever aligner the user chose.
+rammap = ">=1.1"
+strobealign = ">=0.17"
+minibwa = ">=0.6"
+# bwa/bwa-mem2 are pulled transitively into the coverm env by the coverm conda
+# package's own runtime deps, but this env has no dependency on coverm at all
+# -- without these explicit entries, --short-read-mapper bwa-mem/bwa-mem2
+# fails racon polishing with "FileNotFoundError: bwa" even though the same
+# mapper choice works fine for coverage/abundance (which does run via coverm).
+bwa = ">=0.7"
+bwa-mem2 = ">=2.2"
 seqkit = ">=2.1"
 pigz = "*"
 
@@ -278,7 +295,17 @@ checkm2 = ">=1.1.0"
 env = { PYTHONNOUSERSITE = "1" }
 
 [feature.coverm.dependencies]
-coverm = ">=0.6"
+coverm = ">=0.8"
+# Alternative mappers selectable with --short-read-mapper / --long-read-mapper.
+# CoverM names these presets but does not pull the binaries in itself, except
+# for bwa/minimap2/strobealign, which come along transitively as the coverm
+# conda package's own runtime deps. bwa-mem2 is not one of those transitive
+# deps (verified: `pixi list -e coverm` has no bwa-mem2 entry even though
+# --short-read-mapper bwa-mem2 is a documented, supported value) and needs an
+# explicit entry here or it silently fails with "FileNotFoundError: bwa-mem2".
+rammap = ">=1.1"
+minibwa = ">=0.6"
+bwa-mem2 = ">=2.2"
 galah = ">=0.3"
 chopper = ">=0.6"
 pigz = "*"
@@ -305,6 +332,15 @@ perl-lwp-simple = "*"
 [feature.concoct.dependencies]
 scikit-learn = ">=1.1.0"
 concoct = ">=1.1.0"
+# concoct 1.1.0 caps numpy<2. scipy >=1.14 self-declares numpy>=2.0.0 in its
+# dist-info, which is what concoct's pkg_resources check reads -- so scipy must
+# be pinned too, or that check fails at runtime rather than at solve time.
+numpy = "<2"
+scipy = "<1.14"
+
+[feature.concoct.activation]
+# Stops a user-site scipy (~/.local) shadowing the pinned one on sys.path.
+env = { PYTHONNOUSERSITE = "1" }
 
 [feature.vamb.dependencies]
 samtools = "*"

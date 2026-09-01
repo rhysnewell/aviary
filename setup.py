@@ -1,5 +1,4 @@
-import io
-from os.path import dirname, join
+from os.path import dirname
 from setuptools import setup, find_packages
 import os
 
@@ -16,20 +15,13 @@ base_dir = dirname(__file__)
 with open(os.path.join(base_dir, "admin/requirements.txt")) as f:
     install_requires = f.read().splitlines()
 
-def get_version(relpath):
-  """Read version info from a file without importing it"""
-  for line in io.open(join(dirname(__file__), relpath), encoding="cp437"):
-    if "__version__" in line:
-      if '"' in line:
-        # __version__ = "0.9"
-        return line.split('"')[1]
-      elif "'" in line:
-        return line.split("'")[1]
-
-
+# version= is deliberately absent: setuptools_scm derives it from the git tag
+# (see [tool.setuptools_scm] in pyproject.toml). The former get_version() helper
+# scraped __version__ out of aviary/__init__.py, which is now itself generated
+# from the same source of truth -- keeping the scraper would have made the
+# build read a file the build writes.
 setup(
     name='aviary-genome',
-    version=get_version("aviary/__init__.py"),
     url='https://github.com/rhysnewell/aviary',
     license='GPL-3.0',
     author='Rhys Newell',

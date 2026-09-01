@@ -25,3 +25,7 @@ mqsub.out
 test/qsub-test-log.txt
 test_semibin_multi/*
 test_semibin_multi.sh
+set_env_vars.log
+
+# MkDocs build output
+site/

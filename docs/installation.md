@@ -2,122 +2,136 @@
 title: Installation
 ---
 
-Installation
-========
+# Installation
 
-#### Option 1: Install from Bioconda
+Aviary targets Linux and uses isolated dependency environments for its
+bioinformatics tools. Three install routes are documented below — most users
+only need one:
 
-Conda can handle the creation of the environment for you directly:
+!!! tip "Which install route?"
+    - **Most users:** [Pixi](#install-from-source-with-pixi) — the recommended, supported route.
+    - **Already managing tool dependencies yourself:** [pip](#install-from-pip).
+    - **Prefer a Conda-style environment:** [Bioconda](#install-from-bioconda).
 
+## Install from source with Pixi
+
+From a local checkout:
+
+```bash
+cd aviary
+pixi run postinstall
+pixi run aviary --version
 ```
-conda create -n aviary -c bioconda aviary
-```
 
-Or install into existing environment:
-```
-conda install -c bioconda aviary
-```
+This installs Aviary in editable mode. Dependency definitions live in
+`aviary/pixi.toml`, while `aviary/pixi.lock` pins the resolved environments.
+The `postinstall` task prepares both the main and development environments.
 
-#### Option 2: Install from pip
+For a shared development system, database paths can be represented by symlinks
+in the repository's `db/` directory; `admin/set_env_vars.sh` documents the
+expected local names used by the activation hook.
 
-Create the environment using the `admin/requirements.txt` file then install from pip:
-```
-conda env create -n aviary -f admin/requirements.txt
+## Install from pip
+
+The Python package name is `aviary-genome`, but pip alone does not provision
+the complete collection of external bioinformatics tools. Use this route only
+when you are deliberately managing those dependencies yourself:
+
+```bash
+conda env create -n aviary -f admin/environment.yml
 conda activate aviary
 pip install aviary-genome
 ```
 
-#### Option 3: Install from source
+## Install from Bioconda
 
-To install from source, we recommend using [pixi](https://pixi.sh/). First clone
-the aviary repository from GitHub:
-```
-git clone https://github.com/rhysnewell/aviary.git
-cd aviary
-```
+Create a dedicated environment:
 
-Then install the main environment using pixi:
-```
-pixi run postinstall
+```bash
+conda create -n aviary -c conda-forge -c bioconda aviary
+conda activate aviary
 ```
 
-Then aviary can be run using `pixi run` (or via `pixi shell`).
-```
-pixi run aviary --help
-```
+If your Conda channels are configured globally, keep this priority:
 
-When installed this way, aviary is installed in an "editable" way (similar to `pip install -e .`), meaning that any changes made to aviary source are immediately available via the `aviary` command. This is useful for development and debugging.
-
-When run this way, the databases required for aviary (e.g. `CHECKM2DB`) can be symlinked from a `db/` directory in the aviary repository. An activation hook then ensures that these are available when in the pixi environments. To do this, create a `db/` directory in the aviary repository and symlink the required databases into it. For example, as of writing:
-```
-$ ls db -l
-lrwxrwxrwx 1 woodcrob default 40 Apr 23  2025 2015_01_16_v2 -> /work/microbiome/db/checkm/2015_01_16_v2
-lrwxrwxrwx 1 woodcrob default 57 May  2  2025 2024-3-28-GTDB214.1+humanT2T -> /work/microbiome/db/metabuli/2024-3-28-GTDB214.1+humanT2T
-lrwxrwxrwx 1 woodcrob default 51 Apr 23  2025 2.1.3 -> /mnt/hpccs01/work/microbiome/db/eggnog-mapper/2.1.3
-lrwxrwxrwx 1 woodcrob default 73 Nov 18 08:04 CheckM2_database -> /work/microbiome/db/CheckM2_database/CheckM2_database/uniref100.KO.1.dmnd
-lrwxrwxrwx 1 woodcrob default 95 Apr 23  2025 release232 -> /work/microbiome/db/gtdb/gtdb_release232/auxillary_files/gtdbtk_package/full_package/release232
-lrwxrwxrwx 1 woodcrob default 74 Jun 10 15:54 S6.5.0.GTDB_r232.metapackage_20260319.smpkg.zb -> /work/microbiome/db/singlem/S6.5.0.GTDB_r232.metapackage_20260319.smpkg.zb
-```
-To check the expected database symlink names, see `admin/set_env_vars.sh` in the
-aviary repository. The advantage of this approach is that locations of the
-databases are not tracked in the repository, since they are specific to the
-computing cluster of the user.
-
-## Conda channel setup
-
-Your conda channels should be configured ideally in this:
-```
-conda config --add channels defaults
-conda config --add channels bioconda
-conda config --add channels conda-forge
-```
-
-Your resulting `.condarc` file should look something like:
-```
+```yaml
 channels:
   - conda-forge
   - bioconda
   - defaults
 ```
 
-## Databases
+Installing into a new environment avoids dependency conflicts with unrelated
+analysis software.
 
-Aviary uses programs which require access to locally stored databases. 
-These databases can be quite large, as such we recommend setting up one instance of Aviary and these databases per machine or machine cluster.
+## Verify the command
 
-The **required** databases are as follows:
-* [GTDB](https://gtdb.ecogenomic.org/downloads)
-* [EggNog](https://github.com/eggnogdb/eggnog-mapper/wiki/eggNOG-mapper-v2.1.5-to-v2.1.8#setup)
-* [CheckM2](https://github.com/chklovski/CheckM2)
-
-### Installing databases
-
-Aviary can handle the download and installation of these databases via use of the `--download` flag. Using `--download`
-will download and install the databases into the folders corresponding to their associated environment variables. Aviary will
-ask you to set these environment variables upon first running and if they are not already available. Otherwise, users can use
-the `aviary configure` subcommand to reset the environment variables:
-
-```commandline
-aviary configure -o logs/ --eggnog-db-path /shared/db/eggnog/ --gtdb-path /shared/db/gtdb/ --checkm2-db-path /shared/db/checkm2db/ --download
+```bash
+aviary --version
+aviary complete --full-help
 ```
 
-This command will check if the databases exist at those given locations, if they don't then aviary will download and change
-the conda environment variables to match those paths. 
+Before downloading large databases, use `aviary complete --full-help` to confirm
+that the installed release exposes the options used by this documentation.
 
-**N.B.** Again, these databases are VERY large. Please talk to your sysadmin/bioinformatics specialist about setting a shared
-location to install these databases to prevent unnecessary storage use. Additionally, the `--download` flag can be used within
-any aviary module to check that databases are configured properly.
+## Build analysis environments
 
-### Environment variables
+After installation, Aviary can prepare its per-tool environments:
 
-Upon first running Aviary, you will be prompted to input the location for several database folders if
-they haven't already been provided. If at any point the location of these folders change you can
-use the the `aviary configure` module to update the environment variables used by aviary.
-
-These environment variables can also be configured manually, just set the following variables in your `.bashrc` file:
+```bash
+aviary build
 ```
-export GTDBTK_DATA_PATH=/path/to/gtdb/gtdb_release232/db/ # https://gtdb.ecogenomic.org/downloads
-export EGGNOG_DATA_DIR=/path/to/eggnog-mapper/2.1.7/ # https://github.com/eggnogdb/eggnog-mapper/wiki/eggNOG-mapper-v2.1.5-to-v2.1.7#setup
-export SINGLEM_METAPACKAGE_PATH=/path/to/singlem_metapackage.smpkg/
-export CHECKM2DB=/path/to/checkm2db/
+
+GPU environments are optional and require compatible hardware and drivers:
+
+```bash
+aviary build --gpu
 ```
+
+## Configure reference data
+
+Aviary can use local data for GTDB-Tk, EggNOG-mapper, CheckM2, SingleM and
+Metabuli. Which resources are required depends on the workflow stages and
+options selected. Place shared databases outside individual run directories;
+on an HPC system, coordinate their location with the system administrator.
+
+Configure existing resources explicitly:
+
+```bash
+aviary configure \
+  --gtdb-path /shared/db/gtdb/release232 \
+  --eggnog-db-path /shared/db/eggnog \
+  --checkm2-db-path /shared/db/checkm2/uniref100.KO.1.dmnd \
+  --singlem-metapackage-path /shared/db/singlem/package.smpkg.zb \
+  --metabuli-db-path /shared/db/metabuli
+```
+
+The corresponding environment variables are:
+
+| Variable | Consumer |
+| --- | --- |
+| `GTDBTK_DATA_PATH` | GTDB-Tk taxonomy |
+| `EGGNOG_DATA_DIR` | EggNOG functional annotation |
+| `CHECKM2DB` | CheckM2 genome quality assessment |
+| `SINGLEM_METAPACKAGE_PATH` | SingleM community/recovery analysis |
+| `METABULI_DB_PATH` | Metabuli classification used by applicable workflows |
+| `TMPDIR` | Temporary-file location |
+
+To ask Aviary to download configured resources, add `--download` followed by
+one or more of `gtdb`, `eggnog`, `singlem`, `checkm2` and `metabuli`.
+
+```bash
+aviary configure \
+  --gtdb-path /shared/db/gtdb \
+  --checkm2-db-path /shared/db/checkm2 \
+  --download gtdb checkm2
+```
+
+!!! warning "Large downloads"
+    Database downloads are large and should not be duplicated per user or run.
+    Confirm available storage and release requirements before starting them.
+    **Supplying `--download` with no values requests all five databases at
+    once** — always list the specific databases you need.
+
+Continue with the [quickstart](getting-started/quickstart.md). For production
+clusters, see [HPC and cluster submission](guides/hpc.md).

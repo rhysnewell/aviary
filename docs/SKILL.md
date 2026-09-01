@@ -9,7 +9,7 @@ Supports short-read, long-read, and hybrid workflows. Each module runs independe
 
 > **GitHub:** https://github.com/rhysnewell/aviary
 > **Docs:** https://rhysnewell.github.io/aviary
-> **Latest version:** 0.13.0
+> **Latest version:** 0.13.3
 
 
 ---
@@ -189,6 +189,15 @@ aviary assemble \
 | `-c / --coupled PATH ..`      | Coupled forward/reverse list                              |
 | `-l / --longreads PATH ..`    | Nanopore or PacBio reads                                  |
 | `-z / --longread-type TYPE`   | Read type: `ont` \| `ont_hq` \| `rs` \| `sq` \| `ccs` \| `hifi` (default: `ont`) |
+| `--short-read-mapper NAME`    | Short-read aligner: `strobealign` (default) \| `minimap2` \| `rammap` \| `minibwa` \| `bwa-mem` \| `bwa-mem2` \| `strobealign-aemb` (fast direct abundance estimator, binning coverage only -- see [FAQ](faqs.md)) |
+| `--short-read-mapper-model MODEL` | Explicit CoverM preset for `--short-read-mapper` (`minimap2`/`rammap` only): `sr`\|`no-preset` |
+| `--long-read-mapper NAME`     | Long-read aligner: `rammap` (default) \| `minimap2` \| `minibwa`. Preset comes from `--longread-type` unless overridden |
+| `--long-read-mapper-model MODEL` | Explicit CoverM preset for `--long-read-mapper` (`minimap2`/`rammap` only): `lr-hq`\|`hifi`\|`ont` [LEGACY: Deprecated for `lr-hq`]\|`pb` [LEGACY: Deprecated for `hifi`]\|`no-preset` |
+| `--minibwa-params PARAMS`     | Raw passthrough params for minibwa (e.g. `-x lr`); only used when minibwa is selected |
+| `--bwa-params PARAMS`         | Raw CoverM `--bwa-params` passthrough; only used when `--short-read-mapper` is `bwa-mem`/`bwa-mem2` |
+| `--strobealign-params PARAMS` | Raw CoverM `--strobealign-params` passthrough; only used when `--short-read-mapper` is `strobealign` (not `strobealign-aemb`) |
+| `--minimap2-params PARAMS`    | Raw CoverM `--minimap2-params` passthrough; used when either `--short-read-mapper` or `--long-read-mapper` is `minimap2` |
+| `--rammap-params PARAMS`      | Raw CoverM `--rammap-params` passthrough; used when either `--short-read-mapper` or `--long-read-mapper` is `rammap` |
 
 ### Assembly flags
 
@@ -329,10 +338,15 @@ aviary recover \
 
 | Flag                              | Description                                                         | Default    |
 |-----------------------------------|---------------------------------------------------------------------|------------|
-| `--assembly PATH`                 | Input assembled contigs (.fasta) — required                         | —          |
+| `--assembly PATH..`                | Input assembled contigs (.fasta) — required. Multiple files allowed with `--semibin-mode multi` | —          |
 | `-1 / -2`                         | Short reads for coverage calculation                                | —          |
 | `-l / --longreads`                | Long reads for coverage calculation                                 | —          |
 | `-z / --longread-type`            | Long read type (see Section 5)                                      | `ont`      |
+| `--short-read-mapper`             | Short-read aligner for coverage, abundance and polishing (`strobealign-aemb` only applies to binning coverage; abundance/polishing fall back to `strobealign`) | `strobealign` |
+| `--short-read-mapper-model`       | Explicit preset for `--short-read-mapper` (minimap2/rammap only)    | —          |
+| `--long-read-mapper`              | Long-read aligner for coverage and abundance                        | `rammap`   |
+| `--long-read-mapper-model`        | Explicit preset for `--long-read-mapper` (minimap2/rammap only)     | —          |
+| `--minibwa-params`                | Raw passthrough params for minibwa                                  | —          |
 | `--request-gpu`                   | Enable GPU-accelerated binners (taxvamb, comebin, semibin)          | off        |
 | `--binning-only`                  | Stop after binning; skip quality check and annotation               | off        |
 | `--strict`                        | Fail immediately if any binner errors                               | off        |
@@ -342,7 +356,8 @@ aviary recover \
 | `--min-bin-size INT`              | Minimum MAG size (bp)                                               | `200000`   |
 | `--min-completeness FLOAT`        | Minimum CheckM2 completeness % for bins passed to annotation        | `50.0`     |
 | `--max-contamination FLOAT`       | Maximum CheckM2 contamination % for bins passed to annotation       | `5.0`      |
-| `--semibin-model NAME`            | SemiBin2 environment model                                          | `global`   |
+| `--semibin-model NAME`            | SemiBin2 environment model. Ignored when `--semibin-mode multi`     | `global`   |
+| `--semibin-mode single\|multi`    | `single` bins one assembly with `single_easy_bin`. `multi` co-bins multiple `--assembly` files with `multi_easy_bin`, letting SemiBin2 learn across samples | `single`   |
 | `--refinery-max-iterations INT`   | Rosella refinery max iterations                                     | `5`        |
 | `--refinery-max-retries INT`      | Rosella refinery max retries                                        | `3`        |
 | `--coverage-job-strategy STR`     | Strategy for coverage jobs: `default` \| `never` \| `always`       | `default`  |

@@ -9,6 +9,42 @@ def run(command):
     """Simple replacement for extern.run"""
     return subprocess.run(command, shell=True, check=True)
 
+def reprefix_semibin_contig2bin(tsv_path: str, assembly_fasta: str) -> None:
+    """Re-attach the 'sample:' prefix to SemiBin multi-mode bin contigs.
+
+    In multi mode, SemiBin2 writes per-sample bin files (e.g.
+    assembly2_SemiBin_0.fna) but STRIPS the 'sample:' prefix from the contig
+    headers inside them, encoding the sample in the filename/bin-id instead.
+    large_contigs.fasta keeps the prefix (assembly2:NODE_1), so the bare bin
+    names (NODE_1) no longer match the assembly and DAS_Tool fails with
+    "Contigs of contig2bin files not found in assembly". The sample survives in
+    the bin id (<sample>_SemiBin_<n>), so re-derive it and restore the prefix.
+
+    Self-guarding: only rewrites a contig when its bare name is ABSENT from the
+    assembly and the prefixed candidate is PRESENT. Single-sample runs have bare
+    names that already match, so they are left untouched.
+    """
+    assembly_names = {
+        line[1:].split()[0]
+        for line in open(assembly_fasta)
+        if line.startswith('>')
+    }
+    changed = 0
+    fixed_lines = []
+    for line in open(tsv_path):
+        if not line.strip():
+            continue
+        contig, binid = line.rstrip('\n').split('\t')
+        if contig not in assembly_names and '_SemiBin_' in binid:
+            candidate = f"{binid.rsplit('_SemiBin_', 1)[0]}:{contig}"
+            if candidate in assembly_names:
+                contig = candidate
+                changed += 1
+        fixed_lines.append(f'{contig}\t{binid}')
+    with open(tsv_path, 'w') as f:
+        f.write('\n'.join(fixed_lines) + '\n')
+    logging.info(f'semibin contig2bin: re-prefixed {changed} contigs to match assembly')
+
 def parse_args():
     parser = argparse.ArgumentParser(description='Wrapper script for DAS Tool to process multiple binners')
     
@@ -82,6 +118,8 @@ if __name__ == '__main__':
             fix_metabat_cmd = ""
 
         run(f'Fasta_to_Contig2Bin.sh -i data/{binner} -e {extension} {fix_metabat_cmd} >{bin_definition_file}  2>> {logfile}')
+        if binner.startswith('semibin') and os.path.getsize(bin_definition_file) > 0:
+            reprefix_semibin_contig2bin(bin_definition_file, args.fasta)
         if os.path.getsize(bin_definition_file) == 0:
             logging.warning(f'Bin definition file {bin_definition_file} is empty, suggesting that {binner} failed or did not not create any output bins.')
         else:

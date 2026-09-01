@@ -31,8 +31,11 @@ modules are added to aviary.
 - **myloasm**: Shaw, J., Marin, M.G. & Li, H. High-resolution metagenome assembly for modern long reads with myloasm. bioRxiv (2025). https://doi.org/10.1101/2025.09.05.674543
 
 ## Read mapping
+- **Minibwa**: Li, H. & Homer, N. Fast genomic read alignment with minibwa. arXiv (2026). arXiv:2606.15357
 - **Minimap2**: Li, H. Minimap2: pairwise alignment for nucleotide sequences. Bioinformatics 34, 3094–3100 (2018). https://doi.org/10.1093/bioinformatics/bty191
+- **Rammap**: Wang, J.R. & Li, H. Memory-safe high-performance sequence mapping with rammap. bioRxiv (2026). https://doi.org/10.64898/2026.05.26.726289
 - **samtools**: Li, H. et al. The Sequence Alignment/Map format and SAMtools. Bioinformatics 25, 2078–2079 (2009). https://doi.org/10.1093/bioinformatics/btp352
+- **Strobealign**: Sahlin, K. Strobealign: flexible seed size enables ultra-fast and accurate read alignment. Genome Biology 23, 260 (2022). https://doi.org/10.1186/s13059-022-02831-7
 
 ## Binning
 - **CONCOCT**: Alneberg, J. et al. Binning metagenomic contigs by coverage and composition. Nat Methods 11, 1144–1146 (2014). https://doi.org/10.1038/nmeth.3103
