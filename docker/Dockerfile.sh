@@ -17,42 +17,27 @@ RUN curl -fsSL https://pixi.sh/install.sh | bash
 ENV PATH="/root/.pixi/bin:${PATH}"
 ENV PYTHONNOUSERSITE=1
 # re-add the first line when setup here - the second line enables running from arbitrary commits rather than a tag
-RUN git clone https://github.com/rhysnewell/aviary . && git checkout vAVIARY_VERSION
-# RUN git clone https://github.com/rhysnewell/aviary . && git checkout AVIARY_VERSION
+RUN git clone https://github.com/rhysnewell/aviary . && git checkout v0.13.2
+# RUN git clone https://github.com/rhysnewell/aviary . && git checkout 0.13.2
 # We install through pip, because installing via pip install -e . causes issues for apptainer
 # https://github.com/prefix-dev/pixi/issues/1387
 # bird-tool-utils is installed explicitly here because it is a missing pip dependency
 # that otherwise causes downstream failures
-RUN rm -rf .pixi && pixi run --frozen bash -c 'pip install aviary-genome==AVIARY_VERSION bird-tool-utils'
+RUN rm -rf .pixi && pixi run --frozen bash -c 'pip install aviary-genome==0.13.2 bird-tool-utils'
 # Build all non-GPU pixi environments. Aviary workflows invoke these at runtime.
 RUN pixi run --frozen aviary build
 # Download core databases (SingleM, CheckM2, and CheckM v1).
 # GTDB-Tk, EggNOG, and Metabuli are not included due to their size (~140GB combined).
 # Mount those databases at runtime with -v and pass their paths via --gtdb-path,
 # --eggnog-db-path, and --metabuli-db-path, or set the corresponding env vars.
-RUN mkdir -p /db/singlem && \
-    for i in $(seq 1 15); do \
-        pixi run --frozen -e singlem singlem data --output-directory /db/singlem && break || \
-        (echo "singlem data download failed (attempt $i), retrying in 10s..." && sleep 10); \
-    done && \
-    [ -n "$(ls -A /db/singlem 2>/dev/null)" ]
-
-RUN mkdir -p /db/checkm2 && \
-    for i in 1 2 3 4 5; do \
-        pixi run --frozen -e checkm2 checkm2 database --download --path /db/checkm2 && break || \
-        (echo "checkm2 database download failed (attempt $i), retrying in 15s..." && rm -rf /db/checkm2/* && sleep 15); \
-    done && \
-    [ -n "$(ls -A /db/checkm2 2>/dev/null)" ] && \
+RUN mkdir -p /db/singlem /db/checkm2 && \
+    pixi run --frozen -e singlem singlem data --output-directory /db/singlem && \
+    pixi run --frozen -e checkm2 checkm2 database --download --path /db/checkm2 && \
     mv /db/checkm2/CheckM2_database/*.dmnd /db/checkm2/
-
 RUN mkdir -p /db/checkm && \
-    for i in 1 2 3 4 5; do \
-        curl -fSL -C - https://data.ace.uq.edu.au/public/CheckM_databases/checkm_data_2015_01_16.tar.gz -o /tmp/checkm.tar.gz && break || \
-        (echo "checkm download failed (attempt $i), retrying in 15s..." && sleep 15); \
-    done && \
+    curl -fsSL https://data.ace.uq.edu.au/public/CheckM_databases/checkm_data_2015_01_16.tar.gz -o /tmp/checkm.tar.gz && \
     tar -xzf /tmp/checkm.tar.gz -C /db/checkm && \
     rm /tmp/checkm.tar.gz
-
 ENV SINGLEM_METAPACKAGE_PATH=/db/singlem \
     CHECKM2DB=/db/checkm2 \
     CHECKM_DATA_PATH=/db/checkm/2015_01_16_v2 \

@@ -121,6 +121,57 @@ aviary repository. The advantage of this approach is that locations of the
 databases are not tracked in the repository, which is advantageous as they are specific to the
 computing cluster of the user.
 
+### Option 4: Apptainer
+
+This image bundles all of Aviary's tool dependencies, so make sure you have
+plenty of free disk space before pulling: Apptainer downloads the compressed
+layers, extracts them to a temporary uncompressed rootfs, and only then
+builds the final `.sif` — transient disk usage during that process can run
+to several tens of GB before it's cleaned up.
+
+```bash
+# 1. Point Apptainer's temp/build dir at real disk, not the default (often small/tmpfs)
+mkdir -p ~/apptainer-tmp
+export TMPDIR=~/apptainer-tmp
+
+# 2. Force HTTP/1.1 — avoids long-stream resets some networks/proxies do to HTTP/2
+export GODEBUG=http2client=0
+
+# 3. Pull the image (retry if it drops mid-transfer — Apptainer caches completed
+#    layers by digest, so a retry only re-fetches what failed)
+apptainer pull aviary_0.13.3.sif docker://ghcr.io/snh-star/aviary:v0.13.3
+
+# 4. Create a REAL, disk-backed overlay directory (not --writable-tmpfs —
+#    that one is RAM-backed, small, and will fail mid-run with "No space left
+#    on device" even with plenty of free disk). Apptainer's .sif filesystem
+#    is read-only, and pixi (Aviary's environment manager) needs somewhere
+#    writable at runtime.
+mkdir -p ~/apptainer-overlay
+
+# 5. Run aviary, attaching your real databases.
+#
+# The image bundles defaults for SINGLEM_METAPACKAGE_PATH, CHECKM2DB, and
+# CHECKM_DATA_PATH already. GTDBTK_DATA_PATH, EGGNOG_DATA_DIR, and
+# METABULI_DB_PATH are NOT bundled (those databases are too large) and must
+# always be supplied — Aviary reads them at startup even for steps you don't
+# run, so omitting them entirely causes a crash rather than a graceful
+# default. If you don't need one of these steps, pass a placeholder (e.g.
+# /tmp) instead of a real mount and use the matching skip flag where one
+# exists (e.g. --skip-taxonomy for GTDB-Tk).
+apptainer run \
+  --overlay ~/apptainer-overlay:rw \
+  --cleanenv \
+  -B "$PWD":"$PWD" \
+  -B /path/to/host/gtdbtk_data:/db/gtdb:ro \
+  -B /path/to/host/eggnog_data:/db/eggnog:ro \
+  -B /path/to/host/metabuli_data:/db/metabuli:ro \
+  --env GTDBTK_DATA_PATH=/db/gtdb \
+  --env EGGNOG_DATA_DIR=/db/eggnog \
+  --env METABULI_DB_PATH=/db/metabuli \
+  aviary_0.13.3.sif \
+  <aviary-subcommand-and-args>
+```
+
 ## Checking installation
 
 Whatever option you choose, running `aviary --help` should return the following
