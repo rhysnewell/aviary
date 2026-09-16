@@ -15,7 +15,6 @@ on:
 permissions:
   contents: write
   pages: read
-  id-token: read
 
 concurrency:
   group: pages
