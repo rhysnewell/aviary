@@ -1,8 +1,8 @@
 [![install with bioconda](https://img.shields.io/badge/install%20with-bioconda-brightgreen.svg?style=flat)](http://bioconda.github.io/recipes/aviary/README.html)
-![](https://anaconda.org/bioconda/aviary/badges/license.svg)
-![](https://anaconda.org/bioconda/aviary/badges/version.svg)
-![](https://anaconda.org/bioconda/aviary/badges/latest_release_relative_date.svg)
-![](https://anaconda.org/bioconda/aviary/badges/platforms.svg)
+[![Anaconda-Server Badge](https://anaconda.org/bioconda/aviary/badges/license.svg)](https://anaconda.org/bioconda/aviary)
+[![Anaconda-Server Badge](https://anaconda.org/bioconda/aviary/badges/version.svg)](https://anaconda.org/bioconda/aviary)
+[![Anaconda-Server Badge](https://anaconda.org/bioconda/aviary/badges/latest_release_relative_date.svg)](https://anaconda.org/bioconda/aviary)
+[![Anaconda-Server Badge](https://anaconda.org/bioconda/aviary/badges/platforms.svg)](https://anaconda.org/bioconda/aviary)
 [![DOI](https://zenodo.org/badge/DOI/10.5281/zenodo.10806928.svg)](https://doi.org/10.5281/zenodo.10806928)
 
 
