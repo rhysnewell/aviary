@@ -5,7 +5,7 @@
 ### Fixed
 
 - **`Short-read racon polishing stage`**: Errored with `empty sequence set` even 
-though patterns from the file were optioned. Error in seqkit original code 
+though patterns from the file were loaded. Error in seqkit original code 
 `^(\S+?)(?:/[12])?\s?$` this caused headers with more than a word to not be matched
 resulting in zero reads extracted. Now `^(\S+?)(?:/[12])?(?:\s|$)` seqkit takes the
 first word and ignores any descriptor possibly present. Previous usage is retained. 
