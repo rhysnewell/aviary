@@ -15,6 +15,18 @@ import tempfile
 sys.path.insert(0, os.path.join(os.path.dirname(__file__), "..", "..", "..", ".."))
 from aviary import aligner_preset_args
 
+# seqkit --id-regexp for run_polish()'s mapper_needs_suffix_leniency path
+# (see its use below). Non-greedy capture + optional /1 or /2 so seqkit's ID
+# for a header matches the suffix-free qnames run_polish() writes to its
+# pattern file, whether or not the header actually has a mate suffix -- vs.
+# the default "^(\S+)\s?", which would keep it. The boundary is "whitespace
+# or end", not "optional single trailing whitespace then end": a real header
+# commonly carries a description field after the first token (e.g. SRA-style
+# "@1_r1 INSTRUMENT:...", added by clean_short_reads' @-prefix sed), and an
+# end anchor there refuses to match at all, leaving every read unmatched and
+# the extracted fastq empty.
+SEQKIT_MATE_SUFFIX_LENIENT_ID_REGEXP = r'^(\S+?)(?:/[12])?(?:\s|$)'
+
 
 def clean_short_reads(
     cat_or_zcat: str,
@@ -28,7 +40,7 @@ def clean_short_reads(
     sed_cmd = f"""sed s/@/@{read_pair}_/""".split()
 
     with open(log, "a") as logf:
-        logf.write(f"Shell command: {' '.join(cat_cmd)} | {' '.join(sed_cmd)} > {output_path}\n")
+        logf.write(f"Shell command: {' '.join(cat_cmd)} | {' '.join(sed_cmd)} >> {output_path}\n")
         logf.write(' '.join(sed_cmd))
         with open(output_path, 'a') as out:
             cat = Popen(cat_cmd, stdout=PIPE, stderr=logf)
@@ -568,10 +580,9 @@ def run_polish(
                     # (see the qname normalization above); seqkit_id_regexp below
                     # strips a real /1 or /2 from the target read headers to match.
                     o.write(i + '\n')
-            # Non-greedy capture + optional /1 or /2 so seqkit's ID for a header
-            # matches i above whether or not the header actually has a mate
-            # suffix -- vs. the default "^(\S+)\s?", which would keep it.
-            seqkit_id_regexp = r'^(\S+?)(?:/[12])?\s?$' if mapper_needs_suffix_leniency else None
+            seqkit_id_regexp = (
+                SEQKIT_MATE_SUFFIX_LENIENT_ID_REGEXP if mapper_needs_suffix_leniency else None
+            )
             logging.info("Retrieving reads...")
             if not isinstance(reads, str):
                 for read in reads:
