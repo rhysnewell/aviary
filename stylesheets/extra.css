@@ -1,0 +1,1137 @@
+/*
+ * Aviary docs — custom theme layer over mkdocs-material.
+ *
+ * Direction: clean scientific/technical. Deep slate neutrals, Aviary's own
+ * brand green as the accent (not Material's stock teal, not an arbitrary
+ * pick -- sampled directly from docs/_include/images/aviary_logo.png:
+ * true brand green is #4ac58e). A real type scale, and restrained depth
+ * (borders + very soft shadows, not drama). Every override here has both a
+ * light (`[data-md-color-scheme="default"]`) and dark
+ * (`[data-md-color-scheme="slate"]`) value -- this is not a dark-mode-first
+ * site with an afterthought light toggle, or vice versa.
+ *
+ * The true brand green (#4ac58e) only has ~2:1 contrast against the light
+ * background -- fails WCAG AA for text (needs 4.5:1). So: light mode uses a
+ * deepened shade of the same hue (#1a7a58, 4.93:1) for text/links/accents,
+ * while dark mode uses the true brand green directly (8.35:1 against the
+ * dark background -- plenty of room, and fully on-brand). Button fills use
+ * the true brand green in both themes via --aviary-brand-green, since a
+ * large fill only needs the text sitting on it to be readable, not the fill
+ * color itself (dark text on the true green: 8.24:1, verified).
+ */
+
+/* Display font -- headline only. Body copy stays IBM Plex Sans for
+   readability; Space Grotesk gives the hero H1 real character instead of
+   looking like every other Material site's headline.
+
+   This MUST stay at the top of the file: per the CSS spec an @import after
+   any style rule is ignored outright, so while this sat mid-file the font
+   never actually loaded and the hero quietly fell back to Plex. */
+@import url("https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@500..700&display=swap");
+
+/* ---------------------------------------------------------------------- */
+/* Palette                                                                 */
+/* ---------------------------------------------------------------------- */
+
+[data-md-color-scheme="default"] {
+  /* Base surface: a warm, slightly cool-neutral off-white -- not stock pure
+     white, which reads flat and template-y next to a technical mono font. */
+  --md-default-bg-color: #f7f7f5;
+  --md-default-fg-color: #1b2027;
+  --md-default-fg-color--light: #454d57;
+  --md-default-fg-color--lighter: #6b7280;
+  --md-default-fg-color--lightest: #d8dbe0;
+
+  /* Header / nav: deep slate, not pure black -- softer, still confident. */
+  --md-primary-fg-color: #171b21;
+  --md-primary-fg-color--light: #2b313a;
+  --md-primary-fg-color--dark: #0f1216;
+  --md-primary-bg-color: #f4ede1;
+  --md-primary-bg-color--light: #f4ede1;
+
+  /* Accent: Aviary's own brand green, deepened for AA text contrast. */
+  --md-accent-fg-color: #1a7a58;
+  --md-accent-fg-color--transparent: #1a7a581a;
+  --md-accent-bg-color: #fff;
+  --md-accent-bg-color--light: #fff;
+
+  --md-typeset-a-color: #1a7a58;
+
+  --md-code-bg-color: #eeece5;
+  --md-code-fg-color: #22271f;
+
+  --md-footer-bg-color: #171b21;
+  --md-footer-bg-color--dark: #0f1216;
+  --md-footer-fg-color: #eef4f0;
+  --md-footer-fg-color--light: #c9cdd3;
+
+  --aviary-surface: #ffffff;
+  --aviary-surface-sunken: #efeee9;
+  --aviary-border: #dfddd6;
+  --aviary-shadow: 0 1px 2px rgba(23, 27, 33, 0.06), 0 4px 14px rgba(23, 27, 33, 0.05);
+  /* True brand green -- for button fills and other large decorative
+     surfaces only. Never used as small text (see contrast note above). */
+  --aviary-brand-green: #4ac58e;
+  --aviary-brand-green-ink: #0c1a15;
+  /* Table zebra striping. Explicit per-theme values rather than one
+     translucent black -- on the dark surface that reads as a muddy smear. */
+  --aviary-zebra: rgba(23, 27, 33, 0.032);
+}
+
+[data-md-color-scheme="slate"] {
+  --md-hue: 220deg;
+
+  /* Base surface: deep slate, not pure black -- keeps contrast comfortable
+     and lets the brand green glow rather than clash. */
+  --md-default-bg-color: #12161c;
+  --md-default-fg-color: #dfe2e6;
+  --md-default-fg-color--light: #b7bcc3;
+  --md-default-fg-color--lighter: #8b909a;
+  --md-default-fg-color--lightest: #2a303a;
+
+  --md-primary-fg-color: #0d1015;
+  --md-primary-fg-color--light: #1a1f26;
+  --md-primary-fg-color--dark: #0a0c0f;
+  --md-primary-bg-color: #e4f4ec;
+  --md-primary-bg-color--light: #e4f4ec;
+
+  /* True brand green -- already 8.35:1 against this dark background, so
+     unlike light mode, no deepening/brightening needed here. */
+  --md-accent-fg-color: #4ac58e;
+  --md-accent-fg-color--transparent: #4ac58e26;
+  --md-accent-bg-color: #171b21;
+  --md-accent-bg-color--light: #171b21;
+
+  --md-typeset-a-color: #4ac58e;
+
+  --md-code-bg-color: #1a1f26;
+  --md-code-fg-color: #d6e6db;
+
+  --md-footer-bg-color: #0a0c0f;
+  --md-footer-fg-color: #e4f4ec;
+  --md-footer-fg-color--light: #9aa0a8;
+
+  --aviary-surface: #171b21;
+  --aviary-surface-sunken: #0d1015;
+  --aviary-border: #262c35;
+  --aviary-shadow: 0 1px 2px rgba(0, 0, 0, 0.3), 0 6px 20px rgba(0, 0, 0, 0.35);
+  --aviary-brand-green: #4ac58e;
+  --aviary-brand-green-ink: #0c1a15;
+  --aviary-zebra: rgba(255, 255, 255, 0.035);
+}
+
+/* ---------------------------------------------------------------------- */
+/* Layout guard                                                            */
+/* ---------------------------------------------------------------------- */
+
+/* Material lays <body> out as a flex column, so the announcement banner
+   stretches to the body's width -- which is the VIEWPORT width, not the
+   document width. Any element that overflows horizontally therefore makes
+   the page scroll sideways while the green bar stops at the viewport edge,
+   which reads as "the banner doesn't reach the right".
+
+   `clip` rather than `hidden` on purpose: hidden would make the root a
+   scroll container and break the sticky header, clip does not. Wide content
+   is unaffected -- Material already puts tables and code blocks in their own
+   scroll wrappers, so nothing legitimately scrollable is being cut off here.
+
+   A second, distinct cause of the same symptom (2026-08-10 report): the
+   VERTICAL scrollbar itself. On a page tall enough to need one, the
+   scrollbar eats into the viewport width the browser hands out to layout;
+   on a shorter page there's no scrollbar and the full width is available.
+   Since the banner is sized off the viewport (see above), it is a few
+   pixels narrower specifically on pages with a scrollbar -- reading as "the
+   header doesn't extend all the way to the right", but only on some pages.
+   scrollbar-gutter: stable reserves that space UNCONDITIONALLY, so layout
+   width is identical whether or not a given page's content actually
+   triggers a scrollbar. */
+html {
+  margin: 0;
+  padding: 0;
+  clip: rect(0, auto, auto, 0);
+  scrollbar-gutter: stable;
+}
+
+/* ---------------------------------------------------------------------- */
+/* Typography                                                              */
+/* ---------------------------------------------------------------------- */
+
+.md-typeset {
+  font-size: 0.72rem;
+  line-height: 1.7;
+}
+
+/* Reference prose is read in long sittings, so measure matters more here than
+   filling the column. ~72 characters at this size; tables, code and figures
+   opt out below because they genuinely want the full width. */
+.md-typeset p,
+.md-typeset ul,
+.md-typeset ol {
+  max-width: 42rem;
+}
+
+.md-typeset h1,
+.md-typeset h2,
+.md-typeset h3,
+.md-typeset h4 {
+  font-weight: 650;
+  letter-spacing: -0.012em;
+}
+
+.md-typeset h1 {
+  font-size: 2.1rem;
+  margin-bottom: 0.6em;
+}
+
+/* Section rules run brand green the whole way, rather than a green leader
+   handing off to a grey hairline -- the two-tone version read as an unfinished
+   bar rather than a deliberate accent.
+
+   Spacing is deliberately asymmetric (3.2em above, 1em below): a heading
+   belongs to what follows it, so the gap above must clearly exceed the gap
+   below or the eye groups it with the preceding section. Material's default
+   is closer to even, which is what makes long reference pages read as one
+   undifferentiated column. */
+.md-typeset h2 {
+  position: relative;
+  font-size: 1.4rem;
+  margin-top: 3.2em;
+  margin-bottom: 1em;
+  padding-bottom: 0.4em;
+  border-bottom: none;
+}
+
+.md-typeset h2::after {
+  content: "";
+  position: absolute;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  height: 2px;
+  border-radius: 2px;
+  background: var(--md-accent-fg-color);
+}
+
+.md-typeset h3 {
+  font-size: 1.1rem;
+  font-weight: 600;
+  margin-top: 2.2em;
+}
+
+
+.md-typeset code,
+.md-typeset kbd,
+.md-typeset pre {
+  font-size: 0.82em;
+}
+
+/* ---------------------------------------------------------------------- */
+/* Header + nav                                                           */
+/* ---------------------------------------------------------------------- */
+
+.md-header {
+  box-shadow: none;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.08);
+}
+
+.md-header__button.md-logo {
+  margin: 0;
+  padding: 0.15rem 0.55rem 0.15rem 0;
+}
+
+.md-header__button.md-logo img,
+.md-header__button.md-logo svg {
+  width: 2.1rem;
+  height: 2.1rem;
+  object-fit: contain;
+  image-rendering: auto;
+}
+
+.md-header__title {
+  font-weight: 600;
+}
+
+.md-tabs {
+  border-bottom: 1px solid rgba(255, 255, 255, 0.06);
+}
+
+/* Material renders live star/fork counts under the repo link in the header,
+   fetched from the GitHub API at runtime. Hidden: they are vanity metrics
+   that say nothing about the docs, they shift the header layout when they
+   arrive late, and pointing at rhysnewell/aviary means they are not even
+   this fork's numbers. The repo link itself stays. */
+.md-source__facts {
+  display: none;
+}
+
+.md-nav__link--active,
+.md-nav__link:focus,
+.md-nav__link:hover {
+  color: var(--md-accent-fg-color);
+}
+
+.md-nav__item .md-nav__link--active {
+  font-weight: 600;
+}
+
+/* ---------------------------------------------------------------------- */
+/* Announcement bar (docs/overrides/main.html's .aviary-announcement)      */
+/* ---------------------------------------------------------------------- */
+
+.md-banner {
+  position: relative;
+  overflow: hidden;
+  background: linear-gradient(90deg, var(--aviary-brand-green), #2fa876);
+  color: var(--aviary-brand-green-ink);
+
+  /* Material wraps the announce block in `.md-banner__inner md-grid
+     md-typeset`, so `.md-typeset a { color: var(--md-typeset-a-color) }`
+     applies to our link -- and at specificity (0,1,1) it outranks
+     `.aviary-announcement` (0,1,0). The link was therefore painted in the
+     accent green, on a brand-green bar: near-invisible in BOTH themes (the
+     banner keeps the same green fill regardless of scheme). Rebinding the
+     variable here fixes every link inside the banner instead of fighting
+     specificity element by element. Measured: the old state was 2.44:1 in
+     light and 1.00:1 in dark (the accent variable IS the bar's own green
+     there -- the text was the background colour). Ink on the gradient is
+     8.23:1 at the light end, 5.95:1 at the dark end -- AA either way. */
+  --md-typeset-a-color: var(--aviary-brand-green-ink);
+}
+
+/* The specular sweep that used to run here was removed 2026-08-11. It was the
+   one element animating on every page of the site, on a loop, in the reader's
+   peripheral vision while they read reference material -- the definition of
+   decoration competing with content. The bar earns attention from its colour
+   and position; it does not need to move. */
+
+.aviary-announcement {
+  position: relative;
+  z-index: 1;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.5rem;
+  font-weight: 500;
+  text-decoration: none;
+  color: inherit;
+}
+
+/* Material's own `.md-typeset a:focus, .md-typeset a:hover { color:
+   var(--md-accent-fg-color) }` outranks `.aviary-announcement`'s
+   `color: inherit` on specificity ((0,2,1) vs (0,1,0)), so hovering swapped
+   the ink to the site's generic accent colour -- a washed-out, "lighter"
+   look against the green gradient, not a deliberate choice. Pin it to plain
+   white instead, at higher specificity so it wins regardless of stylesheet
+   load order. Color inherits down to the child <span>/<strong>/arrow, so
+   this covers the whole row, not just the label. */
+.md-banner a.aviary-announcement:hover,
+.md-banner a.aviary-announcement:focus {
+  color: #fff;
+}
+
+.aviary-announcement strong {
+  font-weight: 700;
+}
+
+/* Underline only the label, and nudge the arrow -- more considered than
+   underlining the whole row including the arrow glyph. */
+.aviary-announcement:hover strong {
+  text-decoration: underline;
+  text-underline-offset: 3px;
+}
+
+.aviary-announcement [aria-hidden] {
+  transition: transform 0.2s cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+.aviary-announcement:hover [aria-hidden] {
+  transform: translateX(4px);
+}
+
+/* ---------------------------------------------------------------------- */
+/* Buttons                                                                 */
+/* ---------------------------------------------------------------------- */
+
+.md-typeset .md-button {
+  border-radius: 6px;
+  border-width: 1.5px;
+  font-weight: 600;
+  padding: 0.7em 1.4em;
+  line-height: 1.3;
+  transition: transform 0.15s ease, box-shadow 0.15s ease, background-color 0.15s ease,
+              border-color 0.15s ease, color 0.15s ease;
+}
+
+.md-typeset .md-button--primary {
+  background-color: var(--aviary-brand-green);
+  border-color: var(--aviary-brand-green);
+  color: var(--aviary-brand-green-ink);
+}
+
+.md-typeset .md-button--primary:hover {
+  /* A fixed shade, not var(--md-accent-fg-color): in dark mode that variable
+     IS --aviary-brand-green (see palette note above), so using it here
+     would make hover indistinguishable from the resting state. */
+  transform: translateY(-1px);
+  box-shadow: var(--aviary-shadow);
+  background-color: #3aa877;
+  border-color: #3aa877;
+  color: var(--aviary-brand-green-ink);
+}
+
+/* Resting-state colour, made explicit rather than left to mkdocs-material's
+   own default: that default was low-contrast against the hero's dark
+   background in both colour schemes (2026-08-10 report -- text on these two
+   buttons was hard to read). --md-default-fg-color already adapts per
+   scheme (near-black on light, near-white on dark), so this alone fixes
+   legibility in both without a separate dark-mode override. */
+.md-typeset .md-button:not(.md-button--primary) {
+  color: var(--md-default-fg-color);
+  border-color: var(--md-default-fg-color--lighter);
+}
+
+/* Hover fills with brand green and switches the label to near-black, matching
+   the primary button's treatment so the row reads as one family.
+
+   The fill is not decoration -- it is what makes black legible. Setting the
+   label to black on its own leaves it sitting on whatever is behind the
+   button: 16.7:1 on the light page, but 1.01:1 on the dark one, i.e. black
+   text on a near-black background. With the green behind it the same ink
+   measures 8.23:1 in BOTH schemes, so one rule covers light and dark rather
+   than needing a per-scheme override. */
+.md-typeset .md-button:not(.md-button--primary):hover,
+.md-typeset .md-button:not(.md-button--primary):focus-visible {
+  transform: translateY(-1px);
+  background-color: var(--aviary-brand-green);
+  border-color: var(--aviary-brand-green);
+  color: var(--aviary-brand-green-ink);
+}
+
+/* ---------------------------------------------------------------------- */
+/* Code blocks                                                            */
+/* ---------------------------------------------------------------------- */
+
+.md-typeset .highlight,
+.md-typeset pre {
+  border-radius: 8px;
+  border: 1px solid var(--aviary-border);
+}
+
+.md-typeset .highlight > pre,
+.md-typeset > pre {
+  margin: 0;
+}
+
+.md-typeset code {
+  border-radius: 4px;
+}
+
+/* ---------------------------------------------------------------------- */
+/* Admonitions                                                             */
+/* ---------------------------------------------------------------------- */
+
+.md-typeset .admonition,
+.md-typeset details {
+  border-radius: 8px;
+  border-width: 1px;
+  box-shadow: none;
+}
+
+.md-typeset .admonition-title,
+.md-typeset summary {
+  font-weight: 600;
+}
+
+/* ---------------------------------------------------------------------- */
+/* Tables (heavily used across the CLI reference)                         */
+/* ---------------------------------------------------------------------- */
+
+.md-typeset table:not([class]) {
+  border-radius: 8px;
+  border: 1px solid var(--aviary-border);
+  box-shadow: none;
+}
+
+.md-typeset table:not([class]) th {
+  background-color: var(--aviary-surface-sunken);
+  font-weight: 600;
+}
+
+.md-typeset table:not([class]) tr:hover {
+  background-color: var(--md-accent-fg-color--transparent);
+}
+
+/* ---------------------------------------------------------------------- */
+/* Grid cards (used on the homepage command overview)                     */
+/* ---------------------------------------------------------------------- */
+
+.md-typeset .grid.cards > ul > li {
+  border-radius: 10px;
+  border: 1px solid var(--aviary-border);
+  background-color: var(--aviary-surface);
+  box-shadow: var(--aviary-shadow);
+  transition: transform 0.15s ease, border-color 0.15s ease;
+}
+
+.md-typeset .grid.cards > ul > li:hover {
+  transform: translateY(-2px);
+  border-color: var(--md-accent-fg-color);
+}
+
+.md-typeset .grid.cards > ul > li > hr {
+  border-color: var(--aviary-border);
+}
+
+/* ---------------------------------------------------------------------- */
+/* Motion: reduced-motion is the default. Nothing animates until JS       */
+/* confirms (a) it ran and (b) the visitor didn't ask for less motion.    */
+/* This is the opposite of "animate by default, disable for a11y" -- the  */
+/* accessible state is what everyone gets unless proven otherwise.        */
+/* ---------------------------------------------------------------------- */
+
+.aviary-reveal {
+  opacity: 1;
+  transform: none;
+}
+
+html.aviary-motion-ready .aviary-reveal {
+  opacity: 0;
+  transform: translateY(14px);
+  transition: opacity 0.6s cubic-bezier(0.16, 1, 0.3, 1),
+              transform 0.6s cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+html.aviary-motion-ready .aviary-reveal.is-visible {
+  opacity: 1;
+  transform: none;
+}
+
+/* ---------------------------------------------------------------------- */
+/* Homepage hero                                                          */
+/* ---------------------------------------------------------------------- */
+
+/* The negative margin bleeds the hero past the content column, but it must
+   not exceed the gutter it is bleeding into: Material gives
+   .md-content__inner a margin of 0.8rem (1.2rem at wider breakpoints), and
+   nothing between here and <body> clips overflow. At the old -1.5rem the
+   hero stuck ~0.7rem past the page on each side, which made the DOCUMENT
+   wider than the viewport -- and since the announcement banner spans the
+   viewport, not the document, the green bar visibly stopped short of the
+   right-hand edge once that horizontal scroll existed. 0.8rem matches the
+   narrowest gutter, so the bleed is safe at every breakpoint. */
+.aviary-hero {
+  position: relative;
+  overflow: hidden;
+  padding: 3.2rem 1.5rem 2.4rem;
+  margin: 0 -0.8rem 2.5rem;
+  border-bottom: 1px solid var(--aviary-border);
+  border-radius: 0 0 20px 20px;
+  isolation: isolate;
+}
+
+/* A single, still wash behind the hero -- one accent-tinted gradient rather
+   than the three-colour drifting mesh that was here before (removed
+   2026-08-11, along with the SVG grain overlay).
+
+   Both were doing the same job the branch motif already does better, and
+   doing it in the reader's peripheral vision. A perpetual 22-second drift on
+   the landing page of a reference site is movement with nothing to say; the
+   grain was a texture trend rather than a property of this product. What
+   remains is a quiet depth cue that lets the motif and the headline carry the
+   page. */
+.aviary-hero::before {
+  content: "";
+  position: absolute;
+  inset: 0;
+  z-index: -2;
+  background: radial-gradient(60% 80% at 18% 0%,
+    var(--md-accent-fg-color--transparent), transparent 72%);
+}
+
+.aviary-hero__inner {
+  position: relative;
+  z-index: 1;
+  display: grid;
+  grid-template-columns: minmax(0, 1.35fr) minmax(220px, 280px);
+  gap: 1.5rem;
+  align-items: center;
+}
+
+@media screen and (max-width: 76.1875em) {
+  .aviary-hero__inner {
+    grid-template-columns: 1fr;
+  }
+}
+
+.aviary-hero__motif {
+  position: absolute;
+  inset: 0;
+  z-index: 0;
+  width: 100%;
+  height: 100%;
+  opacity: 0.5;
+  pointer-events: none;
+}
+
+.aviary-hero__motif path {
+  fill: none;
+  stroke: var(--md-accent-fg-color);
+  stroke-width: 1.4;
+  stroke-linecap: round;
+}
+
+.aviary-hero__motif circle {
+  fill: var(--md-accent-fg-color);
+}
+
+@media (prefers-reduced-motion: no-preference) {
+  html.aviary-js .aviary-hero__motif path {
+    stroke-dasharray: 700;
+    stroke-dashoffset: 700;
+    animation: aviary-draw 2.2s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+  }
+  html.aviary-js .aviary-hero__motif path:nth-of-type(2) { animation-delay: 0.12s; }
+  html.aviary-js .aviary-hero__motif path:nth-of-type(3) { animation-delay: 0.24s; }
+  html.aviary-js .aviary-hero__motif path:nth-of-type(4) { animation-delay: 0.36s; }
+  html.aviary-js .aviary-hero__motif circle {
+    opacity: 0;
+    animation: aviary-fade-in 0.6s ease forwards;
+    animation-delay: 1.6s;
+  }
+}
+
+@keyframes aviary-draw {
+  to { stroke-dashoffset: 0; }
+}
+
+@keyframes aviary-fade-in {
+  to { opacity: 1; }
+}
+
+.aviary-hero__eyebrow {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.4rem;
+  font-size: 0.68rem;
+  font-weight: 700;
+  letter-spacing: 0.09em;
+  text-transform: uppercase;
+  color: var(--md-accent-fg-color);
+  margin-bottom: 0.8rem;
+}
+
+.aviary-hero__eyebrow::before {
+  content: "";
+  display: inline-block;
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
+  background: var(--md-accent-fg-color);
+  box-shadow: 0 0 0 3px var(--md-accent-fg-color--transparent);
+}
+
+.aviary-hero h1 {
+  font-family: "Space Grotesk", "IBM Plex Sans", sans-serif;
+  font-size: clamp(2.4rem, 4.2vw, 3.4rem);
+  line-height: 1.05;
+  letter-spacing: -0.02em;
+  margin: 0 0 0.7rem;
+}
+
+.aviary-hero p {
+  max-width: 42rem;
+  color: var(--md-default-fg-color--light);
+  font-size: 1rem;
+}
+
+/* The three calls to action sit on one line.
+
+   The wrapper itself is the flex container, and the paragraph(s) markdown
+   generates inside it are collapsed with `display: contents` so the buttons
+   become flex items directly. Styling the <p> as the flex row instead only
+   works if markdown emits exactly ONE paragraph for all three links -- if it
+   ever splits them (a stray blank line, a different md_in_html version), each
+   <p> becomes its own single-item row and they stack again no matter how much
+   width is available. Collapsing the paragraph box makes the layout depend on
+   the buttons, not on how the Markdown happened to be parsed. */
+.aviary-hero__actions {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 0.75rem;
+  margin-top: 1.3rem;
+}
+
+.aviary-hero__actions p {
+  display: contents;
+  margin: 0;
+}
+
+.aviary-hero__actions .md-button {
+  margin: 0;
+  white-space: nowrap;
+}
+
+/* --- Decorative cycling terminal, hero right-hand column ---------------- */
+
+.aviary-terminal {
+  position: relative;
+  z-index: 1;
+  border-radius: 12px;
+  border: 1px solid var(--aviary-border);
+  background: var(--aviary-surface);
+  box-shadow: var(--aviary-shadow);
+  overflow: hidden;
+}
+
+[data-md-color-scheme="slate"] .aviary-terminal {
+  background: rgba(23, 27, 33, 0.6);
+  backdrop-filter: blur(18px) saturate(140%);
+  -webkit-backdrop-filter: blur(18px) saturate(140%);
+  border-color: rgba(255, 255, 255, 0.08);
+}
+
+.aviary-terminal__bar {
+  display: flex;
+  align-items: center;
+  gap: 0.4rem;
+  padding: 0.65rem 0.85rem;
+  border-bottom: 1px solid var(--aviary-border);
+}
+
+[data-md-color-scheme="slate"] .aviary-terminal__bar {
+  border-color: rgba(255, 255, 255, 0.08);
+}
+
+.aviary-terminal__bar span {
+  width: 9px;
+  height: 9px;
+  border-radius: 50%;
+  background: var(--md-default-fg-color--lightest);
+}
+
+.aviary-terminal__body {
+  margin: 0;
+  padding: 1.1rem 1rem 1.3rem;
+  font-family: "IBM Plex Mono", monospace;
+  font-size: 0.78rem;
+  min-height: 6.4rem;
+  color: var(--md-code-fg-color);
+}
+
+.aviary-terminal__prompt {
+  color: var(--md-accent-fg-color);
+  margin-right: 0.4rem;
+}
+
+.aviary-terminal__type::after {
+  content: "";
+  display: inline-block;
+  width: 0.55em;
+  height: 1em;
+  margin-left: 0.15em;
+  vertical-align: -0.15em;
+  background: var(--md-accent-fg-color);
+  opacity: 0.85;
+}
+
+@media (prefers-reduced-motion: no-preference) {
+  html.aviary-js .aviary-terminal__type::after {
+    animation: aviary-caret-blink 1s steps(1) infinite;
+  }
+}
+
+@keyframes aviary-caret-blink {
+  50% { opacity: 0; }
+}
+
+/* ---------------------------------------------------------------------- */
+/* Command index -- the six subcommands.                                   */
+/*                                                                          */
+/* Replaces the scrollytelling section (removed 2026-08-11): one command    */
+/* revealed per scroll step looked considered but read as a slideshow, and  */
+/* it forced ~5 screens of scrolling to convey what is fundamentally a      */
+/* six-row reference. A reader arriving here wants to compare the six and   */
+/* leave, not be walked through them.                                       */
+/*                                                                          */
+/* A ruled list rather than another card grid: the "Find what you need"     */
+/* block below is already cards, and two card grids stacked is exactly the  */
+/* uniform, template-y rhythm worth avoiding. Rules give a denser, more     */
+/* scannable register and let the monospaced command names form a strong    */
+/* left-hand column the eye can run down.                                   */
+/* ---------------------------------------------------------------------- */
+
+.aviary-commands {
+  margin: 1.6rem 0 2.4rem;
+  border-top: 1px solid var(--aviary-border);
+}
+
+.aviary-command {
+  display: grid;
+  grid-template-columns: minmax(11rem, 15rem) minmax(0, 1fr);
+  gap: 0.4rem 2rem;
+  align-items: baseline;
+  padding: 1.15rem 0.6rem 1.15rem 0.75rem;
+  border-bottom: 1px solid var(--aviary-border);
+  /* Left rail rather than a background tint: keeps the row flat until it is
+     pointed at, so the resting state stays quiet. */
+  box-shadow: inset 2px 0 0 -2px transparent;
+  transition: box-shadow 0.2s ease, background-color 0.2s ease;
+}
+
+.aviary-command:hover {
+  background-color: var(--aviary-zebra);
+  box-shadow: inset 2px 0 0 0 var(--md-accent-fg-color);
+}
+
+.aviary-command__head {
+  display: flex;
+  flex-direction: column;
+  gap: 0.3rem;
+}
+
+.aviary-command__name {
+  font-weight: 600;
+  text-decoration: none;
+}
+
+/* The command names are the page's anchor points, so they get the accent and
+   a size step up -- everything else in the row stays secondary. */
+.md-typeset .aviary-command__name code {
+  background: none;
+  padding: 0;
+  font-size: 0.95rem;
+  color: var(--md-accent-fg-color);
+}
+
+.aviary-command__name:hover code {
+  text-decoration: underline;
+  text-underline-offset: 3px;
+}
+
+.aviary-command__flow {
+  font-size: 0.62rem;
+  font-weight: 500;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  color: var(--md-default-fg-color--lighter);
+}
+
+.md-typeset .aviary-command__body {
+  margin: 0;
+  color: var(--md-default-fg-color--light);
+}
+
+@media screen and (max-width: 44.9375em) {
+  .aviary-command {
+    grid-template-columns: minmax(0, 1fr);
+    gap: 0.5rem;
+  }
+}
+
+
+/* ---------------------------------------------------------------------- */
+/* Scrollbar + selection -- small details, but stock browser chrome next   */
+/* to a deliberately-designed page is exactly the kind of seam that reads  */
+/* as unfinished.                                                          */
+/* ---------------------------------------------------------------------- */
+
+::selection {
+  background: var(--aviary-brand-green);
+  color: var(--aviary-brand-green-ink);
+}
+
+* {
+  scrollbar-color: var(--md-default-fg-color--lightest) transparent;
+}
+
+::-webkit-scrollbar {
+  width: 11px;
+  height: 11px;
+}
+
+::-webkit-scrollbar-thumb {
+  background-color: var(--md-default-fg-color--lightest);
+  border-radius: 8px;
+  border: 3px solid var(--md-default-bg-color);
+}
+
+::-webkit-scrollbar-thumb:hover {
+  background-color: var(--md-accent-fg-color);
+}
+
+/* ---------------------------------------------------------------------- */
+/* Per-surface detailing                                                   */
+/*                                                                         */
+/* Each of these is a DIFFERENT gesture, on purpose. The hero already has   */
+/* its drawn branch/flight-path motif; reusing that one idea on every       */
+/* surface is exactly what makes a site read as a template. So: body links  */
+/* get a wipe, code gets a spectrum edge, quotes get a glyph, nav gets a    */
+/* marker, tables get weight, the header gets a progress hairline. Shared   */
+/* palette and timing hold them together; the gestures stay distinct.       */
+/* ---------------------------------------------------------------------- */
+
+/* --- Body links: underline wipes in from the left ---------------------- */
+/* Scoped to prose containers only (p/li/td inside .md-content), so it      */
+/* never touches buttons, cards, nav, headerlinks or the banner -- each of  */
+/* which has its own hover language defined elsewhere in this file.         */
+
+.md-content .md-typeset :is(p, li, td) > a:not(.md-button) {
+  text-decoration: none;
+  background-image: linear-gradient(currentColor, currentColor);
+  background-repeat: no-repeat;
+  background-position: 0 100%;
+  background-size: 0% 1.5px;
+}
+
+@media (prefers-reduced-motion: no-preference) {
+  .md-content .md-typeset :is(p, li, td) > a:not(.md-button) {
+    transition: background-size 0.28s cubic-bezier(0.16, 1, 0.3, 1);
+  }
+}
+
+.md-content .md-typeset :is(p, li, td) > a:hover,
+.md-content .md-typeset :is(p, li, td) > a:focus-visible {
+  background-size: 100% 1.5px;
+}
+
+/* --- Code blocks: a brand-green spectrum along the top edge ------------- */
+/* The CLI reference is mostly code, so the blocks carry a lot of the       */
+/* page's visual weight; a hairline gives them a defined "top" without      */
+/* another border competing with the one already there.                     */
+
+.md-typeset .highlight {
+  position: relative;
+}
+
+.md-typeset .highlight::before {
+  content: "";
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  height: 2px;
+  border-radius: 8px 8px 0 0;
+  opacity: 0.75;
+  background: linear-gradient(90deg, var(--aviary-brand-green), transparent 58%);
+}
+
+/* --- Blockquotes: oversized quote glyph in the gutter ------------------- */
+
+.md-typeset blockquote {
+  position: relative;
+  border-left: 3px solid var(--md-accent-fg-color);
+  padding-left: 1.5rem;
+  color: var(--md-default-fg-color--light);
+}
+
+.md-typeset blockquote::before {
+  content: "\201C";
+  position: absolute;
+  left: 0.45rem;
+  top: -0.5rem;
+  font-family: "Space Grotesk", Georgia, serif;
+  font-size: 2.6rem;
+  line-height: 1;
+  color: var(--md-accent-fg-color);
+  opacity: 0.2;
+  pointer-events: none;
+}
+
+/* --- Navigation: primary gets a rail, the TOC gets a dot ---------------- */
+/* Two different markers so the two sidebars stay tellable apart at a       */
+/* glance -- they sit on opposite sides of the same page.                   */
+/*                                                                          */
+/* BOTH markers must sit INSIDE the link's own box. Material gives          */
+/* .md-sidebar__scrollwrap `overflow-y: auto`, which makes it a scroll      */
+/* container -- and a scroll container clips on BOTH axes, so overflow-x is */
+/* effectively hidden too. Markers hung off the left edge with a negative   */
+/* `left` (which is what was here until 2026-08-11) get sliced down their   */
+/* left-hand side, worst on the TOC where a clipped circle is obvious.      */
+/* Hence: reserve space with padding on every link, then draw the marker    */
+/* within it. Padding goes on ALL links, not just the active one, so        */
+/* activating an item does not shift its text sideways.                     */
+
+/* Both markers are PAINTED ON THE LINK ITSELF -- an inset shadow for the rail,
+   a background gradient for the dot -- rather than drawn with an absolutely
+   positioned ::after.
+
+   This is deliberate and it is the third attempt at this. A positioned
+   pseudo-element can always be clipped by some ancestor's overflow, and here
+   there is one: Material gives .md-sidebar__scrollwrap `overflow-y: auto`,
+   which makes it a scroll container, and a scroll container clips on BOTH
+   axes. Moving the marker inside the padding box fixed it in principle but
+   still left a shape that another overflow context could cut. Backgrounds and
+   inset shadows are painted within the element's own border box, so no
+   ancestor can slice them -- the failure mode is structurally gone rather
+   than avoided by choosing the right offset. */
+
+/* On the primary nav being "cut off" at the bottom of long pages.
+
+   Material sizes the scrollwrap from JS (`i.style.height = ${l - 2*a}px` on
+   `.md-sidebar__scrollwrap`, sidebar observable) and shrinks it as the footer
+   comes into view, so the nav never overlaps the footer. Forcing full height
+   with `height: auto !important` was tried on 2026-08-11 and reverted the same
+   day: it stops the shrinking, but the nav then runs down THROUGH the footer,
+   which is worse than what it fixed.
+
+   As of 2026-08-13, `navigation.sections` is no longer enabled in
+   mkdocs.yml, so Guide and CLI reference collapse to single entries until
+   the reader is inside them -- the always-visible list is ~14 items instead
+   of ~28, and the footer prev/next strip has been trimmed too (below). Both
+   make the shrink-to-visible-nothing case far rarer. But the underlying
+   mechanism is unchanged: whichever section IS expanded can still push the
+   list past viewport height on a short window, and it still has to scroll
+   internally when that happens. A permanent mask previously faded the final
+   1.5rem of this container, but it also made the footer transition look like
+   an overlap and obscured links even after the inner nav reached its end.
+   Leaving the native scroll edge visible makes the boundary unambiguous. */
+
+.md-sidebar--primary .md-nav__link {
+  margin-top: 0.5em;
+  padding-left: 0.6rem;
+}
+
+/* Rail: a 3px inset edge down the whole link. */
+.md-sidebar--primary .md-nav__link--active {
+  box-shadow: inset 3px 0 0 0 var(--md-accent-fg-color);
+}
+
+/* Dot: a real flex item, not a painted background.
+
+   Material makes .md-nav__link a flex container (`display: flex;
+   align-items: flex-start; gap: .4rem`), so a ::before becomes a laid-out
+   child -- it gets the gap for free, sits on the FIRST line of a wrapped
+   entry because of flex-start, and cannot be clipped because it is in normal
+   flow rather than positioned. The earlier background-gradient version had to
+   guess a vertical offset (`0.75em`) and got it wrong; here the geometry is
+   computed from the line box instead.
+
+   The slot is reserved on EVERY link and merely coloured in on the active
+   one. Adding the marker only when active would widen that link by
+   5px + 0.4rem gap and shove its text sideways as you scroll. */
+.md-sidebar--secondary .md-nav__link::before {
+  content: "";
+  flex: 0 0 5px;
+  height: 5px;
+  border-radius: 50%;
+  background-color: transparent;
+  /* Centre on the first line: half the 1.3 line-height, less half the dot. */
+  margin-top: calc(0.65em - 2.5px);
+  transition: background-color 125ms;
+}
+
+.md-sidebar--secondary .md-nav__link--active::before {
+  background-color: var(--md-accent-fg-color);
+  box-shadow: 0 0 0 3px var(--md-accent-fg-color--transparent);
+}
+
+/* --- Tables: zebra + a header that sits back ---------------------------- */
+/* The reference tables run long; banding is what makes a wide row scannable
+   across, and it does more for readability here than another accent would. */
+
+.md-typeset table:not([class]) th {
+  background-image: linear-gradient(180deg, var(--aviary-surface-sunken), transparent);
+}
+
+.md-typeset table:not([class]) tbody tr:nth-child(even) {
+  background-color: var(--aviary-zebra);
+}
+
+/* Hover still wins over the banding -- declared after, same specificity. */
+.md-typeset table:not([class]) tbody tr:hover {
+  background-color: var(--md-accent-fg-color--transparent);
+}
+
+/* --- Header: scroll progress hairline ----------------------------------- */
+/* Pure CSS scroll-driven animation, no JS and no scroll listener. Wrapped
+   in @supports because it is Chromium-only for now: elsewhere the header
+   simply has no progress line, which is a missing flourish, not a defect. */
+
+@supports (animation-timeline: scroll()) {
+  @media (prefers-reduced-motion: no-preference) {
+    .md-header::after {
+      content: "";
+      position: absolute;
+      left: 0;
+      bottom: -1px;
+      width: 100%;
+      height: 2px;
+      transform-origin: 0 50%;
+      background: linear-gradient(90deg, var(--aviary-brand-green), #2fa876);
+      animation: aviary-progress linear;
+      animation-timeline: scroll(root block);
+    }
+  }
+}
+
+@keyframes aviary-progress {
+  from { transform: scaleX(0); }
+  to   { transform: scaleX(1); }
+}
+
+/* ---------------------------------------------------------------------- */
+/* Footer                                                                  */
+/* ---------------------------------------------------------------------- */
+
+/* A brand-green edge fading out to the right, so the footer reads as a
+   deliberate end to the page rather than where the background changes. */
+.md-footer {
+  background-image: linear-gradient(90deg, var(--aviary-brand-green), transparent 55%);
+  background-repeat: no-repeat;
+  background-size: 100% 2px;
+}
+
+.md-footer-meta {
+  background-color: var(--md-footer-bg-color--dark);
+}
+
+/* Merge the previous/next strip and the copyright bar into one row instead
+   of two stacked full-width ones. Both were kept -- nothing here drops the
+   prev/next links or the copyright/social row, it just puts them side by
+   side so the footer's total height is one row's worth instead of two.
+   `.md-footer__inner` (the prev/next <nav>) and `.md-footer-meta` (copyright
+   + social) are siblings under `.md-footer` already, so this is a pure
+   layout change: no template override needed, and each block keeps its own
+   background/typography exactly as Material renders it.
+
+   flex-wrap is left on so this still falls back to the original two-row
+   stack on narrow viewports, where there usually isn't width to spare for a
+   side-by-side row anyway. */
+.md-footer {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+}
+
+.md-footer > .md-footer__inner {
+  flex: 1 1 auto;
+  min-width: 0;
+}
+
+.md-footer > .md-footer-meta {
+  flex: 0 0 auto;
+}
+
+/* Trim the previous/next strip. Material's defaults (.md-footer__link:
+   margin-top 1rem, margin-bottom .4rem; .md-footer__title: margin-bottom
+   .7rem) give it a taller footprint than the copyright bar next to it now,
+   and it's also part of what the sidebar scrollwrap has to make room for as
+   it scrolls into view (see the primary-nav comment further up this file) --
+   trimming it here means less of the sidebar has to shrink away for it.
+   Margins only, not font-size or padding on the button, so the click/tap
+   target stays full-sized. */
+.md-footer__link {
+  margin-top: 0.5rem;
+  margin-bottom: 0.2rem;
+}
+.md-footer__title {
+  margin-bottom: 0.35rem;
+}
+
+/* Match the copyright/social row's vertical rhythm to the trimmed prev/next
+   strip beside it, so the merged row reads as one deliberate bar rather than
+   two mismatched heights forced together. */
+.md-footer-meta__inner {
+  padding: 0.5rem 0;
+}
