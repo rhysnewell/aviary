@@ -12,8 +12,10 @@ rather than failing.
 The corresponding end-to-end coverage lives in test_integration.py.
 """
 
+import gzip
 import importlib.util
 import os
+import shutil
 import tempfile
 import unittest
 from unittest import mock
@@ -504,6 +506,77 @@ class TestMapperCliValidation(unittest.TestCase):
             "-1", os.path.join(self.DATA, "wgsim.1.fq.gz"),
             "-2", os.path.join(self.DATA, "wgsim.2.fq.gz")])
         self.assertEqual(result.returncode, 0, result.stdout + result.stderr)
+
+
+@unittest.skipUnless(shutil.which("seqkit") and shutil.which("pigz"),
+                      "seqkit/pigz not on PATH -- run inside the polishing pixi env")
+class TestSeqkitIdRegexpSuffixLeniency(unittest.TestCase):
+    """run_polish()'s seqkit_id_regexp must match a real seqkit read header,
+    not just the pattern strings polish.py itself writes.
+
+    Regression test for a bug where polish_meta_racon_ill silently extracted
+    zero reads and racon then died with "empty sequences set!". The old
+    regexp (`^(\\S+?)(?:/[12])?\\s?$`) end-anchors right after an optional
+    single trailing-whitespace character, so it only matched a header that
+    was a single whitespace-free token. wgsim -- the only read source the
+    existing racon-polishing integration tests in test_integration.py use --
+    always emits single-token headers (e.g.
+    "@CP006915.1_405386_405827_3:0:0_6:1:0_0/1"), so those tests kept passing
+    while never exercising this. Real short reads (SRA/fastq-dump output)
+    commonly carry a second, whitespace-separated description field on the
+    header, e.g. "@ERR10225372.1 E00582:421:H7WWLCCX2:8:1101:10176:25095/1"
+    -- which the old regexp could never match, however matching the pattern
+    file's ID exactly. This test runs the real seqkit binary (as
+    run_polish() does), not just the Python regex, so it catches seqkit's own
+    --id-regexp parsing behavior, not just a plausible-looking pattern.
+    """
+
+    def _extract(self, header, pattern):
+        """Run run_seqkit()'s current id_regexp against one read/pattern
+        pair and return the extracted (decompressed) fastq text, empty
+        string if nothing matched."""
+        with tempfile.TemporaryDirectory() as tmp:
+            reads_path = os.path.join(tmp, "reads.fq")
+            pattern_path = os.path.join(tmp, "pattern.lst")
+            output_path = os.path.join(tmp, "out.fastq.gz")
+            log_path = os.path.join(tmp, "log")
+            with open(reads_path, "w") as handle:
+                handle.write(f"{header}\nACGT\n+\nIIII\n")
+            with open(pattern_path, "w") as handle:
+                handle.write(f"{pattern}\n")
+
+            polish.run_seqkit(
+                reads=reads_path,
+                pattern_file=pattern_path,
+                output_file=output_path,
+                threads=1,
+                log=log_path,
+                id_regexp=polish.SEQKIT_MATE_SUFFIX_LENIENT_ID_REGEXP,
+                strip_mate_suffix_from_output=True,
+            )
+            with gzip.open(output_path, "rt") as handle:
+                return handle.read()
+
+    def test_extracts_read_with_sra_style_description_field(self):
+        # The exact shape from the bug report: clean_short_reads()'s "@" ->
+        # "@{pair}_" sed has already run, and the header carries a
+        # description field after the ID token.
+        extracted = self._extract(
+            header="@1_ERR10225372.1 E00582:421:H7WWLCCX2:8:1101:10176:25095/1",
+            pattern="1_ERR10225372.1",
+        )
+        self.assertIn("ERR10225372.1", extracted,
+                       "seqkit extracted nothing for a header with a "
+                       "description field -- this is the empty-reads bug")
+
+    def test_still_extracts_single_token_wgsim_style_header(self):
+        # Must not regress the header shape the existing racon-polishing
+        # integration tests actually run against.
+        extracted = self._extract(
+            header="@CP006915.1_405386_405827_3:0:0_6:1:0_0/1",
+            pattern="CP006915.1_405386_405827_3:0:0_6:1:0_0",
+        )
+        self.assertIn("CP006915.1_405386_405827_3", extracted)
 
 
 if __name__ == '__main__':
