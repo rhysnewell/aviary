@@ -7,5 +7,5 @@ pip==25.3
 polars==1.38.0
 pyOpenSSL==25.3.0
 ruamel.yaml==0.19.1
-setuptools==80.10.1
+setuptools==83.0.0
 snakemake
