@@ -16,8 +16,7 @@ name: Pixi dependency check
 # pixi.toml), capped; the full report goes to the job summary and artifact.
 
 on:
-  push:
-    branches: [main]
+  push: 
 
 permissions:
   contents: read
