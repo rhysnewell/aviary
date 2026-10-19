@@ -72,6 +72,9 @@ jobs:
                        "of this run.\n\n")
               report = open("updates.md").read()
               full = intro + report + footer
+              post = (intro + explicit +
+                      "\n*Implicit (transitive) dependency changes are in the job summary.*\n"
+                      + footer)
           open("full.md", "w").write(full)
           open("post.md", "w").write(post)
           PY
