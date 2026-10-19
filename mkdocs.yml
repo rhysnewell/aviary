@@ -17,8 +17,8 @@ exclude_docs: |
 theme:
   name: material
   custom_dir: docs/overrides
-  logo: _include/images/mini_logo.png
-  favicon: _include/images/mini_logo.png
+  logo: _include/images/aviary_logo.png
+  favicon: _include/images/aviary_logo.png
   language: en
   font:
     text: IBM Plex Sans
