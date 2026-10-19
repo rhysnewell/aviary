@@ -1,5 +1,22 @@
 # Changelog
 
+## v0.13.5 - 2026-10-19
+
+### Added
+
+- **`--myloasm-kmc`** / **`--myloasm-kmc-ram *`** — opt-in on-disk k-mer
+  counting for myloasm (>= 0.7) via `myloasm-kmc-v1`. Lowers RAM on complex
+  metagenomes; myloasm only.
+  ```"The on-disk k-mer counter for myloasm. Myloasm v0.7.0 (released Sept 9, 2026) allows for disk-based k-mer counting by using this binary as a standalone process via the --kmc option. This alleviates a RAM bottleneck for complex metagenomes."```
+
+### Fixed
+
+- **Short-read racon polishing** (`polish_meta_racon_ill`): failed with
+  `unequal lengths in sequence and overlap file` on paired-end reads, or
+  polished with the wrong mate when mates were the same length. QC'd reads
+  reach racon interleaved, and both mates shared one read ID. Every read now
+  gets a unique ID before mapping.
+
 ## v0.13.4 - 2026-10-07
 
 ### Fixed
