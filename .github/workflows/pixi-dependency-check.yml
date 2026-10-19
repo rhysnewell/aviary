@@ -9,11 +9,6 @@ name: Pixi dependency check
 #
 # Running on push rather than pull_request also means fork PRs get the
 # comment: push runs have a write token, fork pull_request runs do not.
-#
-# The full report for aviary is large (~270 KB: ~40 environments, hundreds of
-# implicit dependencies), well over GitHub's 65,536-character comment limit,
-# so the comment carries only the explicit dependencies (the ones named in
-# pixi.toml), capped; the full report goes to the job summary and artifact.
 
 on:
   push: 
@@ -77,15 +72,6 @@ jobs:
                        "of this run.\n\n")
               report = open("updates.md").read()
               full = intro + report + footer
-              # Explicit dependencies only: everything before the implicit table.
-              explicit = report.split("<details>\n<summary>Implicit dependencies", 1)[0]
-              limit = int(os.environ["MAX_POST_CHARS"]) - len(intro) - len(footer) - 200
-              if len(explicit) > limit:
-                  explicit = explicit[:limit].rsplit("\n", 1)[0] + (
-                      "\n\n*…truncated. Full table in the job summary.*\n</details>\n")
-              post = (intro + explicit +
-                      "\n*Implicit (transitive) dependency changes are in the job summary.*\n"
-                      + footer)
           open("full.md", "w").write(full)
           open("post.md", "w").write(post)
           PY
