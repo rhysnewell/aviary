@@ -9,7 +9,7 @@ Supports short-read, long-read, and hybrid workflows. Each module runs independe
 
 > **GitHub:** https://github.com/rhysnewell/aviary
 > **Docs:** https://rhysnewell.github.io/aviary
-> **Latest version:** 0.13.3
+> **Latest version:** 0.13.4
 
 
 ---
@@ -204,6 +204,8 @@ aviary assemble \
 | Flag                       | Description                                                        | Default    |
 |----------------------------|--------------------------------------------------------------------|------------|
 | `--long-read-assembler`    | `myloasm` \| `flye`                                                | `myloasm`  |
+| `--myloasm-kmc`            | Count myloasm k-mers on disk (lower RAM); myloasm only             | off        |
+| `--myloasm-kmc-ram GB`     | Memory budget for `--myloasm-kmc`                                  | 12         |
 | `--use-megahit`            | Use MEGAHIT instead of metaSPAdes for short reads                  | off        |
 | `--use-unicycler`          | Use Unicycler for metaSPAdes reassembly                            | off        |
 | `--coassemble`             | Co-assemble multiple input read sets                               | off        |

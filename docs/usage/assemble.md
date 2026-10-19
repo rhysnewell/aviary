@@ -59,6 +59,12 @@ Long-read assembly defaults to myloasm. Swap to Flye instead:
 aviary assemble --longreads reads.fastq.gz --long-read-type ont --long-read-assembler flye
 ```
 
+For large, complex metagenomes (soil, sediment), myloasm can count k-mers on disk
+instead of in memory, cutting peak RAM:
+```bash
+aviary assemble --longreads reads.fastq.gz --long-read-type ont --myloasm-kmc --myloasm-kmc-ram 32
+```
+
 ### Hybrid (short + long reads)
 
 ```bash
@@ -111,6 +117,14 @@ aviary assemble -1 s1_1.fq.gz s2_1.fq.gz -2 s1_2.fq.gz s2_2.fq.gz --coassemble n
 **`--long-read-assembler`** ASSEMBLER
 
   Long-read assembler to use. `myloasm` (default) or `flye`. [default: myloasm]
+
+**`--myloasm-kmc`**
+
+  Count myloasm's k-mers on disk with `myloasm-kmc-v1` instead of in memory. Lowers peak RAM on large, complex metagenomes at the cost of disk I/O; the assembly is otherwise the same. myloasm only: combining it with `--long-read-assembler flye` is an error. [default: off]
+
+**`--myloasm-kmc-ram`** GB
+
+  Memory budget for `--myloasm-kmc`. Ignored, with a warning, unless `--myloasm-kmc` is set. [default: 12, myloasm's own default]
 
 **`--medaka-model`** MODEL
 

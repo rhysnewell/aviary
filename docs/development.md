@@ -25,3 +25,11 @@ as below:
 ```bash
 pixi run -e dev pytest -v --run-expensive --run-qsub
 ```
+
+## Dependency check
+
+Every push runs `.github/workflows/pixi-dependency-check.yml`. It re-solves
+`aviary/pixi.lock` against the newest packages `aviary/pixi.toml` allows
+(installing nothing) and comments the out-of-date packages on the PR the commit
+belongs to. Pushes without a PR get the report in the job summary only; the
+re-solved lock is attached to the run as an artifact.

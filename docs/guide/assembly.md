@@ -44,6 +44,9 @@ aviary assemble \
 ## Important controls
 
 `--long-read-assembler` selects the supported long-read assembly implementation.
+With myloasm (the default), `--myloasm-kmc` counts k-mers on disk instead of in
+memory, which lowers peak RAM on large, complex metagenomes;
+`--myloasm-kmc-ram` sets that counter's memory budget.
 Quality-control thresholds affect which reads reach the assembler and should be
 chosen for the sequencing data, not copied mechanically between projects.
 `--min-contig-size` is accepted by `assemble` through its shared parser, but it

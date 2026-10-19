@@ -125,6 +125,14 @@ aviary complete --assembly sample1.fasta sample2.fasta \
 
   Long-read assembler: `myloasm` or `flye`. [default: myloasm]
 
+**`--myloasm-kmc`**
+
+  Count myloasm's k-mers on disk with `myloasm-kmc-v1` instead of in memory. Lowers peak RAM on large, complex metagenomes at the cost of disk I/O; the assembly is otherwise the same. myloasm only: combining it with `--long-read-assembler flye` is an error. [default: off]
+
+**`--myloasm-kmc-ram`** GB
+
+  Memory budget for `--myloasm-kmc`. Ignored, with a warning, unless `--myloasm-kmc` is set. [default: 12, myloasm's own default]
+
 **`--medaka-model`** MODEL
 
   Medaka model for long-read polishing. [default: r941_min_hac_g507]
