@@ -252,6 +252,8 @@ class Processor:
             self.longread_type = args.longread_type
             self.medaka_model = args.medaka_model
             self.long_read_assembler = getattr(args, "long_read_assembler", "myloasm")
+            self.myloasm_kmc = getattr(args, "myloasm_kmc", False)
+            self.myloasm_kmc_ram = getattr(args, "myloasm_kmc_ram", None)
             self.long_read_mapper = getattr(args, "long_read_mapper", None)
             self.short_read_mapper = getattr(args, "short_read_mapper", None)
             self.long_read_mapper_model = getattr(args, "long_read_mapper_model", None)
@@ -265,6 +267,8 @@ class Processor:
             self.longread_type = 'none'
             self.medaka_model = 'none'
             self.long_read_assembler = 'myloasm'
+            self.myloasm_kmc = False
+            self.myloasm_kmc_ram = None
             self.long_read_mapper = None
             self.short_read_mapper = None
             self.long_read_mapper_model = None
@@ -275,6 +279,15 @@ class Processor:
             self.minimap2_params = None
             self.rammap_params = None
         self.guppy_model = getattr(args, 'guppy_model', 'r941_min_hac_g507')
+
+        if self.myloasm_kmc and self.long_read_assembler != "myloasm":
+            logging.error(f"--myloasm-kmc requires --long-read-assembler myloasm, not {self.long_read_assembler}.")
+            sys.exit(-1)
+        if self.myloasm_kmc_ram is not None and self.myloasm_kmc_ram <= 0:
+            logging.error("--myloasm-kmc-ram must be a positive number of GB")
+            sys.exit(-1)
+        if self.myloasm_kmc_ram is not None and not self.myloasm_kmc:
+            logging.warning("--myloasm-kmc-ram has no effect without --myloasm-kmc; ignoring.")
 
         try:
             self.short_percent_identity = args.short_percent_identity
@@ -671,6 +684,8 @@ class Processor:
         # rather than omitted.
         conf["long_read_type_spades"] = LONG_READ_TYPE_TO_SPADES.get(self.longread_type, "none")
         conf["long_read_assembler"] = self.long_read_assembler
+        conf["myloasm_kmc"] = self.myloasm_kmc
+        conf["myloasm_kmc_ram"] = self.myloasm_kmc_ram if self.myloasm_kmc_ram is not None else "none"
         conf["long_read_mapper"] = self.long_read_mapper
         conf["long_read_mapper_model"] = self.long_read_mapper_model or "none"
         conf["minibwa_params"] = self.minibwa_params or "none"
