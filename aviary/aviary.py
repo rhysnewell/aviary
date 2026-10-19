@@ -660,6 +660,24 @@ def main():
     )
 
     long_read_group.add_argument(
+        '--myloasm-kmc', '--myloasm_kmc', '--kmc',
+        help='Count k-mers on disk with myloasm-kmc-v1 instead of in memory. '
+             'Lowers RAM on complex metagenomes at the cost of disk I/O; '
+             'results are otherwise identical. myloasm only.',
+        dest='myloasm_kmc',
+        action='store_true',
+        default=False,
+    )
+
+    long_read_group.add_argument(
+        '--myloasm-kmc-ram', '--myloasm_kmc_ram', '--kmc-ram',
+        help='Memory budget in GB for --myloasm-kmc [default: myloasm\'s own, 12].',
+        dest='myloasm_kmc_ram',
+        type=int,
+        default=None,
+    )
+
+    long_read_group.add_argument(
         '--medaka-model', '--medaka_model',
         help='Medaka model to use for polishing long reads. \n',
         dest='medaka_model',

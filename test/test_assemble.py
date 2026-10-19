@@ -3,6 +3,8 @@
 import unittest
 import os
 import tempfile
+import importlib.util
+from unittest import mock
 import extern
 
 path_to_data = os.path.join(os.path.dirname(os.path.realpath(__file__)),'data')
@@ -353,6 +355,52 @@ class Tests(unittest.TestCase):
             self.assertTrue("long_read_assembly" in output)
             self.assertTrue("logs/myloasm_assembly.log" in output)
             self.assertTrue("logs/flye_assembly.log" not in output)
+
+    def test_myloasm_kmc_is_written_to_config(self):
+        with tempfile.TemporaryDirectory() as tmpdir:
+            self.run_dryrun(f"-l {LONG_READS} --longread-type ont --myloasm-kmc --myloasm-kmc-ram 8", tmpdir)
+            with open(f"{tmpdir}/test/config.yaml") as config:
+                text = config.read()
+            self.assertIn("myloasm_kmc: true", text)
+            self.assertIn("myloasm_kmc_ram: 8", text)
+
+    def test_myloasm_kmc_is_rejected_for_flye(self):
+        with tempfile.TemporaryDirectory() as tmpdir:
+            with self.assertRaises(extern.ExternCalledProcessError):
+                self.run_dryrun(
+                    f"-l {LONG_READS} --longread-type ont --long-read-assembler flye --myloasm-kmc", tmpdir)
+
+
+class TestRunMyloasmCommand(unittest.TestCase):
+    """run_myloasm.py turns --kmc/--kmc-ram into myloasm's own flags."""
+
+    spec = importlib.util.spec_from_file_location(
+        "run_myloasm", os.path.join(os.path.dirname(os.path.dirname(os.path.realpath(__file__))),
+                                    "aviary", "modules", "assembly", "scripts", "run_myloasm.py"))
+
+    def _cmd(self, **kwargs):
+        try:
+            module = importlib.util.module_from_spec(self.spec)
+            self.spec.loader.exec_module(module)
+        except ImportError as error:  # Bio lives in the myloasm env
+            self.skipTest(f"run_myloasm.py needs {error.name}")
+        with tempfile.TemporaryDirectory() as tmpdir, \
+                mock.patch.object(module.subprocess, "run") as run, \
+                mock.patch.object(module, "write_assembly_info"):
+            open(os.path.join(tmpdir, "assembly.fasta"), "w").close()
+            module.run_myloasm("reads.fq.gz", tmpdir, "ont", 4, os.path.join(tmpdir, "log"), **kwargs)
+            return run.call_args.args[0]
+
+    def test_kmc_off_by_default(self):
+        self.assertNotIn("--kmc", self._cmd())
+
+    def test_kmc_with_ram_budget(self):
+        cmd = self._cmd(kmc=True, kmc_ram=8)
+        self.assertEqual(cmd[cmd.index("--kmc"):], ["--kmc", "--kmc-ram", "8"])
+
+    def test_kmc_without_ram_uses_myloasm_default(self):
+        self.assertNotIn("--kmc-ram", self._cmd(kmc=True))
+
 
 if __name__ == '__main__':
     unittest.main()

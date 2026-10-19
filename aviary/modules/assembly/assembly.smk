@@ -153,7 +153,9 @@ else:
             info = LONG_ASSEMBLY_INFO,
         params:
             long_read_type = config["long_read_type"],
-            output_dir = LONG_ASSEMBLY_DIR
+            output_dir = LONG_ASSEMBLY_DIR,
+            kmc = "" if not config.get("myloasm_kmc", False) else "--kmc" + (
+                "" if config.get("myloasm_kmc_ram", "none") == "none" else f" --kmc-ram {config['myloasm_kmc_ram']}"),
         threads:
             config["max_threads"]
         resources:
@@ -170,6 +172,7 @@ else:
             --input-fastq {input.fastq} \
             --output-dir {params.output_dir} \
             --threads {threads} \
+            {params.kmc} \
             --log {log}
             """
 

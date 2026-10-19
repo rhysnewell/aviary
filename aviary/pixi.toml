@@ -217,7 +217,8 @@ flye = ">=2.9"
 biopython = "*"
 
 [feature.myloasm.dependencies]
-myloasm = "*"
+myloasm = ">=0.7.0"  # --kmc needs 0.7
+myloasm-kmc = "*"  # myloasm-kmc-v1, used only with --myloasm-kmc (GPL-3, so a separate package)
 biopython = "*"
 
 [feature.polishing.dependencies]
