@@ -6,8 +6,9 @@
 
 - **`--myloasm-kmc`** / **`--myloasm-kmc-ram *`** — opt-in on-disk k-mer
   counting for myloasm (>= 0.7) via `myloasm-kmc-v1`. Lowers RAM on complex
-  metagenomes; myloasm only.
-  ```"The on-disk k-mer counter for myloasm. Myloasm v0.7.0 (released Sept 9, 2026) allows for disk-based k-mer counting by using this binary as a standalone process via the --kmc option. This alleviates a RAM bottleneck for complex metagenomes."```
+  metagenomes; myloasm only. The on-disk k-mer counter is a standalone
+  process that myloasm v0.7.0 (released Sept 9, 2026) drives through its
+  `--kmc` option.
 
 ### Fixed
 
