@@ -6,9 +6,17 @@
 
 - **`--myloasm-kmc`** / **`--myloasm-kmc-ram *`** — opt-in on-disk k-mer
   counting for myloasm (>= 0.7) via `myloasm-kmc-v1`. Lowers RAM on complex
-  metagenomes; myloasm only. The on-disk k-mer counter is a standalone
-  process that myloasm v0.7.0 (released Sept 9, 2026) drives through its
-  `--kmc` option.
+  metagenomes; myloasm only. Counting now runs as its own Snakemake rule
+  (`count_kmers_kmc`) ahead of the assembly step, so its scratch space (needs
+  free disk comparable to the input read size) can be pointed at `--tmpdir`
+  independently, and its RAM budget no longer inflates the main assembly
+  job's memory request. myloasm loads the result via its own
+  `--kmc-stranded-db` option.
+- **Automatic on-disk k-mer counting as a last-resort retry fallback**: when
+  `--cluster-retries N` (N >= 1) is set but `--myloasm-kmc` wasn't requested,
+  the final retry attempt automatically switches myloasm to the on-disk
+  counter instead of giving up. Earlier attempts still use the fast
+  in-memory counter; only the last attempt pays the disk-I/O cost.
 
 ### Fixed
 
