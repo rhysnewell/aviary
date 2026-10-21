@@ -146,11 +146,9 @@ else:
     # Count k-mers on disk, decoupled from the assembly step so its scratch space
     # (needs free disk comparable to the input read size) can be pointed at
     # --tmpdir independently, and its own RAM budget doesn't inflate the main
-    # assembly job's resource request. Runs whenever --myloasm-kmc was requested,
-    # or whenever --cluster-retries is set (as an automatic last-resort fallback
-    # for the final retry attempt -- see long_read_assembly's kmc_flag below).
-    CLUSTER_RETRIES = int(config.get("cluster_retries", 0) or 0)
-    KMC_MAYBE = config.get("myloasm_kmc", False) or CLUSTER_RETRIES >= 1
+    # assembly job's resource request. Opt-in only: runs when --myloasm-kmc was
+    # requested.
+    KMC_MAYBE = config.get("myloasm_kmc", False)
     KMC_DB_BASE = f"{LONG_ASSEMBLY_DIR}/kmc_counts"
 
     rule count_kmers_kmc:
@@ -198,22 +196,12 @@ else:
         params:
             long_read_type = config["long_read_type"],
             output_dir = LONG_ASSEMBLY_DIR,
+            kmc_flag = f"--kmc-stranded-db {KMC_DB_BASE}" if KMC_MAYBE else "",
         threads:
             config["max_threads"]
         resources:
             mem_mb = lambda wildcards, attempt: min(int(config["max_memory"])*1024, 512*1024*attempt),
             runtime = lambda wildcards, attempt: 24*60 + 24*60*attempt,
-            # Always on if the user asked for --myloasm-kmc; otherwise only on the
-            # final retry attempt (attempt == CLUSTER_RETRIES + 1), as a last-resort
-            # fallback -- earlier attempts still use the fast in-memory counter.
-            # A `resources:` entry (not `params:`) because only resources callables
-            # are passed `attempt` by Snakemake; referenced below as {resources.kmc_flag},
-            # same pattern as the existing {resources.log_path} elsewhere in this file.
-            kmc_flag = (lambda wildcards, attempt:
-                f"--kmc-stranded-db {KMC_DB_BASE}"
-                if (config.get("myloasm_kmc", False) or attempt == CLUSTER_RETRIES + 1)
-                else ""
-            ) if KMC_MAYBE else "",
         log:
             "logs/myloasm_assembly.log"
         benchmark:
@@ -225,7 +213,7 @@ else:
             --input-fastq {input.fastq} \
             --output-dir {params.output_dir} \
             --threads {threads} \
-            {resources.kmc_flag} \
+            {params.kmc_flag} \
             --log {log}
             """
 

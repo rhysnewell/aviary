@@ -104,9 +104,6 @@ class Processor:
         self.workflows = args.workflow
         self.request_gpu = args.request_gpu
         self.strict = args.strict
-        # Needed (not just the run_workflow() arg) so assembly.smk can tell, from
-        # config.yaml alone, which attempt is the final one -- see myloasm_kmc.
-        self.cluster_retries = int(getattr(args, "cluster_retries", 0) or 0)
 
         try:
             self.skip_reads_check = args.skip_reads_check
@@ -689,7 +686,6 @@ class Processor:
         conf["long_read_assembler"] = self.long_read_assembler
         conf["myloasm_kmc"] = self.myloasm_kmc
         conf["myloasm_kmc_ram"] = self.myloasm_kmc_ram if self.myloasm_kmc_ram is not None else "none"
-        conf["cluster_retries"] = self.cluster_retries
         conf["long_read_mapper"] = self.long_read_mapper
         conf["long_read_mapper_model"] = self.long_read_mapper_model or "none"
         conf["minibwa_params"] = self.minibwa_params or "none"
