@@ -374,10 +374,14 @@ class Tests(unittest.TestCase):
         subprocess.run(cmd, shell=True, check=True)
 
         self.assertTrue(os.path.isfile(f"{output_dir}/aviary_out/data/final_contigs.fasta"))
+        # k-mers are counted by their own rule, within the requested RAM budget...
+        with open(f"{output_dir}/aviary_out/logs/myloasm_kmc_counting.log") as log:
+            self.assertIn("4 GB of RAM", log.read())
+        # ...and myloasm loads that database instead of counting them itself.
         with open(f"{output_dir}/aviary_out/logs/myloasm_assembly.log") as log:
             text = log.read()
-        self.assertIn("--kmc --kmc-ram 4", text)
-        self.assertIn("Counting k-mers on disk", text)
+        self.assertIn("--kmc-stranded-db", text)
+        self.assertIn("Using precomputed k-mer count database", text)
 
     def test_long_read_assembly_flye(self):
         output_dir = os.path.join("example", "test_long_read_assembly_flye")

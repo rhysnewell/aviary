@@ -127,7 +127,7 @@ aviary complete --assembly sample1.fasta sample2.fasta \
 
 **`--myloasm-kmc`**
 
-  Count myloasm's k-mers on disk with `myloasm-kmc-v1` instead of in memory. Lowers peak RAM on large, complex metagenomes at the cost of disk I/O; the assembly is otherwise the same. myloasm only: combining it with `--long-read-assembler flye` is an error. [default: off]
+  Count myloasm's k-mers on disk with `myloasm-kmc-v1` instead of in memory. Lowers peak RAM on large, complex metagenomes at the cost of disk I/O; the assembly is otherwise the same. Counting runs as its own step before assembly and needs free scratch disk comparable to the size of the long reads, in `--tmpdir` if you set one. myloasm only: combining it with `--long-read-assembler flye` is an error. [default: off]
 
 **`--myloasm-kmc-ram`** GB
 
