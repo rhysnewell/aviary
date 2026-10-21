@@ -11,12 +11,8 @@
   free disk comparable to the input read size) can be pointed at `--tmpdir`
   independently, and its RAM budget no longer inflates the main assembly
   job's memory request. myloasm loads the result via its own
-  `--kmc-stranded-db` option.
-- **Automatic on-disk k-mer counting as a last-resort retry fallback**: when
-  `--cluster-retries N` (N >= 1) is set but `--myloasm-kmc` wasn't requested,
-  the final retry attempt automatically switches myloasm to the on-disk
-  counter instead of giving up. Earlier attempts still use the fast
-  in-memory counter; only the last attempt pays the disk-I/O cost.
+  `--kmc-stranded-db` option. Opt-in only -- always off unless explicitly
+  requested.
 
 ### Fixed
 
