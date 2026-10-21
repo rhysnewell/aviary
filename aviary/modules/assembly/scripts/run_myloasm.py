@@ -64,7 +64,7 @@ def ensure_placeholder(path: str) -> None:
 
 def run_myloasm(
     input_fastq: str, output_dir: str, long_read_type: str, threads: int, log: str,
-    kmc: bool = False, kmc_ram: int | None = None,
+    kmc_stranded_db: str | None = None,
 ) -> None:
     os.makedirs(output_dir, exist_ok=True)
     assembly_fasta = os.path.join(output_dir, "assembly.fasta")
@@ -84,11 +84,10 @@ def run_myloasm(
     ]
     if long_read_type and long_read_type.lower() in {"hifi", "ccs"}:
         cmd.append("--hifi")
-    if kmc:
-        # Disk-based k-mer counting; myloasm finds myloasm-kmc-v1 on PATH itself.
-        cmd.append("--kmc")
-        if kmc_ram is not None:
-            cmd.extend(["--kmc-ram", str(kmc_ram)])
+    if kmc_stranded_db is not None:
+        # Load a database counted standalone by myloasm-kmc-v1 (run_myloasm_kmc.py /
+        # the count_kmers_kmc rule), instead of counting k-mers itself.
+        cmd.extend(["--kmc-stranded-db", kmc_stranded_db])
 
     with open(log, "w") as logf:
         try:
@@ -131,8 +130,7 @@ if __name__ == "__main__":
     parser.add_argument("--long-read-type", default="ont", help="Long read technology")
     parser.add_argument("--threads", type=int, default=8, help="Number of threads")
     parser.add_argument("--log", required=True, help="Log file")
-    parser.add_argument("--kmc", action="store_true", help="Count k-mers with myloasm-kmc-v1")
-    parser.add_argument("--kmc-ram", type=int, default=None, help="RAM budget in GB for --kmc")
+    parser.add_argument("--kmc-stranded-db", default=None, help="Load k-mer counts from a database made by myloasm-kmc-v1")
 
     args = parser.parse_args()
 
@@ -142,6 +140,5 @@ if __name__ == "__main__":
         long_read_type=args.long_read_type,
         threads=args.threads,
         log=args.log,
-        kmc=args.kmc,
-        kmc_ram=args.kmc_ram,
+        kmc_stranded_db=args.kmc_stranded_db,
     )
