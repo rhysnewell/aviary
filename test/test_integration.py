@@ -26,6 +26,7 @@ import os
 import os.path
 import subprocess
 import shutil
+import csv
 import unittest
 import glob
 import random
@@ -902,6 +903,68 @@ class Tests(unittest.TestCase):
 
         self.assertFalse(os.path.isfile(f"{output_dir}/aviary_out/data/final_contigs.fasta"))
 
+    def test_short_read_recovery_metacat(self):
+        suffix = "_gpu" if os.environ.get("TEST_REQUEST_GPU") == "1" else ""
+        output_dir = os.path.join("example", f"test_short_read_recovery_metacat{suffix}")
+        logs_dir = os.path.join(output_dir, "aviary_out", "logs")
+        logs_backup = logs_dir + ".bak"
+        if os.path.exists(logs_dir):
+            shutil.copytree(logs_dir, logs_backup)
+        setup_output_dir(output_dir)
+        if os.path.exists(logs_backup):
+            os.makedirs(os.path.join(output_dir, "aviary_out"), exist_ok=True)
+            shutil.copytree(logs_backup, logs_dir)
+            shutil.rmtree(logs_backup)
+
+        # Create inflated assembly file. MetaCAT's cluster step does PCA
+        # (--min-pca-components defaults to 20) before GMM/SWDPGMM clustering,
+        # so like COMEBin's hnswlib embedding it needs more distinguishable
+        # contigs than the toy assembly alone provides.
+        write_inflated_assembly(f"{data}/assembly.fasta", f"{output_dir}/assembly.fasta")
+
+        cmd = (
+            f"aviary recover "
+            f"--assembly {output_dir}/assembly.fasta "
+            f"-o {output_dir}/aviary_out "
+            f"-1 {data}/wgsim.1.fq.gz "
+            f"-2 {data}/wgsim.2.fq.gz "
+            f"--binning-only "
+            f"--skip-binners rosella semibin metabat vamb "
+            f"{request_gpu} "
+            f"--skip-qc "
+            f"--refinery-max-iterations 0 "
+            f"-n 32 -t 32 "
+            f"--strict "
+        )
+        subprocess.run(cmd, shell=True, check=True)
+
+        bin_info_path = f"{output_dir}/aviary_out/bins/bin_info.tsv"
+        self.assertTrue(os.path.isfile(bin_info_path))
+        with open(bin_info_path) as f:
+            num_lines = sum(1 for _ in f)
+        self.assertTrue(num_lines > 2)
+
+        self.assertFalse(os.path.isfile(f"{output_dir}/aviary_out/data/final_contigs.fasta"))
+
+        # Surface the binner's own Snakemake `benchmark:` output (walltime,
+        # peak memory, CPU load) rather than only checking it exists, so a
+        # regression that makes the GPU path quietly fall back to CPU speed
+        # -- or blow out memory -- is visible in the test log, not just
+        # something you'd have to notice by hand in the run's own output dir.
+        benchmark_path = f"{output_dir}/aviary_out/benchmarks/metacat.benchmark.txt"
+        self.assertTrue(os.path.isfile(benchmark_path))
+        with open(benchmark_path) as f:
+            row = next(csv.DictReader(f, delimiter="\t"))
+        walltime_s = float(row["s"])
+        max_rss_mb = float(row["max_rss"])
+        print(
+            f"MetaCAT benchmark ({'gpu' if suffix else 'cpu'}): "
+            f"walltime={walltime_s:.1f}s max_rss={max_rss_mb:.1f}MB "
+            f"mean_load={row['mean_load']}%"
+        )
+        self.assertGreater(walltime_s, 0)
+        self.assertGreater(max_rss_mb, 0)
+
     def test_short_read_recovery_quickbin(self):
         output_dir = os.path.join("example", "test_short_read_recovery_quickbin")
         setup_output_dir(output_dir)
@@ -1358,7 +1421,8 @@ class Tests(unittest.TestCase):
             f"-1 {data}/tiny_sample.1.fq "
             f"-2 {data}/tiny_sample.2.fq "
             f"--binning-only "
-            f"--skip-binners rosella vamb semibin metabat1 "
+            # MetaCAT also bins on composition, so it finds bins even at zero depth
+            f"--skip-binners rosella vamb semibin metabat1 metacat "
             f"--skip-qc "
             f"--refinery-max-iterations 0 "
             f"-n 32 -t 32 "
