@@ -279,6 +279,10 @@ class Processor:
             self.minimap2_params = None
             self.rammap_params = None
         self.guppy_model = getattr(args, 'guppy_model', 'r941_min_hac_g507')
+        self.metacat_options = {
+            stage: getattr(args, f"metacat_{stage}_params", "")
+            for stage in ("coverage", "seed", "cluster")
+        }
 
         if self.myloasm_kmc and self.long_read_assembler != "myloasm":
             logging.error(f"--myloasm-kmc requires --long-read-assembler myloasm, not {self.long_read_assembler}.")
@@ -486,7 +490,7 @@ class Processor:
         # unaffected. Auto-skip the BAM-only binners with a warning rather
         # than fail mid-run.
         if self.short_read_mapper == "strobealign-aemb":
-            bam_only_binners = ("semibin", "concoct", "comebin", "quickbin")
+            bam_only_binners = ("semibin", "concoct", "comebin", "quickbin", "metacat")
             newly_skipped = [b for b in bam_only_binners if b not in self.skip_binners]
             if newly_skipped:
                 logging.warning(
@@ -567,6 +571,19 @@ class Processor:
                 "--short-read-mapper or --long-read-mapper."
             )
             sys.exit(-1)
+
+        # MetaCAT runs by default (opt out with --skip-binners metacat), so check how
+        # its tuning options interact with that opt-out even when not asked for.
+        if ("metacat" not in self.skip_binners and "none" not in self.skip_binners
+                and self.longreads != "none" and self.pe1 != "none"):
+            logging.warning(
+                "MetaCAT uses one coverage mode for the mixed short/long BAM collection; "
+                "--metacat-coverage-params='--long' applies to every BAM. "
+                "Use homogeneous recovery inputs when distinct coverage modes are required."
+            )
+        if any(self.metacat_options.values()) and "metacat" in self.skip_binners:
+            logging.error("MetaCAT options were given but MetaCAT is skipped; remove --skip-binners metacat")
+            sys.exit(1)
 
 
     def make_config(self):
@@ -684,6 +701,7 @@ class Processor:
         # rather than omitted.
         conf["long_read_type_spades"] = LONG_READ_TYPE_TO_SPADES.get(self.longread_type, "none")
         conf["long_read_assembler"] = self.long_read_assembler
+        conf["metacat_options"] = self.metacat_options
         conf["myloasm_kmc"] = self.myloasm_kmc
         conf["myloasm_kmc_ram"] = self.myloasm_kmc_ram if self.myloasm_kmc_ram is not None else "none"
         conf["long_read_mapper"] = self.long_read_mapper

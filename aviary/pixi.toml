@@ -170,6 +170,8 @@ semibin = ["semibin", "cpu"]
 semibin-gpu = ["semibin","semibin-gpu"]
 comebin = ["comebin", "cpu"]
 comebin-gpu = ["comebin", "comebin-gpu"]
+metacat = ["metacat", "cpu"]
+metacat-gpu = ["metacat", "metacat-gpu"]
 # Annotation
 eggnog = ["eggnog", "cpu"]
 gtdbtk = ["gtdbtk", "cpu"]
