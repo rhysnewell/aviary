@@ -41,6 +41,7 @@ modules are added to aviary.
 - **CONCOCT**: Alneberg, J. et al. Binning metagenomic contigs by coverage and composition. Nat Methods 11, 1144–1146 (2014). https://doi.org/10.1038/nmeth.3103
 - **VAMB**: Nissen, J.N. et al. Improved metagenome binning and assembly using deep variational autoencoders. Nature Biotechnology 1–6 (2021) doi:10.1038/s41587-020-00777-4. https://doi.org/10.1038/s41587-020-00777-4
 - **MetaBAT**: Kang, D.D., Froula, J., Egan, R. & Wang, Z. MetaBAT, an efficient tool for accurately reconstructing single genomes from complex microbial communities. PeerJ 3, e1165 (2015). https://doi.org/10.7717/peerj.1165
+- **MetaCAT**: Liu, CC., Dong, SS., Guo, J. et al. MetaCAT enables reconstruction of high-quality microbial genomes and their association with host traits from metagenomic data. Nature Microbiology (2026). https://doi.org/10.1038/s41564-026-02472-7
 - **MetaBAT2**: Kang, D.D. et al. MetaBAT 2: an adaptive binning algorithm for robust and efficient genome reconstruction from metagenome assemblies. PeerJ 7, (2019). https://doi.org/10.7717/peerj.7359
 - **DAS Tool**: Sieber, C.M.K. et al. Recovery of genomes from metagenomes via a dereplication, aggregation and scoring strategy. Nature Microbiology 3, 836–843 (2018). https://doi.org/10.1038/s41564-018-0171-1
 - **QuickBin**: Bushnell, B. & Villada, J.C. Deployable high-fidelity metagenome binning at scale with QuickBin. bioRxiv (2026). https://doi.org/10.64898/2026.01.08.698506

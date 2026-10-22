@@ -43,7 +43,7 @@ SemiBin2 is configured, and what happens after binning.
 
 ### Choosing which binning algorithms run
 
-`rosella`, `semibin`, `metabat1`/`metabat2` and `vamb` run by default; `maxbin2`, `concoct`,
+`rosella`, `semibin`, `metabat1`/`metabat2`, `vamb` and `metacat` run by default; `maxbin2`, `concoct`,
 `comebin`, `taxvamb` and `quickbin` are skipped by default because of their runtime. Turn extras
 on, or drop defaults you don't want (e.g. `vamb` is memory-hungry on large assemblies):
 ```bash
@@ -95,6 +95,21 @@ aviary recover --assembly scaffolds.fasta -1 reads_1.fq.gz -2 reads_2.fq.gz \
 aviary recover --assembly scaffolds.fasta -1 reads_1.fq.gz -2 reads_2.fq.gz \
   --refinery-max-retries 6
 ```
+
+### Tuning MetaCAT
+
+MetaCAT runs by default; opt out with `--skip-binners metacat`. Aviary runs its `coverage`, `seed` and `cluster` stages in turn, then renames the cluster FASTA files to `.fna` for DAS Tool. Each stage's option string is passed to MetaCAT as given, so a typo is reported by MetaCAT itself (see `MetaCAT <stage> --help` for all options).
+
+Aviary supplies the input and output paths, thread counts, `--temp` and `--swdpgmm-engine` (`cpu`, or `gpu` with `--request-gpu`), so don't set those yourself. Like the other binners, MetaCAT is held to `--min-contig-size` (as `--min-sequence-length` for `coverage` and `cluster`) and `--min-bin-size` (as `--min-cluster`); options you give are placed after these, so they take precedence. Completeness and contamination filtering is applied after DAS Tool to all binners alike. `--long` is added to `coverage` for long-read-only runs unless you pass `--long`/`-l` yourself; a mixed short and long BAM collection uses one coverage mode for all BAMs, so run the technologies separately if they need different modes.
+
+```bash
+aviary recover --assembly assembly.fasta -1 R1.fq.gz -2 R2.fq.gz \
+  --metacat-coverage-params='--identity 0.95 --mapq 10' \
+  --metacat-cluster-params='--min-pca-components 10 --random-number 42' \
+  -t 8 -n 8 -o recovery
+```
+
+Use `--option='...'` when the value begins with a dash.
 
 ### Large sample cohorts
 
@@ -293,7 +308,11 @@ These five flags all decide which Flye contigs make it into the assembly before 
 
 **`--skip-binners`** BINNER [BINNER ...]
 
-  Binning algorithms to skip: `rosella`, `semibin`, `metabat1`, `metabat2`, `metabat`, `vamb`, `quickbin`.
+  Binning algorithms to skip: `rosella`, `semibin`, `metabat1`, `metabat2`, `metabat`, `vamb`, `quickbin`, `metacat`.
+
+**`--metacat-coverage-params`**, **`--metacat-seed-params`**, **`--metacat-cluster-params`** STR
+
+  Quoted MetaCAT options for each stage, passed to MetaCAT as given (see [Tuning MetaCAT](#tuning-metacat)). Input/output paths, threads and GPU selection are managed by Aviary. Giving these with `--skip-binners metacat` is an error.
 
 **`--semibin-model`** MODEL
 
@@ -448,7 +467,7 @@ These five flags all decide which Flye contigs make it into the assembly before 
 
     **`--request-gpu`**
 
-      Request a GPU for the pipeline (taxvamb, comebin, semibin). Only takes effect when run on a cluster. [default: false]
+      Request a GPU for the pipeline (taxvamb, comebin, semibin, metacat). Only takes effect when run on a cluster. [default: false]
 
     **`--snakemake-cmds`** STRING
 

@@ -246,7 +246,11 @@ aviary complete --assembly sample1.fasta sample2.fasta \
 
 **`--skip-binners`** BINNER [BINNER ...]
 
-  Binning algorithms to skip: `rosella`, `semibin`, `metabat1`, `metabat2`, `metabat` and `vamb`.
+  Binning algorithms to skip: `rosella`, `semibin`, `metabat1`, `metabat2`, `metabat`, `vamb`, `quickbin` and `metacat`.
+
+**`--metacat-coverage-params`**, **`--metacat-seed-params`**, **`--metacat-cluster-params`** STR
+
+  Quoted MetaCAT options for each stage, passed to MetaCAT as given (see [Tuning MetaCAT](recover.md#tuning-metacat)). Input/output paths, threads and GPU selection are managed by Aviary. Giving these with `--skip-binners metacat` is an error.
 
 **`--semibin-model`** MODEL
 
@@ -401,7 +405,7 @@ aviary complete --assembly sample1.fasta sample2.fasta \
 
     **`--request-gpu`**
 
-      Request a GPU for the pipeline (taxvamb, comebin, semibin). Only takes effect when run on a cluster. [default: false]
+      Request a GPU for the pipeline (taxvamb, comebin, semibin, metacat). Only takes effect when run on a cluster. [default: false]
 
     **`--snakemake-cmds`** STRING
 
