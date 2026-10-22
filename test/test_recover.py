@@ -196,7 +196,7 @@ class Tests(unittest.TestCase):
 
     def test_recover_strobealign_aemb_auto_skips_bam_only_binners(self):
         """--short-read-mapper strobealign-aemb never produces a BAM file, so
-        BAM-only binners (semibin/concoct/comebin/quickbin) must be
+        BAM-only binners (semibin/concoct/comebin/quickbin/metacat) must be
         auto-skipped with a warning rather than failing deep in the DAG.
         Coverage-table binners (rosella/metabat2/vamb) are unaffected."""
         with tempfile.TemporaryDirectory() as tmpdir:
@@ -225,11 +225,13 @@ class Tests(unittest.TestCase):
 
             self.assertIn("strobealign-aemb produces no BAM file", stderr)
             self.assertIn("semibin", stderr)
+            self.assertIn("metacat", stderr)
 
             # concoct/comebin/quickbin are already skipped by default (see
-            # test_recover_skip_binners), so semibin is the only rule this
-            # auto-skip newly removes from the DAG here.
+            # test_recover_skip_binners), so semibin and metacat (a default
+            # binner) are the rules this auto-skip newly removes from the DAG here.
             self.assertNotRegex(stdout, r"rule semibin:")
+            self.assertNotRegex(stdout, r"rule metacat:")
             self.assertNotRegex(stdout, r"rule concoct:")
             self.assertNotRegex(stdout, r"rule comebin:")
             self.assertNotRegex(stdout, r"rule quickbin:")
@@ -789,6 +791,141 @@ class Tests(unittest.TestCase):
             config = load_configfile(os.path.join(tmpdir, "test", "config.yaml"))
 
             self.assertEqual(config["minibwa_params"], "-x lr")
+
+    def test_metacat_options_reach_recovery_config(self):
+        with tempfile.TemporaryDirectory() as tmpdir:
+            cmd = (
+                f"GTDBTK_DATA_PATH=. CHECKM2DB=. EGGNOG_DATA_DIR=. "
+                f"METABULI_DB_PATH=. SINGLEM_METAPACKAGE_PATH=. "
+                f"aviary recover --assembly {ASSEMBLY} "
+                f"-1 {FORWARD_READS} -2 {REVERSE_READS} "
+                "--metacat-coverage-params='--mapq 15' "
+                "--metacat-cluster-params='--min-cluster 10' "
+                f"--output {tmpdir}/test --tmpdir {tmpdir} --dryrun "
+            )
+            extern.run(cmd)
+            config = load_configfile(os.path.join(tmpdir, "test", "config.yaml"))
+            self.assertEqual(config["metacat_options"], {
+                "coverage": "--mapq 15", "seed": "", "cluster": "--min-cluster 10"})
+            self.assertNotIn("metacat", config["skip_binners"])
+
+    def test_metacat_runs_by_default_and_can_be_skipped(self):
+        for extra, expect_skipped in (("", False), ("--skip-binners metacat", True)):
+            with tempfile.TemporaryDirectory() as tmpdir:
+                extern.run(
+                    f"GTDBTK_DATA_PATH=. CHECKM2DB=. EGGNOG_DATA_DIR=. "
+                    f"METABULI_DB_PATH=. SINGLEM_METAPACKAGE_PATH=. "
+                    f"aviary recover --assembly {ASSEMBLY} -1 {FORWARD_READS} -2 {REVERSE_READS} "
+                    f"{extra} --output {tmpdir}/test --tmpdir {tmpdir} --dryrun")
+                config = load_configfile(os.path.join(tmpdir, "test", "config.yaml"))
+                self.assertEqual("metacat" in config["skip_binners"], expect_skipped)
+
+    def test_metacat_options_with_metacat_skipped_fail_clearly(self):
+        with tempfile.TemporaryDirectory() as tmpdir:
+            result = subprocess.run(
+                f"GTDBTK_DATA_PATH=. CHECKM2DB=. EGGNOG_DATA_DIR=. "
+                f"METABULI_DB_PATH=. SINGLEM_METAPACKAGE_PATH=. "
+                f"aviary recover --assembly {ASSEMBLY} -1 {FORWARD_READS} -2 {REVERSE_READS} "
+                f"--skip-binners metacat --metacat-cluster-params='--min-cluster 10' "
+                f"--output {tmpdir}/test --tmpdir {tmpdir} --dryrun",
+                shell=True, capture_output=True, text=True)
+            self.assertNotEqual(result.returncode, 0)
+            self.assertIn("MetaCAT options were given but MetaCAT is skipped", result.stdout + result.stderr)
+
+    SHORT_READS = f"-1 {FORWARD_READS} -2 {REVERSE_READS}"
+    LONG_READS = f"-l {os.path.join(path_to_data, 'pbsim.fq.gz')} --longread-type ont"
+
+    def _metacat_commands(self, extra, reads=SHORT_READS):
+        """The MetaCAT commands Snakemake would run, from a dry run that prints shell commands."""
+        with tempfile.TemporaryDirectory() as tmpdir:
+            output = extern.run(
+                f"GTDBTK_DATA_PATH=. CHECKM2DB=. EGGNOG_DATA_DIR=. "
+                f"METABULI_DB_PATH=. SINGLEM_METAPACKAGE_PATH=. "
+                f"aviary recover --assembly {ASSEMBLY} {reads} "
+                f"{extra} --output {tmpdir}/test --tmpdir {tmpdir} --dryrun --snakemake-cmds ' -p'")
+        return next(line for line in output.splitlines() if "MetaCAT coverage" in line)
+
+    @staticmethod
+    def _coverage_stage(command):
+        return command[command.index("MetaCAT coverage"):command.index("MetaCAT seed")]
+
+    def test_metacat_long_flag_only_for_long_read_only_runs(self):
+        long_only = self._coverage_stage(self._metacat_commands("", self.LONG_READS))
+        self.assertIn(" --long", long_only)
+        short_only = self._coverage_stage(self._metacat_commands(""))
+        self.assertNotIn("--long", short_only)
+        hybrid = self._coverage_stage(self._metacat_commands("", f"{self.SHORT_READS} {self.LONG_READS}"))
+        self.assertNotIn("--long", hybrid)
+
+    def test_metacat_long_flag_is_not_duplicated_when_the_user_gives_it(self):
+        for given in ("--long", "-l"):
+            stage = self._coverage_stage(self._metacat_commands(
+                f"--metacat-coverage-params='{given} --mapq 5'", self.LONG_READS))
+            self.assertEqual(stage.split().count("--long") + stage.split().count("-l"), 1, stage)
+            self.assertIn("--mapq 5", stage)
+
+    def test_metacat_cpu_and_gpu_use_their_own_environment_and_engine(self):
+        cpu = self._metacat_commands("")
+        self.assertIn(" -e metacat bash", cpu)
+        self.assertIn("--swdpgmm-engine cpu", cpu)
+        gpu = self._metacat_commands("--request-gpu")
+        self.assertIn(" -e metacat-gpu bash", gpu)
+        self.assertIn("--swdpgmm-engine gpu", gpu)
+        self.assertNotIn("--swdpgmm-engine cpu", gpu)
+
+    def test_metacat_options_reach_the_config_through_complete(self):
+        with tempfile.TemporaryDirectory() as tmpdir:
+            extern.run(
+                f"GTDBTK_DATA_PATH=. CHECKM2DB=. EGGNOG_DATA_DIR=. "
+                f"METABULI_DB_PATH=. SINGLEM_METAPACKAGE_PATH=. "
+                f"aviary complete {self.SHORT_READS} --metacat-cluster-params='--min-cluster 10' "
+                f"--output {tmpdir}/test --tmpdir {tmpdir} --dryrun")
+            config = load_configfile(os.path.join(tmpdir, "test", "config.yaml"))
+            self.assertEqual(config["metacat_options"]["cluster"], "--min-cluster 10")
+            self.assertNotIn("metacat", config["skip_binners"])
+
+    def test_metacat_warns_about_one_coverage_mode_for_mixed_short_and_long_reads(self):
+        def stderr_for(reads, extra=""):
+            with tempfile.TemporaryDirectory() as tmpdir:
+                return subprocess.run(
+                    f"GTDBTK_DATA_PATH=. CHECKM2DB=. EGGNOG_DATA_DIR=. "
+                    f"METABULI_DB_PATH=. SINGLEM_METAPACKAGE_PATH=. "
+                    f"aviary recover --assembly {ASSEMBLY} {reads} {extra} "
+                    f"--output {tmpdir}/test --tmpdir {tmpdir} --dryrun",
+                    shell=True, capture_output=True, text=True).stderr
+        warning = "MetaCAT uses one coverage mode"
+        self.assertIn(warning, stderr_for(f"{self.SHORT_READS} {self.LONG_READS}"))
+        self.assertNotIn(warning, stderr_for(self.SHORT_READS))
+        self.assertNotIn(warning, stderr_for(f"{self.SHORT_READS} {self.LONG_READS}", "--skip-binners metacat"))
+
+    def test_metacat_runs_all_three_stages_and_passes_options_to_each(self):
+        command = self._metacat_commands(
+            "--metacat-coverage-params='--mapq 15' --metacat-seed-params='--hmmsearch hmmsearch' "
+            "--metacat-cluster-params='--min-cluster 10'")
+        coverage, seed, cluster = (command.index(f"MetaCAT {stage}") for stage in ("coverage", "seed", "cluster"))
+        self.assertLess(coverage, seed)
+        self.assertLess(seed, cluster)
+        self.assertIn("--mapq 15", command[coverage:seed])
+        self.assertIn("--hmmsearch hmmsearch", command[seed:cluster])
+        self.assertIn("--min-cluster 10", command[cluster:])
+        self.assertIn("--swdpgmm-engine cpu", command[cluster:])
+        self.assertIn("metacat_bins", command)
+
+    def test_metacat_uses_aviarys_contig_and_bin_size_limits(self):
+        # Like rosella, vamb, metabat and quickbin: --min-contig-size / --min-bin-size, not MetaCAT's own defaults.
+        command = self._metacat_commands("--min-contig-size 2000 --min-bin-size 300000")
+        coverage, seed, cluster = (command.index(f"MetaCAT {stage}") for stage in ("coverage", "seed", "cluster"))
+        self.assertIn("--min-sequence-length 2000", command[coverage:seed])
+        self.assertIn("--min-sequence-length 2000", command[cluster:])
+        self.assertIn("--min-cluster 300000", command[cluster:])
+        default = self._metacat_commands("")
+        self.assertIn("--min-cluster 200000", default)
+        self.assertIn("--min-sequence-length 1500", default)
+
+    def test_user_metacat_options_come_after_aviarys_limits_so_they_win(self):
+        command = self._metacat_commands("--metacat-cluster-params='--min-cluster 50000'")
+        cluster = command[command.index("MetaCAT cluster"):]
+        self.assertLess(cluster.index("--min-cluster 200000"), cluster.index("--min-cluster 50000"))
 
 
 if __name__ == '__main__':
