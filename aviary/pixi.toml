@@ -44,7 +44,7 @@ update_deps = { cmd = "python ../admin/build_dep_defs_from_pixi.py", depends-on 
 [tasks.postinstall]
 # install into both standard and dev envs
 depends-on = [
-    { task = "postinstall-base", environment = "main" },
+    { task = "postinstall-base", environment = "default" },
     { task = "postinstall-base", environment = "dev" }
 ]
 
