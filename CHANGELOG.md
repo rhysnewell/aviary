@@ -14,6 +14,15 @@
   `--kmc-stranded-db` option. Opt-in only -- always off unless explicitly
   requested.
 
+- **MetaCAT binner** (`bioconda::metacat >=1.0.6`) is now a default binner; opt out with
+  `--skip-binners metacat`. It uses a GPU-accelerated clustering mode automatically when
+  `--request-gpu` is given. Tune each stage with `--metacat-coverage-params`,
+  `--metacat-seed-params` and `--metacat-cluster-params`
+  (see `docs/usage/recover.md`). Its bins are passed to DAS Tool like the
+  other binners (including `--min-contig-size` and `--min-bin-size`), and it is skipped automatically with `--short-read-mapper strobealign-aemb`,
+  which produces no BAM.
+  - Liu, CC., Dong, SS., Guo, J. et al. MetaCAT enables reconstruction of high-quality microbial genomes and their association with host traits from metagenomic data. Nat Microbiol (2026). https://doi.org/10.1038/s41564-026-02472-7
+
 ### Fixed
 
 - **Short-read racon polishing** (`polish_meta_racon_ill`): failed with
@@ -21,6 +30,9 @@
   polished with the wrong mate when mates were the same length. QC'd reads
   reach racon interleaved, and both mates shared one read ID. Every read now
   gets a unique ID before mapping.
+
+### Updated
+- Chore: Pixi dependency updates 
 
 ## v0.13.4 - 2026-10-07
 
