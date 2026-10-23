@@ -143,17 +143,60 @@ if LONG_READ_ASSEMBLER == "flye":
             --log {log}
             """
 else:
+    # Count k-mers on disk, decoupled from the assembly step so its scratch space
+    # (needs free disk comparable to the input read size) can be pointed at
+    # --tmpdir independently, and its own RAM budget doesn't inflate the main
+    # assembly job's resource request. Opt-in only: runs when --myloasm-kmc was
+    # requested.
+    KMC_MAYBE = config.get("myloasm_kmc", False)
+    KMC_DB_BASE = f"{LONG_ASSEMBLY_DIR}/kmc_counts"
+
+    rule count_kmers_kmc:
+        input:
+            fastq = "data/long_reads.fastq.gz"
+        output:
+            db_pre = temp(f"{KMC_DB_BASE}.kmc_pre"),
+            db_suf = temp(f"{KMC_DB_BASE}.kmc_suf"),
+        params:
+            db_base = KMC_DB_BASE,
+            tmpdir = f"--tmp-dir {config['tmpdir']}" if config.get('tmpdir') else "",
+            ram_gb = "" if config.get("myloasm_kmc_ram", "none") == "none" else f"--ram-gb {config['myloasm_kmc_ram']}",
+        threads:
+            config["max_threads"]
+        resources:
+            mem_mb = lambda wildcards, attempt: min(
+                int(config["max_memory"])*1024,
+                ((int(config["myloasm_kmc_ram"]) if config.get("myloasm_kmc_ram", "none") != "none" else 12) + 2) * 1024 * attempt),
+            runtime = lambda wildcards, attempt: 6*60*attempt,
+        log:
+            "logs/myloasm_kmc_counting.log"
+        benchmark:
+            "benchmarks/myloasm_kmc_counting.benchmark.txt"
+        shell:
+            f'{pixi_run} -e {ASSEMBLER_ENV} {ASSEMBLY_SCRIPTS_DIR}/'+\
+            """run_myloasm_kmc.py \
+            --input-fastq {input.fastq} \
+            --db-base {params.db_base} \
+            --threads {threads} \
+            {params.tmpdir} \
+            {params.ram_gb} \
+            --log {log}
+            """
+
     # Assembly long reads with myloasm
     rule long_read_assembly:
         input:
-            fastq = "data/long_reads.fastq.gz"
+            fastq = "data/long_reads.fastq.gz",
+            kmc_db_pre = f"{KMC_DB_BASE}.kmc_pre" if KMC_MAYBE else [],
+            kmc_db_suf = f"{KMC_DB_BASE}.kmc_suf" if KMC_MAYBE else [],
         output:
             fasta = LONG_ASSEMBLY_FASTA,
             graph = LONG_ASSEMBLY_GRAPH,
             info = LONG_ASSEMBLY_INFO,
         params:
             long_read_type = config["long_read_type"],
-            output_dir = LONG_ASSEMBLY_DIR
+            output_dir = LONG_ASSEMBLY_DIR,
+            kmc_flag = f"--kmc-stranded-db {KMC_DB_BASE}" if KMC_MAYBE else "",
         threads:
             config["max_threads"]
         resources:
@@ -170,6 +213,7 @@ else:
             --input-fastq {input.fastq} \
             --output-dir {params.output_dir} \
             --threads {threads} \
+            {params.kmc_flag} \
             --log {log}
             """
 

@@ -1080,7 +1080,7 @@ aviary recover --assembly assembly.fasta -1 sample_R1.fastq.gz -2 sample_R2.fast
 <span class="comment"># With long reads for coverage (improves binning)</span>
 aviary recover --assembly assembly.fasta -1 sample_R1.fastq.gz -2 sample_R2.fastq.gz -l sample.fastq.gz -z ont -o output_dir/ --n-cores 16
 
-<span class="comment"># GPU-accelerated binners (taxvamb, comebin, semibin)</span>
+<span class="comment"># GPU-accelerated binners (taxvamb, comebin, semibin, metacat)</span>
 aviary recover --assembly assembly.fasta -1 sample_R1.fastq.gz -2 sample_R2.fastq.gz -o output_dir/ --n-cores 16 --request-gpu
 
 <span class="comment"># Add extra binners beyond defaults</span>
@@ -1103,7 +1103,7 @@ aviary recover --assembly assembly.fasta -1 sample_R1.fastq.gz -2 sample_R2.fast
             <tr><td><code>--assembly PATH</code></td><td>Input assembled contigs (.fasta) — required</td><td>—</td></tr>
             <tr><td><code>-1 / -2</code></td><td>Short reads for coverage calculation</td><td>—</td></tr>
             <tr><td><code>-l / --longreads</code></td><td>Long reads for coverage calculation</td><td>—</td></tr>
-            <tr><td><code>--request-gpu</code></td><td>Enable GPU-accelerated binners (taxvamb, comebin, semibin)</td><td>off</td></tr>
+            <tr><td><code>--request-gpu</code></td><td>Enable GPU-accelerated binners (taxvamb, comebin, semibin, metacat)</td><td>off</td></tr>
             <tr><td><code>--binning-only</code></td><td>Stop after binning; skip quality check and annotation</td><td>off</td></tr>
             <tr><td><code>--strict</code></td><td>Fail immediately if any binner errors</td><td>off</td></tr>
             <tr><td><code>--extra-binners LIST</code></td><td>Add extra binners: <code>maxbin</code> | <code>concoct</code> | <code>comebin</code> | <code>taxvamb</code></td><td>—</td></tr>
@@ -1292,7 +1292,7 @@ aviary complete -1 sample_R1.fastq.gz -2 sample_R2.fastq.gz -o output_dir/ --dry
             <tr><td><code>-m / --max-memory INT</code></td><td>Max memory in GB</td><td>250</td></tr>
             <tr><td><code>-p / --pplacer-threads INT</code></td><td>Threads for pplacer (avoid high values — deadlock risk)</td><td>8</td></tr>
             <tr><td><code>-o / --output PATH</code></td><td>Output directory</td><td>./</td></tr>
-            <tr><td><code>--request-gpu</code></td><td>Enable GPU-accelerated steps (taxvamb, comebin, semibin)</td><td>off</td></tr>
+            <tr><td><code>--request-gpu</code></td><td>Enable GPU-accelerated steps (taxvamb, comebin, semibin, metacat)</td><td>off</td></tr>
             <tr><td><code>--dry-run</code></td><td>Show workflow steps without executing</td><td>off</td></tr>
             <tr><td><code>-w / --workflow RULE</code></td><td>Target a specific Snakemake rule (all prerequisites still run)</td><td>—</td></tr>
             <tr><td><code>--snakemake-cmds STR</code></td><td>Extra arguments passed directly to Snakemake</td><td>—</td></tr>
@@ -1468,7 +1468,7 @@ pixi run run-tests-at-cmr</code></pre>
       <ul style="list-style:none;display:flex;flex-direction:column;gap:4px;margin:8px 0 12px;font-size:.84rem">
         <li>• Collects all <code>@expensive</code> and <code>@qsub</code> pytest tests</li>
         <li>• Submits each as a separate <code>mqsub</code> job (16 threads, 64 GB, 4 h)</li>
-        <li>• GPU tests (taxvamb, comebin, semibin) are submitted with <code>--A100</code></li>
+        <li>• GPU tests (taxvamb, comebin, semibin, metacat) are submitted with <code>--A100</code></li>
         <li>• Waits for all jobs and reports failures</li>
       </ul>
 

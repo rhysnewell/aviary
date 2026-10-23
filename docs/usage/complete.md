@@ -125,6 +125,14 @@ aviary complete --assembly sample1.fasta sample2.fasta \
 
   Long-read assembler: `myloasm` or `flye`. [default: myloasm]
 
+**`--myloasm-kmc`**
+
+  Count myloasm's k-mers on disk with `myloasm-kmc-v1` instead of in memory. Lowers peak RAM on large, complex metagenomes at the cost of disk I/O; the assembly is otherwise the same. Counting runs as its own step before assembly and needs free scratch disk comparable to the size of the long reads, in `--tmpdir` if you set one. myloasm only: combining it with `--long-read-assembler flye` is an error. [default: off]
+
+**`--myloasm-kmc-ram`** GB
+
+  Memory budget for `--myloasm-kmc`. Ignored, with a warning, unless `--myloasm-kmc` is set. [default: 12, myloasm's own default]
+
 **`--medaka-model`** MODEL
 
   Medaka model for long-read polishing. [default: r941_min_hac_g507]
@@ -238,7 +246,11 @@ aviary complete --assembly sample1.fasta sample2.fasta \
 
 **`--skip-binners`** BINNER [BINNER ...]
 
-  Binning algorithms to skip: `rosella`, `semibin`, `metabat1`, `metabat2`, `metabat` and `vamb`.
+  Binning algorithms to skip: `rosella`, `semibin`, `metabat1`, `metabat2`, `metabat`, `vamb`, `quickbin` and `metacat`.
+
+**`--metacat-coverage-params`**, **`--metacat-seed-params`**, **`--metacat-cluster-params`** STR
+
+  Quoted MetaCAT options for each stage, passed to MetaCAT as given (see [Tuning MetaCAT](recover.md#tuning-metacat)). Input/output paths, threads and GPU selection are managed by Aviary. Giving these with `--skip-binners metacat` is an error.
 
 **`--semibin-model`** MODEL
 
@@ -393,7 +405,7 @@ aviary complete --assembly sample1.fasta sample2.fasta \
 
     **`--request-gpu`**
 
-      Request a GPU for the pipeline (taxvamb, comebin, semibin). Only takes effect when run on a cluster. [default: false]
+      Request a GPU for the pipeline (taxvamb, comebin, semibin, metacat). Only takes effect when run on a cluster. [default: false]
 
     **`--snakemake-cmds`** STRING
 

@@ -15,42 +15,46 @@ import tempfile
 sys.path.insert(0, os.path.join(os.path.dirname(__file__), "..", "..", "..", ".."))
 from aviary import aligner_preset_args
 
-# seqkit --id-regexp for run_polish()'s mapper_needs_suffix_leniency path
-# (see its use below). Non-greedy capture + optional /1 or /2 so seqkit's ID
-# for a header matches the suffix-free qnames run_polish() writes to its
-# pattern file, whether or not the header actually has a mate suffix -- vs.
-# the default "^(\S+)\s?", which would keep it. The boundary is "whitespace
-# or end", not "optional single trailing whitespace then end": a real header
-# commonly carries a description field after the first token (e.g. SRA-style
-# "@1_r1 INSTRUMENT:...", added by clean_short_reads' @-prefix sed), and an
-# end anchor there refuses to match at all, leaving every read unmatched and
-# the extracted fastq empty.
-SEQKIT_MATE_SUFFIX_LENIENT_ID_REGEXP = r'^(\S+?)(?:/[12])?(?:\s|$)'
+# Rewrites each fastq header to "@<mate>_<id>", where id is the first header
+# token minus any /1 or /2. mate=0 numbers an interleaved file's records 1, 2,
+# 1, 2, ... (on single-end input that just alternates prefixes, harmlessly).
+_RACON_READ_NAME_AWK = (
+    'NR % 4 == 1 { id = substr($1, 2); sub(/\\/[12]$/, "", id); '
+    'print "@" (mate ? mate : (NR % 8 == 1 ? 1 : 2)) "_" id; next } { print }'
+)
 
 
-def clean_short_reads(
-    cat_or_zcat: str,
-    read_path: str,
-    read_pair: str,
-    output_path: str,
-    threads: int,
-    log: str,
-):
-    cat_cmd = f"{cat_or_zcat} {read_path}".split()
-    sed_cmd = f"""sed s/@/@{read_pair}_/""".split()
+def prepare_short_reads(reads_and_mates, output_path: str, threads: int, log: str) -> None:
+    """Write short reads for racon with one plain, unique ID per read.
 
-    with open(log, "a") as logf:
-        logf.write(f"Shell command: {' '.join(cat_cmd)} | {' '.join(sed_cmd)} >> {output_path}\n")
-        logf.write(' '.join(sed_cmd))
-        with open(output_path, 'a') as out:
-            cat = Popen(cat_cmd, stdout=PIPE, stderr=logf)
-            sed = Popen(sed_cmd, stdin=cat.stdout, stdout=out, stderr=logf)
+    racon treats every read as single-end and looks reads up by ID, so mates
+    sharing an ID make it pair one mate's overlap with the other's sequence
+    (isovic/racon#68): "unequal lengths in sequence and overlap file", or
+    silently wrong polishing when the mates are the same length. Giving every
+    read a suffix-free ID up front also means every aligner's PAF query names
+    match these IDs exactly, so nothing downstream needs to reconcile them.
 
-            sed.wait()
-            cat.wait()
-
-            logf.write(f"cat return: {cat.returncode}\n")
-            logf.write(f"sed return: {sed.returncode}\n")
+    reads_and_mates: (fastq path, mate) pairs -- mate 1 or 2 for an R1/R2
+    file, 0 for an interleaved or single-end file.
+    """
+    if os.path.exists(output_path):
+        return
+    tmp_path = output_path + ".tmp"
+    with open(log, "a") as logf, open(tmp_path, "wb") as out:
+        pigz = Popen(["pigz", "-p", str(threads), "--fast"], stdin=PIPE, stdout=out, stderr=logf)
+        for path, mate in reads_and_mates:
+            logf.write(f"Preparing {path} (mate {mate}) for racon -> {output_path}\n")
+            logf.flush()
+            cat = Popen(["zcat" if path.endswith(".gz") else "cat", path], stdout=PIPE, stderr=logf)
+            awk = Popen(["awk", "-v", f"mate={mate}", _RACON_READ_NAME_AWK],
+                        stdin=cat.stdout, stdout=pigz.stdin, stderr=logf)
+            cat.stdout.close()
+            if awk.wait() != 0 or cat.wait() != 0:
+                raise RuntimeError(f"preparing {path} for racon failed; see {log} for details")
+        pigz.stdin.close()
+        if pigz.wait() != 0:
+            raise RuntimeError(f"compressing {output_path} failed; see {log} for details")
+    os.replace(tmp_path, output_path)
 
 
 # PAF-emitting command per short-read aligner. racon needs PAF, and each
@@ -113,42 +117,15 @@ def index_reference(mapper: str, reference: str, log: str) -> None:
 
 def bwa_mem_paf_cmd(
     mapper: str, reference: str, reads: str, threads: int, output_paf: str, log: str,
-    paired_interleaved: bool = False,
 ) -> None:
     """bwa mem / bwa-mem2 mem only emit SAM, unlike every other supported
     short-read aligner which can be asked for PAF directly. Convert with
     paftools.js sam2paf, which ships as part of the polishing env's minimap2
     package, so no extra dependency is needed for the conversion step.
-
-    sam2paf already restores the /1 or /2 mate suffix itself from the FLAG
-    column (`if (flag&1 && flag&0x40) qname += '/1'`, same for 0x80/'2') --
-    do NOT add a second suffix-restoration pass in front of it, e.g. by
-    post-processing the SAM QNAME before piping into sam2paf. sam2paf's
-    check requires FLAG bit 0x1 (paired) to be set, so if that pass strips
-    the suffix and reapplies it standalone the FLAG bits it reads are still
-    bwa's real ones and sam2paf will apply its own restoration on top,
-    doubling the suffix (e.g. "read_id/1/1") -- which then matches nothing
-    in the original fastq via seqkit's exact --pattern-file lookup, leaving
-    racon with an empty read set. sam2paf's own restoration is sufficient
-    and correct as long as bwa actually sets FLAG bit 0x1, which requires -p.
-
-    paired_interleaved must be True when `reads` is a single genuinely
-    interleaved fastq (mates adjacent in the stream, e.g. the -i/--interleaved
-    input path, or --coupled with short_reads_2 == 'none' upstream in
-    run_polish) -- this passes -p so bwa actually sets FLAG bit 0x1 (paired)
-    plus the 0x40/0x80 mate bits sam2paf's own restoration relies on.
-    Verified empirically: without -p, bwa mem treats the input as unpaired
-    single-end reads regardless of whether it is actually interleaved, and
-    never sets those FLAG bits at all (FLAG comes back 0 for every record) --
-    so sam2paf's restoration silently does nothing and the empty-read-set bug
-    comes right back. Must stay False for run_polish's other reads source
-    (paired R1/R2 concatenated block-then-block via clean_short_reads, not
-    interleaved): -p there would wrongly pair up two R1 reads as mates.
     """
     index_reference(mapper, reference, log)
     mem_bin = "bwa" if mapper == "bwa-mem" else "bwa-mem2"
-    pairing_flag = ["-p"] if paired_interleaved else []
-    mem_cmd = [mem_bin, "mem", "-t", str(threads), *pairing_flag, reference, *reads.split()]
+    mem_cmd = [mem_bin, "mem", "-t", str(threads), reference, *reads.split()]
     sam2paf_cmd = ["paftools.js", "sam2paf", "-P", "-"]
     with open(log, "a") as logf:
         print("Running command:", " ".join(mem_cmd), "|", " ".join(sam2paf_cmd), file=logf)
@@ -209,46 +186,18 @@ def run_seqkit(
     output_file: str,
     threads: int,
     log: str,
-    id_regexp: str = None,
-    strip_mate_suffix_from_output: bool = False,
 ):
-    # id_regexp (not -r/--use-regexp) is deliberate: -r matches every pattern
-    # against every read as a regex, which is O(patterns x reads) instead of
-    # seqkit's normal hash-lookup exact match -- verified against this file's
-    # own wgsim test data (~163k patterns/reads): a -r run was still running
-    # after 7+ minutes where exact matching takes ~2s, and that gap only grows
-    # with real read counts. --id-regexp instead changes how seqkit parses an
-    # ID out of each header (a single pass over the reads, same cost as the
-    # default) while still hash-matching that ID against the pattern file, so
-    # it stays O(reads) with a stripped mate suffix folded into the ID itself.
-    id_regexp_flag = ["--id-regexp", id_regexp] if id_regexp else []
-    seqkit_cmd = ["seqkit", "-j", str(threads), "grep", *id_regexp_flag, "--pattern-file", pattern_file, reads]
+    seqkit_cmd = ["seqkit", "-j", str(threads), "grep", "--pattern-file", pattern_file, reads]
     pigz_cmd = f"pigz -p {threads}".split()
-    # id_regexp only changes what seqkit matches against, not what it writes
-    # out -- extracted reads keep their original (possibly suffixed) headers.
-    # racon then reads both this file and filtered.*.paf, whose query names
-    # were normalized suffix-free upstream (see run_polish()); left alone,
-    # racon fails with "empty overlap set!" because the two never agree on a
-    # name for the same read. Strip the same suffix here so they match again.
-    sed_cmd = ["sed", "-E", r"1~4s#(/1|/2)$##"] if strip_mate_suffix_from_output else None
 
     with open(log, "a") as logf:
-        pipeline_desc = ' | '.join(' '.join(c) for c in (seqkit_cmd, sed_cmd, pigz_cmd) if c)
-        logf.write(f"Shell style: {pipeline_desc} > {output_file}\n")
+        logf.write(f"Shell style: {' '.join(seqkit_cmd)} | {' '.join(pigz_cmd)} > {output_file}\n")
 
         with open(output_file, 'a') as out:
             seqkit = Popen(seqkit_cmd, stdout=PIPE, stderr=logf)
-            if sed_cmd:
-                sed = Popen(sed_cmd, stdin=seqkit.stdout, stdout=PIPE, stderr=logf)
-                pigz = Popen(pigz_cmd, stdin=sed.stdout, stdout=out, stderr=logf)
-                pigz.wait()
-                sed.wait()
-                seqkit.wait()
-                logf.write(f"sed return: {sed.returncode}\n")
-            else:
-                pigz = Popen(pigz_cmd, stdin=seqkit.stdout, stdout=out, stderr=logf)
-                pigz.wait()
-                seqkit.wait()
+            pigz = Popen(pigz_cmd, stdin=seqkit.stdout, stdout=out, stderr=logf)
+            pigz.wait()
+            seqkit.wait()
             logf.write(f"seqkit return: {seqkit.returncode}\n")
             logf.write(f"pigz return: {pigz.returncode}\n")
 
@@ -351,61 +300,19 @@ def run_polish(
 
     # Whether contigs are polished with illumina or long read
     if illumina:
+        # Separate R1/R2 files, or one interleaved/single-end file per sample
+        # (short_reads_2 == 'none', e.g. aviary's own QC output). Mates need
+        # unique IDs either way -- see prepare_short_reads().
         if short_reads_2 != 'none':
-
-            # Racon can't handle paired end reads. It treats them as singled-ended. But when you have paired end reads
-            # in separate files they can share the same read name, so we need to alter the read name based on the pair
-            if not os.path.exists("data/short_reads.racon.1.fastq.gz"):
-                for reads1, reads2 in zip(short_reads_1, short_reads_2):
-                    cat_or_zcat1 = "cat"
-                    cat_or_zcat2 = "cat"
-                    if reads1[-3::] == ".gz":
-                        cat_or_zcat1 = "zcat"
-                    if reads2[-3::] == ".gz":
-                        cat_or_zcat2 = "zcat"
-
-                    clean_short_reads(cat_or_zcat1, reads1, 1, "data/short_reads.racon.1.fastq", threads, log)
-                    clean_short_reads(cat_or_zcat2, reads2, 2, "data/short_reads.racon.1.fastq", threads, log)
-                    if not coassemble:
-                        break
-
-                with open(log, "a") as logf:
-                    run(f"pigz -p {threads} --fast data/short_reads.racon.1.fastq".split(), stdout=logf, stderr=STDOUT)
-
-            pe1 = "data/short_reads.racon.1.fastq.gz"
-            reads = [pe1]
-            # clean_short_reads() concatenates all of R1 then all of R2 into
-            # this file -- block-then-block, not interleaved -- so bwa mem
-            # must not be told -p here (see bwa_mem_paf_cmd's docstring).
-            reads_are_interleaved = False
+            samples = [((r1, 1), (r2, 2)) for r1, r2 in zip(short_reads_1, short_reads_2)]
         else:
-            if len(short_reads_1) == 1 or not coassemble:
-                pe1 = short_reads_1[0]
-            else:
-                if not os.path.exists("data/short_reads.1.fastq.gz"):
-                    for reads1 in short_reads_1:
-                        cat_or_zcat1 = "cat"
-                        if reads1[-3::] == ".gz":
-                            cat_or_zcat1 = "zcat"
-                        
-                        with open("data/short_reads.1.fastq", 'a') as out:
-                            cat_cmd = f"{cat_or_zcat1} {reads1}".split()
-                            with open(log, "a") as logf:
-                                Popen(cat_cmd, stdout=out, stderr=logf).wait()
-
-                    with open(log, "a") as logf:
-                        run(f"pigz -p {threads} --fast data/short_reads.1.fastq".split(), stdout=logf, stderr=STDOUT)
-
-                pe1 = "data/short_reads.1.fastq.gz"
-            reads = [pe1]
-            # short_reads_2 == 'none' means -i/--interleaved input (or a
-            # single already-interleaved file) throughout aviary -- see
-            # get_coverage.py's matching --interleaved branch -- so this is
-            # genuinely interleaved, unlike the clean_short_reads() branch above.
-            reads_are_interleaved = True
+            samples = [((r1, 0),) for r1 in short_reads_1]
+        if not coassemble:
+            samples = samples[:1]
+        reads = "data/short_reads.racon.1.fastq.gz"
+        prepare_short_reads([f for sample in samples for f in sample], reads, threads, log)
     else:
         reads = input_fastq
-        reads_are_interleaved = False
 
     # use racon when using illumina or pacbio data
     if illumina or long_read_type not in ['ont', 'ont_hq']:
@@ -419,13 +326,12 @@ def run_polish(
                 if illumina:
                     if short_read_mapper in ("bwa-mem", "bwa-mem2"):
                         bwa_mem_paf_cmd(
-                            short_read_mapper, reference, ' '.join(reads), threads, paf, log,
-                            paired_interleaved=reads_are_interleaved)
+                            short_read_mapper, reference, reads, threads, paf, log)
                     else:
                         if short_read_mapper == "minibwa":
                             index_reference(short_read_mapper, reference, log)
                         cmd = short_read_paf_cmd(
-                            short_read_mapper, reference, ' '.join(reads), threads)
+                            short_read_mapper, reference, reads, threads)
                         with open(log, "a") as logf:
                             logf.write(f"Short-read PAF command: {cmd}\n")
                             logf.flush()
@@ -516,100 +422,37 @@ def run_polish(
                     elif getseq:
                         o.write(line)
 
-            # minimap2/rammap's handling of an existing /1 or /2 mate suffix is not
-            # reliable to predict per mapper or per read layout: verified against the
-            # installed minimap2 2.30 binary, genuinely interleaved input (R1,R2,R1,R2,...)
-            # gets its suffix doubled (read/1 -> read/1/1, matching what an earlier
-            # version of this code assumed for minimap2/rammap specifically), while this
-            # non-interleaved, R1-then-R2-concatenated path leaves the suffix untouched
-            # instead. Neither behaviour can be relied on to stay put across mapper
-            # versions, so both are handled the same way below rather than assuming one.
-            # bwa-mem/bwa-mem2 have the same problem here too, for a different reason:
-            # bwa_mem_paf_cmd() only passes bwa mem the -p flag that makes it set the
-            # SAM FLAG bits sam2paf's own suffix restoration relies on when the reads
-            # are genuinely interleaved -- for this non-interleaved path it must not
-            # (see that function's docstring), so sam2paf's restoration never fires and
-            # its qnames come out suffix-free too. strobealign/minibwa qnames already
-            # match the fastq header exactly and don't need this, but stripping (a
-            # no-op) and matching leniently doesn't change their (already-correct)
-            # outcome either, so this applies uniformly rather than re-deriving which
-            # mapper+interleaving combination needs it as new mappers are added. Strip
-            # here (handles 0, 1, or a defensively-covered doubled suffix) so qnames
-            # are always suffix-free -- run_seqkit() below then matches leniently
-            # against an optional single /1 or /2 on the target fastq headers. Computed
-            # once here (not per-PAF-line) so it stays defined even if the PAF is empty.
-            mapper_needs_suffix_leniency = illumina
-
             included_reads = set()
             excluded_reads = set()
             with open(paf) as f, open(os.path.join(output_dir, "filtered.%s.%d.paf" % (output_prefix, rounds)), 'w') as paf_file:
                 for line in f:
-                    fields = line.split('\t')
-                    qname, qlen, qstart, qstop, strand, ref, rlen, rstart, rstop = fields[:9]
-                    qlen, qstart, qstop, rlen, rstart, rstop = map(int, [qlen, qstart, qstop, rlen, rstart, rstop])
-                    if mapper_needs_suffix_leniency:
-                        norm_qname = qname
-                        while norm_qname.endswith(('/1', '/2')):
-                            norm_qname = norm_qname[:-2]
-                        if norm_qname != qname:
-                            fields[0] = norm_qname
-                            norm_line = '\t'.join(fields)
-                        else:
-                            norm_line = line
-                    else:
-                        norm_qname = qname
-                        norm_line = line
+                    qname, qlen, qstart, qstop, strand, ref, rlen, rstart, rstop = line.split()[:9]
                     if ref in low_cov:
-                        paf_file.write(norm_line)
-                        included_reads.add(norm_qname)
+                        paf_file.write(line)
+                        included_reads.add(qname)
                     elif ref in high_cov:
                         # Down sample reads from high coverage contigs
                         sample_rate = max_cov / cov_dict[ref]
-                        if norm_qname in excluded_reads:
+                        if qname in excluded_reads:
                             pass
-                        elif norm_qname in included_reads:
-                            paf_file.write(norm_line)
+                        elif qname in included_reads:
+                            paf_file.write(line)
                         elif random.random() < sample_rate:
-                            included_reads.add(norm_qname)
-                            paf_file.write(norm_line)
+                            included_reads.add(qname)
+                            paf_file.write(line)
                         else:
-                            excluded_reads.add(norm_qname)
+                            excluded_reads.add(qname)
             with open(os.path.join(output_dir, "reads.%s.%d.lst" % (output_prefix, rounds)), "w") as o:
                 for i in included_reads:
-                    # i is already suffix-free when mapper_needs_suffix_leniency
-                    # (see the qname normalization above); seqkit_id_regexp below
-                    # strips a real /1 or /2 from the target read headers to match.
                     o.write(i + '\n')
-            seqkit_id_regexp = (
-                SEQKIT_MATE_SUFFIX_LENIENT_ID_REGEXP if mapper_needs_suffix_leniency else None
-            )
             logging.info("Retrieving reads...")
-            if not isinstance(reads, str):
-                for read in reads:
-                    pattern_file = f"{output_dir}/reads.{output_prefix}.{rounds}.lst"
-                    output_file = f"{output_dir}/reads.{output_prefix}.{rounds}.fastq.gz"
-                    run_seqkit(
-                        read,
-                        pattern_file,
-                        output_file=output_file,
-                        threads=threads,
-                        log=log,
-                        id_regexp=seqkit_id_regexp,
-                        strip_mate_suffix_from_output=mapper_needs_suffix_leniency,
-                    )
-
-            else:
-                pattern_file = f"{output_dir}/reads.{output_prefix}.{rounds}.lst"
-                output_file = f"{output_dir}/reads.{output_prefix}.{rounds}.fastq.gz"
-                run_seqkit(
-                    reads,
-                    pattern_file,
-                    output_file=output_file,
-                    threads=threads,
-                    log=log,
-                    id_regexp=seqkit_id_regexp,
-                    strip_mate_suffix_from_output=mapper_needs_suffix_leniency,
-                )
+            run_seqkit(
+                reads,
+                f"{output_dir}/reads.{output_prefix}.{rounds}.lst",
+                output_file=f"{output_dir}/reads.{output_prefix}.{rounds}.fastq.gz",
+                threads=threads,
+                log=log,
+            )
 
             with open(log, "a") as logf:
                 logf.write("Performing round %d of racon polishing..." % rounds)

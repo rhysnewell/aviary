@@ -660,6 +660,24 @@ def main():
     )
 
     long_read_group.add_argument(
+        '--myloasm-kmc', '--myloasm_kmc', '--kmc',
+        help='Count k-mers on disk with myloasm-kmc-v1 instead of in memory. '
+             'Lowers RAM on complex metagenomes at the cost of disk I/O; '
+             'results are otherwise identical. myloasm only.',
+        dest='myloasm_kmc',
+        action='store_true',
+        default=False,
+    )
+
+    long_read_group.add_argument(
+        '--myloasm-kmc-ram', '--myloasm_kmc_ram', '--kmc-ram',
+        help='Memory budget in GB for --myloasm-kmc [default: myloasm\'s own, 12].',
+        dest='myloasm_kmc_ram',
+        type=int,
+        default=None,
+    )
+
+    long_read_group.add_argument(
         '--medaka-model', '--medaka_model',
         help='Medaka model to use for polishing long reads. \n',
         dest='medaka_model',
@@ -813,14 +831,25 @@ def main():
         choices=["maxbin", "maxbin2", "concoct", "comebin", "taxvamb", "quickbin"]
     )
 
+    for stage in ("coverage", "seed", "cluster"):
+        binning_options.add_argument(
+            f"--metacat-{stage}-params", default="",
+            help=f"Quoted MetaCAT {stage} options, passed to MetaCAT as given "
+                 "(see docs/usage/recover.md). MetaCAT runs by default; "
+                 "giving these with --skip-binners metacat is an error. "
+                 "Input/output paths, threads, GPU selection and FASTA output are managed by Aviary.",
+        )
+
     binning_options.add_argument(
         '--skip-binners', '--skip_binners', '--skip_binner', '--skip-binner',
         help='Optional list of binning algorithms to skip. Can be any combination of: \n'
-             'rosella, semibin, metabat1, metabat2, metabat, vamb, quickbin \n'
-             'N.B. specifying "metabat" will skip both MetaBAT1 and MetaBAT2. \n',
+             'rosella, semibin, metabat1, metabat2, metabat, vamb, quickbin, metacat \n'
+             'N.B. specifying "metabat" will skip both MetaBAT1 and MetaBAT2. \n'
+             'N.B. "metacat" runs its GPU-accelerated clustering mode automatically \n'
+             'when aviary is run with GPU support requested \n',
         dest='skip_binners',
         nargs='*',
-        choices=["rosella", "semibin", "metabat1", "metabat2", "metabat", "vamb", "quickbin"]
+        choices=["rosella", "semibin", "metabat1", "metabat2", "metabat", "vamb", "quickbin", "metacat"]
     )
 
     binning_options.add_argument(

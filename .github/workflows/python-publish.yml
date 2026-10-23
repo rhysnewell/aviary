@@ -51,3 +51,69 @@ jobs:
       with:
         password: ${{ secrets.PYPI_API_TOKEN }}
         skip_existing: true
+
+  # Drafts the GitHub release once PyPI has the version, so the only manual
+  # step left is reviewing the notes and pressing Publish. Body layout:
+  #   ## What's Changed      this version's section of CHANGELOG.md
+  #   **PyPI sha256**        digest of the sdist as PyPI serves it
+  #   **Full Changelog**     compare link from the previous v* tag
+  github-release:
+    needs: deploy
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+    steps:
+    - uses: actions/checkout@v4
+      with:
+        fetch-depth: 0   # need every tag to find the previous release
+    - name: Compose release notes
+      run: |
+        version="${GITHUB_REF_NAME#v}"
+
+        awk -v h="## ${GITHUB_REF_NAME}" 'index($0,h)==1{f=1;next} /^## /{f=0} f' CHANGELOG.md > changes.md
+        if [ ! -s changes.md ]; then
+          echo "::warning::no CHANGELOG.md section for ${GITHUB_REF_NAME}"
+          echo "See CHANGELOG.md" > changes.md
+        fi
+
+        # PyPI's JSON API can lag the upload by a few seconds.
+        sha=""
+        for attempt in 1 2 3 4 5 6; do
+          sha="$(curl -fsS "https://pypi.org/pypi/aviary-genome/${version}/json" \
+            | python3 -c "import sys,json; print(next(u['digests']['sha256'] for u in json.load(sys.stdin)['urls'] if u['packagetype']=='sdist'))" \
+            2>/dev/null)" && [ -n "$sha" ] && break
+          sha=""; sleep 10
+        done
+        if [ -z "$sha" ]; then
+          echo "::warning::could not fetch the sha256 for ${version} from PyPI"
+        fi
+
+        # Previous v* tag by version order, i.e. the one just below this tag.
+        prev="$(git tag --list 'v*' --sort=-v:refname | grep -A1 -Fx "${GITHUB_REF_NAME}" | tail -n1)"
+        [ "$prev" = "${GITHUB_REF_NAME}" ] && prev=""
+
+        {
+          echo "## What's Changed"
+          echo
+          cat changes.md
+          echo
+          if [ -n "$sha" ]; then
+            echo "**PyPI sha256** (\`aviary_genome-${version}.tar.gz\`): \`${sha}\`"
+            echo
+          fi
+          if [ -n "$prev" ]; then
+            echo "**Full Changelog**: https://github.com/${GITHUB_REPOSITORY}/compare/${prev}...${GITHUB_REF_NAME}"
+          fi
+        } > notes.md
+        cat notes.md
+    - name: Draft GitHub release
+      env:
+        GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+      run: |
+        # A re-run of the workflow must not fail on an existing release.
+        if gh release view "${GITHUB_REF_NAME}" >/dev/null 2>&1; then
+          echo "Release ${GITHUB_REF_NAME} already exists; leaving it alone."
+          exit 0
+        fi
+        gh release create "${GITHUB_REF_NAME}" --draft --verify-tag \
+          --title "${GITHUB_REF_NAME}" --notes-file notes.md

@@ -301,7 +301,7 @@ class TestBwaMemPafCommand(unittest.TestCase):
     single-command model can't express.
     """
 
-    def _run(self, mapper, paired_interleaved=False):
+    def _run(self, mapper):
         with tempfile.TemporaryDirectory() as tmp:
             output_paf = os.path.join(tmp, "out.paf")
             with mock.patch.object(polish, "run") as mocked_run, \
@@ -311,8 +311,7 @@ class TestBwaMemPafCommand(unittest.TestCase):
                 sam2paf_proc = mock.Mock(returncode=0)
                 mocked_popen.side_effect = [mem_proc, sam2paf_proc]
                 polish.bwa_mem_paf_cmd(
-                    mapper, "ref.fa", "r1.fq.gz r2.fq.gz", 8, output_paf, "/dev/null",
-                    paired_interleaved=paired_interleaved)
+                    mapper, "ref.fa", "r1.fq.gz r2.fq.gz", 8, output_paf, "/dev/null")
                 return mocked_run, mocked_popen
 
     def test_bwa_mem_indexes_before_mapping(self):
@@ -340,23 +339,10 @@ class TestBwaMemPafCommand(unittest.TestCase):
             with self.assertRaises(RuntimeError):
                 polish.bwa_mem_paf_cmd("bwa-mem", "ref.fa", "r.fq.gz", 8, "out.paf", "/dev/null")
 
-    def test_paired_interleaved_passes_p_to_bwa_mem(self):
-        # Regression test: verified empirically against a real bwa binary
-        # that without -p, bwa mem treats a genuinely interleaved input as
-        # unpaired single-end reads and never sets FLAG 0x40/0x80 at all
-        # (FLAG comes back 0 for every record), which makes sam2paf's own
-        # mate-suffix restoration silently do nothing and brings back the
-        # exact empty-read-set bug this whole mechanism exists to fix. -p is
-        # what makes bwa mem actually set those FLAG bits.
-        _, mocked_popen = self._run("bwa-mem", paired_interleaved=True)
-        mem_cmd = mocked_popen.call_args_list[0].args[0]
-        self.assertIn("-p", mem_cmd)
-
-    def test_non_interleaved_reads_do_not_get_p(self):
-        # run_polish()'s other reads source (paired R1/R2 concatenated
-        # block-then-block via clean_short_reads, not interleaved) must never
-        # get -p: it would wrongly pair up two R1 reads as mates.
-        _, mocked_popen = self._run("bwa-mem", paired_interleaved=False)
+    def test_reads_are_mapped_unpaired(self):
+        # racon only uses reads single-end, and prepare_short_reads() gives
+        # mates distinct IDs, so bwa must not try to pair them with -p.
+        _, mocked_popen = self._run("bwa-mem")
         mem_cmd = mocked_popen.call_args_list[0].args[0]
         self.assertNotIn("-p", mem_cmd)
 
@@ -508,75 +494,71 @@ class TestMapperCliValidation(unittest.TestCase):
         self.assertEqual(result.returncode, 0, result.stdout + result.stderr)
 
 
-@unittest.skipUnless(shutil.which("seqkit") and shutil.which("pigz"),
-                      "seqkit/pigz not on PATH -- run inside the polishing pixi env")
-class TestSeqkitIdRegexpSuffixLeniency(unittest.TestCase):
-    """run_polish()'s seqkit_id_regexp must match a real seqkit read header,
-    not just the pattern strings polish.py itself writes.
+@unittest.skipUnless(shutil.which("awk") and shutil.which("pigz"), "needs awk and pigz")
+class TestPrepareShortReads(unittest.TestCase):
+    """prepare_short_reads() must give every read a plain, unique ID.
 
-    Regression test for a bug where polish_meta_racon_ill silently extracted
-    zero reads and racon then died with "empty sequences set!". The old
-    regexp (`^(\\S+?)(?:/[12])?\\s?$`) end-anchors right after an optional
-    single trailing-whitespace character, so it only matched a header that
-    was a single whitespace-free token. wgsim -- the only read source the
-    existing racon-polishing integration tests in test_integration.py use --
-    always emits single-token headers (e.g.
-    "@CP006915.1_405386_405827_3:0:0_6:1:0_0/1"), so those tests kept passing
-    while never exercising this. Real short reads (SRA/fastq-dump output)
-    commonly carry a second, whitespace-separated description field on the
-    header, e.g. "@ERR10225372.1 E00582:421:H7WWLCCX2:8:1101:10176:25095/1"
-    -- which the old regexp could never match, however matching the pattern
-    file's ID exactly. This test runs the real seqkit binary (as
-    run_polish() does), not just the Python regex, so it catches seqkit's own
-    --id-regexp parsing behavior, not just a plausible-looking pattern.
+    racon treats reads as single-end and looks them up by ID; mates sharing
+    one made polish_meta_racon_ill fail with "unequal lengths in sequence and
+    overlap file" (isovic/racon#68), or polish with the wrong mate.
     """
 
-    def _extract(self, header, pattern):
-        """Run run_seqkit()'s current id_regexp against one read/pattern
-        pair and return the extracted (decompressed) fastq text, empty
-        string if nothing matched."""
+    def _prepare(self, files):
+        """files: list of (list of header lines, mate). Returns output headers
+        and quality lines."""
         with tempfile.TemporaryDirectory() as tmp:
-            reads_path = os.path.join(tmp, "reads.fq")
-            pattern_path = os.path.join(tmp, "pattern.lst")
+            reads_and_mates = []
+            for i, (headers, mate) in enumerate(files):
+                path = os.path.join(tmp, f"{i}.fq")
+                with open(path, "w") as handle:
+                    for header in headers:
+                        handle.write(f"@{header}\nACGT\n+\nI@II\n")
+                reads_and_mates.append((path, mate))
             output_path = os.path.join(tmp, "out.fastq.gz")
-            log_path = os.path.join(tmp, "log")
-            with open(reads_path, "w") as handle:
-                handle.write(f"{header}\nACGT\n+\nIIII\n")
-            with open(pattern_path, "w") as handle:
-                handle.write(f"{pattern}\n")
-
-            polish.run_seqkit(
-                reads=reads_path,
-                pattern_file=pattern_path,
-                output_file=output_path,
-                threads=1,
-                log=log_path,
-                id_regexp=polish.SEQKIT_MATE_SUFFIX_LENIENT_ID_REGEXP,
-                strip_mate_suffix_from_output=True,
-            )
+            polish.prepare_short_reads(
+                reads_and_mates, output_path, threads=1, log=os.path.join(tmp, "log"))
             with gzip.open(output_path, "rt") as handle:
-                return handle.read()
+                lines = handle.read().splitlines()
+        return lines[0::4], lines[3::4]
 
-    def test_extracts_read_with_sra_style_description_field(self):
-        # The exact shape from the bug report: clean_short_reads()'s "@" ->
-        # "@{pair}_" sed has already run, and the header carries a
-        # description field after the ID token.
-        extracted = self._extract(
-            header="@1_ERR10225372.1 E00582:421:H7WWLCCX2:8:1101:10176:25095/1",
-            pattern="1_ERR10225372.1",
-        )
-        self.assertIn("ERR10225372.1", extracted,
-                       "seqkit extracted nothing for a header with a "
-                       "description field -- this is the empty-reads bug")
+    def test_interleaved_illumina_mates_get_unique_ids(self):
+        # John's header shape: both mates share the ID, no /1 /2 suffix.
+        headers, _ = self._prepare([([
+            "A00632:496:H2C37DRX5:1:2101:1551:1016 1:N:0:CT+GT",
+            "A00632:496:H2C37DRX5:1:2101:1551:1016 2:N:0:CT+GT",
+        ], 0)])
+        self.assertEqual(headers, ["@1_A00632:496:H2C37DRX5:1:2101:1551:1016",
+                                   "@2_A00632:496:H2C37DRX5:1:2101:1551:1016"])
 
-    def test_still_extracts_single_token_wgsim_style_header(self):
-        # Must not regress the header shape the existing racon-polishing
-        # integration tests actually run against.
-        extracted = self._extract(
-            header="@CP006915.1_405386_405827_3:0:0_6:1:0_0/1",
-            pattern="CP006915.1_405386_405827_3:0:0_6:1:0_0",
-        )
-        self.assertIn("CP006915.1_405386_405827_3", extracted)
+    def test_interleaved_suffixed_mates_get_unique_suffix_free_ids(self):
+        headers, _ = self._prepare([(["r1/1", "r1/2", "r2/1", "r2/2"], 0)])
+        self.assertEqual(headers, ["@1_r1", "@2_r1", "@1_r2", "@2_r2"])
+
+    def test_separate_r1_r2_files_are_prefixed_by_file(self):
+        headers, _ = self._prepare([(["r1/1", "r2/1"], 1), (["r1/2", "r2/2"], 2)])
+        self.assertEqual(headers, ["@1_r1", "@1_r2", "@2_r1", "@2_r2"])
+
+    def test_quality_lines_are_untouched(self):
+        # The old `sed s/@/@1_/` also rewrote a quality line's first "@".
+        _, quals = self._prepare([(["r1/1"], 1)])
+        self.assertEqual(quals, ["I@II"])
+
+    def test_existing_output_is_reused(self):
+        with tempfile.TemporaryDirectory() as tmp:
+            output_path = os.path.join(tmp, "out.fastq.gz")
+            with open(output_path, "w") as handle:
+                handle.write("sentinel")
+            polish.prepare_short_reads(
+                [(os.path.join(tmp, "missing.fq"), 0)], output_path, 1, os.path.join(tmp, "log"))
+            with open(output_path) as handle:
+                self.assertEqual(handle.read(), "sentinel")
+
+    def test_unreadable_input_raises(self):
+        with tempfile.TemporaryDirectory() as tmp:
+            with self.assertRaises(RuntimeError):
+                polish.prepare_short_reads(
+                    [(os.path.join(tmp, "missing.fq.gz"), 0)],
+                    os.path.join(tmp, "out.fastq.gz"), 1, os.path.join(tmp, "log"))
 
 
 if __name__ == '__main__':
