@@ -120,7 +120,7 @@ aviary assemble -1 s1_1.fq.gz s2_1.fq.gz -2 s1_2.fq.gz s2_2.fq.gz --coassemble n
 
 **`--myloasm-kmc`**
 
-  Count myloasm's k-mers on disk with `myloasm-kmc-v1` instead of in memory. Lowers peak RAM on large, complex metagenomes at the cost of disk I/O; the assembly is otherwise the same. Counting runs as its own step before assembly and needs free scratch disk comparable to the size of the long reads, in `--tmpdir` if you set one. myloasm only: combining it with `--long-read-assembler flye` is an error. [default: off]
+  Count myloasm's k-mers on disk with `myloasm-kmc-v1` instead of in memory. This removes the memory cost of myloasm's counting stage and shortened assembly in testing (about 16-34% on two 34 GB ONT metagenomes), with an essentially identical assembly. It did not lower whole-run peak memory on those samples, because a later stage sets the peak (see [myloasm k-mer counting](myloasm-kmc.md)). Counting runs as its own step before assembly and needs free scratch disk comparable to the size of the long reads, in `--tmpdir` if you set one. myloasm only: combining it with `--long-read-assembler flye` is an error. [default: off]
 
 **`--myloasm-kmc-ram`** GB
 

@@ -124,6 +124,7 @@ nav:
       - Shared options: usage/centralised_commands.md
       - Read mappers: usage/mappers.md
       - assemble: usage/assemble.md
+      - myloasm k-mer counting: usage/myloasm-kmc.md
       - recover: usage/recover.md
       - annotate: usage/annotate.md
       - complete: usage/complete.md
