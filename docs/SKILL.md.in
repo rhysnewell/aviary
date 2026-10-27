@@ -485,10 +485,10 @@ aviary cluster \
 | `-i / --input-runs PATH..`| Space-separated previous Aviary output directories     | —        |
 | `--ani FLOAT`             | ANI threshold for dereplication                        | `97`     |
 | `--precluster-ani FLOAT`  | Minimum ANI for preclustering                          | `95`     |
-| `--precluster-method NAME`| Rough ANI method: `dashing` \| `finch`                 | `dashing`|
+| `--precluster-method NAME`| Rough ANI method: `skani` \| `finch`                   | `skani`  |
 | `--min-completeness FLOAT`| Exclude genomes below this completeness %              | —        |
 | `--max-contamination FLOAT` | Exclude genomes above this contamination %           | —        |
-| `--use-checkm2-scores`    | Use CheckM2 scores for representative selection        | off      |
+| `--use-checkm2-scores`    | Deprecated, no effect (CheckM2 scores always used)   | off      |
 | `--pggb-params STR`       | Parameters passed to pggb (surround with quotes)       | `-k 79 -G 7919,8069` |
 
 ### Expected outputs (`cluster_output/`)

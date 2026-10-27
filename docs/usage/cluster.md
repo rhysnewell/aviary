@@ -35,7 +35,7 @@ aviary cluster --input-runs run1/ run2/ run3/ --ani 95   # species-level
 aviary cluster --input-runs run1/ run2/ run3/ --ani 99.5 # strain-level
 ```
 
-`--precluster-ani` is a separate, cheaper first pass (rough ANI via dashing/finch sketching)
+`--precluster-ani` is a separate, cheaper first pass (rough ANI via skani/finch sketching)
 that groups obviously-similar genomes before the expensive FastANI all-vs-all step — it should
 normally stay below `--ani`, not be tuned to the same value:
 ```bash
@@ -44,21 +44,20 @@ aviary cluster --input-runs run1/ run2/ run3/ --ani 97 --precluster-ani 90
 
 ### Swapping the preclustering method
 
-`dashing` (HyperLogLog sketching, the default) is the faster choice for large genome
-collections. `finch` (MinHash) is worth trying if preclustering seems to be merging genomes it
-shouldn't, since the two sketching approaches can disagree at the margins:
+`skani` (the default) is the faster choice for large genome collections. `finch` (MinHash) is
+worth trying if preclustering seems to be merging genomes it shouldn't, since the two approaches
+can disagree at the margins:
 ```bash
 aviary cluster --input-runs run1/ run2/ run3/ --precluster-method finch
 ```
 
 ### Filtering by quality before dereplication
 
-Drop low-quality genomes from consideration entirely, and trust CheckM2's scores (rather than
-the default CheckM1-derived ones already in `bins/checkm.out`) when Galah picks the cluster
-representative:
+Drop low-quality genomes from consideration entirely. Galah uses the CheckM2 scores in each
+run's `bins/bin_info.tsv` to filter genomes and to pick the cluster representative:
 ```bash
 aviary cluster --input-runs run1/ run2/ \
-  --min-completeness 70 --max-contamination 5 --use-checkm2-scores
+  --min-completeness 70 --max-contamination 5
 ```
 
 ### Building pangenome graphs for each cluster
@@ -84,11 +83,11 @@ aviary cluster --input-runs run1/ run2/ run3/ --pggb-params "-k 47 -G 4057,4229"
 
 **`--precluster-ani`** FLOAT
 
-  Minimum dashing-derived ANI for preclustering. [default: 95]
+  Minimum ANI (from the preclustering method) for preclustering. [default: 95]
 
 **`--precluster-method`** METHOD
 
-  Method for rough ANI in preclustering: `dashing` (HyperLogLog) or `finch` (MinHash). [default: dashing]
+  Method for rough ANI in preclustering: `skani` or `finch` (MinHash). [default: skani]
 
 **`--min-completeness`** FLOAT
 
@@ -100,7 +99,7 @@ aviary cluster --input-runs run1/ run2/ run3/ --pggb-params "-k 47 -G 4057,4229"
 
 **`--use-checkm2-scores`**
 
-  Use CheckM2 completeness and contamination scores for Galah dereplication.
+  Deprecated, has no effect: CheckM2 scores are always used for Galah dereplication.
 
 **`--pggb-params`** STRING
 
