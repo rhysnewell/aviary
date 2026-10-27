@@ -108,7 +108,12 @@ class Processor:
         try:
             self.skip_reads_check = args.skip_reads_check
         except AttributeError:
-            self.skip_reads_check = any(w in SUBCOMMANDS_WITHOUT_READS for w in self.workflows)
+            # The list holds subcommand names, but the workflow is the snakemake target
+            # (`cluster` runs `complete_cluster`), so check the subcommand as well.
+            self.skip_reads_check = (
+                getattr(args, "subparser_name", None) in SUBCOMMANDS_WITHOUT_READS
+                or any(w in SUBCOMMANDS_WITHOUT_READS for w in self.workflows)
+            )
 
         try:
             self.pplacer_threads = min(int(args.pplacer_threads), int(self.threads), 48)
