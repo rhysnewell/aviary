@@ -34,33 +34,22 @@ rule generate_combined_checkm_output:
         combined_checkm_file = "data/combined_checkm.tsv",
         combined_checkm_stats = "data/combined_checkm_full.tsv",
     params:
-        previous_runs = list(config["previous_runs"]),
-        use_checkm2_scores = config["use_checkm2_scores"]
+        previous_runs = list(config["previous_runs"])
     run:
         import pandas as pd
 
         previous_runs = params.previous_runs
-        runs = [pd.read_csv(os.path.abspath(run) + "/bins/checkm_minimal.tsv", sep="\t") for run in previous_runs]
         infos = [pd.read_csv(os.path.abspath(run) + "/bins/bin_info.tsv", sep="\t") for run in previous_runs]
 
-        for (df, run, info_df) in zip(runs, previous_runs, infos):
-            df['Bin Id'] = df['Bin Id'].apply(lambda bin: os.path.abspath(run) + "/bins/final_bins/" + str(bin))
-            info_df['Bin Id'] = info_df['Bin Id'].apply(lambda bin: os.path.abspath(run) + "/bins/final_bins/" + str(bin))
-
-        concat = pd.concat(runs)
-        # need opposite column names to the ones we actually use here
-        score_cols = ["Completeness (CheckM2)", "Contamination (CheckM2)"]
-        rename_cols = ["Completeness (CheckM1)", "Contamination (CheckM1)"]
-        if params.use_checkm2_scores:
-            score_cols = ["Completeness (CheckM1)", "Contamination (CheckM1)"]
-            rename_cols = ["Completeness (CheckM2)", "Contamination (CheckM2)"]
-
-        concat = concat.loc[:, [col not in score_cols for col in concat.columns]]
-        concat.rename({rename_cols[0]: "Completeness", rename_cols[1]: "Contamination"}, inplace=True, axis=1)
-        concat.to_csv("data/combined_checkm.tsv", sep="\t", index=False)
+        # Bin names repeat between aviary runs, so the full path is the unique genome name.
+        for (info_df, run) in zip(infos, previous_runs):
+            info_df.rename(columns={info_df.columns[0]: 'Name'}, inplace=True)
+            info_df['Name'] = info_df['Name'].apply(lambda bin: os.path.abspath(run) + "/bins/final_bins/" + str(bin))
 
         concat_infos = pd.concat(infos)
-        concat_infos.to_csv("data/combined_checkm_full.tsv", sep="\t", index=False)
+        # The first 14 columns of bin_info.tsv are CheckM2's quality_report.tsv, which Galah reads.
+        concat_infos.iloc[:, :14].to_csv("data/combined_checkm.tsv", sep="\t", index=False)
+        concat_infos.rename(columns={'Name': 'Bin Id'}).to_csv("data/combined_checkm_full.tsv", sep="\t", index=False)
 
 
 rule generate_genome_list:
@@ -91,7 +80,7 @@ rule run_galah:
         config['max_threads']
     shell:
         f"{pixi_run} -e coverm "
-        "galah cluster -t {threads} --checkm-tab-table {input.checkm} " 
+        "galah cluster -t {threads} --checkm2-quality-report {input.checkm} " 
         "--genome-fasta-list {input.genome_list} --output-cluster-definition {output.dereplicated_set} "
         "--ani {params.derep_ani} --precluster-ani {params.precluster_ani} --precluster-method {params.precluster_method} "
         "{params.min_completeness} {params.max_contamination} "
@@ -106,7 +95,7 @@ rule representative_checkm:
         representative_checkm = "data/representative_checkm.tsv",
         representative_checkm_full = "data/representative_checkm_full.tsv",
     shell:
-        "grep \'Bin Id\' {input.combined_checkm} >> {output.representative_checkm}; "
+        "head -n 1 {input.combined_checkm} >> {output.representative_checkm}; "
         "grep \'Bin Id\' {input.combined_checkm_full} >> {output.representative_checkm_full}; "
         "cut -f1 {input.dereplicated_clusters} | uniq | parallel -j 1 \"grep {{.}} {input.combined_checkm} >> {output.representative_checkm}\"; "
         "cut -f1 {input.dereplicated_clusters} | uniq | parallel -j 1 \"grep {{.}} {input.combined_checkm_full} >> {output.representative_checkm_full}\"; "
@@ -204,6 +193,7 @@ rule complete_cluster:
             print(f"Gathering: {run}")
             try:
                 df_info = pd.read_csv(os.path.abspath(run) + "/bins/bin_info.tsv", sep="\t")
+                df_info.rename(columns={df_info.columns[0]: 'Bin Id'}, inplace=True)
                 df_info['Bin Id'] = df_info['Bin Id'].apply(lambda mag: os.path.abspath(run) + "/bins/final_bins/" + str(mag))
                 runs_info.append(df_info)
             except (FileNotFoundError, IndexError):

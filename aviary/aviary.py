@@ -970,16 +970,17 @@ def main():
 
     cluster_group.add_argument(
         '--precluster-ani', '--precluster_ani',
-        help='Require at least this dashing-derived ANI for preclustering and to avoid FastANI on distant lineages within preclusters.',
+        help='Require at least this ANI (from the --precluster-method sketch) for preclustering and to avoid FastANI on distant lineages within preclusters.',
         dest='precluster_ani',
         default=95
     )
 
     cluster_group.add_argument(
         '--precluster-method', '--precluster_method',
-        help="method of calculating rough ANI for dereplication. 'dashing' for HyperLogLog, 'finch' for finch MinHash.",
+        help="method of calculating rough ANI for dereplication. 'skani' for Skani, 'finch' for finch MinHash.",
         dest='precluster_method',
-        default='dashing'
+        choices=['skani', 'finch'],
+        default='skani'
     )
 
     cluster_group.add_argument(
@@ -998,7 +999,7 @@ def main():
 
     cluster_group.add_argument(
         '--use-checkm2-scores', '--use_checkm2_scores',
-        help="Use CheckM2 completeness and contamination scores (if available) to perform Galah dereplication",
+        help="Deprecated, has no effect: CheckM2 scores are always used for Galah dereplication",
         type=str2bool,
         nargs='?',
         const=True,
