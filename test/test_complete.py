@@ -1062,5 +1062,73 @@ class Tests(unittest.TestCase):
             self.assertEqual(config["refinery_max_iterations"], 5)
             self.assertEqual(config["pplacer_threads"], 32)
 
+    CHECKM2_COLUMNS = [
+        "Name", "Completeness", "Contamination", "Completeness_Model_Used", "Translation_Table_Used",
+        "Coding_Density", "Contig_N50", "Average_Gene_Length", "Genome_Size", "GC_Content",
+        "Total_Coding_Sequences", "Total_Contigs", "Max_Contig_Length", "Additional_Notes",
+    ]
+
+    def make_cluster_runs(self, tmpdir):
+        """Two finished runs whose bins share names, as they do in real aviary runs."""
+        runs = []
+        for name in ("run1", "run2"):
+            run = os.path.join(tmpdir, name)
+            os.makedirs(os.path.join(run, "bins", "final_bins"))
+            with open(os.path.join(run, "bins", "bin_info.tsv"), "w") as f:
+                f.write("\t".join(self.CHECKM2_COLUMNS + ["sample.fq Relative Abundance (%)"]) + "\n")
+                for bin_name in ("semibin_1", "vamb_1"):
+                    open(os.path.join(run, "bins", "final_bins", f"{bin_name}.fna"), "w").close()
+                    f.write("\t".join([bin_name, "95.0", "1.0", "General", "11", "0.9", "5000", "300",
+                                       "2000000", "0.5", "2000", "10", "400000", "None", "50.0"]) + "\n")
+            runs.append(run)
+        return runs
+
+    def cluster_command(self, tmpdir, runs, extra=""):
+        return (
+            f"GTDBTK_DATA_PATH=. "
+            f"CHECKM2DB=. "
+            f"EGGNOG_DATA_DIR=. "
+            f"METABULI_DB_PATH=. "
+            f"SINGLEM_METAPACKAGE_PATH=. "
+            f"aviary cluster "
+            f"--input-runs {' '.join(runs)} "
+            f"--output {tmpdir}/test --tmpdir {tmpdir} "
+            f"{extra}"
+        )
+
+    def test_cluster_runs_without_reads(self):
+        """`aviary cluster` takes only previous runs, so it must not demand reads."""
+        with tempfile.TemporaryDirectory() as tmpdir:
+            runs = self.make_cluster_runs(tmpdir)
+            extern.run(self.cluster_command(tmpdir, runs, "--dryrun"))
+
+            config = load_configfile(os.path.join(tmpdir, "test", "config.yaml"))
+            self.assertTrue(config["skip_reads_check"])
+
+    def test_cluster_combines_checkm2_quality_reports(self):
+        """Galah gets one CheckM2 quality report, with a unique full-path name per bin."""
+        with tempfile.TemporaryDirectory() as tmpdir:
+            runs = self.make_cluster_runs(tmpdir)
+            extern.run(self.cluster_command(tmpdir, runs, "--workflow generate_combined_checkm_output"))
+
+            with open(os.path.join(tmpdir, "test", "data", "combined_checkm.tsv")) as f:
+                lines = [line.rstrip("\n").split("\t") for line in f]
+
+            self.assertEqual(lines[0], self.CHECKM2_COLUMNS)
+            names = [line[0] for line in lines[1:]]
+            self.assertEqual(len(names), 4)
+            self.assertEqual(len(set(names)), 4)
+            for run in runs:
+                self.assertIn(os.path.abspath(f"{run}/bins/final_bins/semibin_1"), names)
+
+    def test_cluster_galah_uses_checkm2_report(self):
+        with tempfile.TemporaryDirectory() as tmpdir:
+            runs = self.make_cluster_runs(tmpdir)
+            output = extern.run(self.cluster_command(tmpdir, runs, '--dryrun --snakemake-cmds " -p"'))
+
+            self.assertIn("--checkm2-quality-report", output)
+            self.assertNotIn("--checkm-tab-table", output)
+            self.assertIn("--precluster-method skani", output)
+
 if __name__ == '__main__':
     unittest.main()
