@@ -998,16 +998,6 @@ def main():
     )
 
     cluster_group.add_argument(
-        '--use-checkm2-scores', '--use_checkm2_scores',
-        help="Deprecated, has no effect: CheckM2 scores are always used for Galah dereplication",
-        type=str2bool,
-        nargs='?',
-        const=True,
-        dest='use_checkm2_scores',
-        default=False
-    )
-
-    cluster_group.add_argument(
         '--pggb-params', '--pggb_params',
         help="Parameters to be used with pggb, must be surrounded by quotation marks e.g. \'\'",
         dest='pggb_params',

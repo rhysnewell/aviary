@@ -418,7 +418,6 @@ class Processor:
             self.precluster_ani = fraction_to_percent(args.precluster_ani)
             self.ani = fraction_to_percent(args.ani)
             self.precluster_method = args.precluster_method
-            self.use_checkm2_scores = args.use_checkm2_scores
             self.pggb_params = args.pggb_params
         except AttributeError:
             self.min_completeness = 'none'
@@ -426,7 +425,6 @@ class Processor:
             self.ani = 'none'
             self.precluster_ani = 'none'
             self.precluster_method = 'none'
-            self.use_checkm2_scores = False
             self.pggb_params = 'none'
 
         try:
@@ -749,7 +747,6 @@ class Processor:
         conf["metabuli_folder"] = self.metabuli
         # conf["strain_analysis"] = self.strain_analysis
         conf["checkm2_db_folder"] = self.checkm2_db
-        conf["use_checkm2_scores"] = self.use_checkm2_scores
         conf["mag_directory"] = self.mag_directory
         conf["mag_extension"] = self.mag_extension
         conf["previous_runs"] = self.previous_runs

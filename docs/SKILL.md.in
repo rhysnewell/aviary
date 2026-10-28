@@ -488,7 +488,6 @@ aviary cluster \
 | `--precluster-method NAME`| Rough ANI method: `skani` \| `finch`                   | `skani`  |
 | `--min-completeness FLOAT`| Exclude genomes below this completeness %              | —        |
 | `--max-contamination FLOAT` | Exclude genomes above this contamination %           | —        |
-| `--use-checkm2-scores`    | Deprecated, no effect (CheckM2 scores always used)   | off      |
 | `--pggb-params STR`       | Parameters passed to pggb (surround with quotes)       | `-k 79 -G 7919,8069` |
 
 ### Expected outputs (`cluster_output/`)

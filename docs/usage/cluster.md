@@ -97,10 +97,6 @@ aviary cluster --input-runs run1/ run2/ run3/ --pggb-params "-k 47 -G 4057,4229"
 
   Ignore genomes above this contamination percentage. [default: none]
 
-**`--use-checkm2-scores`**
-
-  Deprecated, has no effect: CheckM2 scores are always used for Galah dereplication.
-
 **`--pggb-params`** STRING
 
   Parameters for pggb. [default: `-k 79 -G 7919,8069`]
