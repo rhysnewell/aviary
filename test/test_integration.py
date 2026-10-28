@@ -187,7 +187,7 @@ class TestsQsub(unittest.TestCase):
             f"-o {output_dir}/aviary_out "
             f"-1 {data}/wgsim.1.fq.gz "
             f"-2 {data}/wgsim.2.fq.gz "
-            f"-n 32 -t 32 --local-cores 1 "
+            f"-n 16 -t 16 --max-memory 64 --local-cores 1 "
             f"--strict "
             f"--snakemake-profile aqua --cluster-retries 3 "
         )
@@ -226,7 +226,7 @@ class TestsQsub(unittest.TestCase):
             # filtered_bins dir. Loosened here only for this smoke test.
             f"--min-completeness 20 "
             f"--max-contamination 20 "
-            f"-n 32 -t 32 --local-cores 1 "
+            f"-n 16 -t 16 --max-memory 64 --local-cores 1 "
             f"--strict "
             # Retries because the GPU binners here can fail transiently on this
             # synthetic assembly: COMEBin's embeddings are unseeded, and a run
