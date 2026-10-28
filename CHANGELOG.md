@@ -14,8 +14,9 @@
   - Liu, CC. et al. Nat Microbiol (2026). https://doi.org/10.1038/s41564-026-02472-7
 
 ### Changed
-- **`aviary cluster` now uses CheckM2** (quality report from each run's `bins/bin_info.tsv`);
-  `bins/checkm.out` is no longer needed. `--precluster-method` defaults to `skani`.
+- **`aviary cluster` now uses CheckM2**: it reads `bins/bin_info.tsv` and `bins/final_bins/*.fna` from each run
+  and passes the CheckM2 quality report to Galah; `bins/checkm_minimal.tsv` is no longer used.
+  `--precluster-method` defaults to `skani`.
 - Dependencies: myloasm 0.3.0 -> 0.7.0 (CPU), galah -> 0.6.2, comebin -> 1.1.0, gtdbtk -> 2.8.0,
   singlem -> 0.21.4, semibin -> 2.6.0, skani -> 0.4.0, pixi -> 0.83.0.
 

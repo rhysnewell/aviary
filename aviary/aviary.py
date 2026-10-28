@@ -1197,8 +1197,8 @@ def main():
 
     cluster_options.add_argument(
         '-i', '--input-runs', '--input_runs',
-        help='The paths to the previous finished runs of Aviary. Must contain the bins/checkm.out and bins/final_bins'
-             'outputs',
+        help='The paths to the previous finished runs of Aviary (v0.13 or later). Each must contain '
+             'bins/bin_info.tsv and bins/final_bins/*.fna',
         dest='previous_runs',
         nargs='*',
         required=True,
