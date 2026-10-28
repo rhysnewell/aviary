@@ -119,31 +119,40 @@ rule generate_pggb_input:
         sequences = []
         n_haplotypes = 0
         metadata_table = []
+
+        def write_cluster(cluster, sequences, n_haplotypes):
+            if len(sequences) != 0 and n_haplotypes > 1:
+                # print the fasta file
+                representative_sample_name = cluster.split("/")[-4]
+                representative_name = os.path.basename(cluster).removesuffix(".fna")
+                representative_name = f"{representative_sample_name}_{representative_name}"
+                output_filename = f"data/combined_mags/sequences_{representative_name}.fna"
+                SeqIO.write(sequences, output_filename, "fasta")
+                metadata_table.append([output_filename, n_haplotypes, representative_name])
+            elif n_haplotypes == 1:
+                print(f"Cannot generate pangenome for single genome cluster: {cluster}")
+                print("Skipping...")
+
         for i in range(dereplicated_clusters.shape[0]):
 
             if prev_cluster != dereplicated_clusters.iloc[i, 0]:
-                if len(sequences) != 0 and n_haplotypes > 1:
-                    # print the fasta file
-                    representative_sample_name = prev_cluster.split("/")[-4]
-                    representative_name = prev_cluster.split("/")[-1].strip(".fna")
-                    representative_name = f"{representative_sample_name}_{representative_name}"
-                    output_filename = f"data/combined_mags/sequences_{representative_name}.fna"
-                    SeqIO.write(sequences, output_filename, "fasta")
-                    metadata_table.append([output_filename, n_haplotypes, representative_name])
-                elif n_haplotypes == 1:
-                    print(f"Cannot generate pangenome for single genome cluster: {dereplicated_clusters.iloc[i, 1]}")
-                    print("Skipping...")
+                write_cluster(prev_cluster, sequences, n_haplotypes)
                 # taxonomy = bin_info[bin_info['Bin Id'] == prev_cluster]['classification']
                 prev_cluster = dereplicated_clusters.iloc[i, 0]
                 sequences = []
                 n_haplotypes = 0
 
-            sample_name = prev_cluster.split("/")[-4]
-            name = prev_cluster.split("/")[-1].strip(".fna")
+            # name the sequences after the member genome, not the cluster representative
+            member = dereplicated_clusters.iloc[i, 1]
+            sample_name = member.split("/")[-4]
+            name = os.path.basename(member).removesuffix(".fna")
             n_haplotypes += 1
-            for record in SeqIO.parse(dereplicated_clusters.iloc[i, 1], "fasta"):
+            for record in SeqIO.parse(member, "fasta"):
                 record.id = f"{sample_name}_{name}_{record.id}"
                 sequences.append(record)
+
+        # the last cluster has no following cluster to trigger its write
+        write_cluster(prev_cluster, sequences, n_haplotypes)
 
         pd.DataFrame(metadata_table, columns=None).to_csv(output.pggb_metadata, sep='\t', index=False, header=None)
 

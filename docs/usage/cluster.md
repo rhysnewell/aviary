@@ -21,9 +21,9 @@ runs down to one representative genome per cluster:
 aviary cluster --input-runs run1/ run2/
 ```
 
-Each directory in `--input-runs` must be a completed aviary output (i.e. it already has
-`bins/checkm.out` and `bins/final_bins/` — the output of `recover`/`complete`, not raw MAGs from
-elsewhere). If you have loose FASTA files instead, use `aviary recover`/`annotate` first, or
+Each directory in `--input-runs` must be a completed aviary output from v0.13 or later (i.e. it already has
+`bins/bin_info.tsv`, whose first 14 columns are the CheckM2 quality report, and `bins/final_bins/*.fna` —
+the output of `recover`/`complete`, not raw MAGs from elsewhere). If you have loose FASTA files instead, use `aviary recover`/`annotate` first, or
 [`galah cluster`](https://github.com/wwood/galah) directly.
 
 ### Species- vs strain-level dereplication
@@ -73,7 +73,7 @@ aviary cluster --input-runs run1/ run2/ run3/ --pggb-params "-k 47 -G 4057,4229"
 
 **`-i`**, **`--input-runs`** DIR [DIR ...]
 
-  Paths to previous finished aviary runs. Each must contain `bins/checkm.out` and `bins/final_bins`. **(required)**
+  Paths to previous finished aviary runs (v0.13 or later). Each must contain `bins/bin_info.tsv` and `bins/final_bins/*.fna`; every bin named in `bin_info.tsv` must have a matching `final_bins/<name>.fna`. **(required)**
 
 ## Clustering options
 
