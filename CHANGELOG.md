@@ -1,38 +1,36 @@
 # Changelog
 
-## v0.13.5 - 2026-10-19
+## v0.13.5 - 2026-10-28
 
 ### Added
+- **`--myloasm-kmc`** / **`--myloasm-kmc-ram GB`** — opt-in on-disk k-mer counting for myloasm (>= 0.7)
+  via `myloasm-kmc-v1`, run as its own step (`count_kmers_kmc`) before assembly. On two 34 GB ONT
+  metagenomes it cut assembly time by 16-34% with an essentially identical assembly; peak memory was
+  unchanged because a later stage sets it. Off unless requested. See `docs/usage/myloasm-kmc.md`.
+- **MetaCAT binner** (`bioconda::metacat >=1.0.6`), on by default; opt out with `--skip-binners metacat`.
+  GPU clustering with `--request-gpu`. Tune with `--metacat-{coverage,seed,cluster}-params`
+  (see `docs/usage/recover.md`). Adds runtime to default runs and two pixi environments
+  (`metacat`, `metacat-gpu`). Skipped with `--short-read-mapper strobealign-aemb`. 
+  - Liu, CC. et al. Nat Microbiol (2026). https://doi.org/10.1038/s41564-026-02472-7
 
-- **`--myloasm-kmc`** / **`--myloasm-kmc-ram *`** — opt-in on-disk k-mer
-  counting for myloasm (>= 0.7) via `myloasm-kmc-v1`. Lowers RAM on complex
-  metagenomes; myloasm only. Counting now runs as its own Snakemake rule
-  (`count_kmers_kmc`) ahead of the assembly step, so its scratch space (needs
-  free disk comparable to the input read size) can be pointed at `--tmpdir`
-  independently, and its RAM budget no longer inflates the main assembly
-  job's memory request. myloasm loads the result via its own
-  `--kmc-stranded-db` option. Opt-in only -- always off unless explicitly
-  requested.
+### Changed
+- **`aviary cluster` now uses CheckM2** (quality report from each run's `bins/bin_info.tsv`);
+  `bins/checkm.out` is no longer needed. `--precluster-method` defaults to `skani`.
+- Dependencies: myloasm 0.3.0 -> 0.7.0 (CPU), galah -> 0.6.2, comebin -> 1.1.0, gtdbtk -> 2.8.0,
+  singlem -> 0.21.4, semibin -> 2.6.0, skani -> 0.4.0, pixi -> 0.83.0.
 
-- **MetaCAT binner** (`bioconda::metacat >=1.0.6`) is now a default binner; opt out with
-  `--skip-binners metacat`. It uses a GPU-accelerated clustering mode automatically when
-  `--request-gpu` is given. Tune each stage with `--metacat-coverage-params`,
-  `--metacat-seed-params` and `--metacat-cluster-params`
-  (see `docs/usage/recover.md`). Its bins are passed to DAS Tool like the
-  other binners (including `--min-contig-size` and `--min-bin-size`), and it is skipped automatically with `--short-read-mapper strobealign-aemb`,
-  which produces no BAM.
-  - Liu, CC., Dong, SS., Guo, J. et al. MetaCAT enables reconstruction of high-quality microbial genomes and their association with host traits from metagenomic data. Nat Microbiol (2026). https://doi.org/10.1038/s41564-026-02472-7
+### Breaking
+- `--precluster-method dashing` is rejected (galah no longer supports it; use `skani` or `finch`).
+- `aviary cluster` needs runs from v0.13+ (CheckM2 `bin_info.tsv`); runs from older releases are not supported.
+- `--use-checkm2-scores` (cluster) is removed; CheckM2 scores are now always on. This flag is no longer supported.
 
 ### Fixed
-
 - **Short-read racon polishing** (`polish_meta_racon_ill`): failed with
   `unequal lengths in sequence and overlap file` on paired-end reads, or
   polished with the wrong mate when mates were the same length. QC'd reads
   reach racon interleaved, and both mates shared one read ID. Every read now
   gets a unique ID before mapping.
-
-### Updated
-- Chore: Pixi dependency updates 
+- **aviary cluster** no longer fails with `Programming error: both long_reads and short_reads_1 are set to 'none'`; it now runs without reads, using CheckM2 quality reports.
 
 ## v0.13.4 - 2026-10-07
 
