@@ -44,7 +44,7 @@ update_deps = { cmd = "python ../admin/build_dep_defs_from_pixi.py", depends-on 
 [tasks.postinstall]
 # install into both standard and dev envs
 depends-on = [
-    { task = "postinstall-base", environment = "main" },
+    { task = "postinstall-base", environment = "default" },
     { task = "postinstall-base", environment = "dev" }
 ]
 
@@ -170,6 +170,8 @@ semibin = ["semibin", "cpu"]
 semibin-gpu = ["semibin","semibin-gpu"]
 comebin = ["comebin", "cpu"]
 comebin-gpu = ["comebin", "comebin-gpu"]
+metacat = ["metacat", "cpu"]
+metacat-gpu = ["metacat", "metacat-gpu"]
 # Annotation
 eggnog = ["eggnog", "cpu"]
 gtdbtk = ["gtdbtk", "cpu"]
@@ -217,7 +219,8 @@ flye = ">=2.9"
 biopython = "*"
 
 [feature.myloasm.dependencies]
-myloasm = "*"
+myloasm = ">=0.7.0"  # --kmc needs 0.7
+myloasm-kmc = "*"  # myloasm-kmc-v1, used only with --myloasm-kmc (GPL-3, so a separate package)
 biopython = "*"
 
 [feature.polishing.dependencies]
@@ -365,20 +368,34 @@ platforms = ["linux-64-cuda121"]
 pytorch-gpu = "*"
 
 [feature.comebin.dependencies]
-comebin = ">=1.0.0"
+comebin = ">=1.1.0"  # the comebin rule passes -d (device), added in 1.1
 
 [feature.comebin-gpu]
-platforms = ["linux-64-cuda118"]
-channels = ["nvidia", "pytorch"]
-channel-priority = "disabled"
+platforms = ["linux-64-cuda121"]
 
 
 [feature.comebin-gpu.dependencies]
-# Pin mkl to <2024.1 to fix iJIT_NotifyEvent symbol error
-# pytorch 1.10.2 is incompatible with mkl >= 2024.1
-pytorch = { version = "==1.10.2", channel = "pytorch" }
-pytorch-cuda = { version = "==11.8", channel = "pytorch" }
-mkl = "==2024.0.0"
+# COMEBin >= 1.1 imports torch.amp.GradScaler (PyTorch >= 2.3), so this can no
+# longer be pinned to the old pytorch 1.10.2 / cuda 11.8 stack; same recipe as
+# semibin-gpu and vamb-gpu above.
+pytorch-gpu = "*"
+
+[feature.metacat.dependencies]
+# bioconda's metacat 1.0.6 build only targets Python 3.14 (linux-64 /
+# osx-arm64) -- pin to match, since the earlier GitHub-wheel workaround's
+# 3.10 pin no longer resolves against the conda package.
+python = "3.14.*"
+samtools = ">=1.16"
+metacat = ">=1.0.6"
+
+[feature.metacat-gpu]
+platforms = ["linux-64-cuda121"]
+
+[feature.metacat-gpu.dependencies]
+# conda's cupy, NOT `pip install cupy-cudaXXx` -- conda-forge bundles the
+# matching CUDA math libraries (cuBLAS etc.) as real deps; the pip-wheel
+# route needs several extra nvidia-*-cu12 wheels installed by hand to work.
+cupy = "*"
 
 [feature.eggnog.dependencies]
 eggnog-mapper =  ">=2.1.8"

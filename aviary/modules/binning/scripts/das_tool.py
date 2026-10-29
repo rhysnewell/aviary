@@ -70,6 +70,7 @@ if __name__ == '__main__':
         ('comebin', 'fa'),
         ('taxvamb', 'fna'),
         ('quickbin', 'fna'),
+        ('metacat', 'fna'),
     ]
     refined_binners_to_use = [
         ('rosella', 'fna'),

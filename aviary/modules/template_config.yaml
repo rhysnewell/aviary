@@ -6,6 +6,11 @@ long_read_type:
     ont
 long_read_assembler:
     myloasm
+myloasm_kmc:
+    False
+myloasm_kmc_ram:
+    none
+metacat_options: {}
 medaka_model:
     r941_min_hac_g507
 short_reads_1:

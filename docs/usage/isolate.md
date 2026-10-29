@@ -37,9 +37,10 @@ aviary isolate -i sample_interleaved.fq.gz --longreads reads.fastq.gz --long-rea
 aviary isolate -c sample_1.fq.gz sample_2.fq.gz --longreads reads.fastq.gz --long-read-type ont
 ```
 
-`aviary isolate` has no `--long-read-assembler`/`--use-megahit`/`--use-unicycler` flags — unlike
-`assemble`/`recover`/`complete`, the isolate assembly path is fixed to Flye rather than
+Unlike `assemble`/`recover`/`complete`, the isolate assembly path is fixed to Flye rather than
 user-selectable, since it targets a single pure-culture genome rather than a mixed community.
+`--long-read-assembler`, `--myloasm-kmc` and `--myloasm-kmc-ram` appear in `aviary isolate`'s
+help because the long-read options are shared, but they have no effect here.
 
 ### Sizing the assembly
 

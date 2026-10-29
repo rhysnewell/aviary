@@ -61,6 +61,24 @@ aviary complete \
   -2 A_R2.fastq.gz B_R2.fastq.gz
 ```
 
+## racon: `unequal lengths in sequence and overlap file`
+
+### Cause
+
+Aviary v0.13.4 and earlier, short-read polishing (`polish_meta_racon_ill` or
+`polish_isolate_racon_ill`). After quality control the short reads reach racon
+as one interleaved file in which both mates of a pair share a read ID. racon
+treats every read as single-end, so it matched an overlap from one mate with
+the other mate's sequence. When the mates had the same length the run
+succeeded but polished with the wrong mate.
+
+### Resolution
+
+Fixed in v0.14.0: every read is given a unique ID before mapping. Upgrade and
+repeat the command with the same output directory. On an older version, run
+with `--skip-qc` and separate `-1`/`-2` files, which takes a path where each
+mate already gets a unique ID.
+
 ## `Cannot read short read file ... Please check permissions.`
 
 ### Cause

@@ -21,9 +21,9 @@ runs down to one representative genome per cluster:
 aviary cluster --input-runs run1/ run2/
 ```
 
-Each directory in `--input-runs` must be a completed aviary output (i.e. it already has
-`bins/checkm.out` and `bins/final_bins/` — the output of `recover`/`complete`, not raw MAGs from
-elsewhere). If you have loose FASTA files instead, use `aviary recover`/`annotate` first, or
+Each directory in `--input-runs` must be a completed aviary output from v0.13 or later (i.e. it already has
+`bins/bin_info.tsv`, whose first 14 columns are the CheckM2 quality report, and `bins/final_bins/*.fna` —
+the output of `recover`/`complete`, not raw MAGs from elsewhere). If you have loose FASTA files instead, use `aviary recover`/`annotate` first, or
 [`galah cluster`](https://github.com/wwood/galah) directly.
 
 ### Species- vs strain-level dereplication
@@ -35,7 +35,7 @@ aviary cluster --input-runs run1/ run2/ run3/ --ani 95   # species-level
 aviary cluster --input-runs run1/ run2/ run3/ --ani 99.5 # strain-level
 ```
 
-`--precluster-ani` is a separate, cheaper first pass (rough ANI via dashing/finch sketching)
+`--precluster-ani` is a separate, cheaper first pass (rough ANI via skani/finch sketching)
 that groups obviously-similar genomes before the expensive FastANI all-vs-all step — it should
 normally stay below `--ani`, not be tuned to the same value:
 ```bash
@@ -44,21 +44,20 @@ aviary cluster --input-runs run1/ run2/ run3/ --ani 97 --precluster-ani 90
 
 ### Swapping the preclustering method
 
-`dashing` (HyperLogLog sketching, the default) is the faster choice for large genome
-collections. `finch` (MinHash) is worth trying if preclustering seems to be merging genomes it
-shouldn't, since the two sketching approaches can disagree at the margins:
+`skani` (the default) is the faster choice for large genome collections. `finch` (MinHash) is
+worth trying if preclustering seems to be merging genomes it shouldn't, since the two approaches
+can disagree at the margins:
 ```bash
 aviary cluster --input-runs run1/ run2/ run3/ --precluster-method finch
 ```
 
 ### Filtering by quality before dereplication
 
-Drop low-quality genomes from consideration entirely, and trust CheckM2's scores (rather than
-the default CheckM1-derived ones already in `bins/checkm.out`) when Galah picks the cluster
-representative:
+Drop low-quality genomes from consideration entirely. Galah uses the CheckM2 scores in each
+run's `bins/bin_info.tsv` to filter genomes and to pick the cluster representative:
 ```bash
 aviary cluster --input-runs run1/ run2/ \
-  --min-completeness 70 --max-contamination 5 --use-checkm2-scores
+  --min-completeness 70 --max-contamination 5
 ```
 
 ### Building pangenome graphs for each cluster
@@ -74,7 +73,7 @@ aviary cluster --input-runs run1/ run2/ run3/ --pggb-params "-k 47 -G 4057,4229"
 
 **`-i`**, **`--input-runs`** DIR [DIR ...]
 
-  Paths to previous finished aviary runs. Each must contain `bins/checkm.out` and `bins/final_bins`. **(required)**
+  Paths to previous finished aviary runs (v0.13 or later). Each must contain `bins/bin_info.tsv` and `bins/final_bins/*.fna`; every bin named in `bin_info.tsv` must have a matching `final_bins/<name>.fna`. **(required)**
 
 ## Clustering options
 
@@ -84,11 +83,11 @@ aviary cluster --input-runs run1/ run2/ run3/ --pggb-params "-k 47 -G 4057,4229"
 
 **`--precluster-ani`** FLOAT
 
-  Minimum dashing-derived ANI for preclustering. [default: 95]
+  Minimum ANI (from the preclustering method) for preclustering. [default: 95]
 
 **`--precluster-method`** METHOD
 
-  Method for rough ANI in preclustering: `dashing` (HyperLogLog) or `finch` (MinHash). [default: dashing]
+  Method for rough ANI in preclustering: `skani` or `finch` (MinHash). [default: skani]
 
 **`--min-completeness`** FLOAT
 
@@ -97,10 +96,6 @@ aviary cluster --input-runs run1/ run2/ run3/ --pggb-params "-k 47 -G 4057,4229"
 **`--max-contamination`** FLOAT
 
   Ignore genomes above this contamination percentage. [default: none]
-
-**`--use-checkm2-scores`**
-
-  Use CheckM2 completeness and contamination scores for Galah dereplication.
 
 **`--pggb-params`** STRING
 

@@ -108,7 +108,12 @@ class Processor:
         try:
             self.skip_reads_check = args.skip_reads_check
         except AttributeError:
-            self.skip_reads_check = any(w in SUBCOMMANDS_WITHOUT_READS for w in self.workflows)
+            # The list holds subcommand names, but the workflow is the snakemake target
+            # (`cluster` runs `complete_cluster`), so check the subcommand as well.
+            self.skip_reads_check = (
+                getattr(args, "subparser_name", None) in SUBCOMMANDS_WITHOUT_READS
+                or any(w in SUBCOMMANDS_WITHOUT_READS for w in self.workflows)
+            )
 
         try:
             self.pplacer_threads = min(int(args.pplacer_threads), int(self.threads), 48)
@@ -252,6 +257,8 @@ class Processor:
             self.longread_type = args.longread_type
             self.medaka_model = args.medaka_model
             self.long_read_assembler = getattr(args, "long_read_assembler", "myloasm")
+            self.myloasm_kmc = getattr(args, "myloasm_kmc", False)
+            self.myloasm_kmc_ram = getattr(args, "myloasm_kmc_ram", None)
             self.long_read_mapper = getattr(args, "long_read_mapper", None)
             self.short_read_mapper = getattr(args, "short_read_mapper", None)
             self.long_read_mapper_model = getattr(args, "long_read_mapper_model", None)
@@ -265,6 +272,8 @@ class Processor:
             self.longread_type = 'none'
             self.medaka_model = 'none'
             self.long_read_assembler = 'myloasm'
+            self.myloasm_kmc = False
+            self.myloasm_kmc_ram = None
             self.long_read_mapper = None
             self.short_read_mapper = None
             self.long_read_mapper_model = None
@@ -275,6 +284,19 @@ class Processor:
             self.minimap2_params = None
             self.rammap_params = None
         self.guppy_model = getattr(args, 'guppy_model', 'r941_min_hac_g507')
+        self.metacat_options = {
+            stage: getattr(args, f"metacat_{stage}_params", "")
+            for stage in ("coverage", "seed", "cluster")
+        }
+
+        if self.myloasm_kmc and self.long_read_assembler != "myloasm":
+            logging.error(f"--myloasm-kmc requires --long-read-assembler myloasm, not {self.long_read_assembler}.")
+            sys.exit(-1)
+        if self.myloasm_kmc_ram is not None and self.myloasm_kmc_ram <= 0:
+            logging.error("--myloasm-kmc-ram must be a positive number of GB")
+            sys.exit(-1)
+        if self.myloasm_kmc_ram is not None and not self.myloasm_kmc:
+            logging.warning("--myloasm-kmc-ram has no effect without --myloasm-kmc; ignoring.")
 
         try:
             self.short_percent_identity = args.short_percent_identity
@@ -396,7 +418,6 @@ class Processor:
             self.precluster_ani = fraction_to_percent(args.precluster_ani)
             self.ani = fraction_to_percent(args.ani)
             self.precluster_method = args.precluster_method
-            self.use_checkm2_scores = args.use_checkm2_scores
             self.pggb_params = args.pggb_params
         except AttributeError:
             self.min_completeness = 'none'
@@ -404,7 +425,6 @@ class Processor:
             self.ani = 'none'
             self.precluster_ani = 'none'
             self.precluster_method = 'none'
-            self.use_checkm2_scores = False
             self.pggb_params = 'none'
 
         try:
@@ -473,7 +493,7 @@ class Processor:
         # unaffected. Auto-skip the BAM-only binners with a warning rather
         # than fail mid-run.
         if self.short_read_mapper == "strobealign-aemb":
-            bam_only_binners = ("semibin", "concoct", "comebin", "quickbin")
+            bam_only_binners = ("semibin", "concoct", "comebin", "quickbin", "metacat")
             newly_skipped = [b for b in bam_only_binners if b not in self.skip_binners]
             if newly_skipped:
                 logging.warning(
@@ -554,6 +574,19 @@ class Processor:
                 "--short-read-mapper or --long-read-mapper."
             )
             sys.exit(-1)
+
+        # MetaCAT runs by default (opt out with --skip-binners metacat), so check how
+        # its tuning options interact with that opt-out even when not asked for.
+        if ("metacat" not in self.skip_binners and "none" not in self.skip_binners
+                and self.longreads != "none" and self.pe1 != "none"):
+            logging.warning(
+                "MetaCAT uses one coverage mode for the mixed short/long BAM collection; "
+                "--metacat-coverage-params='--long' applies to every BAM. "
+                "Use homogeneous recovery inputs when distinct coverage modes are required."
+            )
+        if any(self.metacat_options.values()) and "metacat" in self.skip_binners:
+            logging.error("MetaCAT options were given but MetaCAT is skipped; remove --skip-binners metacat")
+            sys.exit(1)
 
 
     def make_config(self):
@@ -671,6 +704,9 @@ class Processor:
         # rather than omitted.
         conf["long_read_type_spades"] = LONG_READ_TYPE_TO_SPADES.get(self.longread_type, "none")
         conf["long_read_assembler"] = self.long_read_assembler
+        conf["metacat_options"] = self.metacat_options
+        conf["myloasm_kmc"] = self.myloasm_kmc
+        conf["myloasm_kmc_ram"] = self.myloasm_kmc_ram if self.myloasm_kmc_ram is not None else "none"
         conf["long_read_mapper"] = self.long_read_mapper
         conf["long_read_mapper_model"] = self.long_read_mapper_model or "none"
         conf["minibwa_params"] = self.minibwa_params or "none"
@@ -711,7 +747,6 @@ class Processor:
         conf["metabuli_folder"] = self.metabuli
         # conf["strain_analysis"] = self.strain_analysis
         conf["checkm2_db_folder"] = self.checkm2_db
-        conf["use_checkm2_scores"] = self.use_checkm2_scores
         conf["mag_directory"] = self.mag_directory
         conf["mag_extension"] = self.mag_extension
         conf["previous_runs"] = self.previous_runs

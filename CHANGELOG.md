@@ -1,5 +1,38 @@
 # Changelog
 
+## v0.14.0 - 2026-10-29
+
+### Added
+- **`--myloasm-kmc`** / **`--myloasm-kmc-ram GB`** — opt-in on-disk k-mer counting for myloasm (>= 0.7)
+  via `myloasm-kmc-v1`, run as its own step (`count_kmers_kmc`) before assembly. On two 34 GB ONT
+  metagenomes it cut assembly time by 16-34% with an essentially identical assembly; peak memory was
+  unchanged because a later stage sets it. Off unless requested. See `docs/usage/myloasm-kmc.md`.
+- **MetaCAT binner** (`bioconda::metacat >=1.0.6`), on by default; opt out with `--skip-binners metacat`.
+  GPU clustering with `--request-gpu`. Tune with `--metacat-{coverage,seed,cluster}-params`
+  (see `docs/usage/recover.md`). Adds runtime to default runs and two pixi environments
+  (`metacat`, `metacat-gpu`). Skipped with `--short-read-mapper strobealign-aemb`. 
+  - Liu, CC. et al. Nat Microbiol (2026). https://doi.org/10.1038/s41564-026-02472-7
+
+### Changed
+- **`aviary cluster` now uses CheckM2**: it reads `bins/bin_info.tsv` and `bins/final_bins/*.fna` from each run
+  and passes the CheckM2 quality report to Galah; `bins/checkm_minimal.tsv` is no longer used.
+  `--precluster-method` defaults to `skani`.
+- Dependencies: myloasm 0.3.0 -> 0.7.0 (CPU), galah -> 0.6.2, comebin -> 1.1.0, gtdbtk -> 2.8.0,
+  singlem -> 0.21.4, semibin -> 2.6.0, skani -> 0.4.0, pixi -> 0.83.0.
+
+### Breaking
+- `--precluster-method dashing` is rejected (galah no longer supports it; use `skani` or `finch`).
+- `aviary cluster` needs runs from v0.13+ (CheckM2 `bin_info.tsv`); runs from older releases are not supported.
+- `--use-checkm2-scores` (cluster) is removed; CheckM2 scores are now always on. This flag is no longer supported.
+
+### Fixed
+- **Short-read racon polishing** (`polish_meta_racon_ill`): failed with
+  `unequal lengths in sequence and overlap file` on paired-end reads, or
+  polished with the wrong mate when mates were the same length. QC'd reads
+  reach racon interleaved, and both mates shared one read ID. Every read now
+  gets a unique ID before mapping.
+- **aviary cluster** no longer fails with `Programming error: both long_reads and short_reads_1 are set to 'none'`; it now runs without reads, using CheckM2 quality reports.
+
 ## v0.13.4 - 2026-10-07
 
 ### Fixed

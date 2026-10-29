@@ -839,6 +839,8 @@ rule comebin:
         config["max_threads"]
     params:
         pixi_env = "comebin-gpu" if config["request_gpu"] else "comebin",
+        # COMEBin >= 1.1 defaults to --device cuda and refuses to run on a CPU-only PyTorch.
+        device = "cuda" if config["request_gpu"] else "cpu",
         touch = "" if config["strict"] else "|| (mkdir -p data/comebin_bins && touch data/comebin_bins/done)",
         really_done = "data/comebin_bins/really_done",
     resources:
@@ -855,8 +857,62 @@ rule comebin:
         "benchmarks/comebin.benchmark.txt"
     shell:
         "rm -rf data/comebin_bins/; unset CUDA_VISIBLE_DEVICES; " + \
-        pixi_run + " -e {params.pixi_env} run_comebin.sh -a {input.fasta} -p data/binning_bams -t {threads} -o data/comebin_bins > {resources.log_path} 2>&1 "
+        pixi_run + " -e {params.pixi_env} run_comebin.sh -a {input.fasta} -p data/binning_bams -t {threads} -d {params.device} -o data/comebin_bins > {resources.log_path} 2>&1 "
         "&& touch {output[0]} {params.really_done} {params.touch}"
+
+rule metacat:
+    """
+    MetaCAT (BAM-based). Runs by default; opt out via --skip-binners metacat.
+    --swdpgmm-engine is passed explicitly (cpu/gpu) rather than relying on
+    MetaCAT's own "auto" default, which silently GPU-probes unless told otherwise.
+    """
+    input:
+        large_contigs_done = "data/done/filter_contigs_by_size.done",
+        fasta = "data/large_contigs.fasta",
+        bams_indexed = ancient("data/binning_bams/done")
+    output:
+        done = "data/metacat_bins/done"
+    threads:
+        config["max_threads"]
+    params:
+        pixi_env = "metacat-gpu" if config["request_gpu"] else "metacat",
+        swdpgmm_engine = "gpu" if config["request_gpu"] else "cpu",
+        min_contig_size = config["min_contig_size"],
+        min_bin_size = config["min_bin_size"],
+        coverage_options = config.get("metacat_options", {}).get("coverage", ""),
+        seed_options = config.get("metacat_options", {}).get("seed", ""),
+        cluster_options = config.get("metacat_options", {}).get("cluster", ""),
+        # Long reads need --long coverage counting, unless the user already chose a mode.
+        long_flag = "--long" if (
+            config["long_reads"] != "none" and config["short_reads_1"] == "none"
+            and not {"--long", "-l"} & set(config.get("metacat_options", {}).get("coverage", "").split())
+        ) else "",
+        touch = "" if config["strict"] else "|| (mkdir -p data/metacat_bins && touch data/metacat_bins/done)",
+        really_done = "data/metacat_bins/really_done",
+    resources:
+        mem_mb = lambda wildcards, attempt: min(int(config["max_memory"])*1024, 128*1024*attempt),
+        runtime = lambda wildcards, attempt: 24*60*attempt,
+        # Both keys are deliberate: Snakemake's SLURM executor plugin reads
+        # "gpu", snakemake_mqsub on aqua (PBS) reads "gpus". Dropping either
+        # silently schedules GPU rules onto a CPU node, where the CUDA pixi
+        # env fails to activate before any log file is written.
+        gpu = 1 if config["request_gpu"] else 0,
+        gpus = 1 if config["request_gpu"] else 0,
+        log_path = lambda wildcards, attempt: setup_log(f"{logs_dir}/metacat", attempt),
+    benchmark:
+        "benchmarks/metacat.benchmark.txt"
+    shell:
+        "rm -rf data/metacat_bins/; mkdir -p data/metacat_bins; unset CUDA_VISIBLE_DEVICES; " + \
+        pixi_run + " -e {params.pixi_env} bash -e -o pipefail -c '"
+        "mkdir -p data/metacat_bins/tmp && "
+        "MetaCAT coverage -b data/binning_bams/*.bam -o data/metacat_bins/metacat.coverage --threads-index {threads} --threads-count {threads} --min-sequence-length {params.min_contig_size} {params.long_flag} {params.coverage_options} && "
+        "MetaCAT seed -f {input.fasta} -o data/metacat_bins/metacat.seed --threads {threads} --temp data/metacat_bins/tmp {params.seed_options} && "
+        "MetaCAT cluster -f {input.fasta} -c data/metacat_bins/metacat.coverage -s data/metacat_bins/metacat.seed -o data/metacat_bins/metacat --threads {threads} --swdpgmm-engine {params.swdpgmm_engine} --min-sequence-length {params.min_contig_size} --min-cluster {params.min_bin_size} {params.cluster_options} && "
+        "rm -rf data/metacat_bins/tmp && "
+        "for f in data/metacat_bins/*.fasta; do [ -e \"$f\" ] || continue; mv \"$f\" \"${{f%.fasta}}.fna\"; done' "
+        "> {resources.log_path} 2>&1 "
+        "&& touch {output[0]} {params.really_done} {params.touch}"
+
 
 rule quickbin:
     input:
@@ -1167,6 +1223,7 @@ rule das_tool:
         quickbin_done = [] if "quickbin" in config["skip_binners"] else "data/quickbin_bins/done",
         vamb_done = [] if "vamb" in config["skip_binners"] else "data/vamb_bins/done",
         taxvamb_done = [] if "taxvamb" in config["skip_binners"] else "data/taxvamb_bins/done",
+        metacat_done = [] if "metacat" in config["skip_binners"] else "data/metacat_bins/done",
     threads:
         min(config["max_threads"], 10)
     resources:

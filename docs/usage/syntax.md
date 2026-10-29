@@ -80,7 +80,7 @@ There are no `--no-clean`-style negated flags. This syntax applies to
 `--request-gpu`, `--strict`, `--dry-run`, `--clean`, `--build`, `--build-gpu`,
 `--disable-adapter-trimming`, `--skip-qc`, `--use-unicycler`, `--use-megahit`,
 `--coassemble`, `--binning-only`, `--skip-abundances`, `--skip-taxonomy`,
-`--skip-singlem`, `--use-checkm2-scores` and `build --gpu`.
+`--skip-singlem` and `build --gpu`.
 
 ## Aliases
 
