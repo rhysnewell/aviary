@@ -1,6 +1,6 @@
 # Changelog
 
-## v0.13.5 - 2026-10-28
+## v0.14.0 - 2026-10-29
 
 ### Added
 - **`--myloasm-kmc`** / **`--myloasm-kmc-ram GB`** — opt-in on-disk k-mer counting for myloasm (>= 0.7)

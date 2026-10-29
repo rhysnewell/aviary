@@ -74,7 +74,7 @@ succeeded but polished with the wrong mate.
 
 ### Resolution
 
-Fixed in v0.13.5: every read is given a unique ID before mapping. Upgrade and
+Fixed in v0.14.0: every read is given a unique ID before mapping. Upgrade and
 repeat the command with the same output directory. On an older version, run
 with `--skip-qc` and separate `-1`/`-2` files, which takes a path where each
 mate already gets a unique ID.
