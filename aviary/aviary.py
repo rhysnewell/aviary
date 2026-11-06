@@ -775,7 +775,8 @@ def main():
 
     binning_options.add_argument(
         '--coverage-samples-per-job', '--coverage_samples_per_job',
-        help='',
+        help='Maximum number of samples to calculate coverage for in each job when coverage calculation is split.\n'
+             'Has no effect unless coverage is being split, see `--coverage-job-strategy`.',
         dest='coverage_samples_per_job',
         type=int,
         default=5,
